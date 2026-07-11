@@ -115,10 +115,10 @@
           element: element,
           x: Math.random() * Math.max(1, layer.clientWidth - 32),
           y: Math.random() * Math.max(1, layer.clientHeight - 32),
-          vx: (Math.random() * 1.1 + 0.8) * (Math.random() > 0.5 ? 1 : -1),
-          vy: (Math.random() * 1.1 + 0.8) * (Math.random() > 0.5 ? 1 : -1),
+          vx: (Math.random() * 2.2 + 1.6) * (Math.random() > 0.5 ? 1 : -1),
+          vy: (Math.random() * 2.2 + 1.6) * (Math.random() > 0.5 ? 1 : -1),
           rotation: Math.random() * 360,
-          spin: (Math.random() - 0.5) * 0.8,
+          spin: (Math.random() * 2 + 1) * (Math.random() > 0.5 ? 1 : -1),
         });
       }
 
