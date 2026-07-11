@@ -320,11 +320,13 @@ class ClinicSettings(models.Model):
     EFFECT_TEETH = 'teeth'
     EFFECT_CROSSES = 'crosses'
     EFFECT_CUSTOM = 'custom'
+    EFFECT_DENTAL_FIELD = 'dental_field'
     EFFECT_CHOICES = [
         (EFFECT_NONE, 'Без анімації'),
         (EFFECT_TEETH, 'Літаючі зуби'),
         (EFFECT_CROSSES, 'Медичні хрестики'),
         (EFFECT_CUSTOM, 'Власне зображення'),
+        (EFFECT_DENTAL_FIELD, 'Стоматологічне поле'),
     ]
 
     clinic_name = models.CharField(max_length=120, default='MedClinic')

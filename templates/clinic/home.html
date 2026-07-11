@@ -97,16 +97,37 @@
       const effect = layer.dataset.particleEffect;
       const isTeeth = effect === 'teeth';
       const isCustom = effect === 'custom';
+      const isDentalField = effect === 'dental_field';
       const symbol = isTeeth ? '🦷' : '+';
-      const amount = window.innerWidth < 680 ? 14 : 28;
+      const amount = isDentalField ? (window.innerWidth < 680 ? 42 : 90) : (window.innerWidth < 680 ? 14 : 28);
       const particles = [];
+      const pointer = { x: -1000, y: -1000 };
+
+      if (isDentalField) {
+        window.addEventListener('pointermove', function (event) {
+          const rect = layer.getBoundingClientRect();
+          pointer.x = event.clientX - rect.left;
+          pointer.y = event.clientY - rect.top;
+        });
+        window.addEventListener('pointerleave', function () {
+          pointer.x = -1000;
+          pointer.y = -1000;
+        });
+      }
 
       for (let index = 0; index < amount; index += 1) {
         const element = document.createElement(isCustom ? 'img' : 'span');
-        element.className = isCustom ? 'home-particle custom-particle' : (isTeeth ? 'home-particle tooth' : 'home-particle medical-cross');
+        const dentalKind = index % 3;
+        element.className = isCustom
+          ? 'home-particle custom-particle'
+          : (isDentalField
+            ? 'home-particle dental-particle ' + (dentalKind === 0 ? 'dental-tooth' : (dentalKind === 1 ? 'braced-tooth' : 'dental-braces'))
+            : (isTeeth ? 'home-particle tooth' : 'home-particle medical-cross'));
         if (isCustom) {
           element.src = layer.dataset.particleImage;
           element.alt = '';
+        } else if (isDentalField) {
+          element.textContent = dentalKind === 2 ? '▦' : '🦷';
         } else {
           element.textContent = symbol;
         }
@@ -115,8 +136,8 @@
           element: element,
           x: Math.random() * Math.max(1, layer.clientWidth - 32),
           y: Math.random() * Math.max(1, layer.clientHeight - 32),
-          vx: (Math.random() * 2.2 + 1.6) * (Math.random() > 0.5 ? 1 : -1),
-          vy: (Math.random() * 2.2 + 1.6) * (Math.random() > 0.5 ? 1 : -1),
+          vx: (isDentalField ? Math.random() * 0.35 + 0.08 : Math.random() * 2.2 + 1.6) * (Math.random() > 0.5 ? 1 : -1),
+          vy: (isDentalField ? Math.random() * 0.35 + 0.08 : Math.random() * 2.2 + 1.6) * (Math.random() > 0.5 ? 1 : -1),
           rotation: Math.random() * 360,
           spin: (Math.random() * 2 + 1) * (Math.random() > 0.5 ? 1 : -1),
         });
@@ -127,6 +148,25 @@
         const height = layer.clientHeight;
         particles.forEach(function (particle) {
           const size = particle.element.offsetWidth;
+          if (isDentalField) {
+            const centerX = particle.x + size / 2;
+            const centerY = particle.y + size / 2;
+            const dx = centerX - pointer.x;
+            const dy = centerY - pointer.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance > 0 && distance < 150) {
+              const force = (150 - distance) / 150 * 1.25;
+              particle.vx += dx / distance * force;
+              particle.vy += dy / distance * force;
+            }
+            particle.vx *= 0.985;
+            particle.vy *= 0.985;
+            const speed = Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy);
+            if (speed > 5) {
+              particle.vx = particle.vx / speed * 5;
+              particle.vy = particle.vy / speed * 5;
+            }
+          }
           particle.x += particle.vx;
           particle.y += particle.vy;
           particle.rotation += particle.spin;
