@@ -1,0 +1,18 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Додати лікаря - MedClinic{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <h1 class="page-title">Додати лікаря</h1>
+    <p class="muted">Адміністратор створює логін, пароль, спеціальність і може одразу завантажити фото.</p>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {% include 'clinic/_form_fields.html' %}
+      <div class="actions">
+        <button type="submit">Створити акаунт лікаря</button>
+        <a class="btn secondary" href="{% url 'admin_panel' %}">Назад</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

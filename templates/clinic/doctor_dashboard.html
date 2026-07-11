@@ -1,0 +1,111 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Кабінет лікаря - MedClinic{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <div>
+      <h1 class="page-title">{{ doctor.full_name }}</h1>
+      <p class="page-subtitle">{{ doctor.specialization }}{% if doctor.phone %} · {{ doctor.phone }}{% endif %}</p>
+    </div>
+  </section>
+
+  <nav class="page-tabs">
+    <a class="page-tab active" href="{% url 'doctor_dashboard' %}">Огляд</a>
+    <a class="page-tab" href="{% url 'doctor_appointments' %}">Прийоми</a>
+    <a class="page-tab" href="{% url 'doctor_patient_cards' %}">Пацієнти</a>
+    <a class="page-tab" href="{% url 'doctor_schedule' %}">Графік</a>
+    <a class="page-tab" href="{% url 'doctor_services' %}">Послуги</a>
+  </nav>
+
+  <section class="overview-grid">
+    <article class="overview-card">
+      <span class="overview-label">Нові заявки</span>
+      <strong class="overview-value">{{ pending_count }}</strong>
+    </article>
+    <article class="overview-card">
+      <span class="overview-label">Активні прийоми</span>
+      <strong class="overview-value">{{ appointments_count }}</strong>
+    </article>
+    <article class="overview-card">
+      <span class="overview-label">Картки пацієнтів</span>
+      <strong class="overview-value">{{ patient_cards_count }}</strong>
+    </article>
+    <article class="overview-card">
+      <span class="overview-label">Швидкий доступ</span>
+      <strong class="overview-text">Основні дії нижче</strong>
+    </article>
+  </section>
+
+  <section class="action-board action-board-wide">
+    <article class="action-group">
+      <span class="action-group-label">Робота</span>
+      <h3>Заявки та пацієнти</h3>
+      <div class="action-group-buttons">
+        <a class="btn" href="{% url 'doctor_appointments' %}">Заявки та прийоми</a>
+        <a class="btn secondary" href="{% url 'doctor_patient_cards' %}">Картки пацієнтів</a>
+        <a class="btn secondary" href="{% url 'doctor_book_patient' %}">Записати пацієнта</a>
+      </div>
+    </article>
+
+    <article class="action-group">
+      <span class="action-group-label">Налаштування</span>
+      <h3>Графік та послуги</h3>
+      <div class="action-group-buttons">
+        <a class="btn secondary" href="{% url 'doctor_schedule' %}">Мій графік</a>
+        <a class="btn secondary" href="{% url 'doctor_services' %}">Мої послуги</a>
+      </div>
+    </article>
+
+    <article class="action-group">
+      <span class="action-group-label">Акаунт</span>
+      <h3>Профіль лікаря</h3>
+      <div class="action-group-buttons">
+        <a class="btn secondary" href="{% url 'doctor_edit_profile' %}">Редагувати профіль</a>
+        <a class="btn secondary" href="{% url 'doctor_change_password' %}">Змінити пароль</a>
+      </div>
+    </article>
+  </section>
+
+  <div class="grid grid-2">
+    <section class="card section-card">
+      <div class="section-head">
+        <h2 class="section-title">Графік роботи</h2>
+      </div>
+      <ul class="simple-list">
+        {% for schedule in doctor.schedules.all %}
+          <li>
+            <span>{{ schedule.get_weekday_display }} · {{ schedule.city }}</span>
+            <strong>
+              {% if schedule.is_working %}
+                {{ schedule.start_time|time:'H:i' }}-{{ schedule.end_time|time:'H:i' }}
+              {% else %}
+                Вихідний
+              {% endif %}
+            </strong>
+          </li>
+        {% empty %}
+          <li><span>Графік ще не заповнений</span><strong></strong></li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="card section-card">
+      <div class="section-head">
+        <h2 class="section-title">Найближчі прийоми</h2>
+      </div>
+      {% if next_appointments %}
+        <ul class="simple-list">
+          {% for appointment in next_appointments %}
+            <li>
+              <span>{{ appointment.date|date:'d.m.Y' }} {{ appointment.time|time:'H:i' }} · {{ appointment.patient_name }}</span>
+              <strong>{{ appointment.city }}</strong>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="empty">Найближчих прийомів поки немає.</div>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

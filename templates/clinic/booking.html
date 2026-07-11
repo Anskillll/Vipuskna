@@ -1,0 +1,108 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Запис до лікаря - MedClinic{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <div>
+      <h1 class="page-title">Запис до лікаря</h1>
+      <p class="page-subtitle">Оберіть лікаря, дату та вільний час.</p>
+    </div>
+  </section>
+
+  <div class="booking-layout">
+    <section class="card section-card">
+      <div class="section-mini-head">
+        <h2>1. Лікар і дата</h2>
+      </div>
+      <form method="get">
+        <div class="field">
+          <label for="doctor">Лікар</label>
+          <select id="doctor" name="doctor">
+            {% for doctor in doctors %}
+              <option value="{{ doctor.id }}" {% if selected_doctor.id == doctor.id %}selected{% endif %}>
+                {{ doctor.full_name }} - {{ doctor.specialization }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="date">Дата</label>
+          <input id="date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+        </div>
+        <button type="submit">Показати час</button>
+      </form>
+    </section>
+
+    {% if selected_doctor %}
+      <section class="card section-card doctor-summary">
+        <div class="doctor-panel-top">
+          {% if selected_doctor.photo_src %}
+            <img class="doctor-photo doctor-photo-lg" src="{{ selected_doctor.photo_src }}" alt="{{ selected_doctor.full_name }}">
+          {% else %}
+            <div class="doctor-photo doctor-photo-lg">{{ selected_doctor.user.first_name|first }}{{ selected_doctor.user.last_name|first }}</div>
+          {% endif %}
+          <div>
+            <h2 class="doctor-name">{{ selected_doctor.full_name }}</h2>
+            <p class="doctor-spec">{{ selected_doctor.specialization }}</p>
+            <p class="doctor-meta">{{ selected_doctor.phone }}</p>
+          </div>
+        </div>
+        <ul class="price-list">
+          {% for service in selected_doctor.services.all %}
+            <li><span>{{ service.name }}</span><strong>{{ service.price }} грн</strong></li>
+          {% empty %}
+            <li><span>Список послуг поки порожній</span><strong></strong></li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+  </div>
+
+  <section class="card section-card">
+    <div class="section-mini-head">
+      <h2>2. Вільний час</h2>
+      {% if selected_schedule and selected_schedule.is_working %}
+        <span class="section-note">{{ selected_schedule.city }}, {{ selected_schedule.address }}</span>
+      {% endif %}
+    </div>
+    {% if selected_schedule and selected_schedule.is_working %}
+      <div class="slot-grid slot-grid-clean">
+        {% for slot in slots %}
+          {% if slot.busy %}
+            <span class="slot-busy">{{ slot.time|time:'H:i' }}</span>
+          {% else %}
+            <a class="time-pill {% if selected_time == slot.time %}active{% endif %}" href="{% url 'booking' %}?doctor={{ selected_doctor.id }}&date={{ selected_date|date:'Y-m-d' }}&time={{ slot.time|time:'H:i' }}">
+              {{ slot.time|time:'H:i' }}
+            </a>
+          {% endif %}
+        {% empty %}
+          <div class="empty">На цей день вільного часу немає.</div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">У цей день лікар не приймає.</div>
+    {% endif %}
+  </section>
+
+  {% if selected_time and selected_schedule %}
+    <section class="card section-card booking-final">
+      <div class="section-mini-head">
+        <h2>3. Підтвердження заявки</h2>
+      </div>
+      <p class="booking-summary">
+        <strong>{{ selected_doctor.full_name }}</strong><br>
+        {{ selected_schedule.city }}, {{ selected_schedule.address }}<br>
+        {{ selected_date|date:'d.m.Y' }} о {{ selected_time|time:'H:i' }}
+      </p>
+      <form method="post" onsubmit="return confirm('Надіслати заявку на цей час?');">
+        {% csrf_token %}
+        <input type="hidden" name="doctor" value="{{ selected_doctor.id }}">
+        <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+        <input type="hidden" name="time" value="{{ selected_time|time:'H:i' }}">
+        {% include 'clinic/_form_fields.html' with form=reason_form %}
+        <button type="submit">Надіслати заявку</button>
+      </form>
+    </section>
+  {% endif %}
+{% endblock %}

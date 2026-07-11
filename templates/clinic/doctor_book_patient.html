@@ -1,0 +1,89 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Записати пацієнта - MedClinic{% endblock %}
+
+{% block content %}
+  <h1 class="page-title">Записати пацієнта</h1>
+
+  <div class="grid grid-2">
+    <section class="card">
+      <h2 class="section-title">Оберіть дату та час</h2>
+      <form method="get">
+        <div class="field">
+          <label for="date">Дата</label>
+          <input id="date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+        </div>
+        <button type="submit">Показати час</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">Інформація про прийом</h2>
+      {% if selected_schedule and selected_schedule.is_working %}
+        <p class="muted">{{ selected_schedule.city }}, {{ selected_schedule.address }}</p>
+        <p class="muted">Тривалість одного слота: {{ selected_schedule.slot_minutes }} хв</p>
+      {% else %}
+        <div class="empty">На обрану дату графік не заповнений.</div>
+      {% endif %}
+    </section>
+  </div>
+
+  <section class="card" style="margin-top: 18px;">
+    <h2 class="section-title">Вільний час</h2>
+    {% if selected_schedule and selected_schedule.is_working %}
+      <div class="slot-grid">
+        {% for slot in slots %}
+          {% if slot.busy %}
+            <span class="slot-busy">{{ slot.time|time:'H:i' }} зайнято</span>
+          {% else %}
+            <a class="btn secondary" href="{% url 'doctor_book_patient' %}?date={{ selected_date|date:'Y-m-d' }}&time={{ slot.time|time:'H:i' }}">
+              {{ slot.time|time:'H:i' }}
+            </a>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">У цей день прийому немає.</div>
+    {% endif %}
+  </section>
+
+  {% if selected_time and selected_schedule %}
+    <section class="card" style="margin-top: 18px;">
+      <h2 class="section-title">Дані пацієнта</h2>
+      <p class="muted">{{ selected_date|date:'d.m.Y' }} о {{ selected_time|time:'H:i' }}</p>
+      <form method="post" onsubmit="return confirm('Записати пацієнта на цей час?');">
+        {% csrf_token %}
+        <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+        <input type="hidden" name="time" value="{{ selected_time|time:'H:i' }}">
+        {% include 'clinic/_form_fields.html' with form=form %}
+        <button type="submit">Записати пацієнта</button>
+      </form>
+    </section>
+  {% endif %}
+
+  <script>
+    function setupPatientFields() {
+      const patientSelect = document.getElementById('id_patient');
+      if (!patientSelect) return;
+
+      const contactFields = ['id_first_name', 'id_last_name', 'id_phone', 'id_email'];
+      function updatePatientFields() {
+        const hideContacts = Boolean(patientSelect.value);
+        contactFields.forEach(function (id) {
+          const input = document.getElementById(id);
+          const field = input ? input.closest('.field') : null;
+          if (field) field.style.display = hideContacts ? 'none' : '';
+        });
+      }
+
+      patientSelect.addEventListener('change', updatePatientFields);
+      updatePatientFields();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setupPatientFields);
+    } else {
+      setupPatientFields();
+    }
+  </script>
+{% endblock %}

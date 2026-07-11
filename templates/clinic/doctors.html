@@ -1,0 +1,76 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Лікарі - MedClinic{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <div>
+      <h1 class="page-title">Лікарі</h1>
+      <p class="page-subtitle">Оберіть спеціаліста та перегляньте доступні послуги.</p>
+    </div>
+  </section>
+
+  <section class="card section-card">
+    <form method="get" class="inline-form">
+      <div class="field field-grow">
+        <label for="q">Пошук</label>
+        <input id="q" name="q" value="{{ query }}" placeholder="Наприклад: терапевт">
+      </div>
+      <button type="submit">Знайти</button>
+    </form>
+  </section>
+
+  <section class="doctor-grid">
+    {% for doctor in doctors %}
+      <article class="doctor-panel">
+        <div class="doctor-panel-top">
+          {% if doctor.photo_src %}
+            <img class="doctor-photo doctor-photo-lg" src="{{ doctor.photo_src }}" alt="{{ doctor.full_name }}">
+          {% else %}
+            <div class="doctor-photo doctor-photo-lg">{{ doctor.user.first_name|first }}{{ doctor.user.last_name|first }}</div>
+          {% endif %}
+          <div>
+            <h2 class="doctor-name">{{ doctor.full_name }}</h2>
+            <p class="doctor-spec">{{ doctor.specialization }}</p>
+            <p class="doctor-meta">{{ doctor.phone }}</p>
+          </div>
+        </div>
+
+        {% if doctor.description %}
+          <p class="doctor-description">{{ doctor.description }}</p>
+        {% endif %}
+
+        <div class="chip-row">
+          {% for city in doctor.cities %}
+            <span class="chip">{{ city }}</span>
+          {% empty %}
+            <span class="chip chip-muted">Графік ще не заповнений</span>
+          {% endfor %}
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section-mini-head">
+          <h3>Послуги</h3>
+        </div>
+        <ul class="price-list">
+          {% for service in doctor.services.all %}
+            <li><span>{{ service.name }}</span><strong>{{ service.price }} грн</strong></li>
+          {% empty %}
+            <li><span>Послуги ще не додані</span><strong></strong></li>
+          {% endfor %}
+        </ul>
+
+        <div class="actions">
+          {% if user.is_authenticated and user.profile.role == 'patient' %}
+            <a class="btn" href="{% url 'booking' %}?doctor={{ doctor.id }}">Записатися</a>
+          {% else %}
+            <a class="btn" href="{% url 'home' %}">Увійти для запису</a>
+          {% endif %}
+        </div>
+      </article>
+    {% empty %}
+      <div class="empty">Лікарів не знайдено.</div>
+    {% endfor %}
+  </section>
+{% endblock %}

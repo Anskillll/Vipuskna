@@ -1,0 +1,902 @@
+from datetime import datetime, timedelta
+from functools import wraps
+
+from django.contrib import messages
+from django.contrib.auth import login, logout, update_session_auth_hash
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth.models import User
+from django.db import IntegrityError
+from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+
+from .forms import (
+    AdminDoctorCreateForm,
+    AdminUserEditForm,
+    AppointmentDecisionForm,
+    BookingReasonForm,
+    DoctorPatientBookingForm,
+    DoctorPatientCardForm,
+    DoctorProfileForm,
+    EmailForm,
+    PatientProfileForm,
+    ServiceForm,
+    UsernameLoginForm,
+    WorkScheduleForm,
+)
+from .models import Appointment, Doctor, DoctorPatientCard, Profile, WorkSchedule
+
+
+BLOCKING_APPOINTMENT_STATUSES = [
+    Appointment.STATUS_PENDING,
+    Appointment.STATUS_APPROVED,
+    Appointment.STATUS_COMPLETED,
+]
+
+
+def user_role(user):
+    if not user.is_authenticated:
+        return None
+    if user.is_staff:
+        return 'admin'
+    try:
+        return user.profile.role
+    except Profile.DoesNotExist:
+        if hasattr(user, 'doctor_profile'):
+            return Profile.ROLE_DOCTOR
+        return None
+
+
+def redirect_by_role(user):
+    role = user_role(user)
+    if role == 'admin':
+        return redirect('admin_panel')
+    if role == Profile.ROLE_DOCTOR:
+        return redirect('doctor_dashboard')
+    return redirect('patient_dashboard')
+
+
+def patient_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if request.user.is_authenticated and user_role(request.user) == Profile.ROLE_PATIENT:
+            return view_func(request, *args, **kwargs)
+        messages.error(request, 'Увійдіть як пацієнт.')
+        return redirect('home')
+
+    return wrapper
+
+
+def doctor_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if request.user.is_authenticated and user_role(request.user) == Profile.ROLE_DOCTOR:
+            if not request.user.is_active:
+                messages.error(request, 'Ваш акаунт заблоковано.')
+                return redirect('home')
+            return view_func(request, *args, **kwargs)
+        messages.error(request, 'Увійдіть як лікар.')
+        return redirect('doctor_login')
+
+    return wrapper
+
+
+def admin_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if request.user.is_authenticated and request.user.is_staff:
+            return view_func(request, *args, **kwargs)
+        messages.error(request, 'Увійдіть як адміністратор.')
+        return redirect('admin_login')
+
+    return wrapper
+
+
+def parse_date(value):
+    try:
+        return datetime.strptime(value, '%Y-%m-%d').date()
+    except (TypeError, ValueError):
+        return timezone.localdate()
+
+
+def parse_time(value):
+    try:
+        return datetime.strptime(value, '%H:%M').time()
+    except (TypeError, ValueError):
+        return None
+
+
+def is_past_appointment(selected_date, selected_time=None):
+    now = timezone.localtime()
+    if selected_date < now.date():
+        return True
+    if selected_time and selected_date == now.date() and selected_time <= now.time().replace(second=0, microsecond=0):
+        return True
+    return False
+
+
+def schedule_for_date(doctor, selected_date):
+    return WorkSchedule.objects.filter(
+        doctor=doctor,
+        weekday=selected_date.weekday(),
+    ).first()
+
+
+def appointment_range(date_value, time_value, slot_minutes, duration_slots):
+    start = datetime.combine(date_value, time_value)
+    end = start + timedelta(minutes=slot_minutes * duration_slots)
+    return start, end
+
+
+def appointment_conflicts(doctor, selected_date, selected_time, duration_slots=1, exclude_id=None):
+    schedule = schedule_for_date(doctor, selected_date)
+    if not schedule:
+        return True
+
+    target_start, target_end = appointment_range(
+        selected_date,
+        selected_time,
+        schedule.slot_minutes,
+        duration_slots,
+    )
+
+    day_end = datetime.combine(selected_date, schedule.end_time)
+    if target_end > day_end:
+        return True
+
+    appointments = (
+        Appointment.objects.filter(
+            doctor=doctor,
+            date=selected_date,
+            status__in=BLOCKING_APPOINTMENT_STATUSES,
+        )
+        .exclude(pk=exclude_id)
+        .order_by('time')
+    )
+
+    for appointment in appointments:
+        item_start, item_end = appointment_range(
+            appointment.date,
+            appointment.time,
+            schedule.slot_minutes,
+            appointment.duration_slots,
+        )
+        if target_start < item_end and target_end > item_start:
+            return True
+    return False
+
+
+def slots_for_doctor(doctor, selected_date):
+    schedule = schedule_for_date(doctor, selected_date)
+    if not schedule:
+        return None, []
+
+    now = timezone.localtime()
+    slots = [
+        {
+            'time': slot,
+            'busy': appointment_conflicts(doctor, selected_date, slot, duration_slots=1) or (
+                selected_date == now.date() and slot <= now.time().replace(second=0, microsecond=0)
+            ),
+        }
+        for slot in schedule.get_slots()
+    ]
+    return schedule, slots
+
+
+def appointment_finished(appointment):
+    visit_end = timezone.make_aware(datetime.combine(appointment.date, appointment.end_time))
+    return visit_end <= timezone.localtime()
+
+
+def refresh_completed_appointments():
+    changed = []
+    for appointment in Appointment.objects.filter(status=Appointment.STATUS_APPROVED).select_related('doctor'):
+        if appointment_finished(appointment):
+            appointment.status = Appointment.STATUS_COMPLETED
+            changed.append(appointment)
+    if changed:
+        Appointment.objects.bulk_update(changed, ['status'])
+
+
+def find_patient_by_contacts(email, phone):
+    patient = None
+    if email:
+        patient = User.objects.filter(
+            email__iexact=email,
+            profile__role=Profile.ROLE_PATIENT,
+        ).first()
+    if not patient and phone:
+        patient = User.objects.filter(
+            profile__role=Profile.ROLE_PATIENT,
+            profile__phone=phone,
+        ).first()
+    return patient
+
+
+def ensure_patient_card_from_appointment(appointment):
+    patient = appointment.patient or find_patient_by_contacts(appointment.patient_email, appointment.patient_phone)
+    card, created = DoctorPatientCard.objects.get_or_create(
+        doctor=appointment.doctor,
+        patient_phone=appointment.patient_phone,
+        defaults={
+            'patient': patient,
+            'patient_first_name': appointment.patient_first_name,
+            'patient_last_name': appointment.patient_last_name,
+            'patient_email': appointment.patient_email,
+        },
+    )
+    changed_fields = []
+    if patient and card.patient_id != patient.id:
+        card.patient = patient
+        changed_fields.append('patient')
+    if card.patient_first_name != appointment.patient_first_name:
+        card.patient_first_name = appointment.patient_first_name
+        changed_fields.append('patient_first_name')
+    if card.patient_last_name != appointment.patient_last_name:
+        card.patient_last_name = appointment.patient_last_name
+        changed_fields.append('patient_last_name')
+    if card.patient_email != appointment.patient_email:
+        card.patient_email = appointment.patient_email
+        changed_fields.append('patient_email')
+    if changed_fields:
+        card.save(update_fields=changed_fields)
+    return card, created
+
+
+def sync_patient_cards_for_doctor(doctor):
+    appointments = doctor.appointments.exclude(
+        status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]
+    )
+    for appointment in appointments:
+        ensure_patient_card_from_appointment(appointment)
+
+
+def home(request):
+    if request.user.is_authenticated:
+        return redirect_by_role(request.user)
+    return render(request, 'clinic/home.html')
+
+
+def login_view(request, role='patient'):
+    if role == 'patient':
+        messages.info(request, 'Для пацієнта використовується вхід через Google.')
+        return redirect('home')
+
+    if request.method == 'GET':
+        return render(
+            request,
+            'clinic/login.html',
+            {
+                'form': UsernameLoginForm(),
+                'role': role,
+            },
+        )
+
+    form = UsernameLoginForm(request.POST)
+    if form.is_valid():
+        user = form.get_user(request)
+        if user and user.is_active:
+            actual_role = user_role(user)
+            if role == 'admin' and not user.is_staff:
+                messages.error(request, 'Цей акаунт не є акаунтом адміністратора.')
+            elif role == 'doctor' and actual_role != Profile.ROLE_DOCTOR:
+                messages.error(request, 'Цей акаунт не є акаунтом лікаря.')
+            elif role == 'patient' and actual_role != Profile.ROLE_PATIENT:
+                messages.error(request, 'Цей акаунт не є акаунтом пацієнта.')
+            else:
+                login(request, user)
+                messages.success(request, 'Ви успішно увійшли в систему.')
+                return redirect_by_role(user)
+        else:
+            messages.error(request, 'Невірний логін або пароль.')
+
+    return render(
+        request,
+        'clinic/login.html',
+        {
+            'form': form,
+            'role': role,
+        },
+    )
+
+
+def logout_view(request):
+    logout(request)
+    messages.success(request, 'Ви вийшли з акаунта.')
+    return redirect('home')
+
+
+def forgot_password(request):
+    form = EmailForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        messages.success(
+            request,
+            'Якщо така пошта є в системі, адміністратор допоможе відновити доступ.',
+        )
+        return redirect('home')
+    return render(request, 'clinic/forgot_password.html', {'form': form})
+
+
+@patient_required
+def patient_dashboard(request):
+    refresh_completed_appointments()
+    appointments = (
+        Appointment.objects.filter(patient=request.user)
+        .select_related('service', 'doctor__user')
+        .order_by('date', 'time')
+    )
+    return render(
+        request,
+        'clinic/patient_dashboard.html',
+        {
+            'pending': appointments.filter(status=Appointment.STATUS_PENDING),
+            'approved': appointments.filter(status=Appointment.STATUS_APPROVED),
+            'completed': appointments.filter(status=Appointment.STATUS_COMPLETED),
+            'canceled': appointments.filter(status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]),
+            'needs_phone': not request.user.profile.phone,
+        },
+    )
+
+
+@patient_required
+def patient_edit_profile(request):
+    form = PatientProfileForm(request.POST or None, user=request.user)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Профіль оновлено.')
+        return redirect('patient_dashboard')
+    return render(request, 'clinic/patient_edit_profile.html', {'form': form})
+
+
+@patient_required
+def patient_change_password(request):
+    form = PasswordChangeForm(request.user, request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        user = form.save()
+        update_session_auth_hash(request, user)
+        messages.success(request, 'Пароль змінено.')
+        return redirect('patient_dashboard')
+    return render(request, 'clinic/change_password.html', {'form': form})
+
+
+@patient_required
+def cancel_appointment(request, appointment_id):
+    appointment = get_object_or_404(
+        Appointment,
+        pk=appointment_id,
+        patient=request.user,
+        status__in=[Appointment.STATUS_PENDING, Appointment.STATUS_APPROVED],
+    )
+    if request.method == 'POST':
+        appointment.status = Appointment.STATUS_CANCELED
+        appointment.save(update_fields=['status'])
+        messages.success(request, 'Запис скасовано.')
+    return redirect('patient_dashboard')
+
+
+@patient_required
+def restore_appointment(request, appointment_id):
+    appointment = get_object_or_404(
+        Appointment,
+        pk=appointment_id,
+        patient=request.user,
+        status=Appointment.STATUS_CANCELED,
+    )
+    if request.method == 'POST':
+        if not appointment.can_restore or appointment_conflicts(
+            appointment.doctor,
+            appointment.date,
+            appointment.time,
+            duration_slots=appointment.duration_slots,
+            exclude_id=appointment.id,
+        ):
+            messages.error(request, 'Цей запис уже не можна відновити.')
+        else:
+            appointment.status = Appointment.STATUS_PENDING
+            appointment.save(update_fields=['status'])
+            messages.success(request, 'Заявку відновлено і знову відправлено лікарю.')
+    return redirect('patient_dashboard')
+
+
+def doctors_list(request):
+    refresh_completed_appointments()
+    query = request.GET.get('q', '').strip()
+    doctors = (
+        Doctor.objects.filter(user__is_active=True)
+        .select_related('user')
+        .prefetch_related('services', 'schedules')
+    )
+    if query:
+        doctors = doctors.filter(
+            Q(user__first_name__icontains=query)
+            | Q(user__last_name__icontains=query)
+            | Q(specialization__icontains=query)
+        )
+    return render(
+        request,
+        'clinic/doctors.html',
+        {
+            'doctors': doctors.distinct(),
+            'query': query,
+        },
+    )
+
+
+@patient_required
+def booking(request):
+    refresh_completed_appointments()
+    if not request.user.profile.phone:
+        messages.error(request, 'Спочатку заповніть телефон у профілі пацієнта.')
+        return redirect('patient_edit_profile')
+
+    doctors = Doctor.objects.filter(user__is_active=True).select_related('user')
+    selected_doctor = get_object_or_404(Doctor, pk=request.GET.get('doctor')) if request.GET.get('doctor') else doctors.first()
+    selected_date = parse_date(request.GET.get('date')) if request.GET.get('date') else timezone.localdate()
+    if selected_date < timezone.localdate():
+        messages.error(request, 'Не можна вибрати минулу дату.')
+        selected_date = timezone.localdate()
+    selected_time = parse_time(request.GET.get('time'))
+
+    if request.method == 'POST':
+        selected_doctor = get_object_or_404(Doctor, pk=request.POST.get('doctor'))
+        selected_date = parse_date(request.POST.get('date'))
+        selected_time = parse_time(request.POST.get('time'))
+        reason_form = BookingReasonForm(request.POST, doctor=selected_doctor)
+        schedule, slots = slots_for_doctor(selected_doctor, selected_date)
+        available_times = [slot['time'] for slot in slots if not slot['busy']]
+
+        if is_past_appointment(selected_date, selected_time):
+            messages.error(request, 'Не можна записатися на минулу дату або час.')
+        elif not selected_time or selected_time not in available_times:
+            messages.error(request, 'Цей час уже недоступний.')
+        elif reason_form.is_valid() and schedule:
+            duration_slots = reason_form.cleaned_data['duration_slots']
+            if appointment_conflicts(selected_doctor, selected_date, selected_time, duration_slots):
+                messages.error(request, 'Для такої тривалості недостатньо вільного часу.')
+            else:
+                try:
+                    appointment = Appointment.objects.create(
+                        doctor=selected_doctor,
+                        service=reason_form.cleaned_data['service'],
+                        patient=request.user,
+                        patient_first_name=request.user.first_name,
+                        patient_last_name=request.user.last_name,
+                        patient_phone=request.user.profile.phone,
+                        patient_email=request.user.email,
+                        date=selected_date,
+                        time=selected_time,
+                        city=schedule.city,
+                        address=schedule.address,
+                        reason=reason_form.cleaned_data['reason'],
+                        duration_slots=duration_slots,
+                        status=Appointment.STATUS_PENDING,
+                    )
+                    ensure_patient_card_from_appointment(appointment)
+                    messages.success(request, 'Заявку відправлено лікарю на підтвердження.')
+                    return redirect('patient_dashboard')
+                except IntegrityError:
+                    messages.error(request, 'Цей час уже недоступний.')
+    else:
+        reason_form = BookingReasonForm(doctor=selected_doctor)
+
+    schedule, slots = slots_for_doctor(selected_doctor, selected_date) if selected_doctor else (None, [])
+
+    return render(
+        request,
+        'clinic/booking.html',
+        {
+            'doctors': doctors,
+            'selected_doctor': selected_doctor,
+            'selected_date': selected_date,
+            'selected_time': selected_time,
+            'selected_schedule': schedule,
+            'slots': slots,
+            'reason_form': reason_form,
+        },
+    )
+
+
+@doctor_required
+def doctor_dashboard(request):
+    refresh_completed_appointments()
+    doctor = request.user.doctor_profile
+    sync_patient_cards_for_doctor(doctor)
+    appointments = doctor.appointments.exclude(
+        status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]
+    )
+    return render(
+        request,
+        'clinic/doctor_dashboard.html',
+        {
+            'doctor': doctor,
+            'appointments_count': appointments.count(),
+            'pending_count': appointments.filter(status=Appointment.STATUS_PENDING).count(),
+            'patient_cards_count': doctor.patient_cards.count(),
+            'next_appointments': appointments.filter(status=Appointment.STATUS_APPROVED).order_by('date', 'time')[:5],
+        },
+    )
+
+
+@doctor_required
+def doctor_appointments(request):
+    refresh_completed_appointments()
+    doctor = request.user.doctor_profile
+    sync_patient_cards_for_doctor(doctor)
+    appointments = doctor.appointments.select_related('service').order_by('date', 'time')
+    cards_by_phone = {card.patient_phone: card for card in doctor.patient_cards.all()}
+    for appointment in appointments:
+        appointment.patient_card = cards_by_phone.get(appointment.patient_phone)
+    return render(
+        request,
+        'clinic/doctor_appointments.html',
+        {
+            'doctor': doctor,
+            'appointments': appointments,
+        },
+    )
+
+
+@doctor_required
+def doctor_review_appointment(request, appointment_id):
+    refresh_completed_appointments()
+    doctor = request.user.doctor_profile
+    appointment = get_object_or_404(
+        Appointment,
+        pk=appointment_id,
+        doctor=doctor,
+        status=Appointment.STATUS_PENDING,
+    )
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'reject':
+            appointment.status = Appointment.STATUS_REJECTED
+            appointment.save(update_fields=['status'])
+            ensure_patient_card_from_appointment(appointment)
+            messages.success(request, 'Заявку відхилено.')
+            return redirect('doctor_appointments')
+
+        form = AppointmentDecisionForm(request.POST)
+        if form.is_valid():
+            duration_slots = form.cleaned_data['duration_slots']
+            if is_past_appointment(appointment.date, appointment.time):
+                messages.error(request, 'Не можна підтвердити заявку на минулий час.')
+            elif appointment_conflicts(
+                doctor,
+                appointment.date,
+                appointment.time,
+                duration_slots=duration_slots,
+                exclude_id=appointment.id,
+            ):
+                messages.error(request, 'На цей час не вистачає вільних слотів для такої тривалості.')
+            else:
+                appointment.duration_slots = duration_slots
+                appointment.status = Appointment.STATUS_APPROVED
+                appointment.approved_at = timezone.now()
+                appointment.save(update_fields=['duration_slots', 'status', 'approved_at'])
+                ensure_patient_card_from_appointment(appointment)
+                messages.success(request, 'Заявку підтверджено.')
+                return redirect('doctor_appointments')
+    return redirect('doctor_appointments')
+
+
+@doctor_required
+def doctor_cancel_appointment(request, appointment_id):
+    appointment = get_object_or_404(
+        Appointment,
+        pk=appointment_id,
+        doctor=request.user.doctor_profile,
+    )
+    if request.method == 'POST':
+        appointment.status = Appointment.STATUS_CANCELED
+        appointment.save(update_fields=['status'])
+        ensure_patient_card_from_appointment(appointment)
+        messages.success(request, 'Запис пацієнта скасовано.')
+    return redirect('doctor_appointments')
+
+
+@doctor_required
+def doctor_book_patient(request):
+    refresh_completed_appointments()
+    doctor = request.user.doctor_profile
+    selected_date = parse_date(request.GET.get('date')) if request.GET.get('date') else timezone.localdate()
+    if selected_date < timezone.localdate():
+        messages.error(request, 'Не можна вибрати минулу дату.')
+        selected_date = timezone.localdate()
+    selected_time = parse_time(request.GET.get('time'))
+    schedule, slots = slots_for_doctor(doctor, selected_date)
+    form = DoctorPatientBookingForm(request.POST or None, doctor=doctor)
+
+    if request.method == 'POST':
+        selected_date = parse_date(request.POST.get('date'))
+        selected_time = parse_time(request.POST.get('time'))
+        schedule, slots = slots_for_doctor(doctor, selected_date)
+        available_times = [slot['time'] for slot in slots if not slot['busy']]
+
+        if is_past_appointment(selected_date, selected_time):
+            messages.error(request, 'Не можна записати пацієнта на минулу дату або час.')
+        elif not selected_time or selected_time not in available_times:
+            messages.error(request, 'Цей час уже недоступний.')
+        elif form.is_valid() and schedule:
+            duration_slots = form.cleaned_data['duration_slots']
+            patient = form.cleaned_data.get('patient') or find_patient_by_contacts(
+                form.cleaned_data.get('email'),
+                form.cleaned_data['phone'],
+            )
+            if appointment_conflicts(doctor, selected_date, selected_time, duration_slots):
+                messages.error(request, 'Для такої тривалості недостатньо вільного часу.')
+            else:
+                try:
+                    appointment = Appointment.objects.create(
+                        doctor=doctor,
+                        service=form.cleaned_data['service'],
+                        patient=patient,
+                        patient_first_name=form.cleaned_data['first_name'],
+                        patient_last_name=form.cleaned_data['last_name'],
+                        patient_phone=form.cleaned_data['phone'],
+                        patient_email=form.cleaned_data.get('email', ''),
+                        date=selected_date,
+                        time=selected_time,
+                        city=schedule.city,
+                        address=schedule.address,
+                        reason=form.cleaned_data['reason'],
+                        duration_slots=duration_slots,
+                        status=Appointment.STATUS_APPROVED,
+                        approved_at=timezone.now(),
+                    )
+                    ensure_patient_card_from_appointment(appointment)
+                    messages.success(request, 'Пацієнта записано.')
+                    return redirect('doctor_appointments')
+                except IntegrityError:
+                    messages.error(request, 'Цей час уже недоступний.')
+
+    return render(
+        request,
+        'clinic/doctor_book_patient.html',
+        {
+            'doctor': doctor,
+            'selected_date': selected_date,
+            'selected_time': selected_time,
+            'selected_schedule': schedule,
+            'slots': slots,
+            'form': form,
+        },
+    )
+
+
+@doctor_required
+def doctor_patient_cards(request):
+    refresh_completed_appointments()
+    doctor = request.user.doctor_profile
+    sync_patient_cards_for_doctor(doctor)
+    cards = doctor.patient_cards.all()
+    card_rows = []
+    for card in cards:
+        appointments = doctor.appointments.filter(patient_phone=card.patient_phone).exclude(
+            status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]
+        )
+        last_visit = appointments.filter(status=Appointment.STATUS_COMPLETED).order_by('-date', '-time').first()
+        next_visit = appointments.filter(status__in=[Appointment.STATUS_PENDING, Appointment.STATUS_APPROVED]).order_by('date', 'time').first()
+        card_rows.append(
+            {
+                'card': card,
+                'appointments_count': appointments.count(),
+                'last_visit': last_visit,
+                'next_visit': next_visit,
+            }
+        )
+    return render(
+        request,
+        'clinic/doctor_patient_cards.html',
+        {
+            'doctor': doctor,
+            'card_rows': card_rows,
+        },
+    )
+
+
+@doctor_required
+def doctor_patient_card_detail(request, card_id):
+    refresh_completed_appointments()
+    doctor = request.user.doctor_profile
+    sync_patient_cards_for_doctor(doctor)
+    card = get_object_or_404(DoctorPatientCard, pk=card_id, doctor=doctor)
+    form = DoctorPatientCardForm(request.POST or None, instance=card)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Картку пацієнта оновлено.')
+        return redirect('doctor_patient_card_detail', card_id=card.id)
+
+    appointments = doctor.appointments.filter(patient_phone=card.patient_phone).select_related('service').order_by('-date', '-time')
+    completed_visits = appointments.filter(status=Appointment.STATUS_COMPLETED).count()
+    last_visit = appointments.filter(status=Appointment.STATUS_COMPLETED).first()
+    first_visit = appointments.last()
+    next_visit = appointments.filter(status__in=[Appointment.STATUS_PENDING, Appointment.STATUS_APPROVED]).order_by('date', 'time').first()
+
+    return render(
+        request,
+        'clinic/doctor_patient_card_detail.html',
+        {
+            'doctor': doctor,
+            'card': card,
+            'form': form,
+            'appointments': appointments,
+            'completed_visits': completed_visits,
+            'last_visit': last_visit,
+            'first_visit': first_visit,
+            'next_visit': next_visit,
+        },
+    )
+
+
+@doctor_required
+def doctor_schedule(request):
+    doctor = request.user.doctor_profile
+    instance = None
+    if request.method == 'POST':
+        weekday = request.POST.get('weekday')
+        instance = WorkSchedule.objects.filter(doctor=doctor, weekday=weekday).first()
+        form = WorkScheduleForm(request.POST, instance=instance)
+        if form.is_valid():
+            schedule = form.save(commit=False)
+            schedule.doctor = doctor
+            schedule.save()
+            messages.success(request, 'Графік збережено.')
+            return redirect('doctor_schedule')
+    else:
+        edit_weekday = request.GET.get('weekday')
+        if edit_weekday is not None:
+            instance = WorkSchedule.objects.filter(doctor=doctor, weekday=edit_weekday).first()
+        form = WorkScheduleForm(instance=instance)
+
+    schedules = doctor.schedules.all()
+    return render(
+        request,
+        'clinic/doctor_schedule.html',
+        {
+            'doctor': doctor,
+            'schedules': schedules,
+            'form': form,
+        },
+    )
+
+
+@doctor_required
+def doctor_services(request):
+    doctor = request.user.doctor_profile
+    edit_id = request.GET.get('edit')
+    instance = doctor.services.filter(pk=edit_id).first() if edit_id else None
+
+    if request.method == 'POST' and request.POST.get('action') == 'delete':
+        service = get_object_or_404(doctor.services, pk=request.POST.get('service_id'))
+        service.delete()
+        messages.success(request, 'Послугу видалено.')
+        return redirect('doctor_services')
+
+    form = ServiceForm(request.POST or None, instance=instance)
+    if request.method == 'POST' and form.is_valid():
+        service = form.save(commit=False)
+        service.doctor = doctor
+        service.save()
+        messages.success(request, 'Послугу збережено.')
+        return redirect('doctor_services')
+
+    return render(
+        request,
+        'clinic/doctor_services.html',
+        {
+            'doctor': doctor,
+            'services': doctor.services.all(),
+            'form': form,
+            'editing': instance,
+        },
+    )
+
+
+@doctor_required
+def doctor_edit_profile(request):
+    doctor = request.user.doctor_profile
+    form = DoctorProfileForm(request.POST or None, request.FILES or None, doctor=doctor)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Профіль лікаря оновлено.')
+        return redirect('doctor_dashboard')
+    return render(request, 'clinic/doctor_edit_profile.html', {'form': form, 'doctor': doctor})
+
+
+@doctor_required
+def doctor_change_password(request):
+    form = PasswordChangeForm(request.user, request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        user = form.save()
+        update_session_auth_hash(request, user)
+        messages.success(request, 'Пароль змінено.')
+        return redirect('doctor_dashboard')
+    return render(request, 'clinic/change_password.html', {'form': form})
+
+
+@admin_required
+def admin_panel(request):
+    refresh_completed_appointments()
+    stats = {
+        'patients': Profile.objects.filter(role=Profile.ROLE_PATIENT).count(),
+        'doctors': Doctor.objects.count(),
+        'appointments': Appointment.objects.count(),
+        'pending': Appointment.objects.filter(status=Appointment.STATUS_PENDING).count(),
+    }
+    users = User.objects.select_related('profile').order_by('last_name', 'first_name')[:50]
+    appointments = Appointment.objects.select_related('doctor__user').order_by('-date', '-time')[:50]
+    return render(
+        request,
+        'clinic/admin_panel.html',
+        {
+            'stats': stats,
+            'users': users,
+            'doctors': Doctor.objects.select_related('user').annotate(total=Count('appointments')),
+            'appointments': appointments,
+        },
+    )
+
+
+@admin_required
+def admin_add_doctor(request):
+    form = AdminDoctorCreateForm(request.POST or None, request.FILES or None)
+    if request.method == 'POST' and form.is_valid():
+        user = form.save()
+        messages.success(request, f'Лікаря додано. Логін для входу: {user.username}')
+        return redirect('admin_panel')
+    return render(request, 'clinic/admin_add_doctor.html', {'form': form})
+
+
+@admin_required
+def admin_edit_user(request, user_id):
+    edited_user = get_object_or_404(User, pk=user_id)
+    form = AdminUserEditForm(request.POST or None, user=edited_user)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Дані користувача оновлено.')
+        return redirect('admin_panel')
+    return render(
+        request,
+        'clinic/admin_edit_user.html',
+        {
+            'form': form,
+            'edited_user': edited_user,
+        },
+    )
+
+
+@admin_required
+def admin_toggle_user(request, user_id):
+    edited_user = get_object_or_404(User, pk=user_id)
+    if request.method == 'POST':
+        if edited_user == request.user:
+            messages.error(request, 'Не можна заблокувати самого себе.')
+        else:
+            edited_user.is_active = not edited_user.is_active
+            edited_user.save(update_fields=['is_active'])
+            messages.success(request, 'Статус акаунта змінено.')
+    return redirect('admin_panel')
+
+
+@admin_required
+def admin_delete_user(request, user_id):
+    edited_user = get_object_or_404(User, pk=user_id)
+    if request.method == 'POST':
+        if edited_user == request.user:
+            messages.error(request, 'Не можна видалити самого себе.')
+        else:
+            edited_user.delete()
+            messages.success(request, 'Акаунт видалено.')
+    return redirect('admin_panel')
+
+
+@admin_required
+def admin_cancel_appointment(request, appointment_id):
+    appointment = get_object_or_404(Appointment, pk=appointment_id)
+    if request.method == 'POST':
+        appointment.status = Appointment.STATUS_CANCELED
+        appointment.save(update_fields=['status'])
+        ensure_patient_card_from_appointment(appointment)
+        messages.success(request, 'Запис скасовано адміністратором.')
+    return redirect('admin_panel')

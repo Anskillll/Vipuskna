@@ -1,0 +1,39 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Графік лікаря - MedClinic{% endblock %}
+
+{% block content %}
+  <div class="grid grid-2">
+    <section class="card">
+      <h1 class="page-title">Мій графік</h1>
+      <ul class="simple-list">
+        {% for schedule in schedules %}
+          <li>
+            <span>{{ schedule.get_weekday_display }} · {{ schedule.city }} · {{ schedule.address }}</span>
+            <strong>
+              {% if schedule.is_working %}
+                {{ schedule.start_time|time:'H:i' }}-{{ schedule.end_time|time:'H:i' }}
+              {% else %}
+                Вихідний
+              {% endif %}
+            </strong>
+          </li>
+        {% empty %}
+          <li><span>Графік ще не додано</span><strong></strong></li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">Змінити день</h2>
+      <form method="post">
+        {% csrf_token %}
+        {% include 'clinic/_form_fields.html' with form=form %}
+        <div class="actions">
+          <button type="submit">Зберегти</button>
+          <a class="btn secondary" href="{% url 'doctor_dashboard' %}">Назад</a>
+        </div>
+      </form>
+    </section>
+  </div>
+{% endblock %}

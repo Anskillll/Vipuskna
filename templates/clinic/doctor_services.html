@@ -1,0 +1,45 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Послуги лікаря - MedClinic{% endblock %}
+
+{% block content %}
+  <div class="grid grid-2">
+    <section class="card">
+      <h1 class="page-title">Мої послуги</h1>
+      <ul class="simple-list">
+        {% for service in services %}
+          <li>
+            <span>{{ service.name }}</span>
+            <strong>{{ service.price }} грн</strong>
+          </li>
+          <li>
+            <span class="muted">Редагування послуги</span>
+            <strong class="actions">
+              <a class="btn secondary" href="{% url 'doctor_services' %}?edit={{ service.id }}">Редагувати</a>
+              <form method="post" onsubmit="return confirm('Видалити цю послугу?');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="service_id" value="{{ service.id }}">
+                <button type="submit" class="danger">Видалити</button>
+              </form>
+            </strong>
+          </li>
+        {% empty %}
+          <li><span>Послуг ще немає</span><strong></strong></li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">{% if editing %}Редагувати послугу{% else %}Нова послуга{% endif %}</h2>
+      <form method="post">
+        {% csrf_token %}
+        {% include 'clinic/_form_fields.html' with form=form %}
+        <div class="actions">
+          <button type="submit">Зберегти</button>
+          <a class="btn secondary" href="{% url 'doctor_dashboard' %}">Назад</a>
+        </div>
+      </form>
+    </section>
+  </div>
+{% endblock %}

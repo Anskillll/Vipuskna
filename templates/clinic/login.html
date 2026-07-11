@@ -1,0 +1,25 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Вхід - MedClinic{% endblock %}
+
+{% block content %}
+  <div class="card">
+    {% if role == 'doctor' %}
+      <h1 class="page-title">Вхід для лікаря</h1>
+    {% elif role == 'admin' %}
+      <h1 class="page-title">Вхід для адміністратора</h1>
+    {% else %}
+      <h1 class="page-title">Вхід</h1>
+    {% endif %}
+    <p class="muted">Використайте логін і пароль.</p>
+
+    <form method="post">
+      {% csrf_token %}
+      {% include 'clinic/_form_fields.html' %}
+      <div class="actions">
+        <button type="submit">Увійти</button>
+        <a class="btn secondary" href="{% url 'home' %}">Назад</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

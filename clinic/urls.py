@@ -1,0 +1,37 @@
+from django.urls import path
+
+from . import views
+
+
+urlpatterns = [
+    path('', views.home, name='home'),
+    path('login/', views.login_view, name='patient_login'),
+    path('doctor/login/', views.login_view, {'role': 'doctor'}, name='doctor_login'),
+    path('admin-login/', views.login_view, {'role': 'admin'}, name='admin_login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('forgot-password/', views.forgot_password, name='forgot_password'),
+    path('doctors/', views.doctors_list, name='doctors'),
+    path('booking/', views.booking, name='booking'),
+    path('patient/', views.patient_dashboard, name='patient_dashboard'),
+    path('patient/profile/', views.patient_edit_profile, name='patient_edit_profile'),
+    path('patient/password/', views.patient_change_password, name='patient_change_password'),
+    path('patient/appointments/<int:appointment_id>/cancel/', views.cancel_appointment, name='cancel_appointment'),
+    path('patient/appointments/<int:appointment_id>/restore/', views.restore_appointment, name='restore_appointment'),
+    path('doctor/', views.doctor_dashboard, name='doctor_dashboard'),
+    path('doctor/appointments/', views.doctor_appointments, name='doctor_appointments'),
+    path('doctor/appointments/<int:appointment_id>/review/', views.doctor_review_appointment, name='doctor_review_appointment'),
+    path('doctor/appointments/<int:appointment_id>/cancel/', views.doctor_cancel_appointment, name='doctor_cancel_appointment'),
+    path('doctor/book-patient/', views.doctor_book_patient, name='doctor_book_patient'),
+    path('doctor/patients/', views.doctor_patient_cards, name='doctor_patient_cards'),
+    path('doctor/patients/<int:card_id>/', views.doctor_patient_card_detail, name='doctor_patient_card_detail'),
+    path('doctor/schedule/', views.doctor_schedule, name='doctor_schedule'),
+    path('doctor/services/', views.doctor_services, name='doctor_services'),
+    path('doctor/profile/', views.doctor_edit_profile, name='doctor_edit_profile'),
+    path('doctor/password/', views.doctor_change_password, name='doctor_change_password'),
+    path('panel/', views.admin_panel, name='admin_panel'),
+    path('panel/doctors/add/', views.admin_add_doctor, name='admin_add_doctor'),
+    path('panel/users/<int:user_id>/edit/', views.admin_edit_user, name='admin_edit_user'),
+    path('panel/users/<int:user_id>/toggle/', views.admin_toggle_user, name='admin_toggle_user'),
+    path('panel/users/<int:user_id>/delete/', views.admin_delete_user, name='admin_delete_user'),
+    path('panel/appointments/<int:appointment_id>/cancel/', views.admin_cancel_appointment, name='admin_cancel_appointment'),
+]

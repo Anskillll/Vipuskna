@@ -1,0 +1,66 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Картки пацієнтів - MedClinic{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <div>
+      <h1 class="page-title">Картки пацієнтів</h1>
+      <p class="page-subtitle">Швидкий доступ до історії відвідувань і нотаток.</p>
+    </div>
+  </section>
+
+  <nav class="page-tabs">
+    <a class="page-tab" href="{% url 'doctor_dashboard' %}">Огляд</a>
+    <a class="page-tab" href="{% url 'doctor_appointments' %}">Прийоми</a>
+    <a class="page-tab active" href="{% url 'doctor_patient_cards' %}">Пацієнти</a>
+    <a class="page-tab" href="{% url 'doctor_schedule' %}">Графік</a>
+  </nav>
+
+  <section class="card section-card">
+    {% if card_rows %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Пацієнт</th>
+              <th>Телефон</th>
+              <th>Email</th>
+              <th>Останній візит</th>
+              <th>Наступний візит</th>
+              <th>Усього записів</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in card_rows %}
+              <tr>
+                <td>{{ row.card.full_name }}</td>
+                <td>{{ row.card.patient_phone }}</td>
+                <td>{{ row.card.patient_email|default:'-' }}</td>
+                <td>
+                  {% if row.last_visit %}
+                    {{ row.last_visit.date|date:'d.m.Y' }} {{ row.last_visit.time|time:'H:i' }}
+                  {% else %}
+                    Ще не було
+                  {% endif %}
+                </td>
+                <td>
+                  {% if row.next_visit %}
+                    {{ row.next_visit.date|date:'d.m.Y' }} {{ row.next_visit.time|time:'H:i' }}
+                  {% else %}
+                    Немає
+                  {% endif %}
+                </td>
+                <td>{{ row.appointments_count }}</td>
+                <td><a class="btn secondary" href="{% url 'doctor_patient_card_detail' row.card.id %}">Відкрити</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">Карток пацієнтів поки немає.</div>
+    {% endif %}
+  </section>
+{% endblock %}

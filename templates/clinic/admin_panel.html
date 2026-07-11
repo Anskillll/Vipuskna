@@ -1,0 +1,146 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Панель адміністратора - MedClinic{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <div>
+      <h1 class="page-title">Панель адміністратора</h1>
+      <p class="page-subtitle">Користувачі, лікарі та останні записи.</p>
+    </div>
+  </section>
+
+  <nav class="page-tabs">
+    <a class="page-tab active" href="{% url 'admin_panel' %}">Огляд</a>
+    <a class="page-tab" href="{% url 'admin_add_doctor' %}">Новий лікар</a>
+  </nav>
+
+  <section class="overview-grid">
+    <article class="overview-card">
+      <span class="overview-label">Пацієнти</span>
+      <strong class="overview-value">{{ stats.patients }}</strong>
+    </article>
+    <article class="overview-card">
+      <span class="overview-label">Лікарі</span>
+      <strong class="overview-value">{{ stats.doctors }}</strong>
+    </article>
+    <article class="overview-card">
+      <span class="overview-label">Усі записи</span>
+      <strong class="overview-value">{{ stats.appointments }}</strong>
+    </article>
+    <article class="overview-card">
+      <span class="overview-label">Нові заявки</span>
+      <strong class="overview-value">{{ stats.pending }}</strong>
+    </article>
+  </section>
+
+  <section class="action-board">
+    <article class="action-group">
+      <span class="action-group-label">Лікарі</span>
+      <h3>Керування лікарями</h3>
+      <div class="action-group-buttons">
+        <a class="btn" href="{% url 'admin_add_doctor' %}">Додати лікаря</a>
+      </div>
+    </article>
+
+    <article class="action-group">
+      <span class="action-group-label">Система</span>
+      <h3>Службові інструменти</h3>
+      <div class="action-group-buttons">
+        <a class="btn secondary" href="/admin/">Django Admin</a>
+      </div>
+    </article>
+  </section>
+
+  <section class="card section-card">
+    <div class="section-head">
+      <h2 class="section-title">Користувачі</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Ім'я</th>
+            <th>Email</th>
+            <th>Роль</th>
+            <th>Статус</th>
+            <th>Дії</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in users %}
+            <tr>
+              <td>{{ item.get_full_name|default:item.username }}</td>
+              <td>{{ item.email }}</td>
+              <td>
+                {% if item.is_staff %}
+                  Адміністратор
+                {% elif item.profile %}
+                  {{ item.profile.get_role_display }}
+                {% else %}
+                  Без профілю
+                {% endif %}
+              </td>
+              <td>
+                {% if item.is_active %}
+                  <span class="status completed">Активний</span>
+                {% else %}
+                  <span class="status canceled">Заблокований</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="actions">
+                  <a class="btn secondary" href="{% url 'admin_edit_user' item.id %}">Редагувати</a>
+                  <form method="post" action="{% url 'admin_toggle_user' item.id %}" class="compact-form">
+                    {% csrf_token %}
+                    <button type="submit" class="secondary">
+                      {% if item.is_active %}Заблокувати{% else %}Розблокувати{% endif %}
+                    </button>
+                  </form>
+                  <form method="post" action="{% url 'admin_delete_user' item.id %}" class="compact-form" onsubmit="return confirm('Видалити цього користувача?');">
+                    {% csrf_token %}
+                    <button type="submit" class="danger">Видалити</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="grid grid-2">
+    <section class="card section-card">
+      <div class="section-head">
+        <h2 class="section-title">Лікарі</h2>
+      </div>
+      <ul class="simple-list">
+        {% for doctor in doctors %}
+          <li>
+            <span>{{ doctor.full_name }} · {{ doctor.specialization }}</span>
+            <strong>{{ doctor.total }} записів</strong>
+          </li>
+        {% empty %}
+          <li><span>Лікарів поки немає</span><strong></strong></li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="card section-card">
+      <div class="section-head">
+        <h2 class="section-title">Останні записи</h2>
+      </div>
+      <ul class="simple-list">
+        {% for appointment in appointments %}
+          <li>
+            <span>{{ appointment.date|date:'d.m.Y' }} {{ appointment.time|time:'H:i' }} · {{ appointment.patient_name }}</span>
+            <strong>{{ appointment.get_status_display }}</strong>
+          </li>
+        {% empty %}
+          <li><span>Записів поки немає</span><strong></strong></li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+{% endblock %}

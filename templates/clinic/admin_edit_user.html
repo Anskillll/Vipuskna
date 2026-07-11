@@ -1,0 +1,18 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Редагувати користувача - MedClinic{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <h1 class="page-title">Редагувати користувача</h1>
+    <p class="muted">Поточний логін: {{ edited_user.username }}</p>
+    <form method="post">
+      {% csrf_token %}
+      {% include 'clinic/_form_fields.html' %}
+      <div class="actions">
+        <button type="submit">Зберегти</button>
+        <a class="btn secondary" href="{% url 'admin_panel' %}">Назад</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

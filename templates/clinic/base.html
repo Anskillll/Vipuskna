@@ -1,0 +1,55 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}MedClinic{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260711-3">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="{% url 'home' %}">
+        <span class="brand-mark">+</span>
+        <span>MedClinic</span>
+      </a>
+
+      <nav class="nav">
+        {% if user.is_authenticated %}
+          {% if user.is_staff %}
+            <a href="{% url 'admin_panel' %}">Панель адміністратора</a>
+          {% elif user.profile.role == 'doctor' %}
+            <a href="{% url 'doctor_dashboard' %}">Кабінет лікаря</a>
+          {% else %}
+            <a href="{% url 'doctors' %}">Лікарі</a>
+            <a href="{% url 'patient_dashboard' %}">Мій кабінет</a>
+            <a class="nav-cta" href="{% url 'booking' %}">Записатися</a>
+          {% endif %}
+          <a href="{% url 'logout' %}">Вийти</a>
+        {% else %}
+          <a href="{% url 'doctor_login' %}">Лікар</a>
+          <a href="{% url 'admin_login' %}">Адмін</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="container">
+      {% if messages %}
+        <div class="messages">
+          {% for message in messages %}
+            <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</body>
+</html>

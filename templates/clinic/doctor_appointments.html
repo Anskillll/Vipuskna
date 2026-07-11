@@ -1,0 +1,85 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Заявки та прийоми - MedClinic{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <div>
+      <h1 class="page-title">Заявки та прийоми</h1>
+      <p class="page-subtitle">Усі актуальні записи лікаря в одному місці.</p>
+    </div>
+  </section>
+
+  <nav class="page-tabs">
+    <a class="page-tab" href="{% url 'doctor_dashboard' %}">Огляд</a>
+    <a class="page-tab active" href="{% url 'doctor_appointments' %}">Прийоми</a>
+    <a class="page-tab" href="{% url 'doctor_patient_cards' %}">Пацієнти</a>
+    <a class="page-tab" href="{% url 'doctor_schedule' %}">Графік</a>
+  </nav>
+
+  <section class="card section-card">
+    {% if appointments %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Пацієнт</th>
+              <th>Послуга</th>
+              <th>Телефон</th>
+              <th>Коли</th>
+              <th>Слоти</th>
+              <th>Місце</th>
+              <th>Причина</th>
+              <th>Статус</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for appointment in appointments %}
+              <tr>
+                <td>
+                  <strong>{{ appointment.patient_name }}</strong><br>
+                  {% if appointment.patient_card %}
+                    <a href="{% url 'doctor_patient_card_detail' appointment.patient_card.id %}" class="muted">Відкрити картку</a>
+                  {% else %}
+                    <a href="{% url 'doctor_patient_cards' %}" class="muted">Перейти до карток</a>
+                  {% endif %}
+                </td>
+                <td>{{ appointment.service.name|default:'Не обрано' }}</td>
+                <td>{{ appointment.patient_phone }}</td>
+                <td>{{ appointment.date|date:'d.m.Y' }} {{ appointment.time|time:'H:i' }}</td>
+                <td>{{ appointment.duration_slots }}</td>
+                <td>{{ appointment.city }}, {{ appointment.address }}</td>
+                <td>{{ appointment.reason }}</td>
+                <td><span class="status {{ appointment.status }}">{{ appointment.get_status_display }}</span></td>
+                <td class="table-actions">
+                  {% if appointment.status == 'pending' %}
+                    <form method="post" action="{% url 'doctor_review_appointment' appointment.id %}" class="compact-form" onsubmit="return confirm('Підтвердити цю заявку?');">
+                      {% csrf_token %}
+                      <label for="duration_{{ appointment.id }}" class="sr-only">Слотів</label>
+                      <input id="duration_{{ appointment.id }}" type="number" name="duration_slots" min="1" value="{{ appointment.duration_slots }}">
+                      <input type="hidden" name="action" value="approve">
+                      <button type="submit" class="green">Підтвердити</button>
+                    </form>
+                    <form method="post" action="{% url 'doctor_review_appointment' appointment.id %}" class="compact-form" onsubmit="return confirm('Відхилити цю заявку?');">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="reject">
+                      <button type="submit" class="secondary">Відхилити</button>
+                    </form>
+                  {% elif appointment.status != 'canceled' and appointment.status != 'rejected' and appointment.status != 'completed' %}
+                    <form method="post" action="{% url 'doctor_cancel_appointment' appointment.id %}" class="compact-form" onsubmit="return confirm('Скасувати цей запис?');">
+                      {% csrf_token %}
+                      <button type="submit" class="danger">Скасувати</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">Поки що немає заявок або прийомів.</div>
+    {% endif %}
+  </section>
+{% endblock %}

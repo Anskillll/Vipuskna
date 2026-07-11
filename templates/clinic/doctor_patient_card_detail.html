@@ -1,0 +1,65 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Картка пацієнта - MedClinic{% endblock %}
+
+{% block content %}
+  <div class="grid grid-2">
+    <section class="card">
+      <h1 class="page-title">{{ card.full_name }}</h1>
+      <ul class="simple-list">
+        <li><span>Телефон</span><strong>{{ card.patient_phone }}</strong></li>
+        <li><span>Email</span><strong>{{ card.patient_email|default:'-' }}</strong></li>
+        <li><span>Перший запис</span><strong>{% if first_visit %}{{ first_visit.date|date:'d.m.Y' }}{% else %}-{% endif %}</strong></li>
+        <li><span>Останній візит</span><strong>{% if last_visit %}{{ last_visit.date|date:'d.m.Y' }} {{ last_visit.time|time:'H:i' }}{% else %}Ще не було{% endif %}</strong></li>
+        <li><span>Наступний візит</span><strong>{% if next_visit %}{{ next_visit.date|date:'d.m.Y' }} {{ next_visit.time|time:'H:i' }}{% else %}Немає{% endif %}</strong></li>
+        <li><span>Завершених прийомів</span><strong>{{ completed_visits }}</strong></li>
+      </ul>
+      <div class="actions">
+        <a class="btn secondary" href="{% url 'doctor_patient_cards' %}">До списку карток</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">Нотатки лікаря</h2>
+      <form method="post">
+        {% csrf_token %}
+        {% include 'clinic/_form_fields.html' with form=form %}
+        <button type="submit">Зберегти нотатки</button>
+      </form>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top: 18px;">
+    <h2 class="section-title">Історія записів</h2>
+    {% if appointments %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Дата</th>
+              <th>Час</th>
+              <th>Послуга</th>
+              <th>Тривалість</th>
+              <th>Статус</th>
+              <th>Причина</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for appointment in appointments %}
+              <tr>
+                <td>{{ appointment.date|date:'d.m.Y' }}</td>
+                <td>{{ appointment.time|time:'H:i' }}</td>
+                <td>{{ appointment.service.name|default:'Не обрано' }}</td>
+                <td>{{ appointment.duration_minutes }} хв</td>
+                <td><span class="status {{ appointment.status }}">{{ appointment.get_status_display }}</span></td>
+                <td>{{ appointment.reason }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">Записів по цьому пацієнту ще немає.</div>
+    {% endif %}
+  </section>
+{% endblock %}

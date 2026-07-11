@@ -1,0 +1,17 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}MedClinic{% endblock %}
+
+{% block content %}
+  <section class="home-center-screen">
+    <div class="home-center-card">
+      <p class="home-center-text">
+        Увійдіть через Google або спочатку перегляньте лікарів.
+      </p>
+      <div class="home-center-actions">
+        <a class="btn btn-large" href="{% url 'google_login' %}">Увійти через Google</a>
+        <a class="btn secondary btn-large" href="{% url 'doctors' %}">Переглянути лікарів</a>
+      </div>
+    </div>
+  </section>
+{% endblock %}
