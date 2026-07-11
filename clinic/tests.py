@@ -227,7 +227,7 @@ class ClinicModelTests(TestCase):
 
         self.assertContains(response, 'data-particle-effect="dental_field"')
         self.assertContains(response, 'pointermove')
-        self.assertContains(response, '660 : 1560')
+        self.assertContains(response, '110 : 260')
         self.assertContains(response, 'separateDentalParticles')
 
     def test_doctor_can_create_only_own_news(self):
