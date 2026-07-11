@@ -27,6 +27,8 @@ class FormStyleMixin:
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs.setdefault('class', 'form-input')
+            if isinstance(field.widget, forms.ClearableFileInput):
+                field.widget.template_name = 'clinic/widgets/clearable_file_input.html'
 
 
 class RegisterForm(FormStyleMixin, forms.Form):

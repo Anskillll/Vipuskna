@@ -630,6 +630,74 @@ input[type="checkbox"]:focus {
   outline-offset: 2px;
 }
 
+.clearable-file-input {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.current-file-row,
+.new-file-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.current-file-row > span,
+.new-file-row > span {
+  flex: 0 0 auto;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.current-file-row a {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clear-file-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  width: fit-content;
+  color: #475569;
+  cursor: pointer;
+}
+
+.new-file-row input[type="file"] {
+  min-width: 0;
+  min-height: 42px;
+  padding: 5px;
+  border-radius: 7px;
+  background: #fff;
+  font-size: 14px;
+}
+
+input[type="file"]::file-selector-button {
+  min-height: 30px;
+  margin-right: 10px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: #e8eef7;
+  color: #1e293b;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+input[type="file"]::file-selector-button:hover {
+  background: #dbe7f6;
+}
+
 .field-help {
   color: var(--muted);
   font-size: 13px;
@@ -1257,6 +1325,12 @@ th {
   }
 
   .content-list li {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .current-file-row,
+  .new-file-row {
     align-items: stretch;
     flex-direction: column;
   }

@@ -1,0 +1,18 @@
+<div class="clearable-file-input">
+  {% if widget.is_initial %}
+    <div class="current-file-row">
+      <span>Поточний файл:</span>
+      <a href="{{ widget.value.url }}" target="_blank" rel="noopener">{{ widget.value }}</a>
+    </div>
+    {% if not widget.required %}
+      <label class="clear-file-option" for="{{ widget.checkbox_id }}">
+        <input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}"{% if widget.attrs.disabled %} disabled{% endif %}{% if widget.attrs.checked %} checked{% endif %}>
+        <span>Видалити поточний файл</span>
+      </label>
+    {% endif %}
+  {% endif %}
+  <div class="new-file-row">
+    <span>{% if widget.is_initial %}Замінити файл:{% else %}Обрати файл:{% endif %}</span>
+    <input type="{{ widget.type }}" name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>
+  </div>
+</div>
