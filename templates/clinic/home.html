@@ -99,7 +99,7 @@
       const isCustom = effect === 'custom';
       const isDentalField = effect === 'dental_field';
       const symbol = isTeeth ? '🦷' : '+';
-      const amount = isDentalField ? (window.innerWidth < 680 ? 110 : 260) : (window.innerWidth < 680 ? 14 : 28);
+      const amount = isDentalField ? (window.innerWidth < 680 ? 660 : 1560) : (window.innerWidth < 680 ? 14 : 28);
       const particles = [];
       const pointer = { x: -1000, y: -1000 };
 
@@ -133,6 +133,7 @@
         }
         layer.appendChild(element);
         particles.push({
+          index: index,
           element: element,
           x: Math.random() * Math.max(1, layer.clientWidth - 32),
           y: Math.random() * Math.max(1, layer.clientHeight - 32),
@@ -143,9 +144,48 @@
         });
       }
 
+      function separateDentalParticles() {
+        const cellSize = 28;
+        const minimumDistance = 22;
+        const grid = new Map();
+
+        particles.forEach(function (particle) {
+          const cellX = Math.floor(particle.x / cellSize);
+          const cellY = Math.floor(particle.y / cellSize);
+          const key = cellX + ':' + cellY;
+          if (!grid.has(key)) grid.set(key, []);
+          grid.get(key).push(particle);
+        });
+
+        particles.forEach(function (particle) {
+          const cellX = Math.floor(particle.x / cellSize);
+          const cellY = Math.floor(particle.y / cellSize);
+          for (let offsetX = -1; offsetX <= 1; offsetX += 1) {
+            for (let offsetY = -1; offsetY <= 1; offsetY += 1) {
+              const neighbours = grid.get((cellX + offsetX) + ':' + (cellY + offsetY)) || [];
+              neighbours.forEach(function (other) {
+                if (other.index <= particle.index) return;
+                const dx = particle.x - other.x;
+                const dy = particle.y - other.y;
+                const distance = Math.sqrt(dx * dx + dy * dy) || 0.01;
+                if (distance >= minimumDistance) return;
+                const force = (minimumDistance - distance) / minimumDistance * 0.18;
+                const forceX = dx / distance * force;
+                const forceY = dy / distance * force;
+                particle.vx += forceX;
+                particle.vy += forceY;
+                other.vx -= forceX;
+                other.vy -= forceY;
+              });
+            }
+          }
+        });
+      }
+
       function moveParticles() {
         const width = layer.clientWidth;
         const height = layer.clientHeight;
+        if (isDentalField) separateDentalParticles();
         particles.forEach(function (particle) {
           const size = particle.element.offsetWidth;
           if (isDentalField) {
