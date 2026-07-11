@@ -8,14 +8,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260711-3">
+  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260711-4">
 </head>
 <body>
   <header class="topbar">
     <div class="topbar-inner">
       <a class="brand" href="{% url 'home' %}">
-        <span class="brand-mark">+</span>
-        <span>MedClinic</span>
+        {% if clinic_branding.logo %}
+          <img class="brand-logo" src="{{ clinic_branding.logo.url }}" alt="{{ clinic_branding.clinic_name }}">
+        {% else %}
+          <span class="brand-mark">+</span>
+        {% endif %}
+        <span>{{ clinic_branding.clinic_name }}</span>
       </a>
 
       <nav class="nav">

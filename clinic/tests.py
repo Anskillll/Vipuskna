@@ -6,7 +6,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import Appointment, Doctor, MedicalService, Profile, WorkSchedule
+from .models import Appointment, Doctor, MedicalService, NewsPost, Profile, WorkSchedule
 from .views import appointment_conflicts
 
 
@@ -189,3 +189,29 @@ class ClinicModelTests(TestCase):
 
         appointment.refresh_from_db()
         self.assertEqual(appointment.status, Appointment.STATUS_COMPLETED)
+
+    def test_guest_sees_published_clinic_and_doctor_news(self):
+        NewsPost.objects.create(title='Новина клініки', text='Текст клініки')
+        NewsPost.objects.create(doctor=self.doctor, title='Новина лікаря', text='Текст лікаря')
+
+        response = self.client.get(reverse('home'))
+
+        self.assertContains(response, 'Новина клініки')
+        self.assertContains(response, 'Новина лікаря')
+        self.assertContains(response, 'Галерея')
+
+    def test_doctor_can_create_only_own_news(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.post(
+            reverse('doctor_news'),
+            data={
+                'title': 'Порада лікаря',
+                'text': 'Корисний текст',
+                'is_published': 'on',
+            },
+        )
+
+        self.assertRedirects(response, reverse('doctor_news'))
+        post = NewsPost.objects.get(title='Порада лікаря')
+        self.assertEqual(post.doctor, self.doctor)

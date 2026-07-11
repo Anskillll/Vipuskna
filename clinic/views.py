@@ -15,16 +15,28 @@ from .forms import (
     AdminUserEditForm,
     AppointmentDecisionForm,
     BookingReasonForm,
+    ClinicSettingsForm,
     DoctorPatientBookingForm,
     DoctorPatientCardForm,
     DoctorProfileForm,
     EmailForm,
+    GalleryImageForm,
+    NewsPostForm,
     PatientProfileForm,
     ServiceForm,
     UsernameLoginForm,
     WorkScheduleForm,
 )
-from .models import Appointment, Doctor, DoctorPatientCard, Profile, WorkSchedule
+from .models import (
+    Appointment,
+    ClinicSettings,
+    Doctor,
+    DoctorPatientCard,
+    GalleryImage,
+    NewsPost,
+    Profile,
+    WorkSchedule,
+)
 
 
 BLOCKING_APPOINTMENT_STATUSES = [
@@ -255,7 +267,15 @@ def sync_patient_cards_for_doctor(doctor):
 def home(request):
     if request.user.is_authenticated:
         return redirect_by_role(request.user)
-    return render(request, 'clinic/home.html')
+    return render(
+        request,
+        'clinic/home.html',
+        {
+            'clinic_news': NewsPost.objects.filter(doctor__isnull=True, is_published=True)[:12],
+            'doctor_news': NewsPost.objects.filter(doctor__isnull=False, is_published=True).select_related('doctor__user')[:12],
+            'gallery_images': GalleryImage.objects.filter(is_published=True)[:18],
+        },
+    )
 
 
 def login_view(request, role='patient'):
@@ -815,6 +835,33 @@ def doctor_change_password(request):
     return render(request, 'clinic/change_password.html', {'form': form})
 
 
+@doctor_required
+def doctor_news(request):
+    doctor = request.user.doctor_profile
+    edit_id = request.GET.get('edit')
+    instance = doctor.news_posts.filter(pk=edit_id).first() if edit_id else None
+
+    if request.method == 'POST' and request.POST.get('action') == 'delete':
+        post = get_object_or_404(doctor.news_posts, pk=request.POST.get('post_id'))
+        post.delete()
+        messages.success(request, 'Новину видалено.')
+        return redirect('doctor_news')
+
+    form = NewsPostForm(request.POST or None, request.FILES or None, instance=instance)
+    if request.method == 'POST' and form.is_valid():
+        post = form.save(commit=False)
+        post.doctor = doctor
+        post.save()
+        messages.success(request, 'Новину збережено.')
+        return redirect('doctor_news')
+
+    return render(
+        request,
+        'clinic/doctor_news.html',
+        {'doctor': doctor, 'posts': doctor.news_posts.all(), 'form': form, 'editing': instance},
+    )
+
+
 @admin_required
 def admin_panel(request):
     refresh_completed_appointments()
@@ -834,6 +881,64 @@ def admin_panel(request):
             'users': users,
             'doctors': Doctor.objects.select_related('user').annotate(total=Count('appointments')),
             'appointments': appointments,
+        },
+    )
+
+
+@admin_required
+def admin_content(request):
+    branding, _ = ClinicSettings.objects.get_or_create(pk=1)
+    news_id = request.GET.get('news')
+    gallery_id = request.GET.get('gallery')
+    news_instance = NewsPost.objects.filter(pk=news_id).first() if news_id else None
+    gallery_instance = GalleryImage.objects.filter(pk=gallery_id).first() if gallery_id else None
+
+    settings_form = ClinicSettingsForm(instance=branding, prefix='settings')
+    news_form = NewsPostForm(instance=news_instance, prefix='news')
+    gallery_form = GalleryImageForm(instance=gallery_instance, prefix='gallery')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'save_settings':
+            settings_form = ClinicSettingsForm(request.POST, request.FILES, instance=branding, prefix='settings')
+            if settings_form.is_valid():
+                settings_form.save()
+                messages.success(request, 'Оформлення головної сторінки збережено.')
+                return redirect('admin_content')
+        elif action == 'save_news':
+            post = NewsPost.objects.filter(pk=request.POST.get('news_id')).first()
+            news_form = NewsPostForm(request.POST, request.FILES, instance=post, prefix='news')
+            if news_form.is_valid():
+                news_form.save()
+                messages.success(request, 'Новину збережено.')
+                return redirect('admin_content')
+        elif action == 'delete_news':
+            get_object_or_404(NewsPost, pk=request.POST.get('news_id')).delete()
+            messages.success(request, 'Новину видалено.')
+            return redirect('admin_content')
+        elif action == 'save_gallery':
+            image = GalleryImage.objects.filter(pk=request.POST.get('gallery_id')).first()
+            gallery_form = GalleryImageForm(request.POST, request.FILES, instance=image, prefix='gallery')
+            if gallery_form.is_valid():
+                gallery_form.save()
+                messages.success(request, 'Фотографію збережено.')
+                return redirect('admin_content')
+        elif action == 'delete_gallery':
+            get_object_or_404(GalleryImage, pk=request.POST.get('gallery_id')).delete()
+            messages.success(request, 'Фотографію видалено.')
+            return redirect('admin_content')
+
+    return render(
+        request,
+        'clinic/admin_content.html',
+        {
+            'settings_form': settings_form,
+            'news_form': news_form,
+            'gallery_form': gallery_form,
+            'news_editing': news_instance,
+            'gallery_editing': gallery_instance,
+            'posts': NewsPost.objects.select_related('doctor__user').all(),
+            'gallery_images': GalleryImage.objects.all(),
         },
     )
 

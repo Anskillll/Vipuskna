@@ -2,7 +2,16 @@ from django import forms
 from django.contrib.auth import authenticate, get_user_model
 from django.core.validators import RegexValidator
 
-from .models import Doctor, DoctorPatientCard, MedicalService, Profile, WorkSchedule
+from .models import (
+    ClinicSettings,
+    Doctor,
+    DoctorPatientCard,
+    GalleryImage,
+    MedicalService,
+    NewsPost,
+    Profile,
+    WorkSchedule,
+)
 
 
 User = get_user_model()
@@ -434,3 +443,38 @@ class AdminUserEditForm(FormStyleMixin, forms.Form):
             self.user.profile.phone = self.cleaned_data['phone']
             self.user.profile.save()
         return self.user
+
+
+class ClinicSettingsForm(FormStyleMixin, forms.ModelForm):
+    class Meta:
+        model = ClinicSettings
+        fields = ['clinic_name', 'logo', 'home_background']
+        labels = {
+            'clinic_name': 'Назва клініки',
+            'logo': 'Логотип клініки',
+            'home_background': 'Фон головної сторінки',
+        }
+
+
+class NewsPostForm(FormStyleMixin, forms.ModelForm):
+    class Meta:
+        model = NewsPost
+        fields = ['title', 'text', 'image', 'is_published']
+        widgets = {'text': forms.Textarea(attrs={'rows': 7})}
+        labels = {
+            'title': 'Заголовок',
+            'text': 'Текст новини',
+            'image': 'Зображення',
+            'is_published': 'Показувати на головній сторінці',
+        }
+
+
+class GalleryImageForm(FormStyleMixin, forms.ModelForm):
+    class Meta:
+        model = GalleryImage
+        fields = ['title', 'image', 'is_published']
+        labels = {
+            'title': 'Підпис до фото',
+            'image': 'Фотографія',
+            'is_published': 'Показувати в галереї',
+        }

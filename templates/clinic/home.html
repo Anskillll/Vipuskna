@@ -1,17 +1,88 @@
 {% extends 'clinic/base.html' %}
 
-{% block title %}MedClinic{% endblock %}
+{% block title %}{{ clinic_branding.clinic_name }}{% endblock %}
 
 {% block content %}
-  <section class="home-center-screen">
-    <div class="home-center-card">
-      <p class="home-center-text">
-        Увійдіть через Google або спочатку перегляньте лікарів.
-      </p>
-      <div class="home-center-actions">
-        <a class="btn btn-large" href="{% url 'google_login' %}">Увійти через Google</a>
-        <a class="btn secondary btn-large" href="{% url 'doctors' %}">Переглянути лікарів</a>
+  <section class="public-home"{% if clinic_branding.home_background %} style="--home-bg: url('{{ clinic_branding.home_background.url }}');"{% endif %}>
+    <div class="public-home-overlay"></div>
+    <div class="public-home-inner">
+      <header class="public-home-intro">
+        {% if clinic_branding.logo %}
+          <img class="public-home-logo" src="{{ clinic_branding.logo.url }}" alt="{{ clinic_branding.clinic_name }}">
+        {% endif %}
+        <h1>{{ clinic_branding.clinic_name }}</h1>
+        <p>Новини, корисна інформація та події нашої клініки.</p>
+        <div class="home-center-actions">
+          <a class="btn btn-large" href="{% url 'google_login' %}">Увійти через Google</a>
+          <a class="btn secondary btn-large" href="{% url 'doctors' %}">Переглянути лікарів</a>
+        </div>
+      </header>
+
+      <div class="public-content-panel">
+        <nav class="content-tabs" aria-label="Розділи головної сторінки">
+          <button class="content-tab active" type="button" data-home-tab="clinic-news">Новини клініки</button>
+          <button class="content-tab" type="button" data-home-tab="doctor-news">Новини лікарів</button>
+          <button class="content-tab" type="button" data-home-tab="gallery">Галерея</button>
+        </nav>
+
+        <section class="home-tab-panel active" data-home-panel="clinic-news">
+          <div class="news-grid">
+            {% for post in clinic_news %}
+              <article class="news-card">
+                {% if post.image %}<img src="{{ post.image.url }}" alt="{{ post.title }}">{% endif %}
+                <div class="news-card-body">
+                  <span class="news-meta">{{ post.created_at|date:'d.m.Y' }}</span>
+                  <h2>{{ post.title }}</h2>
+                  <p>{{ post.text|linebreaksbr }}</p>
+                </div>
+              </article>
+            {% empty %}
+              <div class="empty">Новин клініки поки немає.</div>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section class="home-tab-panel" data-home-panel="doctor-news">
+          <div class="news-grid">
+            {% for post in doctor_news %}
+              <article class="news-card">
+                {% if post.image %}<img src="{{ post.image.url }}" alt="{{ post.title }}">{% endif %}
+                <div class="news-card-body">
+                  <span class="news-meta">{{ post.doctor.full_name }} · {{ post.created_at|date:'d.m.Y' }}</span>
+                  <h2>{{ post.title }}</h2>
+                  <p>{{ post.text|linebreaksbr }}</p>
+                </div>
+              </article>
+            {% empty %}
+              <div class="empty">Новин від лікарів поки немає.</div>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section class="home-tab-panel" data-home-panel="gallery">
+          <div class="clinic-gallery">
+            {% for item in gallery_images %}
+              <figure>
+                <img src="{{ item.image.url }}" alt="{{ item.title|default:'Фото клініки' }}">
+                {% if item.title %}<figcaption>{{ item.title }}</figcaption>{% endif %}
+              </figure>
+            {% empty %}
+              <div class="empty">Фотографій у галереї поки немає.</div>
+            {% endfor %}
+          </div>
+        </section>
       </div>
     </div>
   </section>
+
+  <script>
+    document.querySelectorAll('[data-home-tab]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        document.querySelectorAll('[data-home-tab]').forEach(function (item) { item.classList.remove('active'); });
+        document.querySelectorAll('[data-home-panel]').forEach(function (item) { item.classList.remove('active'); });
+        button.classList.add('active');
+        document.querySelector('[data-home-panel="' + button.dataset.homeTab + '"]').classList.add('active');
+      });
+    });
+  </script>
 {% endblock %}

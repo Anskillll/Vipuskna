@@ -313,3 +313,59 @@ class DoctorPatientCard(models.Model):
     @property
     def full_name(self):
         return f'{self.patient_first_name} {self.patient_last_name}'.strip()
+
+
+class ClinicSettings(models.Model):
+    clinic_name = models.CharField(max_length=120, default='MedClinic')
+    logo = models.ImageField(upload_to='clinic/branding/', blank=True)
+    home_background = models.ImageField(upload_to='clinic/branding/', blank=True)
+
+    class Meta:
+        verbose_name = 'Оформлення клініки'
+        verbose_name_plural = 'Оформлення клініки'
+
+    def __str__(self):
+        return self.clinic_name
+
+
+class NewsPost(models.Model):
+    doctor = models.ForeignKey(
+        Doctor,
+        on_delete=models.CASCADE,
+        related_name='news_posts',
+        null=True,
+        blank=True,
+    )
+    title = models.CharField(max_length=180)
+    text = models.TextField()
+    image = models.ImageField(upload_to='clinic/news/', blank=True)
+    is_published = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Новина'
+        verbose_name_plural = 'Новини'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def is_doctor_news(self):
+        return self.doctor_id is not None
+
+
+class GalleryImage(models.Model):
+    title = models.CharField(max_length=160, blank=True)
+    image = models.ImageField(upload_to='clinic/gallery/')
+    is_published = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Фото галереї'
+        verbose_name_plural = 'Галерея'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title or f'Фото {self.pk}'

@@ -13,6 +13,7 @@
   <nav class="page-tabs">
     <a class="page-tab active" href="{% url 'admin_panel' %}">Огляд</a>
     <a class="page-tab" href="{% url 'admin_add_doctor' %}">Новий лікар</a>
+    <a class="page-tab" href="{% url 'admin_content' %}">Контент сайту</a>
   </nav>
 
   <section class="overview-grid">
@@ -48,6 +49,7 @@
       <h3>Службові інструменти</h3>
       <div class="action-group-buttons">
         <a class="btn secondary" href="/admin/">Django Admin</a>
+        <a class="btn secondary" href="{% url 'admin_content' %}">Головна сторінка</a>
       </div>
     </article>
   </section>

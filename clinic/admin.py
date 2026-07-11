@@ -1,6 +1,16 @@
 from django.contrib import admin
 
-from .models import Appointment, Doctor, DoctorPatientCard, MedicalService, Profile, WorkSchedule
+from .models import (
+    Appointment,
+    ClinicSettings,
+    Doctor,
+    DoctorPatientCard,
+    GalleryImage,
+    MedicalService,
+    NewsPost,
+    Profile,
+    WorkSchedule,
+)
 
 
 class MedicalServiceInline(admin.TabularInline):
@@ -67,3 +77,21 @@ class DoctorPatientCardAdmin(admin.ModelAdmin):
         'patient_email',
         'doctor__user__last_name',
     )
+
+
+@admin.register(ClinicSettings)
+class ClinicSettingsAdmin(admin.ModelAdmin):
+    list_display = ('clinic_name',)
+
+
+@admin.register(NewsPost)
+class NewsPostAdmin(admin.ModelAdmin):
+    list_display = ('title', 'doctor', 'is_published', 'created_at')
+    list_filter = ('is_published', 'doctor')
+    search_fields = ('title', 'text')
+
+
+@admin.register(GalleryImage)
+class GalleryImageAdmin(admin.ModelAdmin):
+    list_display = ('title', 'is_published', 'created_at')
+    list_filter = ('is_published',)

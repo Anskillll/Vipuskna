@@ -1,0 +1,40 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Мої новини - MedClinic{% endblock %}
+
+{% block content %}
+  <section class="page-head"><div><h1 class="page-title">Мої новини</h1><p class="page-subtitle">Публікації, які бачать відвідувачі головної сторінки.</p></div></section>
+  <nav class="page-tabs">
+    <a class="page-tab" href="{% url 'doctor_dashboard' %}">Огляд</a>
+    <a class="page-tab active" href="{% url 'doctor_news' %}">Мої новини</a>
+  </nav>
+
+  <div class="grid grid-2 content-manager-grid">
+    <section class="card section-card">
+      <div class="section-head"><h2 class="section-title">{% if editing %}Редагувати новину{% else %}Створити новину{% endif %}</h2></div>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% include 'clinic/_form_fields.html' with form=form %}
+        <button type="submit">Зберегти новину</button>
+        {% if editing %}<a class="btn secondary" href="{% url 'doctor_news' %}">Скасувати</a>{% endif %}
+      </form>
+    </section>
+    <section class="card section-card">
+      <div class="section-head"><h2 class="section-title">Опубліковані матеріали</h2></div>
+      <ul class="content-list">
+        {% for post in posts %}
+          <li>
+            <div><strong>{{ post.title }}</strong><span>{{ post.created_at|date:'d.m.Y' }}{% if not post.is_published %} · приховано{% endif %}</span></div>
+            <div class="actions">
+              <a class="btn secondary" href="{% url 'doctor_news' %}?edit={{ post.id }}">Редагувати</a>
+              <form method="post" onsubmit="return confirm('Видалити цю новину?');">
+                {% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="post_id" value="{{ post.id }}">
+                <button class="danger" type="submit">Видалити</button>
+              </form>
+            </div>
+          </li>
+        {% empty %}<li><span>Ви ще не створювали новин.</span></li>{% endfor %}
+      </ul>
+    </section>
+  </div>
+{% endblock %}
