@@ -6,7 +6,7 @@
   <section class="public-home"{% if clinic_branding.home_background %} style="--home-bg: url('{{ clinic_branding.home_background.url }}');"{% endif %}>
     <div class="public-home-overlay"></div>
     {% if clinic_branding.home_effect != 'none' %}
-      <div class="home-particles" data-particle-effect="{{ clinic_branding.home_effect }}" aria-hidden="true"></div>
+      <div class="home-particles" data-particle-effect="{{ clinic_branding.home_effect }}"{% if clinic_branding.particle_image %} data-particle-image="{{ clinic_branding.particle_image.url }}"{% endif %} aria-hidden="true"></div>
     {% endif %}
     <div class="public-home-inner">
       <header class="public-home-intro">
@@ -94,22 +94,29 @@
       const layer = document.querySelector('[data-particle-effect]');
       if (!layer || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-      const isTeeth = layer.dataset.particleEffect === 'teeth';
+      const effect = layer.dataset.particleEffect;
+      const isTeeth = effect === 'teeth';
+      const isCustom = effect === 'custom';
       const symbol = isTeeth ? '🦷' : '+';
       const amount = window.innerWidth < 680 ? 14 : 28;
       const particles = [];
 
       for (let index = 0; index < amount; index += 1) {
-        const element = document.createElement('span');
-        element.className = isTeeth ? 'home-particle tooth' : 'home-particle medical-cross';
-        element.textContent = symbol;
+        const element = document.createElement(isCustom ? 'img' : 'span');
+        element.className = isCustom ? 'home-particle custom-particle' : (isTeeth ? 'home-particle tooth' : 'home-particle medical-cross');
+        if (isCustom) {
+          element.src = layer.dataset.particleImage;
+          element.alt = '';
+        } else {
+          element.textContent = symbol;
+        }
         layer.appendChild(element);
         particles.push({
           element: element,
           x: Math.random() * Math.max(1, layer.clientWidth - 32),
           y: Math.random() * Math.max(1, layer.clientHeight - 32),
-          vx: (Math.random() * 0.7 + 0.25) * (Math.random() > 0.5 ? 1 : -1),
-          vy: (Math.random() * 0.7 + 0.25) * (Math.random() > 0.5 ? 1 : -1),
+          vx: (Math.random() * 1.1 + 0.8) * (Math.random() > 0.5 ? 1 : -1),
+          vy: (Math.random() * 1.1 + 0.8) * (Math.random() > 0.5 ? 1 : -1),
           rotation: Math.random() * 360,
           spin: (Math.random() - 0.5) * 0.8,
         });

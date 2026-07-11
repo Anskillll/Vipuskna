@@ -1131,6 +1131,14 @@ th {
   opacity: 0.34;
 }
 
+.home-particle.custom-particle {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  opacity: 0.58;
+  filter: drop-shadow(0 2px 3px rgba(15, 23, 42, 0.16));
+}
+
 .public-home-intro {
   max-width: 680px;
   margin: 0 auto 36px;

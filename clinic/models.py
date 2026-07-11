@@ -319,16 +319,19 @@ class ClinicSettings(models.Model):
     EFFECT_NONE = 'none'
     EFFECT_TEETH = 'teeth'
     EFFECT_CROSSES = 'crosses'
+    EFFECT_CUSTOM = 'custom'
     EFFECT_CHOICES = [
         (EFFECT_NONE, 'Без анімації'),
         (EFFECT_TEETH, 'Літаючі зуби'),
         (EFFECT_CROSSES, 'Медичні хрестики'),
+        (EFFECT_CUSTOM, 'Власне зображення'),
     ]
 
     clinic_name = models.CharField(max_length=120, default='MedClinic')
     logo = models.ImageField(upload_to='clinic/branding/', blank=True)
     home_background = models.ImageField(upload_to='clinic/branding/', blank=True)
     home_effect = models.CharField(max_length=20, choices=EFFECT_CHOICES, default=EFFECT_NONE)
+    particle_image = models.ImageField(upload_to='clinic/branding/particles/', blank=True)
 
     class Meta:
         verbose_name = 'Оформлення клініки'
