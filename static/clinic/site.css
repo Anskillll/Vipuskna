@@ -991,9 +991,45 @@ th {
 
 .public-home-inner {
   position: relative;
+  z-index: 2;
   width: min(1160px, calc(100% - 32px));
   margin: 0 auto;
   padding: 56px 0 72px;
+}
+
+.home-particles {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.home-particle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  user-select: none;
+  will-change: transform;
+}
+
+.home-particle.tooth {
+  width: 28px;
+  height: 28px;
+  font-size: 22px;
+  opacity: 0.48;
+  filter: drop-shadow(0 2px 3px rgba(15, 23, 42, 0.14));
+}
+
+.home-particle.medical-cross {
+  width: 24px;
+  height: 24px;
+  color: #2563eb;
+  font-size: 25px;
+  font-weight: 800;
+  opacity: 0.34;
 }
 
 .public-home-intro {

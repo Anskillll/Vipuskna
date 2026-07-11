@@ -5,6 +5,9 @@
 {% block content %}
   <section class="public-home"{% if clinic_branding.home_background %} style="--home-bg: url('{{ clinic_branding.home_background.url }}');"{% endif %}>
     <div class="public-home-overlay"></div>
+    {% if clinic_branding.home_effect != 'none' %}
+      <div class="home-particles" data-particle-effect="{{ clinic_branding.home_effect }}" aria-hidden="true"></div>
+    {% endif %}
     <div class="public-home-inner">
       <header class="public-home-intro">
         {% if clinic_branding.logo %}
@@ -86,5 +89,54 @@
         document.querySelector('[data-home-panel="' + button.dataset.homeTab + '"]').classList.add('active');
       });
     });
+
+    (function () {
+      const layer = document.querySelector('[data-particle-effect]');
+      if (!layer || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+      const isTeeth = layer.dataset.particleEffect === 'teeth';
+      const symbol = isTeeth ? '🦷' : '+';
+      const amount = window.innerWidth < 680 ? 14 : 28;
+      const particles = [];
+
+      for (let index = 0; index < amount; index += 1) {
+        const element = document.createElement('span');
+        element.className = isTeeth ? 'home-particle tooth' : 'home-particle medical-cross';
+        element.textContent = symbol;
+        layer.appendChild(element);
+        particles.push({
+          element: element,
+          x: Math.random() * Math.max(1, layer.clientWidth - 32),
+          y: Math.random() * Math.max(1, layer.clientHeight - 32),
+          vx: (Math.random() * 0.7 + 0.25) * (Math.random() > 0.5 ? 1 : -1),
+          vy: (Math.random() * 0.7 + 0.25) * (Math.random() > 0.5 ? 1 : -1),
+          rotation: Math.random() * 360,
+          spin: (Math.random() - 0.5) * 0.8,
+        });
+      }
+
+      function moveParticles() {
+        const width = layer.clientWidth;
+        const height = layer.clientHeight;
+        particles.forEach(function (particle) {
+          const size = particle.element.offsetWidth;
+          particle.x += particle.vx;
+          particle.y += particle.vy;
+          particle.rotation += particle.spin;
+          if (particle.x <= 0 || particle.x + size >= width) {
+            particle.vx *= -1;
+            particle.x = Math.max(0, Math.min(particle.x, width - size));
+          }
+          if (particle.y <= 0 || particle.y + size >= height) {
+            particle.vy *= -1;
+            particle.y = Math.max(0, Math.min(particle.y, height - size));
+          }
+          particle.element.style.transform = 'translate(' + particle.x + 'px, ' + particle.y + 'px) rotate(' + particle.rotation + 'deg)';
+        });
+        window.requestAnimationFrame(moveParticles);
+      }
+
+      moveParticles();
+    }());
   </script>
 {% endblock %}

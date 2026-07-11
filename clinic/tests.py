@@ -6,7 +6,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import Appointment, Doctor, MedicalService, NewsPost, Profile, WorkSchedule
+from .models import Appointment, ClinicSettings, Doctor, MedicalService, NewsPost, Profile, WorkSchedule
 from .views import appointment_conflicts
 
 
@@ -208,6 +208,15 @@ class ClinicModelTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Новини клініки')
         self.assertNotContains(response, 'Увійти через Google')
+
+    def test_home_renders_selected_background_effect(self):
+        branding, _ = ClinicSettings.objects.get_or_create(pk=1)
+        branding.home_effect = ClinicSettings.EFFECT_TEETH
+        branding.save(update_fields=['home_effect'])
+
+        response = self.client.get(reverse('home'))
+
+        self.assertContains(response, 'data-particle-effect="teeth"')
 
     def test_doctor_can_create_only_own_news(self):
         self.client.login(username='doctor@test.local', password='pass12345')
