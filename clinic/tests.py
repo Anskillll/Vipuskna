@@ -200,6 +200,15 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Новина лікаря')
         self.assertContains(response, 'Галерея')
 
+    def test_authenticated_user_can_open_home_without_login_button(self):
+        self.client.login(username='patient@test.local', password='pass12345')
+
+        response = self.client.get(reverse('home'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Новини клініки')
+        self.assertNotContains(response, 'Увійти через Google')
+
     def test_doctor_can_create_only_own_news(self):
         self.client.login(username='doctor@test.local', password='pass12345')
 

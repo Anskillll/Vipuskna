@@ -265,8 +265,6 @@ def sync_patient_cards_for_doctor(doctor):
 
 
 def home(request):
-    if request.user.is_authenticated:
-        return redirect_by_role(request.user)
     return render(
         request,
         'clinic/home.html',

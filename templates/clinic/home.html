@@ -13,7 +13,9 @@
         <h1>{{ clinic_branding.clinic_name }}</h1>
         <p>Новини, корисна інформація та події нашої клініки.</p>
         <div class="home-center-actions">
-          <a class="btn btn-large" href="{% url 'google_login' %}">Увійти через Google</a>
+          {% if not user.is_authenticated %}
+            <a class="btn btn-large" href="{% url 'google_login' %}">Увійти через Google</a>
+          {% endif %}
           <a class="btn secondary btn-large" href="{% url 'doctors' %}">Переглянути лікарів</a>
         </div>
       </header>
