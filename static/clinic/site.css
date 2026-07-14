@@ -910,6 +910,7 @@ th {
   color: #3730a3;
   font-size: 12px;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .status.canceled {
