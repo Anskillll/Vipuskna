@@ -125,6 +125,8 @@ class WorkSchedule(models.Model):
     start_time = models.TimeField(default=time(9, 0))
     end_time = models.TimeField(default=time(17, 0))
     slot_minutes = models.PositiveSmallIntegerField(default=60)
+    break_start_time = models.TimeField(null=True, blank=True)
+    break_duration_minutes = models.PositiveSmallIntegerField(null=True, blank=True)
     is_working = models.BooleanField(default=True)
 
     class Meta:
@@ -148,10 +150,14 @@ class WorkSchedule(models.Model):
         start = datetime.combine(timezone.localdate(), self.start_time)
         end = datetime.combine(timezone.localdate(), self.end_time)
         step = timedelta(minutes=self.slot_minutes)
+        break_start = datetime.combine(timezone.localdate(), self.break_start_time) if self.break_start_time else None
+        break_end = break_start + timedelta(minutes=self.break_duration_minutes) if break_start and self.break_duration_minutes else None
         slots = []
 
         while start < end:
-            slots.append(start.time())
+            slot_end = start + step
+            if not break_end or not (start < break_end and slot_end > break_start):
+                slots.append(start.time())
             start += step
 
         return slots
@@ -201,6 +207,7 @@ class Appointment(models.Model):
     address = models.CharField(max_length=200)
     reason = models.TextField()
     duration_slots = models.PositiveSmallIntegerField(default=1)
+    duration_minutes_exact = models.PositiveSmallIntegerField(null=True, blank=True)
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -242,7 +249,7 @@ class Appointment(models.Model):
         schedule = self.doctor.schedules.filter(weekday=self.date.weekday()).first()
         slot_minutes = schedule.slot_minutes if schedule else 60
         target_start = datetime.combine(self.date, self.time)
-        target_end = target_start + timedelta(minutes=slot_minutes * self.duration_slots)
+        target_end = target_start + timedelta(minutes=self.duration_minutes)
 
         appointments = (
             Appointment.objects.filter(
@@ -255,18 +262,16 @@ class Appointment(models.Model):
         )
         for appointment in appointments:
             item_start = datetime.combine(appointment.date, appointment.time)
-            item_end = item_start + timedelta(minutes=slot_minutes * appointment.duration_slots)
+            item_end = item_start + timedelta(minutes=appointment.duration_minutes)
             if target_start < item_end and target_end > item_start:
                 return False
         return True
 
     @property
     def end_time(self):
-        schedule = self.doctor.schedules.filter(weekday=self.date.weekday()).first()
-        slot_minutes = schedule.slot_minutes if schedule else 60
         return (
             datetime.combine(self.date, self.time)
-            + timedelta(minutes=self.duration_slots * slot_minutes)
+            + timedelta(minutes=self.duration_minutes)
         ).time()
 
     @property
@@ -276,7 +281,7 @@ class Appointment(models.Model):
 
     @property
     def duration_minutes(self):
-        return self.duration_slots * self.slot_minutes
+        return self.duration_minutes_exact or self.duration_slots * self.slot_minutes
 
 
 class DoctorPatientCard(models.Model):

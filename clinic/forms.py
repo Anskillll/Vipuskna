@@ -1,6 +1,9 @@
+from datetime import datetime, timedelta
+
 from django import forms
 from django.contrib.auth import authenticate, get_user_model
 from django.core.validators import RegexValidator
+from django.utils import timezone
 
 from .models import (
     ClinicSettings,
@@ -173,9 +176,8 @@ class DoctorPatientBookingForm(FormStyleMixin, forms.Form):
         self.slot_minutes = slot_minutes
         super().__init__(*args, **kwargs)
         self.fields['duration_minutes'].initial = slot_minutes
-        self.fields['duration_minutes'].min_value = slot_minutes
-        self.fields['duration_minutes'].widget.attrs.update({'min': slot_minutes, 'step': slot_minutes})
-        self.fields['duration_minutes'].help_text = f'Крок графіка лікаря — {slot_minutes} хв. Вкажіть {slot_minutes}, {slot_minutes * 2}, {slot_minutes * 3} тощо.'
+        self.fields['duration_minutes'].widget.attrs.update({'min': 1, 'step': 1})
+        self.fields['duration_minutes'].help_text = 'Вкажіть точну тривалість прийому, наприклад 35, 50 або 75 хв.'
         self.fields['patient'].queryset = User.objects.filter(
             profile__role=Profile.ROLE_PATIENT,
         ).select_related('profile').order_by('last_name', 'first_name', 'username')
@@ -191,10 +193,7 @@ class DoctorPatientBookingForm(FormStyleMixin, forms.Form):
         return self.cleaned_data.get('email', '').lower()
 
     def clean_duration_minutes(self):
-        value = self.cleaned_data['duration_minutes']
-        if value % self.slot_minutes:
-            raise forms.ValidationError(f'Тривалість має бути кратною {self.slot_minutes} хв.')
-        return value
+        return self.cleaned_data['duration_minutes']
 
     def clean(self):
         cleaned_data = super().clean()
@@ -225,15 +224,11 @@ class AppointmentDecisionForm(FormStyleMixin, forms.Form):
         self.slot_minutes = slot_minutes
         super().__init__(*args, **kwargs)
         self.fields['duration_minutes'].initial = slot_minutes
-        self.fields['duration_minutes'].min_value = slot_minutes
-        self.fields['duration_minutes'].widget.attrs.update({'min': slot_minutes, 'step': slot_minutes})
-        self.fields['duration_minutes'].help_text = f'Крок вашого графіка — {slot_minutes} хв. Тривалість має бути кратною цьому часу.'
+        self.fields['duration_minutes'].widget.attrs.update({'min': 1, 'step': 1})
+        self.fields['duration_minutes'].help_text = 'Вкажіть точну тривалість прийому в хвилинах.'
 
     def clean_duration_minutes(self):
-        value = self.cleaned_data['duration_minutes']
-        if value % self.slot_minutes:
-            raise forms.ValidationError(f'Тривалість має бути кратною {self.slot_minutes} хв.')
-        return value
+        return self.cleaned_data['duration_minutes']
 
 
 class DoctorPatientCardForm(FormStyleMixin, forms.ModelForm):
@@ -358,10 +353,21 @@ class DoctorProfileForm(FormStyleMixin, forms.Form):
 class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
     class Meta:
         model = WorkSchedule
-        fields = ['weekday', 'city', 'address', 'start_time', 'end_time', 'slot_minutes', 'is_working']
+        fields = [
+            'weekday',
+            'city',
+            'address',
+            'start_time',
+            'end_time',
+            'slot_minutes',
+            'break_start_time',
+            'break_duration_minutes',
+            'is_working',
+        ]
         widgets = {
             'start_time': forms.TimeInput(attrs={'type': 'time'}),
             'end_time': forms.TimeInput(attrs={'type': 'time'}),
+            'break_start_time': forms.TimeInput(attrs={'type': 'time'}),
         }
         labels = {
             'weekday': 'День тижня',
@@ -370,6 +376,8 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
             'start_time': 'Початок прийому',
             'end_time': 'Кінець прийому',
             'slot_minutes': 'Тривалість одного слота, хвилин',
+            'break_start_time': 'Початок обідньої перерви',
+            'break_duration_minutes': 'Тривалість обіду, хвилин',
             'is_working': 'Робочий день',
         }
 
@@ -380,6 +388,8 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
         is_working = cleaned.get('is_working')
         city = cleaned.get('city')
         address = cleaned.get('address')
+        break_start = cleaned.get('break_start_time')
+        break_duration = cleaned.get('break_duration_minutes')
 
         if is_working and not city:
             self.add_error('city', 'Укажіть місто прийому.')
@@ -387,6 +397,12 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
             self.add_error('address', 'Укажіть адресу прийому.')
         if start_time and end_time and start_time >= end_time:
             self.add_error('end_time', 'Кінець прийому має бути пізніше за початок.')
+        if bool(break_start) != bool(break_duration):
+            self.add_error('break_start_time', 'Укажіть і початок, і тривалість обіду або залиште обидва поля порожніми.')
+        if break_start and break_duration and start_time and end_time:
+            break_end = (datetime.combine(timezone.localdate(), break_start) + timedelta(minutes=break_duration)).time()
+            if break_start < start_time or break_end > end_time:
+                self.add_error('break_start_time', 'Обідня перерва має повністю входити в робочий час.')
         return cleaned
 
 

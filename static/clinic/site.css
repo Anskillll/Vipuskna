@@ -894,6 +894,12 @@ th {
   white-space: nowrap;
 }
 
+.schedule-break {
+  color: #b45309;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .status {
   display: inline-flex;
   align-items: center;

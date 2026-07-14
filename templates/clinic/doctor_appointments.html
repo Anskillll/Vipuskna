@@ -57,8 +57,8 @@
                     <form method="post" action="{% url 'doctor_review_appointment' appointment.id %}" class="compact-form" onsubmit="return confirm('Підтвердити цю заявку?');">
                       {% csrf_token %}
                       <label for="duration_{{ appointment.id }}" class="sr-only">Тривалість у хвилинах</label>
-                      <input id="duration_{{ appointment.id }}" type="number" name="duration_minutes" min="{{ appointment.slot_minutes }}" step="{{ appointment.slot_minutes }}" value="{{ appointment.duration_minutes }}" title="Крок: {{ appointment.slot_minutes }} хв">
-                      <small class="duration-input-hint">хв · крок {{ appointment.slot_minutes }} хв</small>
+                      <input id="duration_{{ appointment.id }}" type="number" name="duration_minutes" min="1" step="1" value="{{ appointment.duration_minutes }}" title="Тривалість прийому у хвилинах">
+                      <small class="duration-input-hint">хв</small>
                       <input type="hidden" name="action" value="approve">
                       <button type="submit" class="green">Підтвердити</button>
                     </form>

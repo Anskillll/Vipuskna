@@ -191,14 +191,55 @@ class ClinicModelTests(TestCase):
 
         response = self.client.post(
             reverse('doctor_review_appointment', args=[appointment.id]),
-            data={'action': 'approve', 'duration_minutes': 120},
+            data={'action': 'approve', 'duration_minutes': 75},
             follow=True,
         )
 
         appointment.refresh_from_db()
         self.assertEqual(appointment.status, Appointment.STATUS_APPROVED)
         self.assertEqual(appointment.duration_slots, 2)
-        self.assertContains(response, '120 хв')
+        self.assertEqual(appointment.duration_minutes_exact, 75)
+        self.assertContains(response, '75 хв')
+
+    def test_lunch_break_removes_slots_and_blocks_overlapping_appointment(self):
+        visit_date = timezone.localdate()
+        self.schedule.start_time = time(9, 0)
+        self.schedule.end_time = time(12, 0)
+        self.schedule.slot_minutes = 20
+        self.schedule.break_start_time = time(10, 0)
+        self.schedule.break_duration_minutes = 45
+        self.schedule.save(
+            update_fields=[
+                'start_time',
+                'end_time',
+                'slot_minutes',
+                'break_start_time',
+                'break_duration_minutes',
+            ]
+        )
+
+        slots = [slot.strftime('%H:%M') for slot in self.schedule.get_slots()]
+
+        self.assertNotIn('10:00', slots)
+        self.assertNotIn('10:20', slots)
+        self.assertNotIn('10:40', slots)
+        self.assertIn('11:00', slots)
+        self.assertTrue(
+            appointment_conflicts(
+                self.doctor,
+                visit_date,
+                time(9, 50),
+                duration_minutes=20,
+            )
+        )
+        self.assertFalse(
+            appointment_conflicts(
+                self.doctor,
+                visit_date,
+                time(9, 30),
+                duration_minutes=20,
+            )
+        )
 
     def test_patient_can_restore_future_canceled_appointment(self):
         self.client.login(username='patient@test.local', password='pass12345')

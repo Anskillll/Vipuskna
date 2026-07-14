@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from functools import wraps
+from math import ceil
 
 from django.contrib import messages
 from django.contrib.auth import login, logout, update_session_auth_hash
@@ -137,13 +138,21 @@ def schedule_for_date(doctor, selected_date):
     ).first()
 
 
-def appointment_range(date_value, time_value, slot_minutes, duration_slots):
+def appointment_range(date_value, time_value, slot_minutes, duration_slots=1, duration_minutes=None):
     start = datetime.combine(date_value, time_value)
-    end = start + timedelta(minutes=slot_minutes * duration_slots)
+    minutes = duration_minutes if duration_minutes is not None else slot_minutes * duration_slots
+    end = start + timedelta(minutes=minutes)
     return start, end
 
 
-def appointment_conflicts(doctor, selected_date, selected_time, duration_slots=1, exclude_id=None):
+def appointment_conflicts(
+    doctor,
+    selected_date,
+    selected_time,
+    duration_slots=1,
+    duration_minutes=None,
+    exclude_id=None,
+):
     schedule = schedule_for_date(doctor, selected_date)
     if not schedule:
         return True
@@ -153,11 +162,18 @@ def appointment_conflicts(doctor, selected_date, selected_time, duration_slots=1
         selected_time,
         schedule.slot_minutes,
         duration_slots,
+        duration_minutes,
     )
 
     day_end = datetime.combine(selected_date, schedule.end_time)
     if target_end > day_end:
         return True
+
+    if schedule.break_start_time and schedule.break_duration_minutes:
+        break_start = datetime.combine(selected_date, schedule.break_start_time)
+        break_end = break_start + timedelta(minutes=schedule.break_duration_minutes)
+        if target_start < break_end and target_end > break_start:
+            return True
 
     appointments = (
         Appointment.objects.filter(
@@ -174,7 +190,7 @@ def appointment_conflicts(doctor, selected_date, selected_time, duration_slots=1
             appointment.date,
             appointment.time,
             schedule.slot_minutes,
-            appointment.duration_slots,
+            duration_minutes=appointment.duration_minutes,
         )
         if target_start < item_end and target_end > item_start:
             return True
@@ -434,6 +450,7 @@ def restore_appointment(request, appointment_id):
             appointment.date,
             appointment.time,
             duration_slots=appointment.duration_slots,
+            duration_minutes=appointment.duration_minutes,
             exclude_id=appointment.id,
         ):
             messages.error(request, 'Цей запис уже не можна відновити.')
@@ -612,7 +629,8 @@ def doctor_review_appointment(request, appointment_id):
         slot_minutes = schedule.slot_minutes if schedule else 60
         form = AppointmentDecisionForm(request.POST, slot_minutes=slot_minutes)
         if form.is_valid():
-            duration_slots = form.cleaned_data['duration_minutes'] // slot_minutes
+            duration_minutes = form.cleaned_data['duration_minutes']
+            duration_slots = ceil(duration_minutes / slot_minutes)
             if is_past_appointment(appointment.date, appointment.time):
                 messages.error(request, 'Не можна підтвердити заявку на минулий час.')
             elif appointment_conflicts(
@@ -620,14 +638,16 @@ def doctor_review_appointment(request, appointment_id):
                 appointment.date,
                 appointment.time,
                 duration_slots=duration_slots,
+                duration_minutes=duration_minutes,
                 exclude_id=appointment.id,
             ):
                 messages.error(request, 'На цей час не вистачає вільних слотів для такої тривалості.')
             else:
                 appointment.duration_slots = duration_slots
+                appointment.duration_minutes_exact = duration_minutes
                 appointment.status = Appointment.STATUS_APPROVED
                 appointment.approved_at = timezone.now()
-                appointment.save(update_fields=['duration_slots', 'status', 'approved_at'])
+                appointment.save(update_fields=['duration_slots', 'duration_minutes_exact', 'status', 'approved_at'])
                 ensure_patient_card_from_appointment(appointment)
                 messages.success(request, 'Заявку підтверджено.')
                 return redirect('doctor_appointments')
@@ -678,12 +698,19 @@ def doctor_book_patient(request):
         elif not selected_time or selected_time not in available_times:
             messages.error(request, 'Цей час уже недоступний.')
         elif form.is_valid() and schedule:
-            duration_slots = form.cleaned_data['duration_minutes'] // slot_minutes
+            duration_minutes = form.cleaned_data['duration_minutes']
+            duration_slots = ceil(duration_minutes / slot_minutes)
             patient = form.cleaned_data.get('patient') or find_patient_by_contacts(
                 form.cleaned_data.get('email'),
                 form.cleaned_data['phone'],
             )
-            if appointment_conflicts(doctor, selected_date, selected_time, duration_slots):
+            if appointment_conflicts(
+                doctor,
+                selected_date,
+                selected_time,
+                duration_slots=duration_slots,
+                duration_minutes=duration_minutes,
+            ):
                 messages.error(request, 'Для такої тривалості недостатньо вільного часу.')
             else:
                 try:
@@ -701,6 +728,7 @@ def doctor_book_patient(request):
                         address=schedule.address,
                         reason=form.cleaned_data['reason'],
                         duration_slots=duration_slots,
+                        duration_minutes_exact=duration_minutes,
                         status=Appointment.STATUS_APPROVED,
                         approved_at=timezone.now(),
                     )
