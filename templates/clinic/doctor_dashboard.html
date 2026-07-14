@@ -20,9 +20,9 @@
   </nav>
 
   {% if current_appointment and current_card %}
-    <section class="current-visit-banner{% if current_is_preview %} preview{% endif %}">
+    <section class="current-visit-banner">
       <div>
-        <span class="current-visit-label">{% if current_is_preview %}Тестовий перегляд{% else %}Прийом триває зараз{% endif %}</span>
+        <span class="current-visit-label">Прийом триває зараз</span>
         <h2>Зараз працюєте з клієнтом {{ current_appointment.patient_name }}</h2>
         <p>
           {{ current_appointment.service.name|default:'Послугу не вказано' }} ·
@@ -122,11 +122,6 @@
             </li>
           {% endfor %}
         </ul>
-        {% if not current_appointment %}
-          <div class="actions preview-current-action">
-            <a class="btn secondary" href="{% url 'doctor_dashboard' %}?preview_current={{ next_appointments.0.id }}">Перевірити зелений блок</a>
-          </div>
-        {% endif %}
       {% else %}
         <div class="empty">Найближчих прийомів поки немає.</div>
       {% endif %}

@@ -1074,10 +1074,6 @@ th {
   box-shadow: 0 16px 34px rgba(22, 163, 74, 0.14);
 }
 
-.current-visit-banner.preview {
-  border-style: dashed;
-}
-
 .current-visit-label {
   display: inline-block;
   margin-bottom: 7px;
@@ -1104,10 +1100,6 @@ th {
   background: #16a34a;
   color: #fff;
   box-shadow: 0 10px 24px rgba(22, 163, 74, 0.22);
-}
-
-.preview-current-action {
-  margin-top: 14px;
 }
 
 .record-entry-editor {

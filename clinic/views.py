@@ -551,13 +551,6 @@ def doctor_dashboard(request):
         status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]
     )
     current_appointment = active_appointment_for_doctor(doctor)
-    current_is_preview = False
-    if not current_appointment and request.GET.get('preview_current'):
-        current_appointment = doctor.appointments.filter(
-            pk=request.GET.get('preview_current'),
-            status=Appointment.STATUS_APPROVED,
-        ).select_related('service', 'patient').first()
-        current_is_preview = current_appointment is not None
     current_card = None
     if current_appointment:
         current_card, _ = ensure_patient_card_from_appointment(current_appointment)
@@ -573,7 +566,6 @@ def doctor_dashboard(request):
             'next_appointments': next_appointments,
             'current_appointment': current_appointment,
             'current_card': current_card,
-            'current_is_preview': current_is_preview,
         },
     )
 

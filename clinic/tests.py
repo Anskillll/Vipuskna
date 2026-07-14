@@ -258,31 +258,6 @@ class ClinicModelTests(TestCase):
         post = NewsPost.objects.get(title='Порада лікаря')
         self.assertEqual(post.doctor, self.doctor)
 
-    def test_doctor_can_preview_current_visit_banner(self):
-        self.client.login(username='doctor@test.local', password='pass12345')
-        appointment = Appointment.objects.create(
-            doctor=self.doctor,
-            service=self.service,
-            patient=self.patient,
-            patient_first_name='Тест',
-            patient_last_name='Пацієнт',
-            patient_phone='+380501111111',
-            patient_email='patient@test.local',
-            date=timezone.localdate() + timedelta(days=1),
-            time='09:00',
-            city='Дніпро',
-            address='вул. Тестова, 1',
-            reason='Перевірка активного прийому',
-            status=Appointment.STATUS_APPROVED,
-            approved_at=timezone.now(),
-        )
-
-        response = self.client.get(reverse('doctor_dashboard'), {'preview_current': appointment.id})
-
-        self.assertContains(response, 'Тестовий перегляд')
-        self.assertContains(response, 'Зараз працюєте з клієнтом')
-        self.assertContains(response, 'Відкрити прийом і додати матеріали')
-
     def test_active_appointment_is_detected_by_start_and_end_time(self):
         fixed_now = timezone.make_aware(datetime(2026, 7, 14, 10, 10))
         self.schedule.weekday = fixed_now.date().weekday()
