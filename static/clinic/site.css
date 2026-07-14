@@ -1663,6 +1663,12 @@ th {
   border-radius: 8px;
 }
 
+.appointment-detail-sidebar {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
 .detail-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1705,8 +1711,7 @@ th {
 }
 
 .appointment-decision-panel {
-  position: sticky;
-  top: 96px;
+  position: static;
 }
 
 .appointment-decision-panel form {
@@ -1723,7 +1728,11 @@ th {
 
 .day-appointments-section {
   border-radius: 8px;
-  margin-top: 20px;
+  margin-top: 0;
+}
+
+.day-appointments-head {
+  align-items: flex-start;
 }
 
 .day-appointment-list {
@@ -1744,6 +1753,18 @@ th {
   padding: 12px 16px;
   text-decoration: none;
   transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.appointment-detail-sidebar .day-appointment-item {
+  gap: 8px 12px;
+  grid-template-columns: 54px minmax(0, 1fr);
+  padding: 12px;
+}
+
+.appointment-detail-sidebar .day-appointment-duration,
+.appointment-detail-sidebar .day-appointment-item > .status,
+.appointment-detail-sidebar .active-visit-label {
+  grid-column: 2;
 }
 
 .day-appointment-item:hover {

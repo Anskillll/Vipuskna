@@ -33,56 +33,58 @@
       </div>
     </section>
 
-    {% if appointment.status == 'pending' %}
-      <aside class="card section-card appointment-decision-panel">
-        <h2 class="section-title">Рішення лікаря</h2>
-        <form method="post" action="{% url 'doctor_review_appointment' appointment.id %}" onsubmit="return confirm('Підтвердити цю заявку?');">
-          {% csrf_token %}
-          <div class="field">
-            <label for="detail_duration">Тривалість прийому, хвилин</label>
-            <input id="detail_duration" type="number" name="duration_minutes" min="{{ appointment.slot_minutes }}" step="{{ appointment.slot_minutes }}" value="{{ appointment.duration_minutes }}">
-            <div class="field-help">Один слот цього дня — {{ appointment.slot_minutes }} хв.</div>
-          </div>
-          <input type="hidden" name="action" value="approve">
-          <button type="submit" class="green">Підтвердити заявку</button>
-        </form>
-        <form method="post" action="{% url 'doctor_review_appointment' appointment.id %}" onsubmit="return confirm('Відхилити цю заявку?');">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="reject">
-          <button type="submit" class="secondary">Відхилити заявку</button>
-        </form>
-      </aside>
-    {% endif %}
-  </div>
+    <div class="appointment-detail-sidebar">
+      {% if appointment.status == 'pending' %}
+        <aside class="card section-card appointment-decision-panel">
+          <h2 class="section-title">Рішення лікаря</h2>
+          <form method="post" action="{% url 'doctor_review_appointment' appointment.id %}" onsubmit="return confirm('Підтвердити цю заявку?');">
+            {% csrf_token %}
+            <div class="field">
+              <label for="detail_duration">Тривалість прийому, хвилин</label>
+              <input id="detail_duration" type="number" name="duration_minutes" min="{{ appointment.slot_minutes }}" step="{{ appointment.slot_minutes }}" value="{{ appointment.duration_minutes }}">
+              <div class="field-help">Один слот цього дня — {{ appointment.slot_minutes }} хв.</div>
+            </div>
+            <input type="hidden" name="action" value="approve">
+            <button type="submit" class="green">Підтвердити заявку</button>
+          </form>
+          <form method="post" action="{% url 'doctor_review_appointment' appointment.id %}" onsubmit="return confirm('Відхилити цю заявку?');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reject">
+            <button type="submit" class="secondary">Відхилити заявку</button>
+          </form>
+        </aside>
+      {% endif %}
 
-  <section class="card section-card day-appointments-section">
-    <div class="section-head">
-      <div>
-        <h2 class="section-title">Записи на {{ appointment.date|date:'d.m.Y' }}</h2>
-        <p class="section-note">Усі заявки та прийоми лікаря на цей день</p>
-      </div>
-      <span class="section-note">{{ day_appointments|length }} запис(ів)</span>
+      <section class="card section-card day-appointments-section">
+        <div class="section-head day-appointments-head">
+          <div>
+            <h2 class="section-title">Записи на {{ appointment.date|date:'d.m.Y' }}</h2>
+            <p class="section-note">Усі прийоми цього дня</p>
+          </div>
+          <span class="section-note">{{ day_appointments|length }}</span>
+        </div>
+        <div class="day-appointment-list">
+          {% for day_appointment in day_appointments %}
+            <a class="day-appointment-item{% if day_appointment.id == appointment.id %} selected{% endif %}{% if active_appointment and day_appointment.id == active_appointment.id %} active-now{% endif %}" href="{% url 'doctor_appointment_detail' day_appointment.id %}">
+              <strong class="day-appointment-time">{{ day_appointment.time|time:'H:i' }}</strong>
+              <span class="day-appointment-person">
+                <strong>{{ day_appointment.patient_name }}</strong>
+                <small>{{ day_appointment.service.name|default:'Послугу не обрано' }}</small>
+              </span>
+              <span class="day-appointment-duration">{{ day_appointment.duration_minutes }} хв</span>
+              {% if active_appointment and day_appointment.id == active_appointment.id %}
+                <span class="active-visit-label">Зараз на прийомі</span>
+              {% else %}
+                <span class="status {{ day_appointment.status }}">{{ day_appointment.get_status_display }}</span>
+              {% endif %}
+            </a>
+          {% empty %}
+            <div class="empty">На цей день записів немає.</div>
+          {% endfor %}
+        </div>
+      </section>
     </div>
-    <div class="day-appointment-list">
-      {% for day_appointment in day_appointments %}
-        <a class="day-appointment-item{% if day_appointment.id == appointment.id %} selected{% endif %}{% if active_appointment and day_appointment.id == active_appointment.id %} active-now{% endif %}" href="{% url 'doctor_appointment_detail' day_appointment.id %}">
-          <strong class="day-appointment-time">{{ day_appointment.time|time:'H:i' }}</strong>
-          <span class="day-appointment-person">
-            <strong>{{ day_appointment.patient_name }}</strong>
-            <small>{{ day_appointment.service.name|default:'Послугу не обрано' }}</small>
-          </span>
-          <span class="day-appointment-duration">{{ day_appointment.duration_minutes }} хв</span>
-          {% if active_appointment and day_appointment.id == active_appointment.id %}
-            <span class="active-visit-label">Зараз на прийомі</span>
-          {% else %}
-            <span class="status {{ day_appointment.status }}">{{ day_appointment.get_status_display }}</span>
-          {% endif %}
-        </a>
-      {% empty %}
-        <div class="empty">На цей день записів немає.</div>
-      {% endfor %}
-    </div>
-  </section>
+  </div>
 
   <section class="card section-card appointment-photo-section">
     <div class="section-head">
