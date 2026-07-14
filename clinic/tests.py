@@ -191,15 +191,44 @@ class ClinicModelTests(TestCase):
 
         response = self.client.post(
             reverse('doctor_review_appointment', args=[appointment.id]),
-            data={'action': 'approve', 'duration_minutes': 75},
+            data={'action': 'approve', 'duration_minutes': 120},
             follow=True,
         )
 
         appointment.refresh_from_db()
         self.assertEqual(appointment.status, Appointment.STATUS_APPROVED)
         self.assertEqual(appointment.duration_slots, 2)
-        self.assertEqual(appointment.duration_minutes_exact, 75)
-        self.assertContains(response, '75 хв')
+        self.assertEqual(appointment.duration_minutes_exact, 120)
+        self.assertContains(response, '120 хв')
+
+    def test_doctor_duration_must_match_schedule_slot(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+        future_date = timezone.localdate() + timedelta(days=7)
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            patient_email='patient@test.local',
+            date=future_date,
+            time='09:00',
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Некоректна тривалість',
+            status=Appointment.STATUS_PENDING,
+        )
+
+        response = self.client.post(
+            reverse('doctor_review_appointment', args=[appointment.id]),
+            data={'action': 'approve', 'duration_minutes': 75},
+            follow=True,
+        )
+
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, Appointment.STATUS_PENDING)
+        self.assertContains(response, 'Тривалість має бути кратною тривалості слота: 60 хв.')
 
     def test_lunch_break_removes_slots_and_blocks_overlapping_appointment(self):
         visit_date = timezone.localdate()

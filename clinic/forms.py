@@ -176,8 +176,9 @@ class DoctorPatientBookingForm(FormStyleMixin, forms.Form):
         self.slot_minutes = slot_minutes
         super().__init__(*args, **kwargs)
         self.fields['duration_minutes'].initial = slot_minutes
-        self.fields['duration_minutes'].widget.attrs.update({'min': 1, 'step': 1})
-        self.fields['duration_minutes'].help_text = 'Вкажіть точну тривалість прийому, наприклад 35, 50 або 75 хв.'
+        self.fields['duration_minutes'].min_value = slot_minutes
+        self.fields['duration_minutes'].widget.attrs.update({'min': slot_minutes, 'step': slot_minutes})
+        self.fields['duration_minutes'].help_text = f'Один слот цього дня — {slot_minutes} хв. Можна вказати {slot_minutes}, {slot_minutes * 2}, {slot_minutes * 3} тощо.'
         self.fields['patient'].queryset = User.objects.filter(
             profile__role=Profile.ROLE_PATIENT,
         ).select_related('profile').order_by('last_name', 'first_name', 'username')
@@ -193,7 +194,10 @@ class DoctorPatientBookingForm(FormStyleMixin, forms.Form):
         return self.cleaned_data.get('email', '').lower()
 
     def clean_duration_minutes(self):
-        return self.cleaned_data['duration_minutes']
+        value = self.cleaned_data['duration_minutes']
+        if value % self.slot_minutes:
+            raise forms.ValidationError(f'Тривалість має бути кратною тривалості слота: {self.slot_minutes} хв.')
+        return value
 
     def clean(self):
         cleaned_data = super().clean()
@@ -224,11 +228,15 @@ class AppointmentDecisionForm(FormStyleMixin, forms.Form):
         self.slot_minutes = slot_minutes
         super().__init__(*args, **kwargs)
         self.fields['duration_minutes'].initial = slot_minutes
-        self.fields['duration_minutes'].widget.attrs.update({'min': 1, 'step': 1})
-        self.fields['duration_minutes'].help_text = 'Вкажіть точну тривалість прийому в хвилинах.'
+        self.fields['duration_minutes'].min_value = slot_minutes
+        self.fields['duration_minutes'].widget.attrs.update({'min': slot_minutes, 'step': slot_minutes})
+        self.fields['duration_minutes'].help_text = f'Один слот у графіку цього дня — {slot_minutes} хв. Тривалість має бути кратною цьому часу.'
 
     def clean_duration_minutes(self):
-        return self.cleaned_data['duration_minutes']
+        value = self.cleaned_data['duration_minutes']
+        if value % self.slot_minutes:
+            raise forms.ValidationError(f'Тривалість має бути кратною тривалості слота: {self.slot_minutes} хв.')
+        return value
 
 
 class DoctorPatientCardForm(FormStyleMixin, forms.ModelForm):
