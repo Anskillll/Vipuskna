@@ -203,21 +203,23 @@
       {% if canceled %}
         <ul class="simple-list">
           {% for appointment in canceled %}
-            <li>
-              <span>{{ appointment.date|date:'d.m.Y' }} {{ appointment.time|time:'H:i' }} · {{ appointment.doctor.full_name }}</span>
-              <strong>{{ appointment.get_status_display }}</strong>
-            </li>
-            {% if appointment.can_restore %}
-              <li>
-                <span class="muted">Цю заявку ще можна повернути.</span>
-                <strong>
+            <li class="canceled-appointment-item">
+              <div class="canceled-appointment-info">
+                <span>{{ appointment.date|date:'d.m.Y' }} {{ appointment.time|time:'H:i' }} · {{ appointment.doctor.full_name }}</span>
+                {% if appointment.can_restore %}
+                  <small>Цей запис можна відновити</small>
+                {% endif %}
+              </div>
+              <div class="canceled-appointment-actions">
+                <strong>{{ appointment.get_status_display }}</strong>
+                {% if appointment.can_restore %}
                   <form method="post" action="{% url 'restore_appointment' appointment.id %}" onsubmit="return confirm('Відновити цю заявку?');">
                     {% csrf_token %}
                     <button type="submit" class="green">Відновити</button>
                   </form>
-                </strong>
-              </li>
-            {% endif %}
+                {% endif %}
+              </div>
+            </li>
           {% endfor %}
         </ul>
       {% else %}

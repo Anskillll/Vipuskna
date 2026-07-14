@@ -1250,6 +1250,33 @@ th {
   object-fit: cover;
 }
 
+.canceled-appointment-item {
+  align-items: center;
+}
+
+.canceled-appointment-info,
+.canceled-appointment-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.canceled-appointment-info {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.canceled-appointment-info small {
+  color: #15803d;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.canceled-appointment-actions {
+  flex: 0 0 auto;
+}
+
 @media (max-width: 680px) {
   .current-visit-banner,
   .selected-appointment-note,
@@ -1268,6 +1295,12 @@ th {
 
   .patient-records-grid {
     grid-template-columns: 1fr;
+  }
+
+  .canceled-appointment-item,
+  .canceled-appointment-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 
