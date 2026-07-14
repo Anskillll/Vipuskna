@@ -340,6 +340,31 @@ class ClinicModelTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Новини клініки')
         self.assertNotContains(response, 'Увійти через Google')
+        self.assertContains(response, 'Записатися на прийом')
+        self.assertContains(response, 'Переглянути лікарів')
+
+    def test_doctor_home_button_opens_doctor_dashboard(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.get(reverse('home'))
+
+        self.assertContains(response, 'Перейти до кабінету лікаря')
+        self.assertContains(response, reverse('doctor_dashboard'))
+        self.assertNotContains(response, 'Переглянути лікарів')
+
+    def test_admin_home_button_opens_admin_panel(self):
+        User.objects.create_superuser(
+            username='admin@test.local',
+            email='admin@test.local',
+            password='pass12345',
+        )
+        self.client.login(username='admin@test.local', password='pass12345')
+
+        response = self.client.get(reverse('home'))
+
+        self.assertContains(response, 'Перейти до панелі адміністратора')
+        self.assertContains(response, reverse('admin_panel'))
+        self.assertNotContains(response, 'Переглянути лікарів')
 
     def test_home_renders_selected_background_effect(self):
         branding, _ = ClinicSettings.objects.get_or_create(pk=1)
