@@ -1721,6 +1721,80 @@ th {
   margin-top: 20px;
 }
 
+.day-appointments-section {
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.day-appointment-list {
+  display: grid;
+  gap: 8px;
+}
+
+.day-appointment-item {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #dfe5ef;
+  border-radius: 8px;
+  color: #121a2e;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 70px minmax(180px, 1fr) 80px minmax(120px, auto);
+  min-height: 72px;
+  padding: 12px 16px;
+  text-decoration: none;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.day-appointment-item:hover {
+  background: #f1f5ff;
+  border-color: #9badff;
+}
+
+.day-appointment-item.selected {
+  border-color: #6048f4;
+  box-shadow: inset 4px 0 0 #6048f4;
+}
+
+.day-appointment-item.active-now {
+  background: #e9f9ef;
+  border-color: #20a957;
+  box-shadow: inset 4px 0 0 #20a957;
+}
+
+.day-appointment-time {
+  font-size: 18px;
+}
+
+.day-appointment-person {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.day-appointment-person strong,
+.day-appointment-person small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.day-appointment-person small,
+.day-appointment-duration {
+  color: #66758d;
+}
+
+.active-visit-label {
+  background: #19a954;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  justify-self: start;
+  padding: 8px 11px;
+  white-space: nowrap;
+}
+
 .appointment-photo-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1767,5 +1841,16 @@ th {
   .detail-list,
   .appointment-photo-grid {
     grid-template-columns: 1fr;
+  }
+
+  .day-appointment-item {
+    gap: 8px 12px;
+    grid-template-columns: 58px minmax(0, 1fr);
+  }
+
+  .day-appointment-duration,
+  .day-appointment-item > .status,
+  .active-visit-label {
+    grid-column: 2;
   }
 }

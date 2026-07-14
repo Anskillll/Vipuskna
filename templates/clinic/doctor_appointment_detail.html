@@ -55,6 +55,35 @@
     {% endif %}
   </div>
 
+  <section class="card section-card day-appointments-section">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">Записи на {{ appointment.date|date:'d.m.Y' }}</h2>
+        <p class="section-note">Усі заявки та прийоми лікаря на цей день</p>
+      </div>
+      <span class="section-note">{{ day_appointments|length }} запис(ів)</span>
+    </div>
+    <div class="day-appointment-list">
+      {% for day_appointment in day_appointments %}
+        <a class="day-appointment-item{% if day_appointment.id == appointment.id %} selected{% endif %}{% if active_appointment and day_appointment.id == active_appointment.id %} active-now{% endif %}" href="{% url 'doctor_appointment_detail' day_appointment.id %}">
+          <strong class="day-appointment-time">{{ day_appointment.time|time:'H:i' }}</strong>
+          <span class="day-appointment-person">
+            <strong>{{ day_appointment.patient_name }}</strong>
+            <small>{{ day_appointment.service.name|default:'Послугу не обрано' }}</small>
+          </span>
+          <span class="day-appointment-duration">{{ day_appointment.duration_minutes }} хв</span>
+          {% if active_appointment and day_appointment.id == active_appointment.id %}
+            <span class="active-visit-label">Зараз на прийомі</span>
+          {% else %}
+            <span class="status {{ day_appointment.status }}">{{ day_appointment.get_status_display }}</span>
+          {% endif %}
+        </a>
+      {% empty %}
+        <div class="empty">На цей день записів немає.</div>
+      {% endfor %}
+    </div>
+  </section>
+
   <section class="card section-card appointment-photo-section">
     <div class="section-head">
       <h2 class="section-title">Фотографії до заявки</h2>

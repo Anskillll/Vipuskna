@@ -222,6 +222,48 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Детальний опис заявки')
         self.assertContains(response, 'Фотографії до заявки')
 
+    def test_appointment_details_show_day_schedule_and_highlight_active_visit(self):
+        fixed_now = timezone.make_aware(datetime(2026, 7, 15, 10, 30))
+        active = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Активний',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            patient_email='patient@test.local',
+            date=fixed_now.date(),
+            time=time(10, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Поточний прийом',
+            duration_minutes_exact=60,
+            status=Appointment.STATUS_APPROVED,
+        )
+        later = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient_first_name='Наступний',
+            patient_last_name='Пацієнт',
+            patient_phone='+380504444444',
+            date=fixed_now.date(),
+            time=time(12, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Наступна заявка',
+        )
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        with patch('clinic.views.timezone.localtime', return_value=fixed_now):
+            response = self.client.get(reverse('doctor_appointment_detail', args=[later.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Записи на 15.07.2026')
+        self.assertContains(response, active.patient_name)
+        self.assertContains(response, later.patient_name)
+        self.assertContains(response, 'Зараз на прийомі')
+        self.assertContains(response, 'active-now')
+
     def test_doctor_cannot_open_another_doctors_appointment(self):
         other_user = User.objects.create_user(username='other-doctor', password='pass12345')
         Profile.objects.create(user=other_user, role=Profile.ROLE_DOCTOR)

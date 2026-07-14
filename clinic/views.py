@@ -617,6 +617,11 @@ def doctor_appointment_detail(request, appointment_id):
         doctor.appointments.select_related('service', 'patient').prefetch_related('images'),
         pk=appointment_id,
     )
+    day_appointments = doctor.appointments.filter(date=appointment.date).select_related(
+        'service',
+        'patient',
+    ).order_by('time')
+    active_appointment = active_appointment_for_doctor(doctor)
     patient_card, _ = ensure_patient_card_from_appointment(appointment)
     return render(
         request,
@@ -624,6 +629,8 @@ def doctor_appointment_detail(request, appointment_id):
         {
             'doctor': doctor,
             'appointment': appointment,
+            'day_appointments': day_appointments,
+            'active_appointment': active_appointment,
             'patient_card': patient_card,
         },
     )
