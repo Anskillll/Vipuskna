@@ -51,6 +51,42 @@
     <div class="message error">Додайте телефон у профілі. Без нього не можна записатися на прийом.</div>
   {% endif %}
 
+  <section class="card section-card patient-records-section">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">Лікування та рекомендації</h2>
+        <span class="section-note">Інформація, яку для вас додали лікарі.</span>
+      </div>
+    </div>
+    <div class="patient-records-grid">
+      {% for entry in patient_records %}
+        <article class="patient-record-item">
+          <div class="patient-record-head">
+            <span class="record-kind">{{ entry.get_kind_display }}</span>
+            <span class="news-meta">{{ entry.created_at|date:'d.m.Y' }}</span>
+          </div>
+          <h3>{{ entry.title }}</h3>
+          <p class="patient-record-doctor">{{ entry.doctor.full_name }} · {{ entry.doctor.specialization }}</p>
+          <div class="record-entry-text">{{ entry.details|linebreaks }}</div>
+          {% if entry.recommendations %}
+            <div class="record-recommendations"><strong>Рекомендації</strong>{{ entry.recommendations|linebreaks }}</div>
+          {% endif %}
+          {% if entry.images.all %}
+            <div class="patient-record-images">
+              {% for item in entry.images.all %}
+                <a href="{{ item.image.url }}" target="_blank" rel="noopener">
+                  <img src="{{ item.image.url }}" alt="Матеріал від лікаря">
+                </a>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </article>
+      {% empty %}
+        <div class="empty">Лікарі ще не додавали для вас лікування або рекомендацій.</div>
+      {% endfor %}
+    </div>
+  </section>
+
   <section id="pending" class="card section-card">
     <div class="section-head">
       <h2 class="section-title">Мої заявки</h2>

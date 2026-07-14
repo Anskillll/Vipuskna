@@ -18,6 +18,7 @@ from .models import (
     Profile,
     WorkSchedule,
 )
+from .forms import PatientRecordEntryForm
 from .views import active_appointment_for_doctor, appointment_conflicts
 
 
@@ -336,3 +337,43 @@ class ClinicModelTests(TestCase):
         entry = PatientRecordEntry.objects.get(card=card)
         self.assertEqual(entry.doctor, self.doctor)
         self.assertEqual(entry.title, 'Первинний огляд')
+
+    def test_patient_record_form_uses_ukrainian_labels(self):
+        form = PatientRecordEntryForm()
+
+        self.assertEqual(form.fields['kind'].label, 'Тип запису')
+        self.assertEqual(form.fields['title'].label, 'Короткий заголовок')
+        self.assertEqual(form.fields['details'].label, 'Детальна інформація')
+        self.assertEqual(form.fields['recommendations'].label, 'Рекомендації пацієнту')
+
+    def test_patient_sees_treatment_but_not_internal_doctor_note(self):
+        card = DoctorPatientCard.objects.create(
+            doctor=self.doctor,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            patient_email='patient@test.local',
+        )
+        PatientRecordEntry.objects.create(
+            card=card,
+            doctor=self.doctor,
+            kind=PatientRecordEntry.KIND_TREATMENT,
+            title='План лікування',
+            details='Інформація для пацієнта.',
+            recommendations='Виконувати рекомендації лікаря.',
+        )
+        PatientRecordEntry.objects.create(
+            card=card,
+            doctor=self.doctor,
+            kind=PatientRecordEntry.KIND_NOTE,
+            title='Внутрішня нотатка',
+            details='Це бачить лише лікар.',
+        )
+        self.client.login(username='patient@test.local', password='pass12345')
+
+        response = self.client.get(reverse('patient_dashboard'))
+
+        self.assertContains(response, 'План лікування')
+        self.assertContains(response, 'Інформація для пацієнта.')
+        self.assertNotContains(response, 'Внутрішня нотатка')

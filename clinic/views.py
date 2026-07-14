@@ -361,6 +361,15 @@ def patient_dashboard(request):
         .select_related('service', 'doctor__user')
         .order_by('date', 'time')
     )
+    patient_records = (
+        PatientRecordEntry.objects.filter(
+            Q(card__patient=request.user) | Q(appointment__patient=request.user),
+            kind__in=[PatientRecordEntry.KIND_TREATMENT, PatientRecordEntry.KIND_RECOMMENDATION],
+        )
+        .select_related('doctor__user', 'appointment__service')
+        .prefetch_related('images')
+        .distinct()
+    )
     return render(
         request,
         'clinic/patient_dashboard.html',
@@ -370,6 +379,7 @@ def patient_dashboard(request):
             'completed': appointments.filter(status=Appointment.STATUS_COMPLETED),
             'canceled': appointments.filter(status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]),
             'needs_phone': not request.user.profile.phone,
+            'patient_records': patient_records,
         },
     )
 

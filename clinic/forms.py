@@ -232,6 +232,13 @@ class DoctorPatientCardForm(FormStyleMixin, forms.ModelForm):
         widgets = {
             'notes': forms.Textarea(attrs={'rows': 8}),
         }
+        labels = {
+            'patient_first_name': "Ім'я",
+            'patient_last_name': 'Прізвище',
+            'patient_phone': 'Телефон',
+            'patient_email': 'Email',
+            'notes': 'Нотатки лікаря',
+        }
 
 
 class MultipleImageInput(forms.ClearableFileInput):
@@ -268,12 +275,8 @@ class PatientRecordEntryForm(FormStyleMixin, forms.ModelForm):
             'details': 'Детальна інформація',
             'recommendations': 'Рекомендації пацієнту',
         }
-        labels = {
-            'patient_first_name': "Ім'я",
-            'patient_last_name': 'Прізвище',
-            'patient_phone': 'Телефон',
-            'patient_email': 'Email',
-            'notes': 'Нотатки лікаря',
+        help_texts = {
+            'kind': 'Записи типу «Лікування» та «Рекомендації» будуть видимі пацієнту в його кабінеті.',
         }
 
 

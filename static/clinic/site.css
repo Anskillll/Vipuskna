@@ -1208,6 +1208,56 @@ th {
   object-fit: cover;
 }
 
+.patient-records-section {
+  margin-bottom: 20px;
+}
+
+.patient-records-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.patient-record-item {
+  padding: 18px;
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.patient-record-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.patient-record-item h3 {
+  margin: 12px 0 5px;
+  font-size: 20px;
+}
+
+.patient-record-doctor {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.patient-record-images {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.patient-record-images img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
 @media (max-width: 680px) {
   .current-visit-banner,
   .selected-appointment-note,
@@ -1221,6 +1271,10 @@ th {
   }
 
   .record-images {
+    grid-template-columns: 1fr;
+  }
+
+  .patient-records-grid {
     grid-template-columns: 1fr;
   }
 }
