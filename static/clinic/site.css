@@ -888,6 +888,12 @@ th {
   min-height: 40px;
 }
 
+.duration-input-hint {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .status {
   display: inline-flex;
   align-items: center;

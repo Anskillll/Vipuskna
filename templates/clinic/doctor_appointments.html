@@ -27,7 +27,7 @@
               <th>Послуга</th>
               <th>Телефон</th>
               <th>Коли</th>
-              <th>Слоти</th>
+              <th>Тривалість</th>
               <th>Місце</th>
               <th>Причина</th>
               <th>Статус</th>
@@ -48,7 +48,7 @@
                 <td>{{ appointment.service.name|default:'Не обрано' }}</td>
                 <td>{{ appointment.patient_phone }}</td>
                 <td>{{ appointment.date|date:'d.m.Y' }} {{ appointment.time|time:'H:i' }}</td>
-                <td>{{ appointment.duration_slots }}</td>
+                <td>{{ appointment.duration_minutes }} хв</td>
                 <td>{{ appointment.city }}, {{ appointment.address }}</td>
                 <td>{{ appointment.reason }}</td>
                 <td><span class="status {{ appointment.status }}">{{ appointment.get_status_display }}</span></td>
@@ -56,8 +56,9 @@
                   {% if appointment.status == 'pending' %}
                     <form method="post" action="{% url 'doctor_review_appointment' appointment.id %}" class="compact-form" onsubmit="return confirm('Підтвердити цю заявку?');">
                       {% csrf_token %}
-                      <label for="duration_{{ appointment.id }}" class="sr-only">Слотів</label>
-                      <input id="duration_{{ appointment.id }}" type="number" name="duration_slots" min="1" value="{{ appointment.duration_slots }}">
+                      <label for="duration_{{ appointment.id }}" class="sr-only">Тривалість у хвилинах</label>
+                      <input id="duration_{{ appointment.id }}" type="number" name="duration_minutes" min="{{ appointment.slot_minutes }}" step="{{ appointment.slot_minutes }}" value="{{ appointment.duration_minutes }}" title="Крок: {{ appointment.slot_minutes }} хв">
+                      <small class="duration-input-hint">хв · крок {{ appointment.slot_minutes }} хв</small>
                       <input type="hidden" name="action" value="approve">
                       <button type="submit" class="green">Підтвердити</button>
                     </form>

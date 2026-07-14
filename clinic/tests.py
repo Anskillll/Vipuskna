@@ -18,7 +18,7 @@ from .models import (
     Profile,
     WorkSchedule,
 )
-from .forms import PatientRecordEntryForm
+from .forms import BookingReasonForm, PatientRecordEntryForm
 from .views import active_appointment_for_doctor, appointment_conflicts
 
 
@@ -149,6 +149,56 @@ class ClinicModelTests(TestCase):
 
         self.assertEqual(Appointment.objects.count(), 0)
         self.assertContains(response, 'Не можна записатися на минулу дату або час.')
+
+    def test_patient_does_not_choose_appointment_duration(self):
+        self.assertNotIn('duration_slots', BookingReasonForm(doctor=self.doctor).fields)
+        self.client.login(username='patient@test.local', password='pass12345')
+        future_date = timezone.localdate() + timedelta(days=7)
+
+        self.client.post(
+            reverse('booking'),
+            data={
+                'doctor': self.doctor.id,
+                'date': future_date.strftime('%Y-%m-%d'),
+                'time': '09:00',
+                'service': self.service.id,
+                'reason': 'Заявка без вибору тривалості',
+                'duration_slots': 3,
+            },
+        )
+
+        appointment = Appointment.objects.get(reason='Заявка без вибору тривалості')
+        self.assertEqual(appointment.duration_slots, 1)
+
+    def test_doctor_confirms_request_using_minutes(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+        future_date = timezone.localdate() + timedelta(days=7)
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            patient_email='patient@test.local',
+            date=future_date,
+            time='09:00',
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Підтвердження у хвилинах',
+            status=Appointment.STATUS_PENDING,
+        )
+
+        response = self.client.post(
+            reverse('doctor_review_appointment', args=[appointment.id]),
+            data={'action': 'approve', 'duration_minutes': 120},
+            follow=True,
+        )
+
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, Appointment.STATUS_APPROVED)
+        self.assertEqual(appointment.duration_slots, 2)
+        self.assertContains(response, '120 хв')
 
     def test_patient_can_restore_future_canceled_appointment(self):
         self.client.login(username='patient@test.local', password='pass12345')

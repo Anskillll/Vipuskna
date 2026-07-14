@@ -124,12 +124,6 @@ class BookingReasonForm(FormStyleMixin, forms.Form):
         queryset=MedicalService.objects.none(),
         empty_label='Оберіть послугу',
     )
-    duration_slots = forms.IntegerField(
-        label='Кількість слотів',
-        min_value=1,
-        initial=1,
-        help_text='1 слот — це один стандартний проміжок у графіку лікаря. Наприклад, 3 слоти по 20 хв займуть 60 хвилин поспіль.',
-    )
     reason = forms.CharField(
         label='Причина звернення',
         widget=forms.Textarea(attrs={'rows': 4}),
@@ -164,11 +158,10 @@ class DoctorPatientBookingForm(FormStyleMixin, forms.Form):
         queryset=MedicalService.objects.none(),
         empty_label='Оберіть послугу',
     )
-    duration_slots = forms.IntegerField(
-        label='Кількість слотів',
+    duration_minutes = forms.IntegerField(
+        label='Тривалість прийому, хвилин',
         min_value=1,
-        initial=1,
-        help_text='1 слот — це один стандартний проміжок у графіку лікаря. Наприклад, 3 слоти по 20 хв займуть 60 хвилин поспіль.',
+        initial=60,
     )
     first_name = forms.CharField(label="Ім'я", max_length=80, required=False)
     last_name = forms.CharField(label='Прізвище', max_length=80, required=False)
@@ -176,8 +169,13 @@ class DoctorPatientBookingForm(FormStyleMixin, forms.Form):
     email = forms.EmailField(label='Email', required=False)
     reason = forms.CharField(label='Причина звернення', widget=forms.Textarea(attrs={'rows': 4}))
 
-    def __init__(self, *args, doctor=None, **kwargs):
+    def __init__(self, *args, doctor=None, slot_minutes=60, **kwargs):
+        self.slot_minutes = slot_minutes
         super().__init__(*args, **kwargs)
+        self.fields['duration_minutes'].initial = slot_minutes
+        self.fields['duration_minutes'].min_value = slot_minutes
+        self.fields['duration_minutes'].widget.attrs.update({'min': slot_minutes, 'step': slot_minutes})
+        self.fields['duration_minutes'].help_text = f'Крок графіка лікаря — {slot_minutes} хв. Вкажіть {slot_minutes}, {slot_minutes * 2}, {slot_minutes * 3} тощо.'
         self.fields['patient'].queryset = User.objects.filter(
             profile__role=Profile.ROLE_PATIENT,
         ).select_related('profile').order_by('last_name', 'first_name', 'username')
@@ -191,6 +189,12 @@ class DoctorPatientBookingForm(FormStyleMixin, forms.Form):
 
     def clean_email(self):
         return self.cleaned_data.get('email', '').lower()
+
+    def clean_duration_minutes(self):
+        value = self.cleaned_data['duration_minutes']
+        if value % self.slot_minutes:
+            raise forms.ValidationError(f'Тривалість має бути кратною {self.slot_minutes} хв.')
+        return value
 
     def clean(self):
         cleaned_data = super().clean()
@@ -211,12 +215,25 @@ class DoctorPatientBookingForm(FormStyleMixin, forms.Form):
 
 
 class AppointmentDecisionForm(FormStyleMixin, forms.Form):
-    duration_slots = forms.IntegerField(
-        label='Скільки слотів займе прийом',
+    duration_minutes = forms.IntegerField(
+        label='Тривалість прийому, хвилин',
         min_value=1,
-        initial=1,
-        help_text='1 слот — це один стандартний проміжок у вашому графіку. Наприклад, 3 слоти по 20 хв займуть 60 хвилин поспіль.',
+        initial=60,
     )
+
+    def __init__(self, *args, slot_minutes=60, **kwargs):
+        self.slot_minutes = slot_minutes
+        super().__init__(*args, **kwargs)
+        self.fields['duration_minutes'].initial = slot_minutes
+        self.fields['duration_minutes'].min_value = slot_minutes
+        self.fields['duration_minutes'].widget.attrs.update({'min': slot_minutes, 'step': slot_minutes})
+        self.fields['duration_minutes'].help_text = f'Крок вашого графіка — {slot_minutes} хв. Тривалість має бути кратною цьому часу.'
+
+    def clean_duration_minutes(self):
+        value = self.cleaned_data['duration_minutes']
+        if value % self.slot_minutes:
+            raise forms.ValidationError(f'Тривалість має бути кратною {self.slot_minutes} хв.')
+        return value
 
 
 class DoctorPatientCardForm(FormStyleMixin, forms.ModelForm):

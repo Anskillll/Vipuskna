@@ -496,9 +496,9 @@ def booking(request):
         elif not selected_time or selected_time not in available_times:
             messages.error(request, 'Цей час уже недоступний.')
         elif reason_form.is_valid() and schedule:
-            duration_slots = reason_form.cleaned_data['duration_slots']
-            if appointment_conflicts(selected_doctor, selected_date, selected_time, duration_slots):
-                messages.error(request, 'Для такої тривалості недостатньо вільного часу.')
+            duration_slots = 1
+            if appointment_conflicts(selected_doctor, selected_date, selected_time, duration_slots=1):
+                messages.error(request, 'Цей час уже недоступний.')
             else:
                 try:
                     appointment = Appointment.objects.create(
@@ -608,9 +608,11 @@ def doctor_review_appointment(request, appointment_id):
             messages.success(request, 'Заявку відхилено.')
             return redirect('doctor_appointments')
 
-        form = AppointmentDecisionForm(request.POST)
+        schedule = schedule_for_date(doctor, appointment.date)
+        slot_minutes = schedule.slot_minutes if schedule else 60
+        form = AppointmentDecisionForm(request.POST, slot_minutes=slot_minutes)
         if form.is_valid():
-            duration_slots = form.cleaned_data['duration_slots']
+            duration_slots = form.cleaned_data['duration_minutes'] // slot_minutes
             if is_past_appointment(appointment.date, appointment.time):
                 messages.error(request, 'Не можна підтвердити заявку на минулий час.')
             elif appointment_conflicts(
@@ -629,6 +631,9 @@ def doctor_review_appointment(request, appointment_id):
                 ensure_patient_card_from_appointment(appointment)
                 messages.success(request, 'Заявку підтверджено.')
                 return redirect('doctor_appointments')
+        else:
+            error = form.errors.get('duration_minutes')
+            messages.error(request, error[0] if error else 'Перевірте тривалість прийому.')
     return redirect('doctor_appointments')
 
 
@@ -657,12 +662,15 @@ def doctor_book_patient(request):
         selected_date = timezone.localdate()
     selected_time = parse_time(request.GET.get('time'))
     schedule, slots = slots_for_doctor(doctor, selected_date)
-    form = DoctorPatientBookingForm(request.POST or None, doctor=doctor)
+    slot_minutes = schedule.slot_minutes if schedule else 60
+    form = DoctorPatientBookingForm(request.POST or None, doctor=doctor, slot_minutes=slot_minutes)
 
     if request.method == 'POST':
         selected_date = parse_date(request.POST.get('date'))
         selected_time = parse_time(request.POST.get('time'))
         schedule, slots = slots_for_doctor(doctor, selected_date)
+        slot_minutes = schedule.slot_minutes if schedule else 60
+        form = DoctorPatientBookingForm(request.POST, doctor=doctor, slot_minutes=slot_minutes)
         available_times = [slot['time'] for slot in slots if not slot['busy']]
 
         if is_past_appointment(selected_date, selected_time):
@@ -670,7 +678,7 @@ def doctor_book_patient(request):
         elif not selected_time or selected_time not in available_times:
             messages.error(request, 'Цей час уже недоступний.')
         elif form.is_valid() and schedule:
-            duration_slots = form.cleaned_data['duration_slots']
+            duration_slots = form.cleaned_data['duration_minutes'] // slot_minutes
             patient = form.cleaned_data.get('patient') or find_patient_by_contacts(
                 form.cleaned_data.get('email'),
                 form.cleaned_data['phone'],

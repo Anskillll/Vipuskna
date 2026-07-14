@@ -270,10 +270,13 @@ class Appointment(models.Model):
         ).time()
 
     @property
-    def duration_minutes(self):
+    def slot_minutes(self):
         schedule = self.doctor.schedules.filter(weekday=self.date.weekday()).first()
-        slot_minutes = schedule.slot_minutes if schedule else 60
-        return self.duration_slots * slot_minutes
+        return schedule.slot_minutes if schedule else 60
+
+    @property
+    def duration_minutes(self):
+        return self.duration_slots * self.slot_minutes
 
 
 class DoctorPatientCard(models.Model):
