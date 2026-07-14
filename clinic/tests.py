@@ -1,14 +1,17 @@
 from datetime import datetime, time, timedelta
+import tempfile
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
 from .models import (
     Appointment,
+    AppointmentImage,
     ClinicSettings,
     Doctor,
     DoctorPatientCard,
@@ -170,6 +173,76 @@ class ClinicModelTests(TestCase):
         appointment = Appointment.objects.get(reason='Заявка без вибору тривалості')
         self.assertEqual(appointment.duration_slots, 1)
 
+    def test_patient_can_add_photos_to_appointment_request(self):
+        self.client.login(username='patient@test.local', password='pass12345')
+        future_date = timezone.localdate() + timedelta(days=7)
+        image = SimpleUploadedFile(
+            'request.gif',
+            b'GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff!\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;',
+            content_type='image/gif',
+        )
+
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            response = self.client.post(
+                reverse('booking'),
+                data={
+                    'doctor': self.doctor.id,
+                    'date': future_date.strftime('%Y-%m-%d'),
+                    'time': '09:00',
+                    'service': self.service.id,
+                    'reason': 'Заявка з фотографією',
+                    'photos': [image],
+                },
+            )
+
+            appointment = Appointment.objects.get(reason='Заявка з фотографією')
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(AppointmentImage.objects.filter(appointment=appointment).count(), 1)
+
+    def test_doctor_can_open_own_appointment_details(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            patient_email='patient@test.local',
+            date=timezone.localdate() + timedelta(days=7),
+            time='09:00',
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Детальний опис заявки',
+        )
+
+        response = self.client.get(reverse('doctor_appointment_detail', args=[appointment.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Детальний опис заявки')
+        self.assertContains(response, 'Фотографії до заявки')
+
+    def test_doctor_cannot_open_another_doctors_appointment(self):
+        other_user = User.objects.create_user(username='other-doctor', password='pass12345')
+        Profile.objects.create(user=other_user, role=Profile.ROLE_DOCTOR)
+        other_doctor = Doctor.objects.create(user=other_user, specialization='Хірург')
+        appointment = Appointment.objects.create(
+            doctor=other_doctor,
+            patient_first_name='Інший',
+            patient_last_name='Пацієнт',
+            patient_phone='+380503333333',
+            date=timezone.localdate() + timedelta(days=7),
+            time='09:00',
+            city='Київ',
+            address='вул. Тестова, 2',
+            reason='Чужа заявка',
+        )
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.get(reverse('doctor_appointment_detail', args=[appointment.id]))
+
+        self.assertEqual(response.status_code, 404)
+
     def test_doctor_confirms_request_using_minutes(self):
         self.client.login(username='doctor@test.local', password='pass12345')
         future_date = timezone.localdate() + timedelta(days=7)
@@ -300,6 +373,7 @@ class ClinicModelTests(TestCase):
 
     def test_approved_appointment_becomes_completed_after_end_time(self):
         self.client.login(username='patient@test.local', password='pass12345')
+        appointment_start = timezone.localtime() - timedelta(hours=2)
         appointment = Appointment.objects.create(
             doctor=self.doctor,
             service=self.service,
@@ -308,8 +382,8 @@ class ClinicModelTests(TestCase):
             patient_last_name='Пацієнт',
             patient_phone='+380501111111',
             patient_email='patient@test.local',
-            date=timezone.localdate(),
-            time=(timezone.localtime() - timedelta(hours=2)).time().replace(second=0, microsecond=0),
+            date=appointment_start.date(),
+            time=appointment_start.time().replace(second=0, microsecond=0),
             city='Дніпро',
             address='вул. Тестова, 1',
             reason='Перевірка автозавершення',

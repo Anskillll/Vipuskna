@@ -1628,3 +1628,143 @@ th {
     flex-direction: column;
   }
 }
+
+/* Full appointment details for doctors. */
+.appointment-detail-head {
+  align-items: flex-end;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.back-link {
+  color: #52627a;
+  display: inline-block;
+  font-weight: 700;
+  margin-bottom: 12px;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: #3157e8;
+}
+
+.appointment-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.appointment-detail-main,
+.appointment-decision-panel,
+.appointment-photo-section {
+  border-radius: 8px;
+}
+
+.detail-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+}
+
+.detail-list > div {
+  border-bottom: 1px solid #dfe5ef;
+  padding: 14px 12px 14px 0;
+}
+
+.detail-list dt {
+  color: #66758d;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.detail-list dd {
+  color: #121a2e;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.appointment-reason {
+  margin-top: 24px;
+}
+
+.appointment-reason > div {
+  background: #f7f9fc;
+  border: 1px solid #dfe5ef;
+  border-radius: 8px;
+  margin-top: 12px;
+  padding: 16px;
+}
+
+.appointment-reason p {
+  margin: 0;
+}
+
+.appointment-decision-panel {
+  position: sticky;
+  top: 96px;
+}
+
+.appointment-decision-panel form {
+  margin-top: 18px;
+}
+
+.appointment-decision-panel button {
+  width: 100%;
+}
+
+.appointment-photo-section {
+  margin-top: 20px;
+}
+
+.appointment-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.appointment-photo-grid a {
+  background: #eef2f7;
+  border: 1px solid #dfe5ef;
+  border-radius: 8px;
+  display: block;
+  overflow: hidden;
+}
+
+.appointment-photo-grid img {
+  aspect-ratio: 4 / 3;
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 160ms ease;
+  width: 100%;
+}
+
+.appointment-photo-grid a:hover img {
+  transform: scale(1.025);
+}
+
+@media (max-width: 900px) {
+  .appointment-detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .appointment-decision-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 620px) {
+  .appointment-detail-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .detail-list,
+  .appointment-photo-grid {
+    grid-template-columns: 1fr;
+  }
+}

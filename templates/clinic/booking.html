@@ -95,7 +95,7 @@
         {{ selected_schedule.city }}, {{ selected_schedule.address }}<br>
         {{ selected_date|date:'d.m.Y' }} о {{ selected_time|time:'H:i' }}
       </p>
-      <form method="post" onsubmit="return confirm('Надіслати заявку на цей час?');">
+      <form method="post" enctype="multipart/form-data" onsubmit="return confirm('Надіслати заявку на цей час?');">
         {% csrf_token %}
         <input type="hidden" name="doctor" value="{{ selected_doctor.id }}">
         <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">

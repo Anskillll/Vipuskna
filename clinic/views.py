@@ -31,6 +31,7 @@ from .forms import (
 )
 from .models import (
     Appointment,
+    AppointmentImage,
     ClinicSettings,
     Doctor,
     DoctorPatientCard,
@@ -504,7 +505,7 @@ def booking(request):
         selected_doctor = get_object_or_404(Doctor, pk=request.POST.get('doctor'))
         selected_date = parse_date(request.POST.get('date'))
         selected_time = parse_time(request.POST.get('time'))
-        reason_form = BookingReasonForm(request.POST, doctor=selected_doctor)
+        reason_form = BookingReasonForm(request.POST, request.FILES, doctor=selected_doctor)
         schedule, slots = slots_for_doctor(selected_doctor, selected_date)
         available_times = [slot['time'] for slot in slots if not slot['busy']]
 
@@ -534,6 +535,8 @@ def booking(request):
                         duration_slots=duration_slots,
                         status=Appointment.STATUS_PENDING,
                     )
+                    for photo in reason_form.cleaned_data['photos']:
+                        AppointmentImage.objects.create(appointment=appointment, image=photo)
                     ensure_patient_card_from_appointment(appointment)
                     messages.success(request, 'Заявку відправлено лікарю на підтвердження.')
                     return redirect('patient_dashboard')
@@ -602,6 +605,26 @@ def doctor_appointments(request):
         {
             'doctor': doctor,
             'appointments': appointments,
+        },
+    )
+
+
+@doctor_required
+def doctor_appointment_detail(request, appointment_id):
+    refresh_completed_appointments()
+    doctor = request.user.doctor_profile
+    appointment = get_object_or_404(
+        doctor.appointments.select_related('service', 'patient').prefetch_related('images'),
+        pk=appointment_id,
+    )
+    patient_card, _ = ensure_patient_card_from_appointment(appointment)
+    return render(
+        request,
+        'clinic/doctor_appointment_detail.html',
+        {
+            'doctor': doctor,
+            'appointment': appointment,
+            'patient_card': patient_card,
         },
     )
 

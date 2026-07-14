@@ -284,6 +284,19 @@ class Appointment(models.Model):
         return self.duration_minutes_exact or self.duration_slots * self.slot_minutes
 
 
+class AppointmentImage(models.Model):
+    appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='appointment_images/%Y/%m/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Фото до заявки'
+        verbose_name_plural = 'Фото до заявок'
+
+    def __str__(self):
+        return f'Фото до заявки {self.appointment_id}'
+
+
 class DoctorPatientCard(models.Model):
     doctor = models.ForeignKey(
         Doctor,

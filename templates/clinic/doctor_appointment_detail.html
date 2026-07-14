@@ -1,0 +1,73 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Заявка {{ appointment.id }} - MedClinic{% endblock %}
+
+{% block content %}
+  <section class="page-head appointment-detail-head">
+    <div>
+      <a class="back-link" href="{% url 'doctor_appointments' %}">← До заявок і прийомів</a>
+      <h1 class="page-title">Заявка {{ appointment.patient_name }}</h1>
+      <p class="page-subtitle">Повна інформація для лікаря</p>
+    </div>
+    <span class="status {{ appointment.status }}">{{ appointment.get_status_display }}</span>
+  </section>
+
+  <div class="appointment-detail-layout">
+    <section class="card section-card appointment-detail-main">
+      <div class="section-head"><h2 class="section-title">Інформація про прийом</h2></div>
+      <dl class="detail-list">
+        <div><dt>Пацієнт</dt><dd>{{ appointment.patient_name }}</dd></div>
+        <div><dt>Телефон</dt><dd>{{ appointment.patient_phone }}</dd></div>
+        <div><dt>Email</dt><dd>{{ appointment.patient_email|default:'Не вказано' }}</dd></div>
+        <div><dt>Послуга</dt><dd>{{ appointment.service.name|default:'Не обрано' }}</dd></div>
+        <div><dt>Дата і час</dt><dd>{{ appointment.date|date:'d.m.Y' }} о {{ appointment.time|time:'H:i' }}</dd></div>
+        <div><dt>Тривалість</dt><dd>{{ appointment.duration_minutes }} хв</dd></div>
+        <div><dt>Місце</dt><dd>{{ appointment.city }}, {{ appointment.address }}</dd></div>
+      </dl>
+      <div class="appointment-reason">
+        <h2 class="section-title">Причина звернення</h2>
+        <div>{{ appointment.reason|linebreaks }}</div>
+      </div>
+      <div class="actions">
+        <a class="btn secondary" href="{% url 'doctor_patient_card_detail' patient_card.id %}">Відкрити картку пацієнта</a>
+      </div>
+    </section>
+
+    {% if appointment.status == 'pending' %}
+      <aside class="card section-card appointment-decision-panel">
+        <h2 class="section-title">Рішення лікаря</h2>
+        <form method="post" action="{% url 'doctor_review_appointment' appointment.id %}" onsubmit="return confirm('Підтвердити цю заявку?');">
+          {% csrf_token %}
+          <div class="field">
+            <label for="detail_duration">Тривалість прийому, хвилин</label>
+            <input id="detail_duration" type="number" name="duration_minutes" min="{{ appointment.slot_minutes }}" step="{{ appointment.slot_minutes }}" value="{{ appointment.duration_minutes }}">
+            <div class="field-help">Один слот цього дня — {{ appointment.slot_minutes }} хв.</div>
+          </div>
+          <input type="hidden" name="action" value="approve">
+          <button type="submit" class="green">Підтвердити заявку</button>
+        </form>
+        <form method="post" action="{% url 'doctor_review_appointment' appointment.id %}" onsubmit="return confirm('Відхилити цю заявку?');">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="reject">
+          <button type="submit" class="secondary">Відхилити заявку</button>
+        </form>
+      </aside>
+    {% endif %}
+  </div>
+
+  <section class="card section-card appointment-photo-section">
+    <div class="section-head">
+      <h2 class="section-title">Фотографії до заявки</h2>
+      <span class="section-note">{{ appointment.images.all|length }} файл(ів)</span>
+    </div>
+    <div class="appointment-photo-grid">
+      {% for item in appointment.images.all %}
+        <a href="{{ item.image.url }}" target="_blank" rel="noopener">
+          <img src="{{ item.image.url }}" alt="Фото до заявки {{ appointment.id }}">
+        </a>
+      {% empty %}
+        <div class="empty">Пацієнт не додав фотографій до цієї заявки.</div>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

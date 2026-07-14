@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import (
     Appointment,
+    AppointmentImage,
     ClinicSettings,
     Doctor,
     DoctorPatientCard,
@@ -23,6 +24,11 @@ class MedicalServiceInline(admin.TabularInline):
 class WorkScheduleInline(admin.TabularInline):
     model = WorkSchedule
     extra = 1
+
+
+class AppointmentImageInline(admin.TabularInline):
+    model = AppointmentImage
+    extra = 0
 
 
 @admin.register(Profile)
@@ -66,6 +72,7 @@ class AppointmentAdmin(admin.ModelAdmin):
         'patient_phone',
         'doctor__user__last_name',
     )
+    inlines = [AppointmentImageInline]
 
 
 @admin.register(DoctorPatientCard)

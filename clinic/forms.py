@@ -121,6 +121,20 @@ class PatientProfileForm(FormStyleMixin, forms.Form):
         return self.user
 
 
+class MultipleImageInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleImageField(forms.ImageField):
+    widget = MultipleImageInput(attrs={'multiple': True})
+
+    def clean(self, data, initial=None):
+        single_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            return [single_clean(item, initial) for item in data]
+        return [single_clean(data, initial)] if data else []
+
+
 class BookingReasonForm(FormStyleMixin, forms.Form):
     service = forms.ModelChoiceField(
         label='Послуга',
@@ -130,6 +144,11 @@ class BookingReasonForm(FormStyleMixin, forms.Form):
     reason = forms.CharField(
         label='Причина звернення',
         widget=forms.Textarea(attrs={'rows': 4}),
+    )
+    photos = MultipleImageField(
+        label='Фотографії до заявки',
+        required=False,
+        help_text='Можна додати декілька фотографій або знімків одночасно.',
     )
 
     def __init__(self, *args, doctor=None, **kwargs):
@@ -259,20 +278,6 @@ class DoctorPatientCardForm(FormStyleMixin, forms.ModelForm):
             'patient_email': 'Email',
             'notes': 'Нотатки лікаря',
         }
-
-
-class MultipleImageInput(forms.ClearableFileInput):
-    allow_multiple_selected = True
-
-
-class MultipleImageField(forms.ImageField):
-    widget = MultipleImageInput(attrs={'multiple': True})
-
-    def clean(self, data, initial=None):
-        single_clean = super().clean
-        if isinstance(data, (list, tuple)):
-            return [single_clean(item, initial) for item in data]
-        return [single_clean(data, initial)] if data else []
 
 
 class PatientRecordEntryForm(FormStyleMixin, forms.ModelForm):
