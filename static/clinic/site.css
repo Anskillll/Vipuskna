@@ -1663,6 +1663,12 @@ th {
   border-radius: 8px;
 }
 
+.appointment-detail-main-column {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
 .appointment-detail-sidebar {
   display: grid;
   gap: 20px;
@@ -1723,7 +1729,7 @@ th {
 }
 
 .appointment-photo-section {
-  margin-top: 20px;
+  margin-top: 0;
 }
 
 .day-appointments-section {
