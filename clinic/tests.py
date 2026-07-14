@@ -448,6 +448,21 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Новина лікаря')
         self.assertContains(response, 'Галерея')
 
+    def test_long_doctor_service_list_can_be_expanded(self):
+        for index in range(4):
+            MedicalService.objects.create(
+                doctor=self.doctor,
+                name=f'Додаткова послуга {index + 1}',
+                price=600 + index,
+            )
+
+        response = self.client.get(reverse('doctors'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Показати всі послуги')
+        self.assertContains(response, 'class="service-extra" hidden', count=2)
+        self.assertContains(response, 'data-service-toggle')
+
     def test_authenticated_user_can_open_home_without_login_button(self):
         self.client.login(username='patient@test.local', password='pass12345')
 

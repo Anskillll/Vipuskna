@@ -53,13 +53,26 @@
         <div class="section-mini-head">
           <h3>Послуги</h3>
         </div>
-        <ul class="price-list">
+        <ul class="price-list" id="doctor-services-{{ doctor.id }}">
           {% for service in doctor.services.all %}
-            <li><span>{{ service.name }}</span><strong>{{ service.price }} грн</strong></li>
+            <li{% if forloop.counter > 3 %} class="service-extra" hidden{% endif %}><span>{{ service.name }}</span><strong>{{ service.price }} грн</strong></li>
           {% empty %}
             <li><span>Послуги ще не додані</span><strong></strong></li>
           {% endfor %}
         </ul>
+        {% if doctor.services.count > 3 %}
+          <button
+            class="service-list-toggle"
+            type="button"
+            data-service-toggle
+            data-target="doctor-services-{{ doctor.id }}"
+            aria-controls="doctor-services-{{ doctor.id }}"
+            aria-expanded="false"
+          >
+            <span data-toggle-label>Показати всі послуги</span>
+            <span class="service-toggle-chevron" aria-hidden="true">⌄</span>
+          </button>
+        {% endif %}
 
         <div class="actions">
           {% if user.is_authenticated and user.profile.role == 'patient' %}
@@ -73,4 +86,20 @@
       <div class="empty">Лікарів не знайдено.</div>
     {% endfor %}
   </section>
+
+  <script>
+    document.querySelectorAll('[data-service-toggle]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const list = document.getElementById(button.dataset.target);
+        const expanded = button.getAttribute('aria-expanded') !== 'true';
+        list.querySelectorAll('.service-extra').forEach((item) => {
+          item.hidden = !expanded;
+        });
+        button.setAttribute('aria-expanded', String(expanded));
+        button.querySelector('[data-toggle-label]').textContent = expanded
+          ? 'Згорнути послуги'
+          : 'Показати всі послуги';
+      });
+    });
+  </script>
 {% endblock %}

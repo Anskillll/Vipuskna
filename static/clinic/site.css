@@ -850,6 +850,39 @@ button.danger {
   border-bottom: 1px solid var(--line);
 }
 
+.service-list-toggle {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--primary);
+  gap: 8px;
+  justify-content: flex-start;
+  min-height: 38px;
+  padding: 6px 0;
+}
+
+.service-extra[hidden] {
+  display: none;
+}
+
+.service-list-toggle:hover {
+  background: transparent;
+  box-shadow: none;
+  color: var(--accent);
+  transform: none;
+}
+
+.service-toggle-chevron {
+  display: inline-block;
+  font-size: 20px;
+  line-height: 1;
+  transition: transform 160ms ease;
+}
+
+.service-list-toggle[aria-expanded="true"] .service-toggle-chevron {
+  transform: rotate(180deg);
+}
+
 .table-wrap {
   overflow-x: auto;
 }
