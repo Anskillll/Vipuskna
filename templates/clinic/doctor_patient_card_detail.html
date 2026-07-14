@@ -23,11 +23,81 @@
       <h2 class="section-title">Нотатки лікаря</h2>
       <form method="post">
         {% csrf_token %}
+        <input type="hidden" name="action" value="update_card">
         {% include 'clinic/_form_fields.html' with form=form %}
         <button type="submit">Зберегти нотатки</button>
       </form>
     </section>
   </div>
+
+  <section id="new-entry" class="card section-card record-entry-editor">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">Новий запис у картці</h2>
+        <span class="section-note">Додайте інформацію про огляд, лікування, рекомендації та фотографії.</span>
+      </div>
+    </div>
+    {% if selected_appointment %}
+      <div class="selected-appointment-note">
+        <strong>Матеріали поточного прийому</strong>
+        <span>{{ selected_appointment.date|date:'d.m.Y' }} {{ selected_appointment.time|time:'H:i' }} · {{ selected_appointment.service.name|default:'Без послуги' }}</span>
+      </div>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_entry">
+      {% if selected_appointment %}<input type="hidden" name="appointment_id" value="{{ selected_appointment.id }}">{% endif %}
+      {% include 'clinic/_form_fields.html' with form=entry_form %}
+      <button type="submit" class="green">Додати запис до картки</button>
+    </form>
+  </section>
+
+  <section class="card section-card">
+    <div class="section-head">
+      <h2 class="section-title">Розширені записи лікаря</h2>
+      <span class="section-note">{{ record_entries|length }} запис(ів)</span>
+    </div>
+    <div class="record-timeline">
+      {% for entry in record_entries %}
+        <article class="record-entry">
+          <div class="record-entry-head">
+            <div>
+              <span class="record-kind">{{ entry.get_kind_display }}</span>
+              <h3>{{ entry.title }}</h3>
+              <span class="news-meta">{{ entry.created_at|date:'d.m.Y H:i' }}{% if entry.appointment %} · прийом {{ entry.appointment.date|date:'d.m.Y' }}{% endif %}</span>
+            </div>
+            <form method="post" onsubmit="return confirm('Видалити цей запис разом із фотографіями?');">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete_entry">
+              <input type="hidden" name="entry_id" value="{{ entry.id }}">
+              <button type="submit" class="danger">Видалити</button>
+            </form>
+          </div>
+          <div class="record-entry-text">{{ entry.details|linebreaks }}</div>
+          {% if entry.recommendations %}
+            <div class="record-recommendations"><strong>Рекомендації</strong>{{ entry.recommendations|linebreaks }}</div>
+          {% endif %}
+          {% if entry.images.all %}
+            <div class="record-images">
+              {% for item in entry.images.all %}
+                <figure>
+                  <a href="{{ item.image.url }}" target="_blank" rel="noopener"><img src="{{ item.image.url }}" alt="Фото до запису {{ entry.title }}"></a>
+                  <form method="post" onsubmit="return confirm('Видалити цю фотографію?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_image">
+                    <input type="hidden" name="image_id" value="{{ item.id }}">
+                    <button type="submit" class="secondary">Видалити фото</button>
+                  </form>
+                </figure>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </article>
+      {% empty %}
+        <div class="empty">Розширених записів поки немає.</div>
+      {% endfor %}
+    </div>
+  </section>
 
   <section class="card" style="margin-top: 18px;">
     <h2 class="section-title">Історія записів</h2>

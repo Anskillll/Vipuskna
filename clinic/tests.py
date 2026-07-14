@@ -1,4 +1,5 @@
-from datetime import time, timedelta
+from datetime import datetime, time, timedelta
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.db import IntegrityError
@@ -6,8 +7,18 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import Appointment, ClinicSettings, Doctor, MedicalService, NewsPost, Profile, WorkSchedule
-from .views import appointment_conflicts
+from .models import (
+    Appointment,
+    ClinicSettings,
+    Doctor,
+    DoctorPatientCard,
+    MedicalService,
+    NewsPost,
+    PatientRecordEntry,
+    Profile,
+    WorkSchedule,
+)
+from .views import active_appointment_for_doctor, appointment_conflicts
 
 
 class ClinicModelTests(TestCase):
@@ -245,3 +256,83 @@ class ClinicModelTests(TestCase):
         self.assertRedirects(response, reverse('doctor_news'))
         post = NewsPost.objects.get(title='Порада лікаря')
         self.assertEqual(post.doctor, self.doctor)
+
+    def test_doctor_can_preview_current_visit_banner(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            patient_email='patient@test.local',
+            date=timezone.localdate() + timedelta(days=1),
+            time='09:00',
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Перевірка активного прийому',
+            status=Appointment.STATUS_APPROVED,
+            approved_at=timezone.now(),
+        )
+
+        response = self.client.get(reverse('doctor_dashboard'), {'preview_current': appointment.id})
+
+        self.assertContains(response, 'Тестовий перегляд')
+        self.assertContains(response, 'Зараз працюєте з клієнтом')
+        self.assertContains(response, 'Відкрити прийом і додати матеріали')
+
+    def test_active_appointment_is_detected_by_start_and_end_time(self):
+        fixed_now = timezone.make_aware(datetime(2026, 7, 14, 10, 10))
+        self.schedule.weekday = fixed_now.date().weekday()
+        self.schedule.slot_minutes = 20
+        self.schedule.save(update_fields=['weekday', 'slot_minutes'])
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            patient_email='patient@test.local',
+            date=fixed_now.date(),
+            time='10:00',
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Перевірка визначення активного часу',
+            duration_slots=2,
+            status=Appointment.STATUS_APPROVED,
+            approved_at=fixed_now,
+        )
+
+        with patch('clinic.views.timezone.localtime', return_value=fixed_now):
+            active = active_appointment_for_doctor(self.doctor)
+
+        self.assertEqual(active, appointment)
+
+    def test_doctor_can_add_extended_patient_record(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+        card = DoctorPatientCard.objects.create(
+            doctor=self.doctor,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            patient_email='patient@test.local',
+        )
+
+        response = self.client.post(
+            reverse('doctor_patient_card_detail', args=[card.id]),
+            data={
+                'action': 'add_entry',
+                'kind': PatientRecordEntry.KIND_EXAMINATION,
+                'title': 'Первинний огляд',
+                'details': 'Стан пацієнта та результати огляду.',
+                'recommendations': 'Повторний огляд через місяць.',
+            },
+        )
+
+        self.assertRedirects(response, reverse('doctor_patient_card_detail', args=[card.id]))
+        entry = PatientRecordEntry.objects.get(card=card)
+        self.assertEqual(entry.doctor, self.doctor)
+        self.assertEqual(entry.title, 'Первинний огляд')

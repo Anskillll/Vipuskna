@@ -19,6 +19,23 @@
     <a class="page-tab" href="{% url 'doctor_news' %}">Мої новини</a>
   </nav>
 
+  {% if current_appointment and current_card %}
+    <section class="current-visit-banner{% if current_is_preview %} preview{% endif %}">
+      <div>
+        <span class="current-visit-label">{% if current_is_preview %}Тестовий перегляд{% else %}Прийом триває зараз{% endif %}</span>
+        <h2>Зараз працюєте з клієнтом {{ current_appointment.patient_name }}</h2>
+        <p>
+          {{ current_appointment.service.name|default:'Послугу не вказано' }} ·
+          {{ current_appointment.time|time:'H:i' }}–{{ current_appointment.end_time|time:'H:i' }} ·
+          {{ current_appointment.duration_minutes }} хв
+        </p>
+      </div>
+      <a class="btn current-visit-button" href="{% url 'doctor_patient_card_detail' current_card.id %}?appointment={{ current_appointment.id }}#new-entry">
+        Відкрити прийом і додати матеріали
+      </a>
+    </section>
+  {% endif %}
+
   <section class="overview-grid">
     <article class="overview-card">
       <span class="overview-label">Нові заявки</span>
@@ -105,6 +122,11 @@
             </li>
           {% endfor %}
         </ul>
+        {% if not current_appointment %}
+          <div class="actions preview-current-action">
+            <a class="btn secondary" href="{% url 'doctor_dashboard' %}?preview_current={{ next_appointments.0.id }}">Перевірити зелений блок</a>
+          </div>
+        {% endif %}
       {% else %}
         <div class="empty">Найближчих прийомів поки немає.</div>
       {% endif %}

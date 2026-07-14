@@ -1061,6 +1061,170 @@ th {
   }
 }
 
+.current-visit-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 22px;
+  padding: 22px 24px;
+  border: 1px solid #86efac;
+  border-radius: 8px;
+  background: #dcfce7;
+  box-shadow: 0 16px 34px rgba(22, 163, 74, 0.14);
+}
+
+.current-visit-banner.preview {
+  border-style: dashed;
+}
+
+.current-visit-label {
+  display: inline-block;
+  margin-bottom: 7px;
+  color: #15803d;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.current-visit-banner h2 {
+  margin: 0 0 6px;
+  color: #14532d;
+  font-size: 22px;
+}
+
+.current-visit-banner p {
+  margin: 0;
+  color: #166534;
+}
+
+.current-visit-button,
+.current-visit-button:hover {
+  flex: 0 0 auto;
+  background: #16a34a;
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(22, 163, 74, 0.22);
+}
+
+.preview-current-action {
+  margin-top: 14px;
+}
+
+.record-entry-editor {
+  margin-top: 20px;
+}
+
+.selected-appointment-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border-left: 4px solid #22c55e;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.record-timeline {
+  display: grid;
+  gap: 18px;
+}
+
+.record-entry {
+  padding: 20px;
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.record-entry-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.record-entry-head h3 {
+  margin: 6px 0;
+  font-size: 20px;
+}
+
+.record-kind {
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: #e8eef7;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.record-entry-text,
+.record-recommendations {
+  color: #334155;
+  line-height: 1.65;
+}
+
+.record-entry-text p,
+.record-recommendations p {
+  margin: 8px 0 0;
+}
+
+.record-recommendations {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-left: 4px solid #3b82f6;
+  background: #eff6ff;
+}
+
+.record-recommendations > strong {
+  display: block;
+  color: #1e40af;
+}
+
+.record-images {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.record-images figure {
+  margin: 0;
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.record-images img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+@media (max-width: 680px) {
+  .current-visit-banner,
+  .selected-appointment-note,
+  .record-entry-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .current-visit-button {
+    width: 100%;
+  }
+
+  .record-images {
+    grid-template-columns: 1fr;
+  }
+}
+
 .brand-logo {
   width: 40px;
   height: 40px;

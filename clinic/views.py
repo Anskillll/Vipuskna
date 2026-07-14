@@ -22,6 +22,7 @@ from .forms import (
     EmailForm,
     GalleryImageForm,
     NewsPostForm,
+    PatientRecordEntryForm,
     PatientProfileForm,
     ServiceForm,
     UsernameLoginForm,
@@ -34,6 +35,8 @@ from .models import (
     DoctorPatientCard,
     GalleryImage,
     NewsPost,
+    PatientRecordEntry,
+    PatientRecordImage,
     Profile,
     WorkSchedule,
 )
@@ -199,6 +202,20 @@ def slots_for_doctor(doctor, selected_date):
 def appointment_finished(appointment):
     visit_end = timezone.make_aware(datetime.combine(appointment.date, appointment.end_time))
     return visit_end <= timezone.localtime()
+
+
+def active_appointment_for_doctor(doctor):
+    now = timezone.localtime()
+    appointments = doctor.appointments.filter(
+        date=now.date(),
+        status=Appointment.STATUS_APPROVED,
+    ).select_related('service', 'patient').order_by('time')
+    for appointment in appointments:
+        start = timezone.make_aware(datetime.combine(appointment.date, appointment.time))
+        end = timezone.make_aware(datetime.combine(appointment.date, appointment.end_time))
+        if start <= now < end:
+            return appointment
+    return None
 
 
 def refresh_completed_appointments():
@@ -523,6 +540,18 @@ def doctor_dashboard(request):
     appointments = doctor.appointments.exclude(
         status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]
     )
+    current_appointment = active_appointment_for_doctor(doctor)
+    current_is_preview = False
+    if not current_appointment and request.GET.get('preview_current'):
+        current_appointment = doctor.appointments.filter(
+            pk=request.GET.get('preview_current'),
+            status=Appointment.STATUS_APPROVED,
+        ).select_related('service', 'patient').first()
+        current_is_preview = current_appointment is not None
+    current_card = None
+    if current_appointment:
+        current_card, _ = ensure_patient_card_from_appointment(current_appointment)
+    next_appointments = appointments.filter(status=Appointment.STATUS_APPROVED).order_by('date', 'time')[:5]
     return render(
         request,
         'clinic/doctor_dashboard.html',
@@ -531,7 +560,10 @@ def doctor_dashboard(request):
             'appointments_count': appointments.count(),
             'pending_count': appointments.filter(status=Appointment.STATUS_PENDING).count(),
             'patient_cards_count': doctor.patient_cards.count(),
-            'next_appointments': appointments.filter(status=Appointment.STATUS_APPROVED).order_by('date', 'time')[:5],
+            'next_appointments': next_appointments,
+            'current_appointment': current_appointment,
+            'current_card': current_card,
+            'current_is_preview': current_is_preview,
         },
     )
 
@@ -719,10 +751,51 @@ def doctor_patient_card_detail(request, card_id):
     doctor = request.user.doctor_profile
     sync_patient_cards_for_doctor(doctor)
     card = get_object_or_404(DoctorPatientCard, pk=card_id, doctor=doctor)
-    form = DoctorPatientCardForm(request.POST or None, instance=card)
-    if request.method == 'POST' and form.is_valid():
+    action = request.POST.get('action') if request.method == 'POST' else None
+    form = DoctorPatientCardForm(request.POST if action == 'update_card' else None, instance=card)
+    entry_form = PatientRecordEntryForm(
+        request.POST if action == 'add_entry' else None,
+        request.FILES if action == 'add_entry' else None,
+    )
+
+    if action == 'update_card' and form.is_valid():
         form.save()
         messages.success(request, 'Картку пацієнта оновлено.')
+        return redirect('doctor_patient_card_detail', card_id=card.id)
+
+    if action == 'add_entry' and entry_form.is_valid():
+        appointment = None
+        if request.POST.get('appointment_id'):
+            appointment = get_object_or_404(
+                doctor.appointments,
+                pk=request.POST.get('appointment_id'),
+                patient_phone=card.patient_phone,
+            )
+        entry = entry_form.save(commit=False)
+        entry.card = card
+        entry.doctor = doctor
+        entry.appointment = appointment
+        entry.save()
+        for photo in entry_form.cleaned_data['photos']:
+            PatientRecordImage.objects.create(entry=entry, image=photo)
+        messages.success(request, 'Новий запис додано до картки пацієнта.')
+        return redirect('doctor_patient_card_detail', card_id=card.id)
+
+    if action == 'delete_entry':
+        entry = get_object_or_404(card.record_entries, pk=request.POST.get('entry_id'), doctor=doctor)
+        entry.delete()
+        messages.success(request, 'Запис із картки видалено.')
+        return redirect('doctor_patient_card_detail', card_id=card.id)
+
+    if action == 'delete_image':
+        image = get_object_or_404(
+            PatientRecordImage,
+            pk=request.POST.get('image_id'),
+            entry__card=card,
+            entry__doctor=doctor,
+        )
+        image.delete()
+        messages.success(request, 'Фотографію видалено.')
         return redirect('doctor_patient_card_detail', card_id=card.id)
 
     appointments = doctor.appointments.filter(patient_phone=card.patient_phone).select_related('service').order_by('-date', '-time')
@@ -730,6 +803,9 @@ def doctor_patient_card_detail(request, card_id):
     last_visit = appointments.filter(status=Appointment.STATUS_COMPLETED).first()
     first_visit = appointments.last()
     next_visit = appointments.filter(status__in=[Appointment.STATUS_PENDING, Appointment.STATUS_APPROVED]).order_by('date', 'time').first()
+    selected_appointment = None
+    if request.GET.get('appointment'):
+        selected_appointment = appointments.filter(pk=request.GET.get('appointment')).first()
 
     return render(
         request,
@@ -738,6 +814,9 @@ def doctor_patient_card_detail(request, card_id):
             'doctor': doctor,
             'card': card,
             'form': form,
+            'entry_form': entry_form,
+            'record_entries': card.record_entries.select_related('appointment__service').prefetch_related('images'),
+            'selected_appointment': selected_appointment,
             'appointments': appointments,
             'completed_visits': completed_visits,
             'last_visit': last_visit,

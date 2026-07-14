@@ -9,6 +9,7 @@ from .models import (
     GalleryImage,
     MedicalService,
     NewsPost,
+    PatientRecordEntry,
     Profile,
     WorkSchedule,
 )
@@ -230,6 +231,42 @@ class DoctorPatientCardForm(FormStyleMixin, forms.ModelForm):
         ]
         widgets = {
             'notes': forms.Textarea(attrs={'rows': 8}),
+        }
+
+
+class MultipleImageInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleImageField(forms.ImageField):
+    widget = MultipleImageInput(attrs={'multiple': True})
+
+    def clean(self, data, initial=None):
+        single_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            return [single_clean(item, initial) for item in data]
+        return [single_clean(data, initial)] if data else []
+
+
+class PatientRecordEntryForm(FormStyleMixin, forms.ModelForm):
+    photos = MultipleImageField(
+        label='Фотографії та знімки',
+        required=False,
+        help_text='Можна вибрати одразу декілька файлів.',
+    )
+
+    class Meta:
+        model = PatientRecordEntry
+        fields = ['kind', 'title', 'details', 'recommendations']
+        widgets = {
+            'details': forms.Textarea(attrs={'rows': 6}),
+            'recommendations': forms.Textarea(attrs={'rows': 4}),
+        }
+        labels = {
+            'kind': 'Тип запису',
+            'title': 'Короткий заголовок',
+            'details': 'Детальна інформація',
+            'recommendations': 'Рекомендації пацієнту',
         }
         labels = {
             'patient_first_name': "Ім'я",

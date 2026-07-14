@@ -8,6 +8,8 @@ from .models import (
     GalleryImage,
     MedicalService,
     NewsPost,
+    PatientRecordEntry,
+    PatientRecordImage,
     Profile,
     WorkSchedule,
 )
@@ -95,3 +97,16 @@ class NewsPostAdmin(admin.ModelAdmin):
 class GalleryImageAdmin(admin.ModelAdmin):
     list_display = ('title', 'is_published', 'created_at')
     list_filter = ('is_published',)
+
+
+class PatientRecordImageInline(admin.TabularInline):
+    model = PatientRecordImage
+    extra = 0
+
+
+@admin.register(PatientRecordEntry)
+class PatientRecordEntryAdmin(admin.ModelAdmin):
+    list_display = ('title', 'card', 'doctor', 'kind', 'created_at')
+    list_filter = ('kind', 'doctor')
+    search_fields = ('title', 'details', 'card__patient_first_name', 'card__patient_last_name')
+    inlines = [PatientRecordImageInline]

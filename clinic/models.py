@@ -315,6 +315,56 @@ class DoctorPatientCard(models.Model):
         return f'{self.patient_first_name} {self.patient_last_name}'.strip()
 
 
+class PatientRecordEntry(models.Model):
+    KIND_NOTE = 'note'
+    KIND_EXAMINATION = 'examination'
+    KIND_TREATMENT = 'treatment'
+    KIND_RECOMMENDATION = 'recommendation'
+    KIND_CHOICES = [
+        (KIND_NOTE, 'Нотатка'),
+        (KIND_EXAMINATION, 'Огляд'),
+        (KIND_TREATMENT, 'Лікування'),
+        (KIND_RECOMMENDATION, 'Рекомендації'),
+    ]
+
+    card = models.ForeignKey(DoctorPatientCard, on_delete=models.CASCADE, related_name='record_entries')
+    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name='patient_record_entries')
+    appointment = models.ForeignKey(
+        Appointment,
+        on_delete=models.SET_NULL,
+        related_name='record_entries',
+        null=True,
+        blank=True,
+    )
+    kind = models.CharField(max_length=24, choices=KIND_CHOICES, default=KIND_NOTE)
+    title = models.CharField(max_length=180)
+    details = models.TextField()
+    recommendations = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Запис у картці пацієнта'
+        verbose_name_plural = 'Записи у картках пацієнтів'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.card.full_name}: {self.title}'
+
+
+class PatientRecordImage(models.Model):
+    entry = models.ForeignKey(PatientRecordEntry, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='patient_records/%Y/%m/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Фото медичного запису'
+        verbose_name_plural = 'Фото медичних записів'
+
+    def __str__(self):
+        return f'Фото до запису {self.entry_id}'
+
+
 class ClinicSettings(models.Model):
     EFFECT_NONE = 'none'
     EFFECT_TEETH = 'teeth'
