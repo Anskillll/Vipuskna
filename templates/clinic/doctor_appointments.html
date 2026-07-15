@@ -27,9 +27,22 @@
         </div>
         <div class="appointment-summary-list">
           {% for appointment in day.list %}
-            <article class="appointment-summary-row">
+            <article class="appointment-summary-row appointment-kind-{{ appointment.status }}">
               <time datetime="{{ appointment.date|date:'Y-m-d' }}T{{ appointment.time|time:'H:i' }}">{{ appointment.time|time:'H:i' }}</time>
-              <strong>{{ appointment.patient_name }}</strong>
+              <div class="appointment-summary-person">
+                <strong>{{ appointment.patient_name }}</strong>
+                {% if appointment.status == 'pending' %}
+                  <span class="appointment-kind-label">Заявка очікує</span>
+                {% elif appointment.status == 'approved' %}
+                  <span class="appointment-kind-label">Підтверджений прийом</span>
+                {% elif appointment.status == 'completed' %}
+                  <span class="appointment-kind-label">Завершений прийом</span>
+                {% elif appointment.status == 'canceled' %}
+                  <span class="appointment-kind-label">Прийом скасовано</span>
+                {% else %}
+                  <span class="appointment-kind-label">Заявку відхилено</span>
+                {% endif %}
+              </div>
               <span>{{ appointment.service.name|default:'Послугу не обрано' }}</span>
               <div class="appointment-row-actions">
                 <a class="btn secondary" href="{% url 'doctor_appointment_detail' appointment.id %}">Детальніше</a>

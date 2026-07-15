@@ -955,6 +955,77 @@ th {
   padding: 12px 0;
 }
 
+.appointment-summary-person {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.appointment-summary-person strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.appointment-kind-label {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 6px 9px;
+  white-space: nowrap;
+}
+
+.appointment-summary-row.appointment-kind-pending {
+  background: #fff9e9;
+  border-left: 4px solid #d99b16;
+  padding-left: 14px;
+}
+
+.appointment-kind-pending .appointment-kind-label {
+  background: #ffedb8;
+  color: #805b00;
+}
+
+.appointment-summary-row.appointment-kind-approved {
+  background: #eefaf2;
+  border-left: 4px solid #18a957;
+  padding-left: 14px;
+}
+
+.appointment-kind-approved .appointment-kind-label {
+  background: #ccefd8;
+  color: #116b39;
+}
+
+.appointment-summary-row.appointment-kind-completed {
+  background: #f3f6fa;
+  border-left: 4px solid #718096;
+  padding-left: 14px;
+}
+
+.appointment-kind-completed .appointment-kind-label {
+  background: #e1e7ef;
+  color: #46556a;
+}
+
+.appointment-summary-row.appointment-kind-canceled,
+.appointment-summary-row.appointment-kind-rejected {
+  background: #fff2f2;
+  border-left: 4px solid #dc4242;
+  padding-left: 14px;
+}
+
+.appointment-kind-canceled .appointment-kind-label,
+.appointment-kind-rejected .appointment-kind-label {
+  background: #ffdada;
+  color: #9e2525;
+}
+
 .appointment-summary-row:last-child {
   border-bottom: 0;
   padding-bottom: 0;

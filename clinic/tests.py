@@ -236,6 +236,7 @@ class ClinicModelTests(TestCase):
             city='Приховане місто',
             address='Прихована адреса',
             reason='Прихована причина',
+            status=Appointment.STATUS_APPROVED,
         )
         earlier = Appointment.objects.create(
             doctor=self.doctor,
@@ -273,6 +274,10 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, first_date.strftime('%d.%m.%Y'))
         self.assertContains(response, second_date.strftime('%d.%m.%Y'))
         self.assertContains(response, 'Відкрити картку', count=3)
+        self.assertContains(response, 'Заявка очікує')
+        self.assertContains(response, 'Підтверджений прийом')
+        self.assertContains(response, 'appointment-kind-pending')
+        self.assertContains(response, 'appointment-kind-approved')
         self.assertNotContains(response, 'Прихована причина')
         self.assertNotContains(response, 'Прихована адреса')
         self.assertNotContains(response, '+380509999991')
