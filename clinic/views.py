@@ -50,6 +50,16 @@ BLOCKING_APPOINTMENT_STATUSES = [
     Appointment.STATUS_COMPLETED,
 ]
 
+UKRAINIAN_WEEKDAYS = (
+    'Понеділок',
+    'Вівторок',
+    'Середа',
+    'Четвер',
+    "П'ятниця",
+    'Субота',
+    'Неділя',
+)
+
 
 def user_role(user):
     if not user.is_authenticated:
@@ -599,6 +609,7 @@ def doctor_appointments(request):
     cards_by_phone = {card.patient_phone: card for card in doctor.patient_cards.all()}
     for appointment in appointments:
         appointment.patient_card = cards_by_phone.get(appointment.patient_phone)
+        appointment.weekday_name = UKRAINIAN_WEEKDAYS[appointment.date.weekday()]
     return render(
         request,
         'clinic/doctor_appointments.html',
@@ -617,6 +628,7 @@ def doctor_appointment_detail(request, appointment_id):
         doctor.appointments.select_related('service', 'patient').prefetch_related('images'),
         pk=appointment_id,
     )
+    appointment.weekday_name = UKRAINIAN_WEEKDAYS[appointment.date.weekday()]
     day_appointments = doctor.appointments.filter(date=appointment.date).select_related(
         'service',
         'patient',
