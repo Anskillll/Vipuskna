@@ -1,4 +1,5 @@
 {% extends 'clinic/base.html' %}
+{% load clinic_tags %}
 
 {% block title %}Заявка {{ appointment.id }} - MedClinic{% endblock %}
 
@@ -85,7 +86,7 @@
       <section class="card section-card day-appointments-section">
         <div class="section-head day-appointments-head">
           <div>
-            <h2 class="section-title">Записи на {{ appointment.date|date:'d.m.Y' }}</h2>
+            <h2 class="section-title">Записи на {{ appointment.date|uk_weekday }}, {{ appointment.date|date:'d.m.Y' }}</h2>
             <p class="section-note">Усі прийоми цього дня</p>
           </div>
           <span class="section-note">{{ day_appointments|length }}</span>

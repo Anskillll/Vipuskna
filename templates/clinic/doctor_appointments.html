@@ -1,4 +1,5 @@
 {% extends 'clinic/base.html' %}
+{% load clinic_tags %}
 
 {% block title %}Заявки та прийоми - MedClinic{% endblock %}
 
@@ -22,7 +23,7 @@
     {% for day in appointment_days %}
       <section class="card section-card appointment-day-group">
         <div class="appointment-day-head">
-          <h2>{{ day.grouper|date:'d.m.Y' }}</h2>
+          <h2>{{ day.grouper|uk_weekday }}, {{ day.grouper|date:'d.m.Y' }}</h2>
           <span>{{ day.list|length }} запис(ів)</span>
         </div>
         <div class="appointment-summary-list">

@@ -265,8 +265,11 @@ class ClinicModelTests(TestCase):
 
         response = self.client.get(reverse('doctor_appointments'))
         appointment_ids = [item.id for item in response.context['appointments']]
+        weekday_names = ('Понеділок', 'Вівторок', 'Середа', 'Четвер', "П'ятниця", 'Субота', 'Неділя')
 
         self.assertEqual(appointment_ids, [earlier.id, later.id, next_day.id])
+        self.assertContains(response, weekday_names[first_date.weekday()])
+        self.assertContains(response, weekday_names[second_date.weekday()])
         self.assertContains(response, first_date.strftime('%d.%m.%Y'))
         self.assertContains(response, second_date.strftime('%d.%m.%Y'))
         self.assertContains(response, 'Відкрити картку', count=3)
@@ -310,7 +313,7 @@ class ClinicModelTests(TestCase):
             response = self.client.get(reverse('doctor_appointment_detail', args=[later.id]))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Записи на 15.07.2026')
+        self.assertContains(response, 'Записи на Середа, 15.07.2026')
         self.assertContains(response, active.patient_name)
         self.assertContains(response, later.patient_name)
         self.assertContains(response, 'Зараз на прийомі')
