@@ -6,7 +6,7 @@
   <section class="page-head">
     <div>
       <h1 class="page-title">Заявки та прийоми</h1>
-      <p class="page-subtitle">Усі актуальні записи лікаря в одному місці.</p>
+      <p class="page-subtitle">Записи згруповані за днями та впорядковані за часом.</p>
     </div>
   </section>
 
@@ -17,71 +17,34 @@
     <a class="page-tab" href="{% url 'doctor_schedule' %}">Графік</a>
   </nav>
 
-  <section class="card section-card">
-    {% if appointments %}
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Пацієнт</th>
-              <th>Послуга</th>
-              <th>Телефон</th>
-              <th>Коли</th>
-              <th>Тривалість</th>
-              <th>Місце</th>
-              <th>Причина</th>
-              <th>Статус</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for appointment in appointments %}
-              <tr>
-                <td>
-                  <strong>{{ appointment.patient_name }}</strong><br>
-                  {% if appointment.patient_card %}
-                    <a href="{% url 'doctor_patient_card_detail' appointment.patient_card.id %}" class="muted">Відкрити картку</a>
-                  {% else %}
-                    <a href="{% url 'doctor_patient_cards' %}" class="muted">Перейти до карток</a>
-                  {% endif %}
-                </td>
-                <td>{{ appointment.service.name|default:'Не обрано' }}</td>
-                <td>{{ appointment.patient_phone }}</td>
-                <td>{{ appointment.date|date:'d.m.Y' }} {{ appointment.time|time:'H:i' }}</td>
-                <td>{{ appointment.duration_minutes }} хв</td>
-                <td>{{ appointment.city }}, {{ appointment.address }}</td>
-                <td>{{ appointment.reason }}</td>
-                <td><span class="status {{ appointment.status }}">{{ appointment.get_status_display }}</span></td>
-                <td class="table-actions">
-                  <a class="btn secondary" href="{% url 'doctor_appointment_detail' appointment.id %}">Детальніше</a>
-                  {% if appointment.status == 'pending' %}
-                    <form method="post" action="{% url 'doctor_review_appointment' appointment.id %}" class="compact-form" onsubmit="return confirm('Підтвердити цю заявку?');">
-                      {% csrf_token %}
-                      <label for="duration_{{ appointment.id }}" class="sr-only">Тривалість у хвилинах</label>
-                      <input id="duration_{{ appointment.id }}" type="number" name="duration_minutes" min="{{ appointment.slot_minutes }}" step="{{ appointment.slot_minutes }}" value="{{ appointment.duration_minutes }}" title="Один слот: {{ appointment.slot_minutes }} хв">
-                      <small class="duration-input-hint">хв · слот {{ appointment.slot_minutes }} хв</small>
-                      <input type="hidden" name="action" value="approve">
-                      <button type="submit" class="green">Підтвердити</button>
-                    </form>
-                    <form method="post" action="{% url 'doctor_review_appointment' appointment.id %}" class="compact-form" onsubmit="return confirm('Відхилити цю заявку?');">
-                      {% csrf_token %}
-                      <input type="hidden" name="action" value="reject">
-                      <button type="submit" class="secondary">Відхилити</button>
-                    </form>
-                  {% elif appointment.status != 'canceled' and appointment.status != 'rejected' and appointment.status != 'completed' %}
-                    <form method="post" action="{% url 'doctor_cancel_appointment' appointment.id %}" class="compact-form" onsubmit="return confirm('Скасувати цей запис?');">
-                      {% csrf_token %}
-                      <button type="submit" class="danger">Скасувати</button>
-                    </form>
-                  {% endif %}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <div class="empty">Поки що немає заявок або прийомів.</div>
-    {% endif %}
-  </section>
+  {% regroup appointments by date as appointment_days %}
+  <div class="appointments-by-day">
+    {% for day in appointment_days %}
+      <section class="card section-card appointment-day-group">
+        <div class="appointment-day-head">
+          <h2>{{ day.grouper|date:'d.m.Y' }}</h2>
+          <span>{{ day.list|length }} запис(ів)</span>
+        </div>
+        <div class="appointment-summary-list">
+          {% for appointment in day.list %}
+            <article class="appointment-summary-row">
+              <time datetime="{{ appointment.date|date:'Y-m-d' }}T{{ appointment.time|time:'H:i' }}">{{ appointment.time|time:'H:i' }}</time>
+              <strong>{{ appointment.patient_name }}</strong>
+              <span>{{ appointment.service.name|default:'Послугу не обрано' }}</span>
+              <div class="appointment-row-actions">
+                <a class="btn secondary" href="{% url 'doctor_appointment_detail' appointment.id %}">Детальніше</a>
+                {% if appointment.patient_card %}
+                  <a class="btn" href="{% url 'doctor_patient_card_detail' appointment.patient_card.id %}">Відкрити картку</a>
+                {% else %}
+                  <a class="btn" href="{% url 'doctor_patient_cards' %}">Відкрити картку</a>
+                {% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+    {% empty %}
+      <div class="card section-card empty">Поки що немає заявок або прийомів.</div>
+    {% endfor %}
+  </div>
 {% endblock %}

@@ -913,6 +913,77 @@ th {
   min-width: 160px;
 }
 
+.appointments-by-day {
+  display: grid;
+  gap: 18px;
+}
+
+.appointment-day-group {
+  border-radius: 8px;
+}
+
+.appointment-day-head {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+}
+
+.appointment-day-head h2 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.appointment-day-head span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.appointment-summary-list {
+  display: grid;
+}
+
+.appointment-summary-row {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 76px minmax(160px, 0.8fr) minmax(180px, 1fr) auto;
+  min-height: 78px;
+  padding: 12px 0;
+}
+
+.appointment-summary-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.appointment-summary-row time {
+  color: var(--primary);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.appointment-summary-row > span {
+  color: #52627a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.appointment-row-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.appointment-row-actions .btn {
+  min-height: 42px;
+  white-space: nowrap;
+}
+
 .compact-form {
   gap: 8px;
 }
@@ -1660,6 +1731,20 @@ th {
   .new-file-row {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .appointment-summary-row {
+    gap: 8px 12px;
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .appointment-summary-row > span {
+    grid-column: 2;
+  }
+
+  .appointment-row-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
   }
 }
 

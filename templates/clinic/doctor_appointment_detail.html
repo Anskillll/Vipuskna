@@ -71,6 +71,15 @@
             <button type="submit" class="secondary">Відхилити заявку</button>
           </form>
         </aside>
+      {% elif appointment.status == 'approved' %}
+        <aside class="card section-card appointment-decision-panel">
+          <h2 class="section-title">Керування прийомом</h2>
+          <p class="section-note">Прийом підтверджено. За потреби його можна скасувати.</p>
+          <form method="post" action="{% url 'doctor_cancel_appointment' appointment.id %}" onsubmit="return confirm('Скасувати цей прийом?');">
+            {% csrf_token %}
+            <button type="submit" class="danger">Скасувати прийом</button>
+          </form>
+        </aside>
       {% endif %}
 
       <section class="card section-card day-appointments-section">

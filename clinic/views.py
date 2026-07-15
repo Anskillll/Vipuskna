@@ -699,7 +699,7 @@ def doctor_cancel_appointment(request, appointment_id):
         appointment.save(update_fields=['status'])
         ensure_patient_card_from_appointment(appointment)
         messages.success(request, 'Запис пацієнта скасовано.')
-    return redirect('doctor_appointments')
+    return redirect('doctor_appointment_detail', appointment_id=appointment.id)
 
 
 @doctor_required

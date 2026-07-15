@@ -222,6 +222,58 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Детальний опис заявки')
         self.assertContains(response, 'Фотографії до заявки')
 
+    def test_doctor_appointments_are_grouped_and_show_only_summary(self):
+        first_date = timezone.localdate() + timedelta(days=7)
+        second_date = first_date + timedelta(days=1)
+        later = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient_first_name='Пізній',
+            patient_last_name='Пацієнт',
+            patient_phone='+380509999991',
+            date=first_date,
+            time=time(10, 0),
+            city='Приховане місто',
+            address='Прихована адреса',
+            reason='Прихована причина',
+        )
+        earlier = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient_first_name='Ранній',
+            patient_last_name='Пацієнт',
+            patient_phone='+380509999992',
+            date=first_date,
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Другий прихований опис',
+        )
+        next_day = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient_first_name='Наступний',
+            patient_last_name='Пацієнт',
+            patient_phone='+380509999993',
+            date=second_date,
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Третій прихований опис',
+        )
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.get(reverse('doctor_appointments'))
+        appointment_ids = [item.id for item in response.context['appointments']]
+
+        self.assertEqual(appointment_ids, [earlier.id, later.id, next_day.id])
+        self.assertContains(response, first_date.strftime('%d.%m.%Y'))
+        self.assertContains(response, second_date.strftime('%d.%m.%Y'))
+        self.assertContains(response, 'Відкрити картку', count=3)
+        self.assertNotContains(response, 'Прихована причина')
+        self.assertNotContains(response, 'Прихована адреса')
+        self.assertNotContains(response, '+380509999991')
+
     def test_appointment_details_show_day_schedule_and_highlight_active_visit(self):
         fixed_now = timezone.make_aware(datetime(2026, 7, 15, 10, 30))
         active = Appointment.objects.create(
@@ -314,7 +366,8 @@ class ClinicModelTests(TestCase):
         self.assertEqual(appointment.status, Appointment.STATUS_APPROVED)
         self.assertEqual(appointment.duration_slots, 2)
         self.assertEqual(appointment.duration_minutes_exact, 120)
-        self.assertContains(response, '120 хв')
+        self.assertContains(response, 'Заявку підтверджено.')
+        self.assertNotContains(response, '120 хв')
 
     def test_doctor_duration_must_match_schedule_slot(self):
         self.client.login(username='doctor@test.local', password='pass12345')
