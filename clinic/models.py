@@ -244,6 +244,12 @@ class Appointment(models.Model):
         return f'{self.patient_first_name} {self.patient_last_name}'.strip()
 
     @property
+    def patient_age(self):
+        if self.patient and hasattr(self.patient, 'profile'):
+            return self.patient.profile.age
+        return None
+
+    @property
     def is_future(self):
         visit = timezone.make_aware(datetime.combine(self.date, self.time))
         return visit > timezone.localtime()
@@ -340,6 +346,12 @@ class DoctorPatientCard(models.Model):
     @property
     def full_name(self):
         return f'{self.patient_first_name} {self.patient_last_name}'.strip()
+
+    @property
+    def patient_age(self):
+        if self.patient and hasattr(self.patient, 'profile'):
+            return self.patient.profile.age
+        return None
 
 
 class PatientRecordEntry(models.Model):

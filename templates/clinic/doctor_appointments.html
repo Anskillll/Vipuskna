@@ -30,7 +30,10 @@
             <article class="appointment-summary-row appointment-kind-{{ appointment.status }}">
               <time datetime="{{ appointment.date|date:'Y-m-d' }}T{{ appointment.time|time:'H:i' }}">{{ appointment.time|time:'H:i' }}</time>
               <div class="appointment-summary-person">
-                <strong>{{ appointment.patient_name }}</strong>
+                <div class="appointment-person-name">
+                  <strong>{{ appointment.patient_name }}</strong>
+                  <span>{% if appointment.patient_age %}{{ appointment.patient_age }} років{% else %}Вік не вказано{% endif %}</span>
+                </div>
                 {% if appointment.status == 'pending' %}
                   <span class="appointment-kind-label">Заявка очікує</span>
                 {% elif appointment.status == 'approved' %}

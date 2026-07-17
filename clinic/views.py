@@ -753,8 +753,11 @@ def doctor_appointments(request):
     refresh_completed_appointments()
     doctor = request.user.doctor_profile
     sync_patient_cards_for_doctor(doctor)
-    appointments = doctor.appointments.select_related('service').order_by('date', 'time')
-    cards_by_phone = {card.patient_phone: card for card in doctor.patient_cards.all()}
+    appointments = doctor.appointments.select_related('service', 'patient__profile').order_by('date', 'time')
+    cards_by_phone = {
+        card.patient_phone: card
+        for card in doctor.patient_cards.select_related('patient__profile')
+    }
     for appointment in appointments:
         appointment.patient_card = cards_by_phone.get(appointment.patient_phone)
         appointment.weekday_name = UKRAINIAN_WEEKDAYS[appointment.date.weekday()]
@@ -773,13 +776,13 @@ def doctor_appointment_detail(request, appointment_id):
     refresh_completed_appointments()
     doctor = request.user.doctor_profile
     appointment = get_object_or_404(
-        doctor.appointments.select_related('service', 'patient').prefetch_related('images'),
+        doctor.appointments.select_related('service', 'patient__profile').prefetch_related('images'),
         pk=appointment_id,
     )
     appointment.weekday_name = UKRAINIAN_WEEKDAYS[appointment.date.weekday()]
     day_appointments = doctor.appointments.filter(date=appointment.date).select_related(
         'service',
-        'patient',
+        'patient__profile',
     ).order_by('time')
     active_appointment = active_appointment_for_doctor(doctor)
     patient_card, _ = ensure_patient_card_from_appointment(appointment)

@@ -40,6 +40,7 @@
           <thead>
             <tr>
               <th>Пацієнт</th>
+              <th>Вік</th>
               <th>Телефон</th>
               <th>Останній візит</th>
               <th>Наступний візит</th>
@@ -60,6 +61,7 @@
                     <strong>{{ row.card.full_name }}</strong>
                   </div>
                 </td>
+                <td>{% if row.card.patient_age %}{{ row.card.patient_age }} років{% else %}Не вказано{% endif %}</td>
                 <td>{{ row.card.patient_phone }}</td>
                 <td>
                   {% if row.last_visit %}

@@ -18,6 +18,7 @@
         <div class="section-head"><h2 class="section-title">Інформація про прийом</h2></div>
         <dl class="detail-list">
           <div><dt>Пацієнт</dt><dd>{{ appointment.patient_name }}</dd></div>
+          <div><dt>Вік</dt><dd>{% if appointment.patient_age %}{{ appointment.patient_age }} років{% else %}Не вказано{% endif %}</dd></div>
           <div><dt>Телефон</dt><dd>{{ appointment.patient_phone }}</dd></div>
           <div><dt>Послуга</dt><dd>{{ appointment.service.name|default:'Не обрано' }}</dd></div>
           <div><dt>Дата і час</dt><dd>{{ appointment.date|date:'d.m.Y' }} о {{ appointment.time|time:'H:i' }}</dd></div>
@@ -95,6 +96,7 @@
               <strong class="day-appointment-time">{{ day_appointment.time|time:'H:i' }}</strong>
               <span class="day-appointment-person">
                 <strong>{{ day_appointment.patient_name }}</strong>
+                <small>{% if day_appointment.patient_age %}{{ day_appointment.patient_age }} років{% else %}Вік не вказано{% endif %}</small>
                 <small>{{ day_appointment.service.name|default:'Послугу не обрано' }}</small>
               </span>
               <span class="day-appointment-duration">{{ day_appointment.duration_minutes }} хв</span>

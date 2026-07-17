@@ -291,6 +291,31 @@ class ClinicModelTests(TestCase):
         self.assertNotContains(response, 'Прихована адреса')
         self.assertNotContains(response, '+380509999991')
 
+    def test_doctor_views_show_registered_patient_age(self):
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            patient=self.patient,
+            service=self.service,
+            patient_first_name=self.patient.first_name,
+            patient_last_name=self.patient.last_name,
+            patient_phone=self.patient.profile.phone,
+            date=timezone.localdate() + timedelta(days=7),
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Перевірка віку',
+            status=Appointment.STATUS_APPROVED,
+        )
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        appointments_response = self.client.get(reverse('doctor_appointments'))
+        patients_response = self.client.get(reverse('doctor_patient_cards'))
+        detail_response = self.client.get(reverse('doctor_appointment_detail', args=[appointment.id]))
+
+        self.assertContains(appointments_response, '25 років')
+        self.assertContains(patients_response, '25 років')
+        self.assertContains(detail_response, '25 років')
+
     def test_appointment_details_show_day_schedule_and_highlight_active_visit(self):
         fixed_now = timezone.make_aware(datetime(2026, 7, 15, 10, 30))
         active = Appointment.objects.create(

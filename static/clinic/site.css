@@ -1115,6 +1115,21 @@ th {
   width: 100%;
 }
 
+.appointment-person-name {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.appointment-person-name span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .appointment-kind-label {
   border-radius: 999px;
   display: inline-flex;
