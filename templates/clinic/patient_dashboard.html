@@ -10,10 +10,25 @@
       {% endif %}
       <div>
       <h1 class="page-title">Кабінет пацієнта</h1>
-      <p class="page-subtitle">{{ user.get_full_name }}</p>
+      <p class="page-subtitle">
+        {{ user.get_full_name }}
+        {% if user.profile.age %} · {{ user.profile.age }} років{% endif %}
+      </p>
       </div>
     </div>
   </section>
+
+  {% if profile_incomplete %}
+    <aside class="profile-completion-alert">
+      <div>
+        <strong>Будь ласка, заповніть профіль</strong>
+        <p>Перевірте, чи правильно вказані ім’я та прізвище, і додайте свій вік.</p>
+      </div>
+      <a class="btn profile-completion-link" href="{% url 'patient_edit_profile' %}">
+        Редагувати профіль <span aria-hidden="true">→</span>
+      </a>
+    </aside>
+  {% endif %}
 
   <section class="action-board">
     <article class="action-group">

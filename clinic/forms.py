@@ -104,6 +104,7 @@ class ClaimPatientForm(FormStyleMixin, forms.Form):
 class PatientProfileForm(FormStyleMixin, forms.Form):
     first_name = forms.CharField(label="Ім'я", max_length=80)
     last_name = forms.CharField(label='Прізвище', max_length=80)
+    age = forms.IntegerField(label='Вік', min_value=1, max_value=120)
     phone = forms.CharField(label='Телефон', validators=[phone_validator])
     photo = forms.ImageField(
         label='Нове фото профілю',
@@ -120,6 +121,7 @@ class PatientProfileForm(FormStyleMixin, forms.Form):
                 {
                     'first_name': user.first_name,
                     'last_name': user.last_name,
+                    'age': user.profile.age,
                     'phone': user.profile.phone,
                 }
             )
@@ -133,6 +135,7 @@ class PatientProfileForm(FormStyleMixin, forms.Form):
         self.user.last_name = self.cleaned_data['last_name']
         self.user.save(update_fields=['first_name', 'last_name'])
         self.user.profile.phone = self.cleaned_data['phone']
+        self.user.profile.age = self.cleaned_data['age']
         if self.cleaned_data.get('photo'):
             self.user.profile.photo = self.cleaned_data['photo']
         self.user.profile.save()

@@ -542,6 +542,11 @@ def patient_dashboard(request):
             'completed': appointments.filter(status=Appointment.STATUS_COMPLETED),
             'canceled': appointments.filter(status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]),
             'needs_phone': not request.user.profile.phone,
+            'profile_incomplete': not (
+                request.user.first_name.strip()
+                and request.user.last_name.strip()
+                and request.user.profile.age
+            ),
             'patient_records': patient_records,
         },
     )
@@ -635,6 +640,13 @@ def doctors_list(request):
 @patient_required
 def booking(request):
     refresh_completed_appointments()
+    if not (
+        request.user.first_name.strip()
+        and request.user.last_name.strip()
+        and request.user.profile.age
+    ):
+        messages.error(request, 'Спочатку перевірте ім’я та прізвище і вкажіть свій вік у профілі.')
+        return redirect('patient_edit_profile')
     if not request.user.profile.phone:
         messages.error(request, 'Спочатку заповніть телефон у профілі пацієнта.')
         return redirect('patient_edit_profile')

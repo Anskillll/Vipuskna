@@ -1,7 +1,7 @@
 from datetime import datetime, time, timedelta
 
 from django.conf import settings
-from django.core.validators import MinValueValidator, RegexValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 from django.utils import timezone
 
@@ -29,6 +29,11 @@ class Profile(models.Model):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     phone = models.CharField(max_length=25, validators=[phone_validator], blank=True, default='')
     photo = models.ImageField(upload_to='patient_photos/', blank=True)
+    age = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(120)],
+    )
 
     class Meta:
         verbose_name = 'Профіль'

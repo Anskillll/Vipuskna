@@ -484,6 +484,47 @@ a:hover {
   margin-bottom: 18px;
 }
 
+.profile-completion-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+  padding: 18px 20px;
+  border: 2px solid #f59e0b;
+  border-radius: 8px;
+  background: #fff7d6;
+  color: #713f12;
+  box-shadow: 0 12px 28px rgba(245, 158, 11, 0.18);
+}
+
+.profile-completion-alert strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 18px;
+}
+
+.profile-completion-alert p {
+  margin: 0;
+}
+
+.profile-completion-link {
+  flex: 0 0 auto;
+  background: #f59e0b;
+  color: #281600;
+}
+
+.profile-completion-link:hover {
+  background: #d97706;
+  color: #fff;
+}
+
+.profile-completion-link span {
+  margin-left: 8px;
+  font-size: 20px;
+  line-height: 1;
+}
+
 .action-board-wide {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -1285,6 +1326,15 @@ th {
 }
 
 @media (max-width: 680px) {
+  .profile-completion-alert {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .profile-completion-link {
+    width: 100%;
+  }
+
   .patient-search-controls {
     grid-template-columns: 1fr;
   }

@@ -45,6 +45,7 @@ class ClinicModelTests(TestCase):
             user=self.patient,
             role=Profile.ROLE_PATIENT,
             phone='+380501111111',
+            age=25,
         )
         doctor_user = User.objects.create_user(
             username='doctor@test.local',
@@ -678,6 +679,7 @@ class ClinicModelTests(TestCase):
                     data={
                         'first_name': self.patient.first_name,
                         'last_name': self.patient.last_name,
+                        'age': 25,
                         'phone': self.patient.profile.phone,
                         'photo': photo,
                     },
@@ -686,6 +688,38 @@ class ClinicModelTests(TestCase):
                 self.patient.profile.refresh_from_db()
                 self.assertRedirects(response, reverse('patient_dashboard'))
                 self.assertTrue(self.patient.profile.photo.name.startswith('patient_photos/'))
+
+    def test_incomplete_patient_profile_shows_notice_and_blocks_booking(self):
+        self.patient.profile.age = None
+        self.patient.profile.save(update_fields=['age'])
+        self.client.login(username='patient@test.local', password='pass12345')
+
+        dashboard_response = self.client.get(reverse('patient_dashboard'))
+        booking_response = self.client.get(reverse('booking'))
+
+        self.assertContains(dashboard_response, 'Будь ласка, заповніть профіль')
+        self.assertContains(dashboard_response, 'Редагувати профіль')
+        self.assertRedirects(booking_response, reverse('patient_edit_profile'))
+
+    def test_saving_age_completes_patient_profile(self):
+        self.patient.profile.age = None
+        self.patient.profile.save(update_fields=['age'])
+        self.client.login(username='patient@test.local', password='pass12345')
+
+        response = self.client.post(
+            reverse('patient_edit_profile'),
+            data={
+                'first_name': 'Олена',
+                'last_name': 'Коваль',
+                'age': 34,
+                'phone': self.patient.profile.phone,
+            },
+            follow=True,
+        )
+
+        self.patient.profile.refresh_from_db()
+        self.assertEqual(self.patient.profile.age, 34)
+        self.assertNotContains(response, 'Будь ласка, заповніть профіль')
 
     def test_doctor_can_search_patient_cards_by_name_and_phone(self):
         DoctorPatientCard.objects.create(

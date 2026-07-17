@@ -13,6 +13,10 @@
       </div>
       <ul class="simple-list">
         <li><span>Телефон</span><strong>{{ card.patient_phone }}</strong></li>
+        <li>
+          <span>Вік</span>
+          <strong>{% if card.patient and card.patient.profile.age %}{{ card.patient.profile.age }} років{% else %}Не вказано{% endif %}</strong>
+        </li>
         <li><span>Перший запис</span><strong>{% if first_visit %}{{ first_visit.date|date:'d.m.Y' }}{% else %}-{% endif %}</strong></li>
         <li><span>Останній візит</span><strong>{% if last_visit %}{{ last_visit.date|date:'d.m.Y' }} {{ last_visit.time|time:'H:i' }}{% else %}Ще не було{% endif %}</strong></li>
         <li><span>Наступний візит</span><strong>{% if next_visit %}{{ next_visit.date|date:'d.m.Y' }} {{ next_visit.time|time:'H:i' }}{% else %}Немає{% endif %}</strong></li>
