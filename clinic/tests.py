@@ -662,6 +662,67 @@ class ClinicModelTests(TestCase):
         self.assertNotIn('email', DoctorProfileForm(doctor=self.doctor).fields)
         self.assertNotIn('email', DoctorPatientBookingForm(doctor=self.doctor).fields)
 
+    def test_doctor_booking_recognizes_registered_patient_phone_format(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+        visit_date = timezone.localdate() + timedelta(days=7)
+
+        response = self.client.post(
+            reverse('doctor_book_patient'),
+            data={
+                'date': visit_date.strftime('%Y-%m-%d'),
+                'time': '09:00',
+                'patient': '',
+                'service': self.service.id,
+                'duration_minutes': 60,
+                'first_name': 'Помилкове',
+                'last_name': "Ім'я",
+                'phone': '050 111 11 11',
+                'reason': 'Перевірка наявного номера',
+            },
+            follow=True,
+        )
+
+        appointment = Appointment.objects.get(reason='Перевірка наявного номера')
+        self.assertEqual(appointment.patient, self.patient)
+        self.assertEqual(appointment.patient_first_name, self.patient.first_name)
+        self.assertEqual(appointment.patient_last_name, self.patient.last_name)
+        self.assertContains(response, 'Номер уже належить зареєстрованому пацієнту')
+
+    def test_doctor_booking_reuses_unregistered_patient_card_by_phone(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+        visit_date = timezone.localdate() + timedelta(days=7)
+        card = DoctorPatientCard.objects.create(
+            doctor=self.doctor,
+            patient_first_name='Відомий',
+            patient_last_name='Пацієнт',
+            patient_phone='050 222 33 44',
+        )
+
+        response = self.client.post(
+            reverse('doctor_book_patient'),
+            data={
+                'date': visit_date.strftime('%Y-%m-%d'),
+                'time': '10:00',
+                'patient': '',
+                'service': self.service.id,
+                'duration_minutes': 60,
+                'first_name': 'Інше',
+                'last_name': "Ім'я",
+                'phone': '+380502223344',
+                'reason': 'Повторний запис без акаунта',
+            },
+            follow=True,
+        )
+
+        appointment = Appointment.objects.get(reason='Повторний запис без акаунта')
+        card.refresh_from_db()
+        self.assertIsNone(appointment.patient)
+        self.assertEqual(appointment.patient_first_name, 'Відомий')
+        self.assertEqual(appointment.patient_last_name, 'Пацієнт')
+        self.assertEqual(card.patient_phone, '+380502223344')
+        self.assertEqual(self.doctor.patient_cards.count(), 1)
+        self.assertContains(response, 'використано наявну картку')
+
     def test_doctor_home_button_opens_doctor_dashboard(self):
         self.client.login(username='doctor@test.local', password='pass12345')
 

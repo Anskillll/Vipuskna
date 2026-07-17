@@ -273,22 +273,54 @@ def find_patient_by_contacts(email, phone):
             profile__role=Profile.ROLE_PATIENT,
             profile__phone=phone,
         ).first()
+    if not patient and phone:
+        normalized_phone = normalize_phone_number(phone)
+        patient = next(
+            (
+                candidate
+                for candidate in User.objects.filter(
+                    profile__role=Profile.ROLE_PATIENT,
+                ).select_related('profile')
+                if normalize_phone_number(candidate.profile.phone) == normalized_phone
+            ),
+            None,
+        )
     return patient
 
 
-def ensure_patient_card_from_appointment(appointment):
-    patient = appointment.patient or find_patient_by_contacts(appointment.patient_email, appointment.patient_phone)
-    card, created = DoctorPatientCard.objects.get_or_create(
-        doctor=appointment.doctor,
-        patient_phone=appointment.patient_phone,
-        defaults={
-            'patient': patient,
-            'patient_first_name': appointment.patient_first_name,
-            'patient_last_name': appointment.patient_last_name,
-            'patient_email': appointment.patient_email,
-        },
+def find_doctor_card_by_phone(doctor, phone):
+    normalized_phone = normalize_phone_number(phone)
+    return next(
+        (
+            card
+            for card in doctor.patient_cards.select_related('patient', 'patient__profile')
+            if normalize_phone_number(card.patient_phone) == normalized_phone
+        ),
+        None,
     )
+
+
+def ensure_patient_card_from_appointment(appointment):
+    normalized_phone = normalize_phone_number(appointment.patient_phone)
+    if appointment.patient_phone != normalized_phone:
+        appointment.patient_phone = normalized_phone
+        appointment.save(update_fields=['patient_phone'])
+    patient = appointment.patient or find_patient_by_contacts(appointment.patient_email, appointment.patient_phone)
+    card = find_doctor_card_by_phone(appointment.doctor, normalized_phone)
+    created = card is None
+    if created:
+        card = DoctorPatientCard.objects.create(
+            doctor=appointment.doctor,
+            patient_phone=normalized_phone,
+            patient=patient,
+            patient_first_name=appointment.patient_first_name,
+            patient_last_name=appointment.patient_last_name,
+            patient_email=appointment.patient_email,
+        )
     changed_fields = []
+    if card.patient_phone != normalized_phone:
+        card.patient_phone = normalized_phone
+        changed_fields.append('patient_phone')
     if patient and card.patient_id != patient.id:
         card.patient = patient
         changed_fields.append('patient')
@@ -846,10 +878,27 @@ def doctor_book_patient(request):
         elif form.is_valid() and schedule:
             duration_minutes = form.cleaned_data['duration_minutes']
             duration_slots = ceil(duration_minutes / slot_minutes)
-            patient = form.cleaned_data.get('patient') or find_patient_by_contacts(
+            selected_patient = form.cleaned_data.get('patient')
+            patient = selected_patient or find_patient_by_contacts(
                 '',
                 form.cleaned_data['phone'],
             )
+            existing_card = find_doctor_card_by_phone(doctor, form.cleaned_data['phone'])
+            patient_phone = normalize_phone_number(
+                patient.profile.phone if patient and patient.profile.phone else form.cleaned_data['phone']
+            )
+            patient_first_name = form.cleaned_data['first_name']
+            patient_last_name = form.cleaned_data['last_name']
+            match_message = ''
+            if patient:
+                patient_first_name = patient.first_name or patient_first_name
+                patient_last_name = patient.last_name or patient_last_name
+                if not selected_patient:
+                    match_message = ' Номер уже належить зареєстрованому пацієнту, запис додано до його кабінету.'
+            elif existing_card:
+                patient_first_name = existing_card.patient_first_name
+                patient_last_name = existing_card.patient_last_name
+                match_message = ' Номер уже був у картці пацієнта, використано наявну картку.'
             if appointment_conflicts(
                 doctor,
                 selected_date,
@@ -864,9 +913,9 @@ def doctor_book_patient(request):
                         doctor=doctor,
                         service=form.cleaned_data['service'],
                         patient=patient,
-                        patient_first_name=form.cleaned_data['first_name'],
-                        patient_last_name=form.cleaned_data['last_name'],
-                        patient_phone=form.cleaned_data['phone'],
+                        patient_first_name=patient_first_name,
+                        patient_last_name=patient_last_name,
+                        patient_phone=patient_phone,
                         patient_email=patient.email if patient else '',
                         date=selected_date,
                         time=selected_time,
@@ -879,7 +928,7 @@ def doctor_book_patient(request):
                         approved_at=timezone.now(),
                     )
                     ensure_patient_card_from_appointment(appointment)
-                    messages.success(request, 'Пацієнта записано.')
+                    messages.success(request, f'Пацієнта записано.{match_message}')
                     return redirect('doctor_appointments')
                 except IntegrityError:
                     messages.error(request, 'Цей час уже недоступний.')
