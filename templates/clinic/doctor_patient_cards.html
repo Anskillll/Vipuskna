@@ -18,6 +18,22 @@
   </nav>
 
   <section class="card section-card">
+    <form method="get" class="patient-search-form">
+      <label for="patient-search">Пошук пацієнта</label>
+      <div class="patient-search-controls">
+        <input
+          id="patient-search"
+          type="search"
+          name="q"
+          value="{{ query }}"
+          placeholder="Ім'я, прізвище або телефон"
+        >
+        <button type="submit">Знайти</button>
+        {% if query %}
+          <a class="btn secondary" href="{% url 'doctor_patient_cards' %}">Очистити</a>
+        {% endif %}
+      </div>
+    </form>
     {% if card_rows %}
       <div class="table-wrap">
         <table>
@@ -34,7 +50,16 @@
           <tbody>
             {% for row in card_rows %}
               <tr>
-                <td>{{ row.card.full_name }}</td>
+                <td>
+                  <div class="patient-list-person">
+                    {% if row.card.patient and row.card.patient.profile.photo %}
+                      <img class="patient-list-photo" src="{{ row.card.patient.profile.photo.url }}" alt="">
+                    {% else %}
+                      <span class="patient-list-photo patient-list-placeholder">{{ row.card.patient_first_name|first }}{{ row.card.patient_last_name|first }}</span>
+                    {% endif %}
+                    <strong>{{ row.card.full_name }}</strong>
+                  </div>
+                </td>
                 <td>{{ row.card.patient_phone }}</td>
                 <td>
                   {% if row.last_visit %}
@@ -58,7 +83,9 @@
         </table>
       </div>
     {% else %}
-      <div class="empty">Карток пацієнтів поки немає.</div>
+      <div class="empty">
+        {% if query %}За запитом «{{ query }}» пацієнтів не знайдено.{% else %}Карток пацієнтів поки немає.{% endif %}
+      </div>
     {% endif %}
   </section>
 {% endblock %}

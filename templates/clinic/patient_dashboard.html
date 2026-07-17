@@ -4,9 +4,14 @@
 
 {% block content %}
   <section class="page-head">
-    <div>
+    <div class="patient-profile-heading">
+      {% if user.profile.photo %}
+        <img class="patient-profile-photo" src="{{ user.profile.photo.url }}" alt="Фото {{ user.get_full_name }}">
+      {% endif %}
+      <div>
       <h1 class="page-title">Кабінет пацієнта</h1>
       <p class="page-subtitle">{{ user.get_full_name }}</p>
+      </div>
     </div>
   </section>
 

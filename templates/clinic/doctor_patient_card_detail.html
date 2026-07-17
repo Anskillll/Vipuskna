@@ -5,7 +5,12 @@
 {% block content %}
   <div class="grid grid-2">
     <section class="card">
-      <h1 class="page-title">{{ card.full_name }}</h1>
+      <div class="patient-card-heading">
+        {% if card.patient and card.patient.profile.photo %}
+          <img class="patient-profile-photo" src="{{ card.patient.profile.photo.url }}" alt="Фото {{ card.full_name }}">
+        {% endif %}
+        <h1 class="page-title">{{ card.full_name }}</h1>
+      </div>
       <ul class="simple-list">
         <li><span>Телефон</span><strong>{{ card.patient_phone }}</strong></li>
         <li><span>Перший запис</span><strong>{% if first_visit %}{{ first_visit.date|date:'d.m.Y' }}{% else %}-{% endif %}</strong></li>

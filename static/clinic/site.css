@@ -180,6 +180,86 @@ a:hover {
   font-size: 15px;
 }
 
+.patient-profile-heading,
+.patient-card-heading,
+.patient-list-person {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.patient-profile-photo {
+  width: 76px;
+  height: 76px;
+  flex: 0 0 76px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.profile-photo-preview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 20px 0;
+  color: var(--muted);
+}
+
+.profile-photo-preview img {
+  width: 96px;
+  height: 96px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.patient-card-heading {
+  margin-bottom: 18px;
+}
+
+.patient-search-form {
+  padding-bottom: 20px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+.patient-search-form label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.patient-search-controls {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) auto auto;
+  gap: 10px;
+}
+
+.patient-search-controls input,
+.patient-search-controls button,
+.patient-search-controls .btn {
+  min-height: 46px;
+}
+
+.patient-list-photo {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.patient-list-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef2ff;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .section-card {
   margin-bottom: 18px;
 }
@@ -1205,6 +1285,15 @@ th {
 }
 
 @media (max-width: 680px) {
+  .patient-search-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .patient-search-controls button,
+  .patient-search-controls .btn {
+    width: 100%;
+  }
+
   .topbar-inner,
   .container {
     width: min(100% - 20px, 1160px);

@@ -105,6 +105,12 @@ class PatientProfileForm(FormStyleMixin, forms.Form):
     first_name = forms.CharField(label="Ім'я", max_length=80)
     last_name = forms.CharField(label='Прізвище', max_length=80)
     phone = forms.CharField(label='Телефон', validators=[phone_validator])
+    photo = forms.ImageField(
+        label='Нове фото профілю',
+        required=False,
+        help_text='Залиште поле порожнім, якщо не хочете змінювати поточне фото.',
+        widget=forms.FileInput(attrs={'accept': 'image/*'}),
+    )
 
     def __init__(self, *args, user=None, **kwargs):
         self.user = user
@@ -127,6 +133,8 @@ class PatientProfileForm(FormStyleMixin, forms.Form):
         self.user.last_name = self.cleaned_data['last_name']
         self.user.save(update_fields=['first_name', 'last_name'])
         self.user.profile.phone = self.cleaned_data['phone']
+        if self.cleaned_data.get('photo'):
+            self.user.profile.photo = self.cleaned_data['photo']
         self.user.profile.save()
         return self.user
 

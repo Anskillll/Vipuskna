@@ -28,6 +28,7 @@ class Profile(models.Model):
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     phone = models.CharField(max_length=25, validators=[phone_validator], blank=True, default='')
+    photo = models.ImageField(upload_to='patient_photos/', blank=True)
 
     class Meta:
         verbose_name = 'Профіль'

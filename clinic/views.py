@@ -549,7 +549,7 @@ def patient_dashboard(request):
 
 @patient_required
 def patient_edit_profile(request):
-    form = PatientProfileForm(request.POST or None, user=request.user)
+    form = PatientProfileForm(request.POST or None, request.FILES or None, user=request.user)
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'Профіль оновлено.')
@@ -952,7 +952,19 @@ def doctor_patient_cards(request):
     refresh_completed_appointments()
     doctor = request.user.doctor_profile
     sync_patient_cards_for_doctor(doctor)
-    cards = doctor.patient_cards.all()
+    query = request.GET.get('q', '').strip()
+    cards = doctor.patient_cards.select_related('patient__profile')
+    if query:
+        normalized_query = normalize_phone_number(query)
+        for term in query.split():
+            term_filter = (
+                Q(patient_first_name__icontains=term)
+                | Q(patient_last_name__icontains=term)
+                | Q(patient_phone__icontains=term)
+            )
+            if normalized_query:
+                term_filter |= Q(patient_phone__icontains=normalized_query)
+            cards = cards.filter(term_filter)
     card_rows = []
     for card in cards:
         appointments = doctor.appointments.filter(patient_phone=card.patient_phone).exclude(
@@ -974,6 +986,7 @@ def doctor_patient_cards(request):
         {
             'doctor': doctor,
             'card_rows': card_rows,
+            'query': query,
         },
     )
 
@@ -983,7 +996,11 @@ def doctor_patient_card_detail(request, card_id):
     refresh_completed_appointments()
     doctor = request.user.doctor_profile
     sync_patient_cards_for_doctor(doctor)
-    card = get_object_or_404(DoctorPatientCard, pk=card_id, doctor=doctor)
+    card = get_object_or_404(
+        DoctorPatientCard.objects.select_related('patient__profile'),
+        pk=card_id,
+        doctor=doctor,
+    )
     action = request.POST.get('action') if request.method == 'POST' else None
     form = DoctorPatientCardForm(request.POST if action == 'update_card' else None, instance=card)
     entry_form = PatientRecordEntryForm(

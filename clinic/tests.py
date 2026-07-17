@@ -662,6 +662,54 @@ class ClinicModelTests(TestCase):
         self.assertNotIn('email', DoctorProfileForm(doctor=self.doctor).fields)
         self.assertNotIn('email', DoctorPatientBookingForm(doctor=self.doctor).fields)
 
+    def test_patient_can_upload_profile_photo(self):
+        self.client.login(username='patient@test.local', password='pass12345')
+        photo = SimpleUploadedFile(
+            'profile.gif',
+            b'GIF87a\x01\x00\x01\x00\x80\x01\x00\x00\x00\x00ccc,\x00'
+            b'\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;',
+            content_type='image/gif',
+        )
+
+        with tempfile.TemporaryDirectory() as media_root:
+            with override_settings(MEDIA_ROOT=media_root):
+                response = self.client.post(
+                    reverse('patient_edit_profile'),
+                    data={
+                        'first_name': self.patient.first_name,
+                        'last_name': self.patient.last_name,
+                        'phone': self.patient.profile.phone,
+                        'photo': photo,
+                    },
+                )
+
+                self.patient.profile.refresh_from_db()
+                self.assertRedirects(response, reverse('patient_dashboard'))
+                self.assertTrue(self.patient.profile.photo.name.startswith('patient_photos/'))
+
+    def test_doctor_can_search_patient_cards_by_name_and_phone(self):
+        DoctorPatientCard.objects.create(
+            doctor=self.doctor,
+            patient_first_name='Марія',
+            patient_last_name='Коваль',
+            patient_phone='+380671112233',
+        )
+        DoctorPatientCard.objects.create(
+            doctor=self.doctor,
+            patient_first_name='Олег',
+            patient_last_name='Бондар',
+            patient_phone='+380932224455',
+        )
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.get(reverse('doctor_patient_cards'), {'q': 'Марія Коваль'})
+        self.assertContains(response, 'Марія Коваль')
+        self.assertNotContains(response, 'Олег Бондар')
+
+        response = self.client.get(reverse('doctor_patient_cards'), {'q': '093 222 44 55'})
+        self.assertContains(response, 'Олег Бондар')
+        self.assertNotContains(response, 'Марія Коваль')
+
     def test_doctor_booking_recognizes_registered_patient_phone_format(self):
         self.client.login(username='doctor@test.local', password='pass12345')
         visit_date = timezone.localdate() + timedelta(days=7)

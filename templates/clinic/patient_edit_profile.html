@@ -5,7 +5,13 @@
 {% block content %}
   <div class="card">
     <h1 class="page-title">Редагувати профіль</h1>
-    <form method="post">
+    {% if user.profile.photo %}
+      <div class="profile-photo-preview">
+        <img src="{{ user.profile.photo.url }}" alt="Фото {{ user.get_full_name }}">
+        <span>Поточне фото профілю</span>
+      </div>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
       {% include 'clinic/_form_fields.html' %}
       <div class="actions">
