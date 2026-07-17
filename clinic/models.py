@@ -75,12 +75,12 @@ class Doctor(models.Model):
 
     @property
     def cities(self):
-        return (
+        cities = (
             self.schedules.filter(is_working=True)
             .exclude(city='')
             .values_list('city', flat=True)
-            .distinct()
         )
+        return list(dict.fromkeys(cities))
 
 
 class MedicalService(models.Model):

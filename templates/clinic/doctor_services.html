@@ -3,18 +3,55 @@
 {% block title %}Послуги лікаря - MedClinic{% endblock %}
 
 {% block content %}
-  <div class="grid grid-2">
-    <section class="card">
+  <section class="page-head">
+    <div>
       <h1 class="page-title">Мої послуги</h1>
-      <ul class="simple-list">
-        {% for service in services %}
-          <li>
-            <span>{{ service.name }}</span>
-            <strong>{{ service.price }} грн</strong>
-          </li>
-          <li>
-            <span class="muted">Редагування послуги</span>
-            <strong class="actions">
+      <p class="page-subtitle">Додавайте послуги та редагуйте їх безпосередньо у списку.</p>
+    </div>
+    <a class="btn secondary" href="{% url 'doctor_dashboard' %}">До профілю</a>
+  </section>
+
+  <section class="card service-manager">
+    <div class="service-manager-list">
+      {% if not editing %}
+        <article class="service-manager-item service-manager-create">
+          <div class="service-manager-item-head">
+            <div>
+              <span class="service-manager-label">Нова послуга</span>
+              <h2>Додати послугу</h2>
+            </div>
+          </div>
+          <form method="post" class="service-inline-form">
+            {% csrf_token %}
+            {% include 'clinic/_form_fields.html' with form=form %}
+            <div class="actions">
+              <button type="submit">Додати послугу</button>
+            </div>
+          </form>
+        </article>
+      {% endif %}
+
+      {% for service in services %}
+        <article class="service-manager-item{% if editing.id == service.id %} editing{% endif %}">
+          <div class="service-manager-item-head">
+            <div>
+              <span class="service-manager-label">Послуга</span>
+              <h2>{{ service.name }}</h2>
+            </div>
+            <strong class="service-manager-price">{{ service.price }} грн</strong>
+          </div>
+
+          {% if editing.id == service.id %}
+            <form method="post" class="service-inline-form">
+              {% csrf_token %}
+              {% include 'clinic/_form_fields.html' with form=form %}
+              <div class="actions">
+                <button type="submit">Зберегти зміни</button>
+                <a class="btn secondary" href="{% url 'doctor_services' %}">Скасувати</a>
+              </div>
+            </form>
+          {% else %}
+            <div class="service-manager-actions">
               <a class="btn secondary" href="{% url 'doctor_services' %}?edit={{ service.id }}">Редагувати</a>
               <form method="post" onsubmit="return confirm('Видалити цю послугу?');">
                 {% csrf_token %}
@@ -22,24 +59,12 @@
                 <input type="hidden" name="service_id" value="{{ service.id }}">
                 <button type="submit" class="danger">Видалити</button>
               </form>
-            </strong>
-          </li>
-        {% empty %}
-          <li><span>Послуг ще немає</span><strong></strong></li>
-        {% endfor %}
-      </ul>
-    </section>
-
-    <section class="card">
-      <h2 class="section-title">{% if editing %}Редагувати послугу{% else %}Нова послуга{% endif %}</h2>
-      <form method="post">
-        {% csrf_token %}
-        {% include 'clinic/_form_fields.html' with form=form %}
-        <div class="actions">
-          <button type="submit">Зберегти</button>
-          <a class="btn secondary" href="{% url 'doctor_dashboard' %}">Назад</a>
-        </div>
-      </form>
-    </section>
-  </div>
+            </div>
+          {% endif %}
+        </article>
+      {% empty %}
+        <div class="empty">Послуг ще немає. Додайте першу послугу вище.</div>
+      {% endfor %}
+    </div>
+  </section>
 {% endblock %}

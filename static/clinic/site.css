@@ -1314,6 +1314,83 @@ button:disabled {
   transform: rotate(180deg);
 }
 
+.service-manager {
+  padding: 0 28px;
+}
+
+.service-manager-list {
+  display: grid;
+}
+
+.service-manager-item {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.service-manager-item:last-child {
+  border-bottom: 0;
+}
+
+.service-manager-item.editing,
+.service-manager-create {
+  margin: 18px 0;
+  padding: 22px;
+  border: 1px solid #bfdbfe;
+  border-left: 4px solid var(--primary);
+  border-radius: 8px;
+  background: rgba(239, 246, 255, 0.72);
+}
+
+.service-manager-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.service-manager-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.service-manager-item h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.service-manager-price {
+  flex: 0 0 auto;
+  font-size: 18px;
+}
+
+.service-manager-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.service-manager-actions form {
+  display: block;
+}
+
+.service-inline-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(147, 197, 253, 0.58);
+}
+
+.service-inline-form > .form-error,
+.service-inline-form > .actions {
+  grid-column: 1 / -1;
+}
+
 .table-wrap {
   overflow-x: auto;
 }
@@ -1696,6 +1773,41 @@ th {
 
   .doctor-profile-edit-button {
     width: 100%;
+  }
+
+  .service-manager {
+    padding: 0 18px;
+  }
+
+  .service-manager-item.editing,
+  .service-manager-create {
+    margin: 14px 0;
+    padding: 18px;
+  }
+
+  .service-manager-item-head,
+  .service-manager-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .service-manager-price {
+    font-size: 16px;
+  }
+
+  .service-manager-actions .btn,
+  .service-manager-actions form,
+  .service-manager-actions button {
+    width: 100%;
+  }
+
+  .service-inline-form {
+    grid-template-columns: 1fr;
+  }
+
+  .service-inline-form > .form-error,
+  .service-inline-form > .actions {
+    grid-column: auto;
   }
 
   .profile-completion-link {

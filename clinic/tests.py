@@ -86,6 +86,29 @@ class ClinicModelTests(TestCase):
         self.assertEqual(slots[0].strftime('%H:%M'), '09:00')
         self.assertEqual(slots[1].strftime('%H:%M'), '10:00')
 
+    def test_doctor_cities_do_not_repeat(self):
+        WorkSchedule.objects.create(
+            doctor=self.doctor,
+            weekday=(self.schedule.weekday + 1) % 7,
+            city=self.schedule.city,
+            address='Інша адреса',
+            start_time=time(12, 0),
+            end_time=time(16, 0),
+            slot_minutes=60,
+        )
+
+        self.assertEqual(self.doctor.cities, ['Дніпро'])
+
+    def test_service_editor_expands_inside_selected_service(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.get(reverse('doctor_services'), {'edit': self.service.id})
+
+        self.assertContains(response, 'service-manager-item editing')
+        self.assertContains(response, 'Зберегти зміни')
+        self.assertContains(response, self.service.name)
+        self.assertNotContains(response, 'grid grid-2')
+
     def test_active_appointment_slot_is_unique(self):
         visit_date = timezone.localdate()
 
