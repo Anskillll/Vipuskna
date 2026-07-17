@@ -3,13 +3,6 @@
 {% block title %}Кабінет лікаря - MedClinic{% endblock %}
 
 {% block content %}
-  <section class="page-head">
-    <div>
-      <h1 class="page-title">{{ doctor.full_name }}</h1>
-      <p class="page-subtitle">{{ doctor.specialization }}{% if doctor.phone %} · {{ doctor.phone }}{% endif %}</p>
-    </div>
-  </section>
-
   <nav class="page-tabs">
     <a class="page-tab active" href="{% url 'doctor_dashboard' %}">Огляд</a>
     <a class="page-tab" href="{% url 'doctor_appointments' %}">Прийоми</a>
@@ -36,109 +29,19 @@
     </section>
   {% endif %}
 
-  <section class="overview-grid">
-    <article class="overview-card">
-      <span class="overview-label">Нові заявки</span>
-      <strong class="overview-value">{{ pending_count }}</strong>
-    </article>
-    <article class="overview-card">
-      <span class="overview-label">Активні прийоми</span>
-      <strong class="overview-value">{{ appointments_count }}</strong>
-    </article>
-    <article class="overview-card">
-      <span class="overview-label">Картки пацієнтів</span>
-      <strong class="overview-value">{{ patient_cards_count }}</strong>
-    </article>
-    <article class="overview-card">
-      <span class="overview-label">Швидкий доступ</span>
-      <strong class="overview-text">Основні дії нижче</strong>
-    </article>
-  </section>
+  <section class="card doctor-dashboard-profile">
+    <div class="doctor-profile-hero">
+      {% if doctor.photo_src %}
+        <img class="doctor-profile-photo" src="{{ doctor.photo_src }}" alt="{{ doctor.full_name }}">
+      {% else %}
+        <div class="doctor-profile-photo doctor-profile-photo-placeholder">{{ doctor.user.first_name|first }}{{ doctor.user.last_name|first }}</div>
+      {% endif %}
 
-  <section class="action-board action-board-wide">
-    <article class="action-group">
-      <span class="action-group-label">Робота</span>
-      <h3>Заявки та пацієнти</h3>
-      <div class="action-group-buttons">
-        <a class="btn" href="{% url 'doctor_appointments' %}">Заявки та прийоми</a>
-        <a class="btn secondary" href="{% url 'doctor_patient_cards' %}">Картки пацієнтів</a>
-        <a class="btn secondary" href="{% url 'doctor_book_patient' %}">Записати пацієнта</a>
-      </div>
-    </article>
-
-    <article class="action-group">
-      <span class="action-group-label">Налаштування</span>
-      <h3>Графік та послуги</h3>
-      <div class="action-group-buttons">
-        <a class="btn secondary" href="{% url 'doctor_schedule' %}">Мій графік</a>
-        <a class="btn secondary" href="{% url 'doctor_services' %}">Мої послуги</a>
-        <a class="btn secondary" href="{% url 'doctor_news' %}">Мої новини</a>
-      </div>
-    </article>
-
-    <article class="action-group">
-      <span class="action-group-label">Акаунт</span>
-      <h3>Профіль лікаря</h3>
-      <div class="action-group-buttons">
-        <a class="btn secondary" href="{% url 'doctor_edit_profile' %}">Редагувати профіль</a>
-        <a class="btn secondary" href="{% url 'doctor_change_password' %}">Змінити пароль</a>
-      </div>
-    </article>
-  </section>
-
-  <div class="grid grid-2">
-    <section class="card section-card">
-      <div class="section-head">
-        <h2 class="section-title">Графік роботи</h2>
-      </div>
-      <ul class="simple-list">
-        {% for schedule in doctor.schedules.all %}
-          <li>
-            <span>{{ schedule.get_weekday_display }} · {{ schedule.city }}</span>
-            <strong>
-              {% if schedule.is_working %}
-                {{ schedule.start_time|time:'H:i' }}-{{ schedule.end_time|time:'H:i' }}
-              {% else %}
-                Вихідний
-              {% endif %}
-            </strong>
-          </li>
-        {% empty %}
-          <li><span>Графік ще не заповнений</span><strong></strong></li>
-        {% endfor %}
-      </ul>
-    </section>
-
-    <section class="card section-card">
-      <div class="section-head">
-        <h2 class="section-title">Інформація про себе</h2>
-      </div>
-      <div class="doctor-self-profile">
-        <div class="doctor-panel-top">
-          {% if doctor.photo_src %}
-            <img class="doctor-photo doctor-photo-lg" src="{{ doctor.photo_src }}" alt="{{ doctor.full_name }}">
-          {% else %}
-            <div class="doctor-photo doctor-photo-lg">{{ doctor.user.first_name|first }}{{ doctor.user.last_name|first }}</div>
-          {% endif %}
-          <div>
-            <h3 class="doctor-name">{{ doctor.full_name }}</h3>
-            <p class="doctor-spec">{{ doctor.specialization }}</p>
-            <p class="doctor-meta">{{ doctor.phone }}</p>
-          </div>
-        </div>
-
-        {% if doctor.description %}
-          <div class="doctor-description">
-            <span>Про лікаря</span>
-            <p>{{ doctor.description }}</p>
-          </div>
-        {% else %}
-          <div class="doctor-description doctor-self-empty">
-            <span>Про лікаря</span>
-            <p>Коротка інформація про лікаря ще не заповнена.</p>
-          </div>
-        {% endif %}
-
+      <div class="doctor-profile-identity">
+        <span class="doctor-profile-label">Профіль лікаря</span>
+        <h1>{{ doctor.full_name }}</h1>
+        <p class="doctor-profile-specialization">{{ doctor.specialization }}</p>
+        <p class="doctor-profile-phone">{{ doctor.phone }}</p>
         <div class="chip-row">
           {% for city in doctor.cities %}
             <span class="chip">{{ city }}</span>
@@ -146,11 +49,54 @@
             <span class="chip chip-muted">Міста роботи ще не вказані</span>
           {% endfor %}
         </div>
-
-        <div class="doctor-self-actions">
-          <a class="btn secondary" href="{% url 'doctor_edit_profile' %}">Редагувати інформацію</a>
-        </div>
       </div>
-    </section>
-  </div>
+
+      <div class="doctor-profile-actions">
+        <a class="btn" href="{% url 'doctor_book_patient' %}">Записати пацієнта</a>
+        <a class="btn secondary" href="{% url 'doctor_edit_profile' %}">Редагувати профіль</a>
+      </div>
+    </div>
+
+    <div class="doctor-profile-about">
+      <span>Про лікаря</span>
+      {% if doctor.description %}
+        <p>{{ doctor.description }}</p>
+      {% else %}
+        <p class="doctor-self-empty">Коротка інформація про лікаря ще не заповнена.</p>
+      {% endif %}
+    </div>
+
+    <div class="doctor-profile-sections">
+      <section class="doctor-profile-section">
+        <h2>Графік роботи</h2>
+        <ul class="simple-list">
+          {% for schedule in doctor.schedules.all %}
+            <li>
+              <span>{{ schedule.get_weekday_display }} · {{ schedule.city }}</span>
+              <strong>
+                {% if schedule.is_working %}
+                  {{ schedule.start_time|time:'H:i' }}-{{ schedule.end_time|time:'H:i' }}
+                {% else %}
+                  Вихідний
+                {% endif %}
+              </strong>
+            </li>
+          {% empty %}
+            <li><span>Графік ще не заповнений</span><strong></strong></li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="doctor-profile-section">
+        <h2>Послуги</h2>
+        <ul class="simple-list">
+          {% for service in doctor.services.all %}
+            <li><span>{{ service.name }}</span><strong>{{ service.price }} грн</strong></li>
+          {% empty %}
+            <li><span>Послуги ще не додані</span><strong></strong></li>
+          {% endfor %}
+        </ul>
+      </section>
+    </div>
+  </section>
 {% endblock %}

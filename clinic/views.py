@@ -725,9 +725,6 @@ def doctor_dashboard(request):
     refresh_completed_appointments()
     doctor = request.user.doctor_profile
     sync_patient_cards_for_doctor(doctor)
-    appointments = doctor.appointments.exclude(
-        status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]
-    )
     current_appointment = active_appointment_for_doctor(doctor)
     current_card = None
     if current_appointment:
@@ -737,9 +734,6 @@ def doctor_dashboard(request):
         'clinic/doctor_dashboard.html',
         {
             'doctor': doctor,
-            'appointments_count': appointments.count(),
-            'pending_count': appointments.filter(status=Appointment.STATUS_PENDING).count(),
-            'patient_cards_count': doctor.patient_cards.count(),
             'current_appointment': current_appointment,
             'current_card': current_card,
         },
