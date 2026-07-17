@@ -732,7 +732,6 @@ def doctor_dashboard(request):
     current_card = None
     if current_appointment:
         current_card, _ = ensure_patient_card_from_appointment(current_appointment)
-    next_appointments = appointments.filter(status=Appointment.STATUS_APPROVED).order_by('date', 'time')[:5]
     return render(
         request,
         'clinic/doctor_dashboard.html',
@@ -741,7 +740,6 @@ def doctor_dashboard(request):
             'appointments_count': appointments.count(),
             'pending_count': appointments.filter(status=Appointment.STATUS_PENDING).count(),
             'patient_cards_count': doctor.patient_cards.count(),
-            'next_appointments': next_appointments,
             'current_appointment': current_appointment,
             'current_card': current_card,
         },

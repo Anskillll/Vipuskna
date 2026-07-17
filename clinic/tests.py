@@ -712,6 +712,11 @@ class ClinicModelTests(TestCase):
         self.assertContains(doctors_response, 'Про лікаря')
         self.assertContains(doctors_response, about_text)
 
+        dashboard_response = self.client.get(reverse('doctor_dashboard'))
+        self.assertContains(dashboard_response, 'Інформація про себе')
+        self.assertContains(dashboard_response, about_text)
+        self.assertNotContains(dashboard_response, 'Найближчі прийоми')
+
     def test_patient_can_upload_profile_photo(self):
         self.client.login(username='patient@test.local', password='pass12345')
         photo = SimpleUploadedFile(

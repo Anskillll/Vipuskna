@@ -697,6 +697,32 @@ a:hover {
   text-transform: uppercase;
 }
 
+.doctor-self-summary {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+}
+
+.doctor-self-specialization {
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.doctor-self-summary p {
+  margin: 0;
+  color: #334155;
+  line-height: 1.65;
+}
+
+.doctor-self-summary .doctor-self-empty {
+  color: var(--muted);
+}
+
 .chip-row {
   display: flex;
   flex-wrap: wrap;

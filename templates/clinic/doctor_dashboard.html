@@ -111,20 +111,17 @@
 
     <section class="card section-card">
       <div class="section-head">
-        <h2 class="section-title">Найближчі прийоми</h2>
+        <h2 class="section-title">Інформація про себе</h2>
       </div>
-      {% if next_appointments %}
-        <ul class="simple-list">
-          {% for appointment in next_appointments %}
-            <li>
-              <span>{{ appointment.date|date:'d.m.Y' }} {{ appointment.time|time:'H:i' }} · {{ appointment.patient_name }}</span>
-              <strong>{{ appointment.city }}</strong>
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <div class="empty">Найближчих прийомів поки немає.</div>
-      {% endif %}
+      <div class="doctor-self-summary">
+        <span class="doctor-self-specialization">{{ doctor.specialization }}</span>
+        {% if doctor.description %}
+          <p>{{ doctor.description }}</p>
+        {% else %}
+          <p class="doctor-self-empty">Коротка інформація про лікаря ще не заповнена.</p>
+        {% endif %}
+        <a class="btn secondary" href="{% url 'doctor_edit_profile' %}">Редагувати інформацію</a>
+      </div>
     </section>
   </div>
 {% endblock %}
