@@ -814,9 +814,24 @@ a:hover {
   border-left: 1px solid var(--line);
 }
 
-.doctor-profile-section h2 {
-  margin: 0 0 12px;
+.doctor-profile-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.doctor-profile-section-head h2 {
+  margin: 0;
   font-size: 22px;
+}
+
+.doctor-profile-edit-button {
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 .chip-row {
@@ -1652,6 +1667,15 @@ th {
     padding-left: 0;
     border-top: 1px solid var(--line);
     border-left: 0;
+  }
+
+  .doctor-profile-section-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .doctor-profile-edit-button {
+    width: 100%;
   }
 
   .profile-completion-link {

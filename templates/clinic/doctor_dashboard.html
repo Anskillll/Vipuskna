@@ -7,8 +7,6 @@
     <a class="page-tab active" href="{% url 'doctor_dashboard' %}">Огляд</a>
     <a class="page-tab" href="{% url 'doctor_appointments' %}">Прийоми</a>
     <a class="page-tab" href="{% url 'doctor_patient_cards' %}">Пацієнти</a>
-    <a class="page-tab" href="{% url 'doctor_schedule' %}">Графік</a>
-    <a class="page-tab" href="{% url 'doctor_services' %}">Послуги</a>
     <a class="page-tab" href="{% url 'doctor_news' %}">Мої новини</a>
   </nav>
 
@@ -68,7 +66,10 @@
 
     <div class="doctor-profile-sections">
       <section class="doctor-profile-section">
-        <h2>Графік роботи</h2>
+        <div class="doctor-profile-section-head">
+          <h2>Графік роботи</h2>
+          <a class="btn secondary doctor-profile-edit-button" href="{% url 'doctor_schedule' %}">Редагувати графік</a>
+        </div>
         <ul class="simple-list">
           {% for schedule in doctor.schedules.all %}
             <li>
@@ -88,7 +89,10 @@
       </section>
 
       <section class="doctor-profile-section">
-        <h2>Послуги</h2>
+        <div class="doctor-profile-section-head">
+          <h2>Послуги</h2>
+          <a class="btn secondary doctor-profile-edit-button" href="{% url 'doctor_services' %}">Редагувати послуги</a>
+        </div>
         <ul class="simple-list">
           {% for service in doctor.services.all %}
             <li><span>{{ service.name }}</span><strong>{{ service.price }} грн</strong></li>
