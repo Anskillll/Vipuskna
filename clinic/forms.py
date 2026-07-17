@@ -551,7 +551,7 @@ class ClinicSettingsForm(FormStyleMixin, forms.ModelForm):
         labels = {
             'clinic_name': 'Назва клініки',
             'logo': 'Логотип клініки',
-            'home_background': 'Фон головної сторінки',
+            'home_background': 'Фон усього сайту',
             'home_effect': 'Анімований ефект поверх фону',
             'particle_image': 'Зображення для власного пресета',
         }

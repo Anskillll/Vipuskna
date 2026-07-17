@@ -34,6 +34,16 @@ body {
   line-height: 1.5;
 }
 
+body.has-site-background {
+  background-color: #eef4ff;
+  background-image:
+    linear-gradient(180deg, rgba(238, 244, 255, 0.76), rgba(245, 247, 251, 0.86)),
+    var(--site-bg);
+  background-position: center;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
 a {
   color: var(--primary);
   text-decoration: none;
@@ -1451,6 +1461,10 @@ th {
 }
 
 @media (max-width: 680px) {
+  body.has-site-background {
+    background-attachment: scroll;
+  }
+
   .profile-completion-alert {
     align-items: stretch;
     flex-direction: column;

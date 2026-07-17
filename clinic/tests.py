@@ -862,6 +862,17 @@ class ClinicModelTests(TestCase):
 
         self.assertContains(response, 'data-particle-effect="teeth"')
 
+    def test_selected_background_is_used_on_internal_pages(self):
+        branding, _ = ClinicSettings.objects.get_or_create(pk=1)
+        branding.home_background = 'clinic/branding/site-background.jpg'
+        branding.save(update_fields=['home_background'])
+        self.client.login(username='patient@test.local', password='pass12345')
+
+        response = self.client.get(reverse('patient_dashboard'))
+
+        self.assertContains(response, 'class="has-site-background"')
+        self.assertContains(response, '/media/clinic/branding/site-background.jpg')
+
     def test_home_renders_interactive_dental_field_preset(self):
         branding, _ = ClinicSettings.objects.get_or_create(pk=1)
         branding.home_effect = ClinicSettings.EFFECT_DENTAL_FIELD
