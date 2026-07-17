@@ -712,6 +712,11 @@ class ClinicModelTests(TestCase):
         self.assertContains(doctors_response, 'Про лікаря')
         self.assertContains(doctors_response, about_text)
 
+        NewsPost.objects.create(
+            doctor=self.doctor,
+            title='Новина лікаря для профілю',
+            text='Короткий текст новини.',
+        )
         dashboard_response = self.client.get(reverse('doctor_dashboard'))
         self.assertContains(dashboard_response, 'Профіль лікаря')
         self.assertContains(dashboard_response, about_text)
@@ -721,8 +726,11 @@ class ClinicModelTests(TestCase):
         self.assertContains(dashboard_response, 'Редагувати профіль')
         self.assertContains(dashboard_response, 'Редагувати графік')
         self.assertContains(dashboard_response, 'Редагувати послуги')
+        self.assertContains(dashboard_response, 'Редагувати новини')
+        self.assertContains(dashboard_response, 'Новина лікаря для профілю')
         self.assertNotContains(dashboard_response, '>Графік</a>')
         self.assertNotContains(dashboard_response, '>Послуги</a>')
+        self.assertNotContains(dashboard_response, '>Мої новини</a>')
         self.assertNotContains(dashboard_response, 'action-board')
         self.assertNotContains(dashboard_response, 'Швидкий доступ')
         self.assertNotContains(dashboard_response, 'Найближчі прийоми')

@@ -7,7 +7,6 @@
     <a class="page-tab active" href="{% url 'doctor_dashboard' %}">Огляд</a>
     <a class="page-tab" href="{% url 'doctor_appointments' %}">Прийоми</a>
     <a class="page-tab" href="{% url 'doctor_patient_cards' %}">Пацієнти</a>
-    <a class="page-tab" href="{% url 'doctor_news' %}">Мої новини</a>
   </nav>
 
   {% if current_appointment and current_card %}
@@ -102,5 +101,25 @@
         </ul>
       </section>
     </div>
+
+    <section class="doctor-profile-news">
+      <div class="doctor-profile-section-head">
+        <div>
+          <h2>Мої новини</h2>
+          <p>Публікації, які бачать відвідувачі головної сторінки.</p>
+        </div>
+        <a class="btn secondary doctor-profile-edit-button" href="{% url 'doctor_news' %}">Редагувати новини</a>
+      </div>
+      <ul class="simple-list">
+        {% for post in doctor.news_posts.all|slice:":3" %}
+          <li>
+            <span>{{ post.title }}</span>
+            <strong>{{ post.created_at|date:'d.m.Y' }}{% if not post.is_published %} · приховано{% endif %}</strong>
+          </li>
+        {% empty %}
+          <li><span>Ви ще не створювали новин</span><strong></strong></li>
+        {% endfor %}
+      </ul>
+    </section>
   </section>
 {% endblock %}

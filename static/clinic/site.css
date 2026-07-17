@@ -834,6 +834,22 @@ a:hover {
   white-space: nowrap;
 }
 
+.doctor-profile-news {
+  margin-top: 30px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+}
+
+.doctor-profile-news .doctor-profile-section-head {
+  align-items: flex-end;
+}
+
+.doctor-profile-news .doctor-profile-section-head p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .chip-row {
   display: flex;
   flex-wrap: wrap;
@@ -1672,6 +1688,10 @@ th {
   .doctor-profile-section-head {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .doctor-profile-news .doctor-profile-section-head {
+    align-items: stretch;
   }
 
   .doctor-profile-edit-button {
