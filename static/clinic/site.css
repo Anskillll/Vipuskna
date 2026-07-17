@@ -1378,6 +1378,23 @@ button:disabled {
   display: block;
 }
 
+.service-order-controls {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.service-order-controls form {
+  display: block;
+}
+
+.service-order-button {
+  width: 42px;
+  min-height: 42px;
+  padding: 0;
+  font-size: 18px;
+}
+
 .service-inline-form {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: end;
@@ -1796,8 +1813,20 @@ th {
   }
 
   .service-manager-actions .btn,
-  .service-manager-actions form,
-  .service-manager-actions button {
+  .service-manager-actions > form,
+  .service-manager-actions > form button {
+    width: 100%;
+  }
+
+  .service-order-controls {
+    width: 100%;
+  }
+
+  .service-order-controls form {
+    flex: 1;
+  }
+
+  .service-order-button {
     width: 100%;
   }
 

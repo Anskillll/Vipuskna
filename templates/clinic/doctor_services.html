@@ -35,7 +35,7 @@
         <article class="service-manager-item{% if editing.id == service.id %} editing{% endif %}">
           <div class="service-manager-item-head">
             <div>
-              <span class="service-manager-label">Послуга</span>
+              <span class="service-manager-label">Послуга {{ forloop.counter }}</span>
               <h2>{{ service.name }}</h2>
             </div>
             <strong class="service-manager-price">{{ service.price }} грн</strong>
@@ -52,6 +52,32 @@
             </form>
           {% else %}
             <div class="service-manager-actions">
+              <div class="service-order-controls" aria-label="Змінити порядок послуги">
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="move_up">
+                  <input type="hidden" name="service_id" value="{{ service.id }}">
+                  <button
+                    type="submit"
+                    class="secondary service-order-button"
+                    aria-label="Підняти послугу вище"
+                    title="Підняти вище"
+                    {% if forloop.first %}disabled{% endif %}
+                  >↑</button>
+                </form>
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="move_down">
+                  <input type="hidden" name="service_id" value="{{ service.id }}">
+                  <button
+                    type="submit"
+                    class="secondary service-order-button"
+                    aria-label="Опустити послугу нижче"
+                    title="Опустити нижче"
+                    {% if forloop.last %}disabled{% endif %}
+                  >↓</button>
+                </form>
+              </div>
               <a class="btn secondary" href="{% url 'doctor_services' %}?edit={{ service.id }}">Редагувати</a>
               <form method="post" onsubmit="return confirm('Видалити цю послугу?');">
                 {% csrf_token %}

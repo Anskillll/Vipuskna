@@ -109,6 +109,46 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, self.service.name)
         self.assertNotContains(response, 'grid grid-2')
 
+    def test_doctor_can_change_service_order(self):
+        second_service = MedicalService.objects.create(
+            doctor=self.doctor,
+            name='Друга послуга',
+            price=900,
+            sort_order=1,
+        )
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.post(
+            reverse('doctor_services'),
+            data={
+                'action': 'move_down',
+                'service_id': self.service.id,
+            },
+        )
+
+        ordered_ids = list(self.doctor.services.values_list('id', flat=True))
+        self.assertRedirects(response, reverse('doctor_services'))
+        self.assertEqual(ordered_ids, [second_service.id, self.service.id])
+
+        dashboard_response = self.client.get(reverse('doctor_dashboard'))
+        content = dashboard_response.content.decode()
+        self.assertLess(content.index('Друга послуга'), content.index(self.service.name))
+
+    def test_new_service_is_added_to_end(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.post(
+            reverse('doctor_services'),
+            data={
+                'name': 'Остання послуга',
+                'price': 1200,
+            },
+        )
+
+        created_service = MedicalService.objects.get(name='Остання послуга')
+        self.assertRedirects(response, reverse('doctor_services'))
+        self.assertGreater(created_service.sort_order, self.service.sort_order)
+
     def test_active_appointment_slot_is_unique(self):
         visit_date = timezone.localdate()
 

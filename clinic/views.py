@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Q
+from django.db.models import Count, Max, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -42,6 +42,7 @@ from .models import (
     Doctor,
     DoctorPatientCard,
     GalleryImage,
+    MedicalService,
     NewsPost,
     PatientRecordEntry,
     PatientRecordImage,
@@ -1121,6 +1122,20 @@ def doctor_services(request):
     edit_id = request.GET.get('edit')
     instance = doctor.services.filter(pk=edit_id).first() if edit_id else None
 
+    if request.method == 'POST' and request.POST.get('action') in {'move_up', 'move_down'}:
+        service = get_object_or_404(doctor.services, pk=request.POST.get('service_id'))
+        services = list(doctor.services.order_by('sort_order', 'id'))
+        current_index = services.index(service)
+        offset = -1 if request.POST['action'] == 'move_up' else 1
+        target_index = current_index + offset
+        if 0 <= target_index < len(services):
+            services[current_index], services[target_index] = services[target_index], services[current_index]
+            for position, item in enumerate(services):
+                item.sort_order = position
+            MedicalService.objects.bulk_update(services, ['sort_order'])
+            messages.success(request, 'Порядок послуг оновлено.')
+        return redirect('doctor_services')
+
     if request.method == 'POST' and request.POST.get('action') == 'delete':
         service = get_object_or_404(doctor.services, pk=request.POST.get('service_id'))
         service.delete()
@@ -1131,6 +1146,9 @@ def doctor_services(request):
     if request.method == 'POST' and form.is_valid():
         service = form.save(commit=False)
         service.doctor = doctor
+        if service.pk is None:
+            last_order = doctor.services.aggregate(max_order=Max('sort_order'))['max_order']
+            service.sort_order = 0 if last_order is None else last_order + 1
         service.save()
         messages.success(request, 'Послугу збережено.')
         return redirect('doctor_services')

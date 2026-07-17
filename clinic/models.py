@@ -91,11 +91,12 @@ class MedicalService(models.Model):
     )
     name = models.CharField(max_length=160)
     price = models.PositiveIntegerField(validators=[MinValueValidator(0)])
+    sort_order = models.PositiveIntegerField(default=0)
 
     class Meta:
         verbose_name = 'Медична послуга'
         verbose_name_plural = 'Медичні послуги'
-        ordering = ['name']
+        ordering = ['sort_order', 'id']
 
     def __str__(self):
         return f'{self.name} - {self.price} грн'
