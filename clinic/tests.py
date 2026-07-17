@@ -688,6 +688,30 @@ class ClinicModelTests(TestCase):
         self.assertNotIn('email', DoctorProfileForm(doctor=self.doctor).fields)
         self.assertNotIn('email', DoctorPatientBookingForm(doctor=self.doctor).fields)
 
+    def test_doctor_can_publish_short_about_text(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+        about_text = 'Працюю уважно та пояснюю кожен етап лікування.'
+
+        response = self.client.post(
+            reverse('doctor_edit_profile'),
+            data={
+                'first_name': self.doctor.user.first_name,
+                'last_name': self.doctor.user.last_name,
+                'phone': self.doctor.phone,
+                'specialization': self.doctor.specialization,
+                'photo_url': '',
+                'description': about_text,
+            },
+        )
+
+        self.doctor.refresh_from_db()
+        self.assertRedirects(response, reverse('doctor_dashboard'))
+        self.assertEqual(self.doctor.description, about_text)
+
+        doctors_response = self.client.get(reverse('doctors'))
+        self.assertContains(doctors_response, 'Про лікаря')
+        self.assertContains(doctors_response, about_text)
+
     def test_patient_can_upload_profile_photo(self):
         self.client.login(username='patient@test.local', password='pass12345')
         photo = SimpleUploadedFile(

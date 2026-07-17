@@ -331,9 +331,17 @@ class DoctorProfileForm(FormStyleMixin, forms.Form):
     photo = forms.ImageField(label='Фото з пристрою', required=False)
     photo_url = forms.URLField(label='Посилання на фото', required=False)
     description = forms.CharField(
-        label='Опис',
+        label='Коротко про себе',
         required=False,
-        widget=forms.Textarea(attrs={'rows': 4}),
+        max_length=300,
+        help_text='Короткий текст, який пацієнти побачать у вкладці «Лікарі». До 300 символів.',
+        widget=forms.Textarea(
+            attrs={
+                'rows': 3,
+                'maxlength': 300,
+                'placeholder': 'Наприклад: досвід роботи, підхід до пацієнтів та основні напрямки.',
+            }
+        ),
     )
 
     def __init__(self, *args, doctor=None, **kwargs):

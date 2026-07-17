@@ -675,13 +675,26 @@ a:hover {
 }
 
 .doctor-meta,
-.doctor-description {
+.doctor-description p {
   margin: 0;
   color: var(--muted);
 }
 
 .doctor-description {
-  margin-top: 16px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-left: 4px solid #60a5fa;
+  border-radius: 0 8px 8px 0;
+  background: rgba(239, 246, 255, 0.78);
+}
+
+.doctor-description span {
+  display: block;
+  margin-bottom: 5px;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .chip-row {

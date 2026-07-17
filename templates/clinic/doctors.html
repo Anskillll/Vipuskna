@@ -37,7 +37,10 @@
         </div>
 
         {% if doctor.description %}
-          <p class="doctor-description">{{ doctor.description }}</p>
+          <div class="doctor-description">
+            <span>Про лікаря</span>
+            <p>{{ doctor.description }}</p>
+          </div>
         {% endif %}
 
         <div class="chip-row">
