@@ -25,7 +25,6 @@
             <tr>
               <th>Пацієнт</th>
               <th>Телефон</th>
-              <th>Email</th>
               <th>Останній візит</th>
               <th>Наступний візит</th>
               <th>Усього записів</th>
@@ -37,7 +36,6 @@
               <tr>
                 <td>{{ row.card.full_name }}</td>
                 <td>{{ row.card.patient_phone }}</td>
-                <td>{{ row.card.patient_email|default:'-' }}</td>
                 <td>
                   {% if row.last_visit %}
                     {{ row.last_visit.date|date:'d.m.Y' }} {{ row.last_visit.time|time:'H:i' }}

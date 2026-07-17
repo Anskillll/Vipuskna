@@ -1,14 +1,18 @@
 from datetime import datetime, timedelta
 from functools import wraps
 from math import ceil
+from urllib.parse import urlencode
 
+from allauth.socialaccount.models import SocialAccount
 from django.contrib import messages
 from django.contrib.auth import login, logout, update_session_auth_hash
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
 from .forms import (
@@ -16,6 +20,7 @@ from .forms import (
     AdminUserEditForm,
     AppointmentDecisionForm,
     BookingReasonForm,
+    ClaimPatientForm,
     ClinicSettingsForm,
     DoctorPatientBookingForm,
     DoctorPatientCardForm,
@@ -28,6 +33,7 @@ from .forms import (
     ServiceForm,
     UsernameLoginForm,
     WorkScheduleForm,
+    normalize_phone_number,
 )
 from .models import (
     Appointment,
@@ -300,6 +306,20 @@ def ensure_patient_card_from_appointment(appointment):
     return card, created
 
 
+def unclaimed_records_for_phone(phone):
+    appointments = [
+        appointment
+        for appointment in Appointment.objects.filter(patient__isnull=True).only('id', 'patient_phone')
+        if normalize_phone_number(appointment.patient_phone) == phone
+    ]
+    cards = [
+        card
+        for card in DoctorPatientCard.objects.filter(patient__isnull=True).only('id', 'patient_phone')
+        if normalize_phone_number(card.patient_phone) == phone
+    ]
+    return appointments, cards
+
+
 def sync_patient_cards_for_doctor(doctor):
     appointments = doctor.appointments.exclude(
         status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]
@@ -380,8 +400,92 @@ def forgot_password(request):
     return render(request, 'clinic/forgot_password.html', {'form': form})
 
 
+def claim_patient(request):
+    if request.user.is_authenticated and user_role(request.user) != Profile.ROLE_PATIENT:
+        messages.error(request, 'Ця функція доступна лише пацієнтам.')
+        return redirect_by_role(request.user)
+
+    form = ClaimPatientForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        phone = form.cleaned_data['phone']
+        appointments, cards = unclaimed_records_for_phone(phone)
+        if not appointments and not cards:
+            form.add_error('phone', 'Записів із таким номером не знайдено. Перевірте номер або зверніться до лікаря.')
+        else:
+            request.session['patient_claim_phone'] = phone
+            complete_url = reverse('claim_patient_complete')
+            if request.user.is_authenticated and SocialAccount.objects.filter(
+                user=request.user,
+                provider='google',
+            ).exists():
+                return redirect(complete_url)
+            google_url = reverse('google_login')
+            return redirect(f'{google_url}?{urlencode({"next": complete_url})}')
+
+    return render(request, 'clinic/claim_patient.html', {'form': form})
+
+
+@login_required
+def claim_patient_complete(request):
+    phone = request.session.get('patient_claim_phone')
+    if not phone:
+        return redirect('patient_dashboard')
+
+    if request.user.is_staff:
+        request.session.pop('patient_claim_phone', None)
+        messages.error(request, 'Записи можна прив’язати лише до кабінету пацієнта.')
+        return redirect_by_role(request.user)
+
+    profile, _ = Profile.objects.get_or_create(
+        user=request.user,
+        defaults={'role': Profile.ROLE_PATIENT, 'phone': ''},
+    )
+    if profile.role != Profile.ROLE_PATIENT:
+        request.session.pop('patient_claim_phone', None)
+        messages.error(request, 'Записи можна прив’язати лише до кабінету пацієнта.')
+        return redirect_by_role(request.user)
+
+    if not SocialAccount.objects.filter(user=request.user, provider='google').exists():
+        messages.error(request, 'Для прив’язування записів потрібно увійти через Google.')
+        google_url = reverse('google_login')
+        return redirect(f'{google_url}?{urlencode({"next": reverse("claim_patient_complete")})}')
+
+    current_phone = normalize_phone_number(profile.phone)
+    if current_phone and current_phone != phone:
+        request.session.pop('patient_claim_phone', None)
+        messages.error(request, 'У цьому кабінеті вже вказано інший номер телефону.')
+        return redirect('patient_dashboard')
+
+    phone_belongs_to_another_user = any(
+        normalize_phone_number(item.phone) == phone
+        for item in Profile.objects.filter(role=Profile.ROLE_PATIENT).exclude(user=request.user).exclude(phone='')
+    )
+    if phone_belongs_to_another_user:
+        request.session.pop('patient_claim_phone', None)
+        messages.error(request, 'Цей номер уже прив’язаний до іншого кабінету.')
+        return redirect('patient_dashboard')
+
+    appointments, cards = unclaimed_records_for_phone(phone)
+    if not appointments and not cards:
+        request.session.pop('patient_claim_phone', None)
+        messages.error(request, 'Неприв’язаних записів із цим номером більше немає.')
+        return redirect('patient_dashboard')
+
+    with transaction.atomic():
+        profile.phone = phone
+        profile.save(update_fields=['phone'])
+        Appointment.objects.filter(pk__in=[item.pk for item in appointments]).update(patient=request.user)
+        DoctorPatientCard.objects.filter(pk__in=[item.pk for item in cards]).update(patient=request.user)
+
+    request.session.pop('patient_claim_phone', None)
+    messages.success(request, 'Записи лікаря прив’язано до вашого кабінету.')
+    return redirect('patient_dashboard')
+
+
 @patient_required
 def patient_dashboard(request):
+    if request.session.get('patient_claim_phone'):
+        return redirect('claim_patient_complete')
     refresh_completed_appointments()
     appointments = (
         Appointment.objects.filter(patient=request.user)
@@ -743,7 +847,7 @@ def doctor_book_patient(request):
             duration_minutes = form.cleaned_data['duration_minutes']
             duration_slots = ceil(duration_minutes / slot_minutes)
             patient = form.cleaned_data.get('patient') or find_patient_by_contacts(
-                form.cleaned_data.get('email'),
+                '',
                 form.cleaned_data['phone'],
             )
             if appointment_conflicts(
@@ -763,7 +867,7 @@ def doctor_book_patient(request):
                         patient_first_name=form.cleaned_data['first_name'],
                         patient_last_name=form.cleaned_data['last_name'],
                         patient_phone=form.cleaned_data['phone'],
-                        patient_email=form.cleaned_data.get('email', ''),
+                        patient_email=patient.email if patient else '',
                         date=selected_date,
                         time=selected_time,
                         city=schedule.city,

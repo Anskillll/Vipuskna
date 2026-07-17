@@ -26,6 +26,13 @@ phone_validator = RegexValidator(
 )
 
 
+def normalize_phone_number(value):
+    digits = ''.join(character for character in (value or '') if character.isdigit())
+    if len(digits) == 10 and digits.startswith('0'):
+        digits = f'38{digits}'
+    return f'+{digits}' if digits else ''
+
+
 class FormStyleMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -83,10 +90,20 @@ class EmailForm(FormStyleMixin, forms.Form):
     email = forms.EmailField(label='Email')
 
 
+class ClaimPatientForm(FormStyleMixin, forms.Form):
+    phone = forms.CharField(
+        label='Номер телефону',
+        validators=[phone_validator],
+        help_text='Введіть той самий номер, який ви повідомили лікарю.',
+    )
+
+    def clean_phone(self):
+        return normalize_phone_number(self.cleaned_data['phone'])
+
+
 class PatientProfileForm(FormStyleMixin, forms.Form):
     first_name = forms.CharField(label="Ім'я", max_length=80)
     last_name = forms.CharField(label='Прізвище', max_length=80)
-    email = forms.EmailField(label='Email')
     phone = forms.CharField(label='Телефон', validators=[phone_validator])
 
     def __init__(self, *args, user=None, **kwargs):
@@ -97,25 +114,18 @@ class PatientProfileForm(FormStyleMixin, forms.Form):
                 {
                     'first_name': user.first_name,
                     'last_name': user.last_name,
-                    'email': user.email,
                     'phone': user.profile.phone,
                 }
             )
         super().__init__(*args, initial=initial, **kwargs)
 
-    def clean_email(self):
-        email = self.cleaned_data['email'].lower()
-        qs = User.objects.filter(email__iexact=email).exclude(pk=self.user.pk)
-        if qs.exists():
-            raise forms.ValidationError('Користувач із такою електронною поштою вже зареєстрований.')
-        return email
+    def clean_phone(self):
+        return normalize_phone_number(self.cleaned_data['phone'])
 
     def save(self):
         self.user.first_name = self.cleaned_data['first_name']
         self.user.last_name = self.cleaned_data['last_name']
-        self.user.email = self.cleaned_data['email']
-        self.user.username = self.cleaned_data['email']
-        self.user.save()
+        self.user.save(update_fields=['first_name', 'last_name'])
         self.user.profile.phone = self.cleaned_data['phone']
         self.user.profile.save()
         return self.user
@@ -165,7 +175,8 @@ class BookingReasonForm(FormStyleMixin, forms.Form):
 class PatientChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, user):
         name = user.get_full_name() or user.username
-        return f'{name} ({user.email})' if user.email else name
+        phone = getattr(user.profile, 'phone', '')
+        return f'{name} ({phone})' if phone else name
 
 
 class DoctorPatientBookingForm(FormStyleMixin, forms.Form):
@@ -188,7 +199,6 @@ class DoctorPatientBookingForm(FormStyleMixin, forms.Form):
     first_name = forms.CharField(label="Ім'я", max_length=80, required=False)
     last_name = forms.CharField(label='Прізвище', max_length=80, required=False)
     phone = forms.CharField(label='Телефон', validators=[phone_validator], required=False)
-    email = forms.EmailField(label='Email', required=False)
     reason = forms.CharField(label='Причина звернення', widget=forms.Textarea(attrs={'rows': 4}))
 
     def __init__(self, *args, doctor=None, slot_minutes=60, **kwargs):
@@ -209,9 +219,6 @@ class DoctorPatientBookingForm(FormStyleMixin, forms.Form):
                 if consultation:
                     self.fields['service'].initial = consultation.pk
 
-    def clean_email(self):
-        return self.cleaned_data.get('email', '').lower()
-
     def clean_duration_minutes(self):
         value = self.cleaned_data['duration_minutes']
         if value % self.slot_minutes:
@@ -226,9 +233,11 @@ class DoctorPatientBookingForm(FormStyleMixin, forms.Form):
             phone = patient.profile.phone or cleaned_data.get('phone', '')
             cleaned_data['first_name'] = patient.first_name or patient.username
             cleaned_data['last_name'] = patient.last_name
-            cleaned_data['phone'] = phone
-            cleaned_data['email'] = patient.email.lower()
+            cleaned_data['phone'] = normalize_phone_number(phone)
             return cleaned_data
+
+        if cleaned_data.get('phone'):
+            cleaned_data['phone'] = normalize_phone_number(cleaned_data['phone'])
 
         for field_name in ('first_name', 'last_name', 'phone'):
             if not cleaned_data.get(field_name):
@@ -265,7 +274,6 @@ class DoctorPatientCardForm(FormStyleMixin, forms.ModelForm):
             'patient_first_name',
             'patient_last_name',
             'patient_phone',
-            'patient_email',
             'notes',
         ]
         widgets = {
@@ -275,7 +283,6 @@ class DoctorPatientCardForm(FormStyleMixin, forms.ModelForm):
             'patient_first_name': "Ім'я",
             'patient_last_name': 'Прізвище',
             'patient_phone': 'Телефон',
-            'patient_email': 'Email',
             'notes': 'Нотатки лікаря',
         }
 
@@ -308,7 +315,6 @@ class PatientRecordEntryForm(FormStyleMixin, forms.ModelForm):
 class DoctorProfileForm(FormStyleMixin, forms.Form):
     first_name = forms.CharField(label="Ім'я", max_length=80)
     last_name = forms.CharField(label='Прізвище', max_length=80)
-    email = forms.EmailField(label='Email')
     phone = forms.CharField(label='Телефон', validators=[phone_validator])
     specialization = forms.CharField(label='Спеціальність', max_length=120)
     photo = forms.ImageField(label='Фото з пристрою', required=False)
@@ -327,7 +333,6 @@ class DoctorProfileForm(FormStyleMixin, forms.Form):
                 {
                     'first_name': doctor.user.first_name,
                     'last_name': doctor.user.last_name,
-                    'email': doctor.user.email,
                     'phone': doctor.phone,
                     'specialization': doctor.specialization,
                     'photo_url': doctor.photo_url,
@@ -336,19 +341,14 @@ class DoctorProfileForm(FormStyleMixin, forms.Form):
             )
         super().__init__(*args, initial=initial, **kwargs)
 
-    def clean_email(self):
-        email = self.cleaned_data['email'].lower()
-        qs = User.objects.filter(email__iexact=email).exclude(pk=self.doctor.user.pk)
-        if qs.exists():
-            raise forms.ValidationError('Цей email уже використовується.')
-        return email
+    def clean_phone(self):
+        return normalize_phone_number(self.cleaned_data['phone'])
 
     def save(self):
         user = self.doctor.user
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
-        user.email = self.cleaned_data['email']
-        user.save()
+        user.save(update_fields=['first_name', 'last_name'])
 
         self.doctor.phone = self.cleaned_data['phone']
         self.doctor.specialization = self.cleaned_data['specialization']

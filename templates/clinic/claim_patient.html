@@ -1,0 +1,18 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Знайти записи лікаря - MedClinic{% endblock %}
+
+{% block content %}
+  <div class="claim-patient-page">
+    <section class="card claim-patient-card">
+      <h1 class="page-title">Вас уже реєстрував лікар?</h1>
+      <p class="page-subtitle">Введіть номер телефону із запису. Після цього увійдіть через Google, щоб безпечно створити кабінет і прив’язати свої прийоми.</p>
+      <form method="post">
+        {% csrf_token %}
+        {% include 'clinic/_form_fields.html' %}
+        <button type="submit">Знайти записи та увійти через Google</button>
+      </form>
+      <a class="back-link" href="{% url 'home' %}">← Повернутися на головну</a>
+    </section>
+  </div>
+{% endblock %}

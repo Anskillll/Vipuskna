@@ -823,6 +823,30 @@ button.danger {
   gap: 20px;
 }
 
+.claim-patient-page {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: calc(100vh - 150px);
+  padding: 28px 0;
+}
+
+.claim-patient-card {
+  border-radius: 8px;
+  max-width: 560px;
+  width: 100%;
+}
+
+.claim-patient-card form {
+  display: grid;
+  gap: 16px;
+  margin: 24px 0 18px;
+}
+
+.claim-patient-card form > button {
+  width: 100%;
+}
+
 .doctor-summary {
   align-self: start;
 }

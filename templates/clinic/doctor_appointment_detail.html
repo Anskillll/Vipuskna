@@ -19,7 +19,6 @@
         <dl class="detail-list">
           <div><dt>Пацієнт</dt><dd>{{ appointment.patient_name }}</dd></div>
           <div><dt>Телефон</dt><dd>{{ appointment.patient_phone }}</dd></div>
-          <div><dt>Email</dt><dd>{{ appointment.patient_email|default:'Не вказано' }}</dd></div>
           <div><dt>Послуга</dt><dd>{{ appointment.service.name|default:'Не обрано' }}</dd></div>
           <div><dt>Дата і час</dt><dd>{{ appointment.date|date:'d.m.Y' }} о {{ appointment.time|time:'H:i' }}</dd></div>
           <div><dt>Тривалість</dt><dd>{{ appointment.duration_minutes }} хв</dd></div>

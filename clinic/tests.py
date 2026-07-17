@@ -2,6 +2,7 @@ from datetime import datetime, time, timedelta
 import tempfile
 from unittest.mock import patch
 
+from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
@@ -21,7 +22,13 @@ from .models import (
     Profile,
     WorkSchedule,
 )
-from .forms import BookingReasonForm, PatientRecordEntryForm
+from .forms import (
+    BookingReasonForm,
+    DoctorPatientBookingForm,
+    DoctorProfileForm,
+    PatientProfileForm,
+    PatientRecordEntryForm,
+)
 from .views import active_appointment_for_doctor, appointment_conflicts
 
 
@@ -265,12 +272,13 @@ class ClinicModelTests(TestCase):
         self.client.login(username='doctor@test.local', password='pass12345')
 
         response = self.client.get(reverse('doctor_appointments'))
-        appointment_ids = [item.id for item in response.context['appointments']]
+        rendered_appointments = list(response.context['appointments'])
+        appointment_ids = [item.id for item in rendered_appointments]
         weekday_names = ('Понеділок', 'Вівторок', 'Середа', 'Четвер', "П'ятниця", 'Субота', 'Неділя')
 
         self.assertEqual(appointment_ids, [earlier.id, later.id, next_day.id])
-        self.assertContains(response, weekday_names[first_date.weekday()])
-        self.assertContains(response, weekday_names[second_date.weekday()])
+        self.assertEqual(rendered_appointments[0].weekday_name, weekday_names[first_date.weekday()])
+        self.assertEqual(rendered_appointments[-1].weekday_name, weekday_names[second_date.weekday()])
         self.assertContains(response, first_date.strftime('%d.%m.%Y'))
         self.assertContains(response, second_date.strftime('%d.%m.%Y'))
         self.assertContains(response, 'Відкрити картку', count=3)
@@ -534,6 +542,125 @@ class ClinicModelTests(TestCase):
         self.assertNotContains(response, 'Увійти через Google')
         self.assertContains(response, 'Записатися на прийом')
         self.assertContains(response, 'Переглянути лікарів')
+
+    def test_guest_can_start_claiming_doctor_created_record_by_phone(self):
+        phone = '+380501234567'
+        Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient_first_name='Новий',
+            patient_last_name='Пацієнт',
+            patient_phone=phone,
+            date=timezone.localdate() + timedelta(days=7),
+            time='10:00',
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Запис створив лікар',
+            status=Appointment.STATUS_APPROVED,
+        )
+
+        response = self.client.post(
+            reverse('claim_patient'),
+            data={'phone': '050 123 45 67'},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('google_login'), response.url)
+        self.assertEqual(self.client.session['patient_claim_phone'], phone)
+
+    def test_google_patient_can_claim_appointments_and_cards_by_phone(self):
+        phone = '+380501234568'
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient_first_name='Новий',
+            patient_last_name='Пацієнт',
+            patient_phone='050 123 45 68',
+            date=timezone.localdate() + timedelta(days=7),
+            time='10:00',
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Запис для прив’язування',
+            status=Appointment.STATUS_APPROVED,
+        )
+        card = DoctorPatientCard.objects.create(
+            doctor=self.doctor,
+            patient_first_name='Новий',
+            patient_last_name='Пацієнт',
+            patient_phone='050 123 45 68',
+        )
+        google_user = User.objects.create_user(
+            username='google-patient@test.local',
+            email='google-patient@test.local',
+            first_name='Новий',
+            last_name='Пацієнт',
+        )
+        profile = Profile.objects.create(
+            user=google_user,
+            role=Profile.ROLE_PATIENT,
+            phone='',
+        )
+        SocialAccount.objects.create(
+            user=google_user,
+            provider='google',
+            uid='google-patient-uid',
+        )
+        self.client.force_login(google_user)
+        session = self.client.session
+        session['patient_claim_phone'] = phone
+        session.save()
+
+        response = self.client.get(reverse('claim_patient_complete'))
+
+        self.assertRedirects(response, reverse('patient_dashboard'))
+        appointment.refresh_from_db()
+        card.refresh_from_db()
+        profile.refresh_from_db()
+        self.assertEqual(appointment.patient, google_user)
+        self.assertEqual(card.patient, google_user)
+        self.assertEqual(profile.phone, phone)
+        self.assertNotIn('patient_claim_phone', self.client.session)
+
+    def test_claiming_records_requires_linked_google_account(self):
+        phone = '+380501234569'
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient_first_name='Новий',
+            patient_last_name='Пацієнт',
+            patient_phone=phone,
+            date=timezone.localdate() + timedelta(days=7),
+            time='10:00',
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Запис без Google',
+            status=Appointment.STATUS_APPROVED,
+        )
+        local_user = User.objects.create_user(
+            username='local-patient',
+            password='pass12345',
+        )
+        Profile.objects.create(
+            user=local_user,
+            role=Profile.ROLE_PATIENT,
+            phone='',
+        )
+        self.client.force_login(local_user)
+        session = self.client.session
+        session['patient_claim_phone'] = phone
+        session.save()
+
+        response = self.client.get(reverse('claim_patient_complete'))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('google_login'), response.url)
+        appointment.refresh_from_db()
+        self.assertIsNone(appointment.patient)
+
+    def test_patient_and_doctor_profile_forms_do_not_show_email(self):
+        self.assertNotIn('email', PatientProfileForm(user=self.patient).fields)
+        self.assertNotIn('email', DoctorProfileForm(doctor=self.doctor).fields)
+        self.assertNotIn('email', DoctorPatientBookingForm(doctor=self.doctor).fields)
 
     def test_doctor_home_button_opens_doctor_dashboard(self):
         self.client.login(username='doctor@test.local', password='pass12345')

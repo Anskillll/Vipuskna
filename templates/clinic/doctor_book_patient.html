@@ -66,7 +66,7 @@
       const patientSelect = document.getElementById('id_patient');
       if (!patientSelect) return;
 
-      const contactFields = ['id_first_name', 'id_last_name', 'id_phone', 'id_email'];
+      const contactFields = ['id_first_name', 'id_last_name', 'id_phone'];
       function updatePatientFields() {
         const hideContacts = Boolean(patientSelect.value);
         contactFields.forEach(function (id) {
