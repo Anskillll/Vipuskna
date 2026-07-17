@@ -113,14 +113,43 @@
       <div class="section-head">
         <h2 class="section-title">Інформація про себе</h2>
       </div>
-      <div class="doctor-self-summary">
-        <span class="doctor-self-specialization">{{ doctor.specialization }}</span>
+      <div class="doctor-self-profile">
+        <div class="doctor-panel-top">
+          {% if doctor.photo_src %}
+            <img class="doctor-photo doctor-photo-lg" src="{{ doctor.photo_src }}" alt="{{ doctor.full_name }}">
+          {% else %}
+            <div class="doctor-photo doctor-photo-lg">{{ doctor.user.first_name|first }}{{ doctor.user.last_name|first }}</div>
+          {% endif %}
+          <div>
+            <h3 class="doctor-name">{{ doctor.full_name }}</h3>
+            <p class="doctor-spec">{{ doctor.specialization }}</p>
+            <p class="doctor-meta">{{ doctor.phone }}</p>
+          </div>
+        </div>
+
         {% if doctor.description %}
-          <p>{{ doctor.description }}</p>
+          <div class="doctor-description">
+            <span>Про лікаря</span>
+            <p>{{ doctor.description }}</p>
+          </div>
         {% else %}
-          <p class="doctor-self-empty">Коротка інформація про лікаря ще не заповнена.</p>
+          <div class="doctor-description doctor-self-empty">
+            <span>Про лікаря</span>
+            <p>Коротка інформація про лікаря ще не заповнена.</p>
+          </div>
         {% endif %}
-        <a class="btn secondary" href="{% url 'doctor_edit_profile' %}">Редагувати інформацію</a>
+
+        <div class="chip-row">
+          {% for city in doctor.cities %}
+            <span class="chip">{{ city }}</span>
+          {% empty %}
+            <span class="chip chip-muted">Міста роботи ще не вказані</span>
+          {% endfor %}
+        </div>
+
+        <div class="doctor-self-actions">
+          <a class="btn secondary" href="{% url 'doctor_edit_profile' %}">Редагувати інформацію</a>
+        </div>
       </div>
     </section>
   </div>
