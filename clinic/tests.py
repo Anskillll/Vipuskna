@@ -1555,6 +1555,25 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, reverse('admin_panel'))
         self.assertNotContains(response, 'Переглянути лікарів')
 
+    def test_admin_panel_has_clear_management_sections(self):
+        admin_user = User.objects.create_superuser(
+            username='admin-panel@test.local',
+            email='admin-panel@test.local',
+            password='pass12345',
+        )
+        self.client.login(username='admin-panel@test.local', password='pass12345')
+
+        response = self.client.get(reverse('admin_panel'))
+
+        self.assertContains(response, 'Керування клінікою')
+        self.assertContains(response, 'Що потрібно зробити?')
+        self.assertContains(response, 'Знайти користувача')
+        self.assertContains(response, 'data-page-size="10"')
+        self.assertContains(response, 'Нещодавно створені заявки та прийоми.')
+        self.assertContains(response, 'Це ви')
+        self.assertContains(response, reverse('admin_edit_user', args=[admin_user.id]))
+        self.assertNotContains(response, '<th>Електронна пошта</th>', html=True)
+
     def test_home_renders_selected_background_effect(self):
         branding, _ = ClinicSettings.objects.get_or_create(pk=1)
         branding.home_effect = ClinicSettings.EFFECT_TEETH

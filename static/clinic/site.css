@@ -3433,7 +3433,239 @@ th {
   transform: scale(1.025);
 }
 
+.admin-dashboard {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-dashboard > *,
+.admin-dashboard .page-head,
+.admin-dashboard .page-tabs,
+.admin-dashboard .section-card {
+  margin-bottom: 0;
+}
+
+.admin-tabs {
+  flex-wrap: wrap;
+}
+
+.admin-command-bar {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-left: 4px solid #2563eb;
+  border-radius: 8px;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  padding: 18px 20px;
+}
+
+.admin-command-bar h2 {
+  font-size: 20px;
+  margin: 3px 0 0;
+}
+
+.admin-eyebrow {
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.admin-command-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-summary-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.admin-stat {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-left: 4px solid #2563eb;
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
+  display: grid;
+  gap: 6px;
+  min-height: 132px;
+  padding: 18px;
+}
+
+.admin-stat span {
+  color: #52637c;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.admin-stat strong {
+  color: #111827;
+  font-size: 34px;
+  line-height: 1;
+}
+
+.admin-stat small {
+  align-self: end;
+  color: #718096;
+  font-size: 12px;
+}
+
+.admin-stat-doctors {
+  border-left-color: #7c3aed;
+}
+
+.admin-stat-appointments {
+  border-left-color: #0f9f8f;
+}
+
+.admin-stat-pending {
+  background: #fffbed;
+  border-left-color: #e7a400;
+}
+
+.admin-dashboard .section-card {
+  border-radius: 8px;
+}
+
+.admin-section-head {
+  align-items: flex-start;
+}
+
+.admin-section-head .section-note {
+  display: block;
+  margin-top: 5px;
+}
+
+.admin-users-table {
+  min-width: 930px;
+}
+
+.admin-user-identity,
+.admin-list-main {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.admin-user-identity small,
+.admin-list-main span {
+  color: #66758d;
+  font-size: 13px;
+}
+
+.admin-role {
+  background: #eef2ff;
+  border-radius: 999px;
+  color: #4338ca;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 9px;
+  white-space: nowrap;
+}
+
+.admin-role-staff {
+  background: #e8f7f4;
+  color: #087968;
+}
+
+.admin-role-empty {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.admin-table-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 7px;
+}
+
+.admin-table-actions .btn,
+.admin-table-actions button {
+  min-height: 38px;
+  padding: 0 11px;
+  white-space: nowrap;
+}
+
+.admin-overview-columns {
+  align-items: start;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+}
+
+.admin-compact-list {
+  display: grid;
+}
+
+.admin-doctor-row,
+.admin-appointment-row {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 14px;
+  min-height: 72px;
+  padding: 12px 0;
+}
+
+.admin-compact-list > article:first-child {
+  border-top: 0;
+}
+
+.admin-doctor-row {
+  grid-template-columns: minmax(160px, 1fr) auto;
+}
+
+.admin-list-meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.admin-list-meta > span:first-child {
+  color: #66758d;
+  font-size: 13px;
+}
+
+.admin-list-meta a {
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-appointment-row {
+  grid-template-columns: 58px minmax(160px, 1fr) auto;
+}
+
+.admin-appointment-row time {
+  color: #66758d;
+  display: grid;
+  font-size: 12px;
+  gap: 2px;
+}
+
+.admin-appointment-row time strong {
+  color: #1d4ed8;
+  font-size: 16px;
+}
+
 @media (max-width: 900px) {
+  .admin-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-overview-columns {
+    grid-template-columns: 1fr;
+  }
+
   .appointment-detail-layout {
     grid-template-columns: 1fr;
   }
@@ -3449,6 +3681,47 @@ th {
 }
 
 @media (max-width: 620px) {
+  .admin-command-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-command-actions {
+    display: grid;
+  }
+
+  .admin-command-actions .btn {
+    width: 100%;
+  }
+
+  .admin-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-stat {
+    min-height: 118px;
+    padding: 15px;
+  }
+
+  .admin-stat strong {
+    font-size: 30px;
+  }
+
+  .admin-doctor-row,
+  .admin-appointment-row {
+    align-items: start;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-list-meta {
+    justify-content: flex-start;
+  }
+
+  .admin-appointment-row time {
+    display: flex;
+    gap: 8px;
+  }
+
   .patient-reschedule-alert {
     align-items: stretch;
     flex-direction: column;

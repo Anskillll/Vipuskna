@@ -1477,15 +1477,22 @@ def admin_panel(request):
         'appointments': Appointment.objects.count(),
         'pending': Appointment.objects.filter(status=Appointment.STATUS_PENDING).count(),
     }
-    users = User.objects.select_related('profile').order_by('last_name', 'first_name')[:50]
-    appointments = Appointment.objects.select_related('doctor__user').order_by('-date', '-time')[:50]
+    users = User.objects.select_related('profile').order_by('last_name', 'first_name', 'username')
+    appointments = (
+        Appointment.objects.select_related('doctor__user', 'service')
+        .order_by('-created_at')[:8]
+    )
     return render(
         request,
         'clinic/admin_panel.html',
         {
             'stats': stats,
             'users': users,
-            'doctors': Doctor.objects.select_related('user').annotate(total=Count('appointments')),
+            'doctors': (
+                Doctor.objects.select_related('user')
+                .annotate(total=Count('appointments'))
+                .order_by('user__last_name', 'user__first_name')
+            ),
             'appointments': appointments,
         },
     )
