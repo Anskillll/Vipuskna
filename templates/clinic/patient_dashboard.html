@@ -87,16 +87,25 @@
     <div class="message error">Додайте телефон у профілі. Без нього не можна записатися на прийом.</div>
   {% endif %}
 
-  <section class="card section-card patient-records-section">
+  <section class="card section-card patient-records-section" data-live-filter data-page-size="5">
     <div class="section-head">
       <div>
         <h2 class="section-title">Лікування та рекомендації</h2>
         <span class="section-note">Інформація, яку для вас додали лікарі.</span>
       </div>
     </div>
+    {% if patient_records %}
+      <div class="live-filter-bar">
+        <div class="live-filter-field">
+          <label for="patient-record-search">Фільтр лікування та рекомендацій</label>
+          <input id="patient-record-search" type="search" placeholder="Лікар, тип, заголовок, текст або дата" autocomplete="off" data-live-filter-input>
+        </div>
+        <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
+      </div>
+    {% endif %}
     <div class="patient-records-grid">
       {% for entry in patient_records %}
-        <article class="patient-record-item">
+        <article class="patient-record-item" data-live-filter-item data-filter-extra="{{ entry.get_kind_display|escape }} {{ entry.title|escape }} {{ entry.details|escape }} {{ entry.recommendations|escape }} {{ entry.doctor.full_name|escape }} {{ entry.doctor.specialization|escape }} {{ entry.created_at|date:'d.m.Y' }}">
           <div class="patient-record-head">
             <span class="record-kind">{{ entry.get_kind_display }}</span>
             <span class="news-meta">{{ entry.created_at|date:'d.m.Y' }}</span>
@@ -121,14 +130,22 @@
         <div class="empty">Лікарі ще не додавали для вас лікування або рекомендацій.</div>
       {% endfor %}
     </div>
+    {% if patient_records %}<div class="empty live-filter-empty" data-live-filter-empty hidden>Матеріалів із такими даними не знайдено.</div>{% endif %}
   </section>
 
-  <section id="pending" class="card section-card">
+  <section id="pending" class="card section-card" data-live-filter data-page-size="5">
     <div class="section-head">
       <h2 class="section-title">Мої заявки</h2>
       <span class="section-note">Очікують підтвердження лікаря</span>
     </div>
     {% if pending %}
+      <div class="live-filter-bar">
+        <div class="live-filter-field">
+          <label for="pending-search">Фільтр заявок</label>
+          <input id="pending-search" type="search" placeholder="Лікар, послуга, дата, місце або статус" autocomplete="off" data-live-filter-input>
+        </div>
+        <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
+      </div>
       <div class="table-wrap">
         <table>
           <thead>
@@ -143,7 +160,7 @@
           </thead>
           <tbody>
             {% for appointment in pending %}
-              <tr>
+              <tr data-live-filter-item data-filter-extra="{{ appointment.doctor.full_name|escape }} {{ appointment.doctor.specialization|escape }} {{ appointment.service.name|default:''|escape }} {{ appointment.date|date:'d.m.Y' }} {{ appointment.time|time:'H:i' }} {{ appointment.city|escape }} {{ appointment.address|escape }} {{ appointment.get_status_display|escape }}">
                 <td><strong>{{ appointment.doctor.full_name }}</strong><br><span class="muted">{{ appointment.doctor.specialization }}</span></td>
                 <td>{{ appointment.service.name|default:'Не обрано' }}</td>
                 <td>{{ appointment.date|date:'d.m.Y' }} {{ appointment.time|time:'H:i' }}</td>
@@ -162,17 +179,25 @@
           </tbody>
         </table>
       </div>
+      <div class="empty live-filter-empty" data-live-filter-empty hidden>Заявок із такими даними не знайдено.</div>
     {% else %}
       <div class="empty">Заявок поки немає.</div>
     {% endif %}
   </section>
 
-  <section id="approved" class="card section-card">
+  <section id="approved" class="card section-card" data-live-filter data-page-size="5">
     <div class="section-head">
       <h2 class="section-title">Підтверджені прийоми</h2>
       <span class="section-note">Найближчі записи</span>
     </div>
     {% if approved %}
+      <div class="live-filter-bar">
+        <div class="live-filter-field">
+          <label for="approved-search">Фільтр підтверджених прийомів</label>
+          <input id="approved-search" type="search" placeholder="Лікар, послуга, дата, місце або тривалість" autocomplete="off" data-live-filter-input>
+        </div>
+        <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
+      </div>
       <div class="table-wrap">
         <table>
           <thead>
@@ -187,7 +212,7 @@
           </thead>
           <tbody>
             {% for appointment in approved %}
-              <tr>
+              <tr data-live-filter-item data-filter-extra="{{ appointment.doctor.full_name|escape }} {{ appointment.service.name|default:''|escape }} {{ appointment.date|date:'d.m.Y' }} {{ appointment.time|time:'H:i' }} {{ appointment.duration_minutes }} хв {{ appointment.city|escape }} {{ appointment.address|escape }}">
                 <td>{{ appointment.doctor.full_name }}</td>
                 <td>{{ appointment.service.name|default:'Не обрано' }}</td>
                 <td>{{ appointment.date|date:'d.m.Y' }} {{ appointment.time|time:'H:i' }}</td>
@@ -208,38 +233,54 @@
           </tbody>
         </table>
       </div>
+      <div class="empty live-filter-empty" data-live-filter-empty hidden>Прийомів із такими даними не знайдено.</div>
     {% else %}
       <div class="empty">Підтверджених прийомів поки немає.</div>
     {% endif %}
   </section>
 
   <div class="grid grid-2">
-    <section id="history" class="card section-card">
+    <section id="history" class="card section-card" data-live-filter data-page-size="5">
       <div class="section-head">
         <h2 class="section-title">Завершені прийоми</h2>
       </div>
       {% if completed %}
+        <div class="live-filter-bar">
+          <div class="live-filter-field">
+            <label for="completed-search">Фільтр завершених прийомів</label>
+            <input id="completed-search" type="search" placeholder="Дата, лікар або місто" autocomplete="off" data-live-filter-input>
+          </div>
+          <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
+        </div>
         <ul class="simple-list">
           {% for appointment in completed %}
-            <li>
+            <li data-live-filter-item data-filter-extra="{{ appointment.date|date:'d.m.Y' }} {{ appointment.time|time:'H:i' }} {{ appointment.doctor.full_name|escape }} {{ appointment.city|escape }}">
               <span>{{ appointment.date|date:'d.m.Y' }} {{ appointment.time|time:'H:i' }} · {{ appointment.doctor.full_name }}</span>
               <strong>{{ appointment.city }}</strong>
             </li>
           {% endfor %}
         </ul>
+        <div class="empty live-filter-empty" data-live-filter-empty hidden>Прийомів із такими даними не знайдено.</div>
       {% else %}
         <div class="empty">Завершених прийомів поки немає.</div>
       {% endif %}
     </section>
 
-    <section id="canceled" class="card section-card">
+    <section id="canceled" class="card section-card" data-live-filter data-page-size="5">
       <div class="section-head">
         <h2 class="section-title">Скасовані та відхилені</h2>
       </div>
       {% if canceled %}
+        <div class="live-filter-bar">
+          <div class="live-filter-field">
+            <label for="canceled-search">Фільтр скасованих прийомів</label>
+            <input id="canceled-search" type="search" placeholder="Дата, лікар або статус" autocomplete="off" data-live-filter-input>
+          </div>
+          <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
+        </div>
         <ul class="simple-list">
           {% for appointment in canceled %}
-            <li class="canceled-appointment-item">
+            <li class="canceled-appointment-item" data-live-filter-item data-filter-extra="{{ appointment.date|date:'d.m.Y' }} {{ appointment.time|time:'H:i' }} {{ appointment.doctor.full_name|escape }} {{ appointment.get_status_display|escape }}">
               <div class="canceled-appointment-info">
                 <span>{{ appointment.date|date:'d.m.Y' }} {{ appointment.time|time:'H:i' }} · {{ appointment.doctor.full_name }}</span>
                 {% if appointment.can_restore %}
@@ -258,6 +299,7 @@
             </li>
           {% endfor %}
         </ul>
+        <div class="empty live-filter-empty" data-live-filter-empty hidden>Записів із такими даними не знайдено.</div>
       {% else %}
         <div class="empty">Тут поки порожньо.</div>
       {% endif %}

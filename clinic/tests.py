@@ -1427,6 +1427,13 @@ class ClinicModelTests(TestCase):
         self.assertContains(public_response, 'clinic/live_filter.js')
         self.assertNotContains(public_response, '>Знайти</button>')
 
+        self.client.logout()
+        self.client.login(username='patient@test.local', password='pass12345')
+        patient_dashboard_response = self.client.get(reverse('patient_dashboard'))
+        self.assertContains(patient_dashboard_response, 'Фільтр заявок')
+        self.assertContains(patient_dashboard_response, 'data-page-size="5"')
+        self.assertContains(patient_dashboard_response, 'data-live-filter-item')
+
     def test_doctor_booking_recognizes_registered_patient_phone_format(self):
         self.client.login(username='doctor@test.local', password='pass12345')
         visit_date = timezone.localdate() + timedelta(days=7)

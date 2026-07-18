@@ -355,6 +355,67 @@ a:hover {
   display: none !important;
 }
 
+.live-pagination {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.live-pagination[hidden] {
+  display: none;
+}
+
+.live-pagination button,
+.live-pagination button:hover,
+.live-pagination button:active {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 2px 0 #cbd5e1;
+  color: var(--text);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 800;
+  height: 36px;
+  justify-content: center;
+  min-height: 36px;
+  min-width: 36px;
+  padding: 0 10px;
+  transform: none;
+}
+
+.live-pagination button:hover {
+  border-color: #93a4ff;
+  color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.live-pagination button.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  box-shadow: 0 2px 0 var(--primary-dark);
+  color: #fff;
+}
+
+.live-pagination button:disabled {
+  background: #f1f5f9;
+  box-shadow: none;
+  color: #94a3b8;
+  cursor: default;
+  opacity: 1;
+  transform: none;
+}
+
+.live-pagination-ellipsis {
+  color: var(--muted);
+  min-width: 24px;
+  text-align: center;
+}
+
 @media (max-width: 620px) {
   .live-filter-bar {
     align-items: stretch;

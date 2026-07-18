@@ -45,6 +45,7 @@
           class="service-manager-item{% if editing.id == service.id %} editing{% endif %}"
           data-live-filter-item
           data-filter-extra="{{ service.name|escape }} {{ service.description|escape }} {% if service.is_patient_selectable %}доступна онлайн запис{% else %}прихована недоступна{% endif %}"
+          {% if editing.id == service.id %}data-live-filter-active{% endif %}
         >
           <div class="service-manager-item-head">
             <div>
