@@ -208,10 +208,24 @@ class ClinicModelTests(TestCase):
         doctor_service_ids = list(
             doctor_form.fields['service'].queryset.values_list('id', flat=True)
         )
+        patient_service_labels = [
+            label for _, label in patient_form.fields['service'].choices
+        ]
+        doctor_service_labels = [
+            label for _, label in doctor_form.fields['service'].choices
+        ]
 
         self.assertIn(self.service.id, patient_service_ids)
         self.assertNotIn(hidden_service.id, patient_service_ids)
         self.assertIn(hidden_service.id, doctor_service_ids)
+        self.assertIsNone(patient_form.fields['service'].empty_label)
+        self.assertIsNone(doctor_form.fields['service'].empty_label)
+        self.assertEqual(patient_service_labels, [self.service.name])
+        self.assertEqual(
+            doctor_service_labels,
+            [self.service.name, hidden_service.name],
+        )
+        self.assertNotIn('грн', ' '.join(doctor_service_labels))
 
         forged_form = BookingReasonForm(
             data={

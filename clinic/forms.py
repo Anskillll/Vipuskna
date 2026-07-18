@@ -156,11 +156,16 @@ class MultipleImageField(forms.ImageField):
         return [single_clean(data, initial)] if data else []
 
 
+class ServiceChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, service):
+        return service.name
+
+
 class BookingReasonForm(FormStyleMixin, forms.Form):
-    service = forms.ModelChoiceField(
+    service = ServiceChoiceField(
         label='Послуга',
         queryset=MedicalService.objects.none(),
-        empty_label='Оберіть послугу',
+        empty_label=None,
     )
     reason = forms.CharField(
         label='Причина звернення',
@@ -197,10 +202,10 @@ class DoctorPatientBookingForm(FormStyleMixin, forms.Form):
         required=False,
         empty_label='Ввести дані нового пацієнта вручну',
     )
-    service = forms.ModelChoiceField(
+    service = ServiceChoiceField(
         label='Послуга',
         queryset=MedicalService.objects.none(),
-        empty_label='Оберіть послугу',
+        empty_label=None,
     )
     duration_minutes = forms.IntegerField(
         label='Тривалість прийому, хвилин',
