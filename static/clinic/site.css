@@ -291,6 +291,52 @@ a:hover {
   outline: none;
 }
 
+.live-filter-input-row {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) 38px;
+}
+
+.live-filter-clear,
+.live-filter-clear:hover,
+.live-filter-clear:active {
+  align-items: center;
+  background: #ef4444;
+  border: 0;
+  border-radius: 8px;
+  box-shadow: 0 3px 0 #b91c1c;
+  color: #fff;
+  display: inline-flex;
+  font-size: 22px;
+  font-weight: 600;
+  height: 38px;
+  justify-content: center;
+  line-height: 1;
+  min-height: 38px;
+  padding: 0;
+  transform: none;
+  width: 38px;
+}
+
+.live-filter-clear:hover {
+  background: #dc2626;
+  box-shadow: 0 3px 0 #991b1b;
+}
+
+.live-filter-clear:active {
+  box-shadow: 0 1px 0 #991b1b;
+  transform: translateY(2px);
+}
+
+.live-filter-clear:disabled {
+  background: #fca5a5;
+  box-shadow: 0 2px 0 #f87171;
+  cursor: default;
+  opacity: 0.55;
+  transform: none;
+}
+
 .live-filter-count {
   color: var(--muted);
   font-size: 13px;
@@ -1907,6 +1953,37 @@ th {
   gap: 8px;
   max-width: 100%;
   min-width: 0;
+}
+
+.appointment-filter-name,
+.appointment-filter-name:hover,
+.appointment-filter-name:active {
+  background: transparent;
+  border: 0;
+  border-radius: 2px;
+  box-shadow: none;
+  color: var(--text);
+  cursor: pointer;
+  display: block;
+  font: inherit;
+  font-weight: 800;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  text-overflow: ellipsis;
+  transform: none;
+  white-space: nowrap;
+}
+
+.appointment-filter-name:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.appointment-filter-name:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
 }
 
 .appointment-person-name span {

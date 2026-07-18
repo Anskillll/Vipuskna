@@ -21,13 +21,23 @@
     <div class="card section-card live-filter-bar">
       <div class="live-filter-field">
         <label for="appointment-search">Фільтр заявок і прийомів</label>
-        <input
-          id="appointment-search"
-          type="search"
-          placeholder="Пацієнт, телефон, вік, послуга, дата, місце або статус"
-          autocomplete="off"
-          data-live-filter-input
-        >
+        <div class="live-filter-input-row">
+          <input
+            id="appointment-search"
+            type="search"
+            placeholder="Пацієнт, телефон, вік, послуга, дата, місце або статус"
+            autocomplete="off"
+            data-live-filter-input
+          >
+          <button
+            class="live-filter-clear"
+            type="button"
+            title="Очистити фільтр"
+            aria-label="Очистити фільтр"
+            data-live-filter-clear
+            disabled
+          ><span aria-hidden="true">×</span></button>
+        </div>
       </div>
       <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
     </div>
@@ -50,7 +60,12 @@
               <time datetime="{{ appointment.date|date:'Y-m-d' }}T{{ appointment.time|time:'H:i' }}">{{ appointment.time|time:'H:i' }}</time>
               <div class="appointment-summary-person">
                 <div class="appointment-person-name">
-                  <strong>{{ appointment.patient_name }}</strong>
+                  <button
+                    class="appointment-filter-name"
+                    type="button"
+                    title="Показати всі записи цього пацієнта"
+                    data-live-filter-value="{{ appointment.patient_name|escape }}"
+                  >{{ appointment.patient_name }}</button>
                   <span>{% if appointment.patient_age %}{{ appointment.patient_age }} років{% else %}Вік не вказано{% endif %}</span>
                 </div>
                 {% if appointment.status == 'pending' %}

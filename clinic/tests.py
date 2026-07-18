@@ -1417,6 +1417,8 @@ class ClinicModelTests(TestCase):
 
         self.assertContains(appointment_response, 'Фільтр заявок і прийомів')
         self.assertContains(appointment_response, 'data-live-filter-group')
+        self.assertContains(appointment_response, 'data-live-filter-clear')
+        self.assertContains(appointment_response, f'data-live-filter-value="{appointment.patient_name}"')
         self.assertContains(appointment_response, appointment.patient_phone)
         self.assertNotContains(appointment_response, '>Знайти</button>')
 

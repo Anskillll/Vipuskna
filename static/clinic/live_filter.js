@@ -23,6 +23,8 @@
 
     const count = root.querySelector('[data-live-filter-count]');
     const empty = root.querySelector('[data-live-filter-empty]');
+    const clearButton = root.querySelector('[data-live-filter-clear]');
+    const valueButtons = root.querySelectorAll('[data-live-filter-value]');
     if (!items.length) {
       if (count) {
         count.textContent = 'Усього: 0';
@@ -73,10 +75,27 @@
       if (empty) {
         empty.hidden = visibleCount !== 0;
       }
+      if (clearButton) {
+        clearButton.disabled = !input.value;
+      }
     };
 
     input.addEventListener('input', applyFilter);
     input.addEventListener('search', applyFilter);
+    valueButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        input.value = button.dataset.liveFilterValue || '';
+        applyFilter();
+        input.focus();
+      });
+    });
+    if (clearButton) {
+      clearButton.addEventListener('click', () => {
+        input.value = '';
+        applyFilter();
+        input.focus();
+      });
+    }
     applyFilter();
   });
 })();
