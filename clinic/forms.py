@@ -46,7 +46,7 @@ class FormStyleMixin:
 class RegisterForm(FormStyleMixin, forms.Form):
     first_name = forms.CharField(label="Ім'я", max_length=80)
     last_name = forms.CharField(label='Прізвище', max_length=80)
-    email = forms.EmailField(label='Email')
+    email = forms.EmailField(label='Електронна пошта')
     phone = forms.CharField(label='Телефон', validators=[phone_validator])
     password = forms.CharField(label='Пароль', widget=forms.PasswordInput)
 
@@ -88,7 +88,7 @@ class UsernameLoginForm(FormStyleMixin, forms.Form):
 
 
 class EmailForm(FormStyleMixin, forms.Form):
-    email = forms.EmailField(label='Email')
+    email = forms.EmailField(label='Електронна пошта')
 
 
 class ClaimPatientForm(FormStyleMixin, forms.Form):
@@ -591,7 +591,7 @@ class AdminDoctorCreateForm(FormStyleMixin, forms.Form):
     username = forms.CharField(label='Логін', max_length=150)
     first_name = forms.CharField(label="Ім'я", max_length=80)
     last_name = forms.CharField(label='Прізвище', max_length=80)
-    email = forms.EmailField(label='Email', required=False)
+    email = forms.EmailField(label='Електронна пошта', required=False)
     phone = forms.CharField(label='Телефон', validators=[phone_validator])
     password = forms.CharField(label='Пароль', widget=forms.PasswordInput)
     specialization = forms.CharField(label='Спеціальність', max_length=120)
@@ -612,7 +612,7 @@ class AdminDoctorCreateForm(FormStyleMixin, forms.Form):
     def clean_email(self):
         email = self.cleaned_data.get('email', '').lower().strip()
         if email and User.objects.filter(email__iexact=email).exists():
-            raise forms.ValidationError('Цей email уже використовується.')
+            raise forms.ValidationError('Ця електронна пошта вже використовується.')
         return email
 
     def save(self):
@@ -643,7 +643,7 @@ class AdminUserEditForm(FormStyleMixin, forms.Form):
     username = forms.CharField(label='Логін', max_length=150)
     first_name = forms.CharField(label="Ім'я", max_length=80)
     last_name = forms.CharField(label='Прізвище', max_length=80)
-    email = forms.EmailField(label='Email', required=False)
+    email = forms.EmailField(label='Електронна пошта', required=False)
     phone = forms.CharField(label='Телефон', validators=[phone_validator], required=False)
     is_active = forms.BooleanField(label='Активний акаунт', required=False)
 
@@ -674,7 +674,7 @@ class AdminUserEditForm(FormStyleMixin, forms.Form):
         email = self.cleaned_data.get('email', '').lower().strip()
         qs = User.objects.filter(email__iexact=email).exclude(pk=self.user.pk)
         if email and qs.exists():
-            raise forms.ValidationError('Цей email уже використовується.')
+            raise forms.ValidationError('Ця електронна пошта вже використовується.')
         return email
 
     def save(self):

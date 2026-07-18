@@ -5,6 +5,8 @@ import tempfile
 from unittest.mock import patch
 
 from allauth.socialaccount.models import SocialAccount
+from django.conf import settings
+from django.contrib import admin
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
@@ -35,6 +37,7 @@ from .forms import (
     PatientProfileForm,
     PatientRecordEntryForm,
     ServiceForm,
+    UsernameLoginForm,
     WorkScheduleForm,
 )
 from .views import active_appointment_for_doctor, appointment_conflicts
@@ -118,6 +121,27 @@ class ClinicModelTests(TestCase):
 
         self.assertNotIn('confirm(', rendered_source)
         self.assertNotIn('onsubmit=', rendered_source)
+
+    def test_site_and_admin_use_ukrainian_language(self):
+        self.assertEqual(settings.LANGUAGE_CODE, 'uk')
+        self.assertEqual(settings.LANGUAGES, [('uk', 'Українська')])
+        self.assertEqual(admin.site.site_header, 'Адміністрування MedClinic')
+        self.assertEqual(Doctor._meta.get_field('specialization').verbose_name, 'Спеціальність')
+        self.assertEqual(Appointment._meta.get_field('patient_first_name').verbose_name, "Ім'я пацієнта")
+
+        form = UsernameLoginForm(data={})
+        self.assertFalse(form.is_valid())
+        self.assertEqual(form.errors['username'][0], "Це поле обов'язкове.")
+
+        self.patient.is_staff = True
+        self.patient.is_superuser = True
+        self.patient.save(update_fields=['is_staff', 'is_superuser'])
+        self.client.login(username='patient@test.local', password='pass12345')
+        response = self.client.get(reverse('admin:index'))
+
+        self.assertContains(response, 'Адміністрування MedClinic')
+        self.assertContains(response, 'Керування клінікою')
+        self.assertNotContains(response, 'Администрирование')
 
     def test_doctor_cities_do_not_repeat(self):
         WorkSchedule.objects.create(

@@ -8,7 +8,7 @@ from django.utils import timezone
 
 phone_validator = RegexValidator(
     regex=r'^\+?\d[\d\s().-]{7,18}$',
-    message='Введите телефон в формате +380XXXXXXXXX.',
+    message='Введіть телефон у форматі +380XXXXXXXXX.',
 )
 
 
@@ -25,11 +25,13 @@ class Profile(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='profile',
+        verbose_name='Користувач',
     )
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
-    phone = models.CharField(max_length=25, validators=[phone_validator], blank=True, default='')
-    photo = models.ImageField(upload_to='patient_photos/', blank=True)
+    role = models.CharField('Роль', max_length=20, choices=ROLE_CHOICES)
+    phone = models.CharField('Телефон', max_length=25, validators=[phone_validator], blank=True, default='')
+    photo = models.ImageField('Фото профілю', upload_to='patient_photos/', blank=True)
     age = models.PositiveSmallIntegerField(
+        'Вік',
         null=True,
         blank=True,
         validators=[MinValueValidator(1), MaxValueValidator(120)],
@@ -48,12 +50,13 @@ class Doctor(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='doctor_profile',
+        verbose_name='Користувач',
     )
-    specialization = models.CharField(max_length=120)
-    phone = models.CharField(max_length=25, validators=[phone_validator])
-    photo = models.ImageField(upload_to='doctor_photos/', blank=True)
-    photo_url = models.URLField(blank=True)
-    description = models.TextField(blank=True)
+    specialization = models.CharField('Спеціальність', max_length=120)
+    phone = models.CharField('Телефон', max_length=25, validators=[phone_validator])
+    photo = models.ImageField('Фото лікаря', upload_to='doctor_photos/', blank=True)
+    photo_url = models.URLField('Посилання на фото', blank=True)
+    description = models.TextField('Інформація про лікаря', blank=True)
 
     class Meta:
         verbose_name = 'Лікар'
@@ -88,10 +91,11 @@ class DoctorWorkplace(models.Model):
         Doctor,
         on_delete=models.CASCADE,
         related_name='workplaces',
+        verbose_name='Лікар',
     )
-    name = models.CharField(max_length=160)
-    city = models.CharField(max_length=100)
-    address = models.CharField(max_length=200)
+    name = models.CharField('Назва клініки або кабінету', max_length=160)
+    city = models.CharField('Місто', max_length=100)
+    address = models.CharField('Адреса', max_length=200)
 
     class Meta:
         verbose_name = 'Місце прийому'
@@ -136,16 +140,18 @@ class MedicalService(models.Model):
         Doctor,
         on_delete=models.CASCADE,
         related_name='services',
+        verbose_name='Лікар',
     )
-    name = models.CharField(max_length=160)
+    name = models.CharField('Назва послуги', max_length=160)
     approximate_price = models.PositiveIntegerField(
+        'Орієнтовна вартість',
         null=True,
         blank=True,
         validators=[MinValueValidator(0)],
     )
-    description = models.TextField(blank=True)
-    sort_order = models.PositiveIntegerField(default=0)
-    is_patient_selectable = models.BooleanField(default=True)
+    description = models.TextField('Опис послуги', blank=True)
+    sort_order = models.PositiveIntegerField('Порядок відображення', default=0)
+    is_patient_selectable = models.BooleanField('Доступна для онлайн-запису', default=True)
 
     class Meta:
         verbose_name = 'Медична послуга'
@@ -163,9 +169,10 @@ class MedicalServiceImage(models.Model):
         MedicalService,
         on_delete=models.CASCADE,
         related_name='images',
+        verbose_name='Послуга',
     )
-    image = models.ImageField(upload_to='service_photos/')
-    created_at = models.DateTimeField(auto_now_add=True)
+    image = models.ImageField('Фотографія', upload_to='service_photos/')
+    created_at = models.DateTimeField('Додано', auto_now_add=True)
 
     class Meta:
         verbose_name = 'Фотографія послуги'
@@ -199,6 +206,7 @@ class WorkSchedule(models.Model):
         Doctor,
         on_delete=models.CASCADE,
         related_name='schedules',
+        verbose_name='Лікар',
     )
     workplace = models.ForeignKey(
         DoctorWorkplace,
@@ -206,16 +214,17 @@ class WorkSchedule(models.Model):
         related_name='schedules',
         null=True,
         blank=True,
+        verbose_name='Місце прийому',
     )
-    weekday = models.PositiveSmallIntegerField(choices=WEEKDAY_CHOICES)
-    city = models.CharField(max_length=100, blank=True)
-    address = models.CharField(max_length=200, blank=True)
-    start_time = models.TimeField(default=time(9, 0))
-    end_time = models.TimeField(default=time(17, 0))
-    slot_minutes = models.PositiveSmallIntegerField(default=60)
-    break_start_time = models.TimeField(null=True, blank=True)
-    break_duration_minutes = models.PositiveSmallIntegerField(null=True, blank=True)
-    is_working = models.BooleanField(default=True)
+    weekday = models.PositiveSmallIntegerField('День тижня', choices=WEEKDAY_CHOICES)
+    city = models.CharField('Місто', max_length=100, blank=True)
+    address = models.CharField('Адреса', max_length=200, blank=True)
+    start_time = models.TimeField('Початок прийому', default=time(9, 0))
+    end_time = models.TimeField('Кінець прийому', default=time(17, 0))
+    slot_minutes = models.PositiveSmallIntegerField('Тривалість слота, хвилин', default=60)
+    break_start_time = models.TimeField('Початок обідньої перерви', null=True, blank=True)
+    break_duration_minutes = models.PositiveSmallIntegerField('Тривалість обіду, хвилин', null=True, blank=True)
+    is_working = models.BooleanField('Робочий день', default=True)
 
     class Meta:
         verbose_name = 'Графік лікаря'
@@ -272,6 +281,7 @@ class Appointment(models.Model):
         Doctor,
         on_delete=models.CASCADE,
         related_name='appointments',
+        verbose_name='Лікар',
     )
     service = models.ForeignKey(
         MedicalService,
@@ -279,6 +289,7 @@ class Appointment(models.Model):
         null=True,
         blank=True,
         related_name='appointments',
+        verbose_name='Послуга',
     )
     patient = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -286,28 +297,30 @@ class Appointment(models.Model):
         null=True,
         blank=True,
         related_name='appointments',
+        verbose_name='Зареєстрований пацієнт',
     )
-    patient_first_name = models.CharField(max_length=80)
-    patient_last_name = models.CharField(max_length=80)
-    patient_phone = models.CharField(max_length=25, validators=[phone_validator])
-    patient_email = models.EmailField(blank=True)
-    date = models.DateField()
-    time = models.TimeField()
-    city = models.CharField(max_length=100)
-    address = models.CharField(max_length=200)
-    reason = models.TextField()
-    duration_slots = models.PositiveSmallIntegerField(default=1)
-    duration_minutes_exact = models.PositiveSmallIntegerField(null=True, blank=True)
+    patient_first_name = models.CharField("Ім'я пацієнта", max_length=80)
+    patient_last_name = models.CharField('Прізвище пацієнта', max_length=80)
+    patient_phone = models.CharField('Телефон пацієнта', max_length=25, validators=[phone_validator])
+    patient_email = models.EmailField('Електронна пошта пацієнта', blank=True)
+    date = models.DateField('Дата прийому')
+    time = models.TimeField('Час прийому')
+    city = models.CharField('Місто', max_length=100)
+    address = models.CharField('Адреса', max_length=200)
+    reason = models.TextField('Причина звернення')
+    duration_slots = models.PositiveSmallIntegerField('Кількість слотів', default=1)
+    duration_minutes_exact = models.PositiveSmallIntegerField('Тривалість прийому, хвилин', null=True, blank=True)
     status = models.CharField(
+        'Статус',
         max_length=20,
         choices=STATUS_CHOICES,
         default=STATUS_PENDING,
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    approved_at = models.DateTimeField(null=True, blank=True)
-    previous_date = models.DateField(null=True, blank=True)
-    previous_time = models.TimeField(null=True, blank=True)
-    reschedule_requested_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField('Створено', auto_now_add=True)
+    approved_at = models.DateTimeField('Підтверджено', null=True, blank=True)
+    previous_date = models.DateField('Попередня дата', null=True, blank=True)
+    previous_time = models.TimeField('Попередній час', null=True, blank=True)
+    reschedule_requested_at = models.DateTimeField('Запропоновано перенесення', null=True, blank=True)
 
     class Meta:
         verbose_name = 'Запис на прийом'
@@ -384,9 +397,14 @@ class Appointment(models.Model):
 
 
 class AppointmentImage(models.Model):
-    appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='appointment_images/%Y/%m/')
-    uploaded_at = models.DateTimeField(auto_now_add=True)
+    appointment = models.ForeignKey(
+        Appointment,
+        on_delete=models.CASCADE,
+        related_name='images',
+        verbose_name='Заявка',
+    )
+    image = models.ImageField('Фотографія', upload_to='appointment_images/%Y/%m/')
+    uploaded_at = models.DateTimeField('Завантажено', auto_now_add=True)
 
     class Meta:
         verbose_name = 'Фото до заявки'
@@ -401,6 +419,7 @@ class DoctorPatientCard(models.Model):
         Doctor,
         on_delete=models.CASCADE,
         related_name='patient_cards',
+        verbose_name='Лікар',
     )
     patient = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -408,13 +427,14 @@ class DoctorPatientCard(models.Model):
         null=True,
         blank=True,
         related_name='doctor_cards',
+        verbose_name='Зареєстрований пацієнт',
     )
-    patient_first_name = models.CharField(max_length=80)
-    patient_last_name = models.CharField(max_length=80, blank=True)
-    patient_phone = models.CharField(max_length=25, validators=[phone_validator])
-    patient_email = models.EmailField(blank=True)
-    notes = models.TextField(blank=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    patient_first_name = models.CharField("Ім'я пацієнта", max_length=80)
+    patient_last_name = models.CharField('Прізвище пацієнта', max_length=80, blank=True)
+    patient_phone = models.CharField('Телефон пацієнта', max_length=25, validators=[phone_validator])
+    patient_email = models.EmailField('Електронна пошта пацієнта', blank=True)
+    notes = models.TextField('Нотатки лікаря', blank=True)
+    updated_at = models.DateTimeField('Оновлено', auto_now=True)
 
     class Meta:
         verbose_name = 'Картка пацієнта'
@@ -453,21 +473,32 @@ class PatientRecordEntry(models.Model):
         (KIND_RECOMMENDATION, 'Рекомендації'),
     ]
 
-    card = models.ForeignKey(DoctorPatientCard, on_delete=models.CASCADE, related_name='record_entries')
-    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name='patient_record_entries')
+    card = models.ForeignKey(
+        DoctorPatientCard,
+        on_delete=models.CASCADE,
+        related_name='record_entries',
+        verbose_name='Картка пацієнта',
+    )
+    doctor = models.ForeignKey(
+        Doctor,
+        on_delete=models.CASCADE,
+        related_name='patient_record_entries',
+        verbose_name='Лікар',
+    )
     appointment = models.ForeignKey(
         Appointment,
         on_delete=models.SET_NULL,
         related_name='record_entries',
         null=True,
         blank=True,
+        verbose_name='Прийом',
     )
-    kind = models.CharField(max_length=24, choices=KIND_CHOICES, default=KIND_NOTE)
-    title = models.CharField(max_length=180)
-    details = models.TextField()
-    recommendations = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    kind = models.CharField('Тип запису', max_length=24, choices=KIND_CHOICES, default=KIND_NOTE)
+    title = models.CharField('Заголовок', max_length=180)
+    details = models.TextField('Детальна інформація')
+    recommendations = models.TextField('Рекомендації пацієнту', blank=True)
+    created_at = models.DateTimeField('Створено', auto_now_add=True)
+    updated_at = models.DateTimeField('Оновлено', auto_now=True)
 
     class Meta:
         verbose_name = 'Запис у картці пацієнта'
@@ -479,9 +510,14 @@ class PatientRecordEntry(models.Model):
 
 
 class PatientRecordImage(models.Model):
-    entry = models.ForeignKey(PatientRecordEntry, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='patient_records/%Y/%m/')
-    uploaded_at = models.DateTimeField(auto_now_add=True)
+    entry = models.ForeignKey(
+        PatientRecordEntry,
+        on_delete=models.CASCADE,
+        related_name='images',
+        verbose_name='Медичний запис',
+    )
+    image = models.ImageField('Фотографія', upload_to='patient_records/%Y/%m/')
+    uploaded_at = models.DateTimeField('Завантажено', auto_now_add=True)
 
     class Meta:
         verbose_name = 'Фото медичного запису'
@@ -505,11 +541,11 @@ class ClinicSettings(models.Model):
         (EFFECT_DENTAL_FIELD, 'Стоматологічне поле'),
     ]
 
-    clinic_name = models.CharField(max_length=120, default='MedClinic')
-    logo = models.ImageField(upload_to='clinic/branding/', blank=True)
-    home_background = models.ImageField(upload_to='clinic/branding/', blank=True)
-    home_effect = models.CharField(max_length=20, choices=EFFECT_CHOICES, default=EFFECT_NONE)
-    particle_image = models.ImageField(upload_to='clinic/branding/particles/', blank=True)
+    clinic_name = models.CharField('Назва клініки', max_length=120, default='MedClinic')
+    logo = models.ImageField('Логотип клініки', upload_to='clinic/branding/', blank=True)
+    home_background = models.ImageField('Фон сайту', upload_to='clinic/branding/', blank=True)
+    home_effect = models.CharField('Анімований ефект', max_length=20, choices=EFFECT_CHOICES, default=EFFECT_NONE)
+    particle_image = models.ImageField('Зображення частинок', upload_to='clinic/branding/particles/', blank=True)
 
     class Meta:
         verbose_name = 'Оформлення клініки'
@@ -526,13 +562,14 @@ class NewsPost(models.Model):
         related_name='news_posts',
         null=True,
         blank=True,
+        verbose_name='Лікар',
     )
-    title = models.CharField(max_length=180)
-    text = models.TextField()
-    image = models.ImageField(upload_to='clinic/news/', blank=True)
-    is_published = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    title = models.CharField('Заголовок', max_length=180)
+    text = models.TextField('Текст новини')
+    image = models.ImageField('Зображення', upload_to='clinic/news/', blank=True)
+    is_published = models.BooleanField('Опубліковано', default=True)
+    created_at = models.DateTimeField('Створено', auto_now_add=True)
+    updated_at = models.DateTimeField('Оновлено', auto_now=True)
 
     class Meta:
         verbose_name = 'Новина'
@@ -548,10 +585,10 @@ class NewsPost(models.Model):
 
 
 class GalleryImage(models.Model):
-    title = models.CharField(max_length=160, blank=True)
-    image = models.ImageField(upload_to='clinic/gallery/')
-    is_published = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    title = models.CharField('Підпис до фото', max_length=160, blank=True)
+    image = models.ImageField('Фотографія', upload_to='clinic/gallery/')
+    is_published = models.BooleanField('Опубліковано', default=True)
+    created_at = models.DateTimeField('Створено', auto_now_add=True)
 
     class Meta:
         verbose_name = 'Фото галереї'

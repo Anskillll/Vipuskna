@@ -24,7 +24,7 @@ class ClinicSocialAccountAdapter(DefaultSocialAccountAdapter):
         if existing_user.is_staff:
             messages.error(
                 request,
-                'Администратор входит только по логину и паролю, не через Google.',
+                'Адміністратор входить лише за логіном і паролем, не через Google.',
             )
             raise ImmediateHttpResponse(redirect('home'))
 
@@ -32,7 +32,7 @@ class ClinicSocialAccountAdapter(DefaultSocialAccountAdapter):
         if profile and profile.role == Profile.ROLE_DOCTOR:
             messages.error(
                 request,
-                'Врач входит только по логину и паролю, не через Google.',
+                'Лікар входить лише за логіном і паролем, не через Google.',
             )
             raise ImmediateHttpResponse(redirect('home'))
 

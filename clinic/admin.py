@@ -17,6 +17,10 @@ from .models import (
     WorkSchedule,
 )
 
+admin.site.site_header = 'Адміністрування MedClinic'
+admin.site.site_title = 'Адміністрування MedClinic'
+admin.site.index_title = 'Керування клінікою'
+
 
 class MedicalServiceInline(admin.TabularInline):
     model = MedicalService
@@ -52,11 +56,15 @@ class ProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Doctor)
 class DoctorAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'specialization', 'phone', 'is_active')
+    list_display = ('doctor_name', 'specialization', 'phone', 'is_active')
     search_fields = ('user__first_name', 'user__last_name', 'specialization', 'phone')
     inlines = [DoctorWorkplaceInline, MedicalServiceInline, WorkScheduleInline]
 
-    @admin.display(boolean=True, description='Активен')
+    @admin.display(description="Ім'я лікаря")
+    def doctor_name(self, obj):
+        return obj.full_name
+
+    @admin.display(boolean=True, description='Активний')
     def is_active(self, obj):
         return obj.user.is_active
 
@@ -84,7 +92,7 @@ class DoctorWorkplaceAdmin(admin.ModelAdmin):
 
 @admin.register(Appointment)
 class AppointmentAdmin(admin.ModelAdmin):
-    list_display = ('patient_name', 'doctor', 'date', 'time', 'city', 'status')
+    list_display = ('patient_display_name', 'doctor', 'date', 'time', 'city', 'status')
     list_filter = ('status', 'date', 'doctor__specialization', 'city')
     search_fields = (
         'patient_first_name',
@@ -94,10 +102,14 @@ class AppointmentAdmin(admin.ModelAdmin):
     )
     inlines = [AppointmentImageInline]
 
+    @admin.display(description="Ім'я пацієнта")
+    def patient_display_name(self, obj):
+        return obj.patient_name
+
 
 @admin.register(DoctorPatientCard)
 class DoctorPatientCardAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'doctor', 'patient_phone', 'patient_email', 'updated_at')
+    list_display = ('patient_display_name', 'doctor', 'patient_phone', 'patient_email', 'updated_at')
     list_filter = ('doctor__specialization',)
     search_fields = (
         'patient_first_name',
@@ -106,6 +118,10 @@ class DoctorPatientCardAdmin(admin.ModelAdmin):
         'patient_email',
         'doctor__user__last_name',
     )
+
+    @admin.display(description="Ім'я пацієнта")
+    def patient_display_name(self, obj):
+        return obj.full_name
 
 
 @admin.register(ClinicSettings)
