@@ -40,6 +40,8 @@
                   <span class="appointment-kind-label">Підтверджений прийом</span>
                 {% elif appointment.status == 'completed' %}
                   <span class="appointment-kind-label">Завершений прийом</span>
+                {% elif appointment.status == 'reschedule_proposed' %}
+                  <span class="appointment-kind-label">Новий час на погодженні</span>
                 {% elif appointment.status == 'canceled' %}
                   <span class="appointment-kind-label">Прийом скасовано</span>
                 {% else %}

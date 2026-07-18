@@ -526,7 +526,8 @@ class Command(BaseCommand):
                         Appointment.STATUS_APPROVED,
                         Appointment.STATUS_CANCELED,
                         Appointment.STATUS_REJECTED,
-                    ][(patient_index + item_index) % 4]
+                        Appointment.STATUS_RESCHEDULE_PROPOSED,
+                    ][(patient_index + item_index) % 5]
 
                 service = doctor.services.all()[
                     (patient_index + item_index) % doctor.services.count()
@@ -549,6 +550,21 @@ class Command(BaseCommand):
                     approved_at=(
                         timezone.now()
                         if status in [Appointment.STATUS_APPROVED, Appointment.STATUS_COMPLETED]
+                        else None
+                    ),
+                    previous_date=(
+                        visit_date - timedelta(days=7)
+                        if status == Appointment.STATUS_RESCHEDULE_PROPOSED
+                        else None
+                    ),
+                    previous_time=(
+                        visit_time
+                        if status == Appointment.STATUS_RESCHEDULE_PROPOSED
+                        else None
+                    ),
+                    reschedule_requested_at=(
+                        timezone.now()
+                        if status == Appointment.STATUS_RESCHEDULE_PROPOSED
                         else None
                     ),
                 )

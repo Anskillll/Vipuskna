@@ -535,6 +535,61 @@ a:hover {
   box-shadow: 0 12px 28px rgba(245, 158, 11, 0.18);
 }
 
+.patient-reschedule-alert {
+  align-items: center;
+  background: #fff3c4;
+  border: 2px solid #f0a500;
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(217, 119, 6, 0.2);
+  color: #4a2800;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  padding: 20px 22px;
+}
+
+.patient-reschedule-alert strong {
+  display: block;
+  font-size: 20px;
+  margin: 4px 0 6px;
+}
+
+.patient-reschedule-alert p {
+  margin: 0;
+}
+
+.reschedule-eyebrow {
+  color: #9a5400;
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.btn.reschedule-alert-link {
+  background: #f59e0b;
+  border-color: #d97706;
+  border-bottom-color: #92400e;
+  color: #2b1800;
+  flex: 0 0 auto;
+}
+
+.btn.warning,
+button.warning {
+  background: #f59e0b;
+  border-color: #d97706;
+  border-bottom-color: #92400e;
+  color: #2b1800;
+  box-shadow: 0 5px 0 rgba(146, 64, 14, 0.16), 0 12px 22px rgba(245, 158, 11, 0.2);
+}
+
+.btn.warning:hover,
+button.warning:hover {
+  background: #d97706;
+  color: #fff;
+}
+
 .profile-completion-alert strong {
   display: block;
   margin-bottom: 4px;
@@ -1806,6 +1861,17 @@ th {
   padding-left: 14px;
 }
 
+.appointment-summary-row.appointment-kind-reschedule_proposed {
+  background: #fff8df;
+  border-left: 4px solid #f0a500;
+  padding-left: 14px;
+}
+
+.appointment-kind-reschedule_proposed .appointment-kind-label {
+  background: #ffe49a;
+  color: #7a4300;
+}
+
 .appointment-kind-approved .appointment-kind-label {
   background: #ccefd8;
   color: #116b39;
@@ -1905,6 +1971,11 @@ th {
 .status.completed {
   background: #dcfce7;
   color: #166534;
+}
+
+.status.reschedule_proposed {
+  background: #ffe49a;
+  color: #7a4300;
 }
 
 .slot-grid {
@@ -2936,6 +3007,91 @@ th {
   width: 100%;
 }
 
+.appointment-reschedule-button {
+  margin-top: 14px;
+  width: 100%;
+}
+
+.appointment-reschedule-panel form,
+.patient-reschedule-decision form {
+  margin-top: 16px;
+}
+
+.appointment-reschedule-panel button,
+.patient-reschedule-decision button {
+  width: 100%;
+}
+
+.reschedule-waiting-panel {
+  background: #fff9e8;
+  border: 1px solid #f0c45b;
+}
+
+.reschedule-comparison {
+  align-items: center;
+  background: #fff3c4;
+  border: 2px solid #f0a500;
+  border-radius: 8px;
+  box-shadow: 0 14px 32px rgba(217, 119, 6, 0.18);
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-bottom: 20px;
+  padding: 24px;
+}
+
+.reschedule-comparison h2 {
+  margin: 5px 0 8px;
+}
+
+.reschedule-comparison p {
+  margin: 0;
+}
+
+.reschedule-times {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.reschedule-time {
+  background: #fff;
+  border: 1px solid #e1c36f;
+  border-radius: 8px;
+  display: grid;
+  gap: 3px;
+  min-width: 132px;
+  padding: 14px;
+}
+
+.reschedule-time span {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.reschedule-time.old {
+  opacity: 0.72;
+}
+
+.reschedule-time.new {
+  border-color: #18a957;
+  box-shadow: inset 4px 0 0 #18a957;
+}
+
+.reschedule-arrow {
+  color: #9a5400;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.patient-appointment-layout {
+  align-items: start;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+}
+
 .appointment-photo-section {
   margin-top: 0;
 }
@@ -3065,9 +3221,28 @@ th {
   .appointment-decision-panel {
     position: static;
   }
+
+  .patient-appointment-layout,
+  .reschedule-comparison {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 620px) {
+  .patient-reschedule-alert {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .reschedule-times {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .reschedule-arrow {
+    transform: rotate(90deg);
+  }
+
   .appointment-detail-head {
     align-items: flex-start;
     flex-direction: column;

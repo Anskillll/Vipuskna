@@ -1,0 +1,72 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Запис до {{ appointment.doctor.full_name }} - MedClinic{% endblock %}
+
+{% block content %}
+  <section class="page-head appointment-detail-head">
+    <div>
+      <a class="back-link" href="{% url 'patient_dashboard' %}">← До мого кабінету</a>
+      <h1 class="page-title">Запис до {{ appointment.doctor.full_name }}</h1>
+      <p class="page-subtitle">Перевірте інформацію про прийом</p>
+    </div>
+    <span class="status {{ appointment.status }}">{{ appointment.get_status_display }}</span>
+  </section>
+
+  {% if appointment.status == 'reschedule_proposed' %}
+    <section class="reschedule-comparison">
+      <div class="reschedule-comparison-copy">
+        <span class="reschedule-eyebrow">Потрібне ваше рішення</span>
+        <h2>Лікар пропонує змінити дату або час прийому</h2>
+        <p>Порівняйте старий та новий час. Запис буде підтверджено лише після вашої згоди.</p>
+      </div>
+      <div class="reschedule-times">
+        <article class="reschedule-time old">
+          <span>Було</span>
+          <strong>{{ appointment.previous_date|date:'d.m.Y' }}</strong>
+          <b>{{ appointment.previous_time|time:'H:i' }}</b>
+        </article>
+        <span class="reschedule-arrow" aria-hidden="true">→</span>
+        <article class="reschedule-time new">
+          <span>Запропоновано</span>
+          <strong>{{ appointment.date|date:'d.m.Y' }}</strong>
+          <b>{{ appointment.time|time:'H:i' }}</b>
+        </article>
+      </div>
+    </section>
+  {% endif %}
+
+  <div class="patient-appointment-layout">
+    <section class="card section-card">
+      <div class="section-head"><h2 class="section-title">Інформація про прийом</h2></div>
+      <dl class="detail-list">
+        <div><dt>Лікар</dt><dd>{{ appointment.doctor.full_name }}</dd></div>
+        <div><dt>Послуга</dt><dd>{{ appointment.service.name|default:'Не обрано' }}</dd></div>
+        <div><dt>Дата і час</dt><dd>{{ appointment.date|date:'d.m.Y' }} о {{ appointment.time|time:'H:i' }}</dd></div>
+        <div><dt>Тривалість</dt><dd>{{ appointment.duration_minutes }} хв</dd></div>
+        <div><dt>Місце</dt><dd>{{ appointment.city }}, {{ appointment.address }}</dd></div>
+        <div><dt>Статус</dt><dd>{{ appointment.get_status_display }}</dd></div>
+      </dl>
+      <div class="appointment-reason">
+        <h2 class="section-title">Причина звернення</h2>
+        <div>{{ appointment.reason|linebreaks }}</div>
+      </div>
+    </section>
+
+    {% if appointment.status == 'reschedule_proposed' %}
+      <aside class="card section-card patient-reschedule-decision">
+        <h2 class="section-title">Ваше рішення</h2>
+        <p class="section-note">Після відмови цей запис буде скасовано.</p>
+        <form method="post" action="{% url 'patient_reschedule_response' appointment.id %}" onsubmit="return confirm('Погодитися з новим часом прийому?');">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="accept">
+          <button class="green" type="submit">Погодитися з новим часом</button>
+        </form>
+        <form method="post" action="{% url 'patient_reschedule_response' appointment.id %}" onsubmit="return confirm('Відхилити новий час і скасувати запис?');">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="reject">
+          <button class="danger" type="submit">Відхилити та скасувати</button>
+        </form>
+      </aside>
+    {% endif %}
+  </div>
+{% endblock %}

@@ -804,6 +804,168 @@ class ClinicModelTests(TestCase):
         self.assertEqual(appointment.status, Appointment.STATUS_PENDING)
         self.assertContains(response, 'Тривалість має бути кратною тривалості слота: 60 хв.')
 
+    def test_doctor_can_propose_new_time_and_patient_sees_alert(self):
+        original_date = timezone.localdate() + timedelta(days=7)
+        proposed_date = original_date + timedelta(days=7)
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            date=original_date,
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Потрібно перенести прийом',
+            status=Appointment.STATUS_PENDING,
+        )
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        detail_response = self.client.get(reverse('doctor_appointment_detail', args=[appointment.id]))
+        response = self.client.post(
+            reverse('doctor_propose_reschedule', args=[appointment.id]),
+            data={
+                'date': proposed_date.strftime('%Y-%m-%d'),
+                'time': '10:00',
+                'duration_minutes': 60,
+            },
+        )
+
+        appointment.refresh_from_db()
+        self.assertContains(detail_response, 'Перенести прийом')
+        self.assertRedirects(response, reverse('doctor_appointment_detail', args=[appointment.id]))
+        self.assertEqual(appointment.status, Appointment.STATUS_RESCHEDULE_PROPOSED)
+        self.assertEqual(appointment.previous_date, original_date)
+        self.assertEqual(appointment.previous_time, time(9, 0))
+        self.assertEqual(appointment.date, proposed_date)
+        self.assertEqual(appointment.time, time(10, 0))
+
+        self.client.logout()
+        self.client.login(username='patient@test.local', password='pass12345')
+        dashboard_response = self.client.get(reverse('patient_dashboard'))
+        patient_detail_response = self.client.get(
+            reverse('patient_appointment_detail', args=[appointment.id])
+        )
+
+        self.assertContains(dashboard_response, 'хоче змінити час прийому')
+        self.assertContains(dashboard_response, reverse('patient_appointment_detail', args=[appointment.id]))
+        self.assertContains(patient_detail_response, 'Погодитися з новим часом')
+        self.assertContains(patient_detail_response, original_date.strftime('%d.%m.%Y'))
+        self.assertContains(patient_detail_response, proposed_date.strftime('%d.%m.%Y'))
+
+    def test_patient_can_accept_doctor_reschedule_proposal(self):
+        original_date = timezone.localdate() + timedelta(days=7)
+        proposed_date = original_date + timedelta(days=7)
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            date=proposed_date,
+            time=time(10, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Погодження нового часу',
+            duration_minutes_exact=60,
+            status=Appointment.STATUS_RESCHEDULE_PROPOSED,
+            previous_date=original_date,
+            previous_time=time(9, 0),
+            reschedule_requested_at=timezone.now(),
+        )
+        self.client.login(username='patient@test.local', password='pass12345')
+
+        response = self.client.post(
+            reverse('patient_reschedule_response', args=[appointment.id]),
+            data={'action': 'accept'},
+            follow=True,
+        )
+
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, Appointment.STATUS_APPROVED)
+        self.assertIsNotNone(appointment.approved_at)
+        self.assertContains(response, 'Новий час прийому підтверджено.')
+        self.assertNotContains(response, 'хоче змінити час прийому')
+
+    def test_patient_can_reject_doctor_reschedule_proposal(self):
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            date=timezone.localdate() + timedelta(days=14),
+            time=time(10, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Відмова від нового часу',
+            status=Appointment.STATUS_RESCHEDULE_PROPOSED,
+            previous_date=timezone.localdate() + timedelta(days=7),
+            previous_time=time(9, 0),
+            reschedule_requested_at=timezone.now(),
+        )
+        self.client.login(username='patient@test.local', password='pass12345')
+
+        response = self.client.post(
+            reverse('patient_reschedule_response', args=[appointment.id]),
+            data={'action': 'reject'},
+            follow=True,
+        )
+
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, Appointment.STATUS_CANCELED)
+        self.assertContains(response, 'Запропонований час відхилено. Запис скасовано.')
+
+    def test_doctor_cannot_propose_time_that_overlaps_another_appointment(self):
+        original_date = timezone.localdate() + timedelta(days=7)
+        target_date = original_date + timedelta(days=7)
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            date=original_date,
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Спроба перенесення',
+        )
+        Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient_first_name='Інший',
+            patient_last_name='Пацієнт',
+            patient_phone='+380509999999',
+            date=target_date,
+            time=time(10, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Зайнятий час',
+            status=Appointment.STATUS_APPROVED,
+        )
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.post(
+            reverse('doctor_propose_reschedule', args=[appointment.id]),
+            data={
+                'date': target_date.strftime('%Y-%m-%d'),
+                'time': '10:00',
+                'duration_minutes': 60,
+            },
+            follow=True,
+        )
+
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, Appointment.STATUS_PENDING)
+        self.assertEqual(appointment.date, original_date)
+        self.assertContains(response, 'Обраний час перетинається з іншим записом')
+
     def test_lunch_break_removes_slots_and_blocks_overlapping_appointment(self):
         visit_date = timezone.localdate()
         self.schedule.start_time = time(9, 0)

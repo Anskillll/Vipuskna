@@ -70,16 +70,54 @@
             <input type="hidden" name="action" value="reject">
             <button type="submit" class="secondary">Відхилити заявку</button>
           </form>
+          {% if appointment.patient %}
+            <a class="btn warning appointment-reschedule-button" href="{% url 'doctor_appointment_detail' appointment.id %}?reschedule=1#reschedule">Перенести прийом</a>
+          {% endif %}
         </aside>
       {% elif appointment.status == 'approved' %}
         <aside class="card section-card appointment-decision-panel">
           <h2 class="section-title">Керування прийомом</h2>
           <p class="section-note">Прийом підтверджено. За потреби його можна скасувати.</p>
+          {% if appointment.patient %}
+            <a class="btn warning appointment-reschedule-button" href="{% url 'doctor_appointment_detail' appointment.id %}?reschedule=1#reschedule">Перенести прийом</a>
+          {% endif %}
           <form method="post" action="{% url 'doctor_cancel_appointment' appointment.id %}" onsubmit="return confirm('Скасувати цей прийом?');">
             {% csrf_token %}
             <button type="submit" class="danger">Скасувати прийом</button>
           </form>
         </aside>
+      {% elif appointment.status == 'reschedule_proposed' %}
+        <aside class="card section-card appointment-decision-panel reschedule-waiting-panel">
+          <span class="reschedule-eyebrow">Надіслано пацієнту</span>
+          <h2 class="section-title">Очікуємо рішення</h2>
+          <p>Було: {{ appointment.previous_date|date:'d.m.Y' }} о {{ appointment.previous_time|time:'H:i' }}</p>
+          <p><strong>Новий час: {{ appointment.date|date:'d.m.Y' }} о {{ appointment.time|time:'H:i' }}</strong></p>
+          <form method="post" action="{% url 'doctor_cancel_appointment' appointment.id %}" onsubmit="return confirm('Скасувати цей запис?');">
+            {% csrf_token %}
+            <button type="submit" class="danger">Скасувати запис</button>
+          </form>
+        </aside>
+      {% endif %}
+
+      {% if show_reschedule_form and appointment.patient %}
+        {% if appointment.status == 'pending' or appointment.status == 'approved' %}
+          <section id="reschedule" class="card section-card appointment-reschedule-panel">
+            <span class="reschedule-eyebrow">Узгодження з пацієнтом</span>
+            <h2 class="section-title">Запропонувати інший час</h2>
+            <p class="section-note">Новий час спочатку надійде пацієнту. Прийом стане підтвердженим після його згоди.</p>
+            <form method="post" action="{% url 'doctor_propose_reschedule' appointment.id %}">
+              {% csrf_token %}
+              {% for field in reschedule_form %}
+                <div class="field">
+                  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                  {{ field }}
+                  {% if field.help_text %}<div class="field-help">{{ field.help_text }}</div>{% endif %}
+                </div>
+              {% endfor %}
+              <button type="submit" class="warning">Надіслати новий час пацієнту</button>
+            </form>
+          </section>
+        {% endif %}
       {% endif %}
 
       <section class="card section-card day-appointments-section">

@@ -234,6 +234,7 @@ class Appointment(models.Model):
     STATUS_COMPLETED = 'completed'
     STATUS_CANCELED = 'canceled'
     STATUS_REJECTED = 'rejected'
+    STATUS_RESCHEDULE_PROPOSED = 'reschedule_proposed'
 
     STATUS_CHOICES = [
         (STATUS_PENDING, 'Нова заявка'),
@@ -241,6 +242,7 @@ class Appointment(models.Model):
         (STATUS_COMPLETED, 'Завершено'),
         (STATUS_CANCELED, 'Скасовано'),
         (STATUS_REJECTED, 'Відхилено'),
+        (STATUS_RESCHEDULE_PROPOSED, 'Очікує рішення пацієнта'),
     ]
 
     doctor = models.ForeignKey(
@@ -280,6 +282,9 @@ class Appointment(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     approved_at = models.DateTimeField(null=True, blank=True)
+    previous_date = models.DateField(null=True, blank=True)
+    previous_time = models.TimeField(null=True, blank=True)
+    reschedule_requested_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = 'Запис на прийом'

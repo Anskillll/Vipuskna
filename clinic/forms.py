@@ -284,6 +284,79 @@ class AppointmentDecisionForm(FormStyleMixin, forms.Form):
         return value
 
 
+class AppointmentRescheduleForm(FormStyleMixin, forms.Form):
+    date = forms.DateField(
+        label='Нова дата',
+        widget=forms.DateInput(attrs={'type': 'date'}),
+    )
+    time = forms.TimeField(
+        label='Новий час',
+        widget=forms.TimeInput(attrs={'type': 'time'}),
+    )
+    duration_minutes = forms.IntegerField(
+        label='Тривалість прийому, хвилин',
+        min_value=1,
+    )
+
+    def __init__(self, *args, appointment=None, **kwargs):
+        self.appointment = appointment
+        self.schedule = None
+        initial = kwargs.pop('initial', {})
+        if appointment:
+            initial = {
+                'date': appointment.date,
+                'time': appointment.time,
+                'duration_minutes': appointment.duration_minutes,
+                **initial,
+            }
+        kwargs['initial'] = initial
+        super().__init__(*args, **kwargs)
+        self.fields['date'].widget.attrs['min'] = timezone.localdate().isoformat()
+        if appointment:
+            slot_minutes = appointment.slot_minutes
+            self.fields['duration_minutes'].widget.attrs.update(
+                {'min': slot_minutes, 'step': slot_minutes}
+            )
+            self.fields['duration_minutes'].help_text = (
+                f'Для поточного дня один слот триває {slot_minutes} хв. '
+                'Після зміни дати система перевірить слот нового дня.'
+            )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        selected_date = cleaned_data.get('date')
+        selected_time = cleaned_data.get('time')
+        duration_minutes = cleaned_data.get('duration_minutes')
+        if not selected_date or not selected_time or not duration_minutes or not self.appointment:
+            return cleaned_data
+
+        now = timezone.localtime()
+        if selected_date < now.date() or (
+            selected_date == now.date()
+            and selected_time <= now.time().replace(second=0, microsecond=0)
+        ):
+            self.add_error('date', 'Не можна запропонувати час у минулому.')
+            return cleaned_data
+
+        self.schedule = WorkSchedule.objects.filter(
+            doctor=self.appointment.doctor,
+            weekday=selected_date.weekday(),
+            is_working=True,
+        ).first()
+        if not self.schedule:
+            self.add_error('date', 'На цей день лікар не має робочого графіка.')
+            return cleaned_data
+
+        if selected_time not in self.schedule.get_slots():
+            self.add_error('time', 'Оберіть час, який відповідає початку слота в графіку цього дня.')
+        if duration_minutes % self.schedule.slot_minutes:
+            self.add_error(
+                'duration_minutes',
+                f'Тривалість має бути кратною тривалості слота: {self.schedule.slot_minutes} хв.',
+            )
+        return cleaned_data
+
+
 class DoctorPatientCardForm(FormStyleMixin, forms.ModelForm):
     class Meta:
         model = DoctorPatientCard

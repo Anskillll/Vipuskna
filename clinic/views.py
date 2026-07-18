@@ -19,6 +19,7 @@ from .forms import (
     AdminDoctorCreateForm,
     AdminUserEditForm,
     AppointmentDecisionForm,
+    AppointmentRescheduleForm,
     BookingReasonForm,
     ClaimPatientForm,
     ClinicSettingsForm,
@@ -58,6 +59,7 @@ BLOCKING_APPOINTMENT_STATUSES = [
     Appointment.STATUS_PENDING,
     Appointment.STATUS_APPROVED,
     Appointment.STATUS_COMPLETED,
+    Appointment.STATUS_RESCHEDULE_PROPOSED,
 ]
 
 UKRAINIAN_WEEKDAYS = (
@@ -542,6 +544,13 @@ def patient_dashboard(request):
         'clinic/patient_dashboard.html',
         {
             'pending': appointments.filter(status=Appointment.STATUS_PENDING),
+            'reschedule_requests': appointments.filter(status=Appointment.STATUS_RESCHEDULE_PROPOSED),
+            'open_requests_count': appointments.filter(
+                status__in=[
+                    Appointment.STATUS_PENDING,
+                    Appointment.STATUS_RESCHEDULE_PROPOSED,
+                ]
+            ).count(),
             'approved': appointments.filter(status=Appointment.STATUS_APPROVED),
             'completed': appointments.filter(status=Appointment.STATUS_COMPLETED),
             'canceled': appointments.filter(status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]),
@@ -583,7 +592,11 @@ def cancel_appointment(request, appointment_id):
         Appointment,
         pk=appointment_id,
         patient=request.user,
-        status__in=[Appointment.STATUS_PENDING, Appointment.STATUS_APPROVED],
+        status__in=[
+            Appointment.STATUS_PENDING,
+            Appointment.STATUS_APPROVED,
+            Appointment.STATUS_RESCHEDULE_PROPOSED,
+        ],
     )
     if request.method == 'POST':
         appointment.status = Appointment.STATUS_CANCELED
@@ -614,6 +627,67 @@ def restore_appointment(request, appointment_id):
             appointment.status = Appointment.STATUS_PENDING
             appointment.save(update_fields=['status'])
             messages.success(request, 'Заявку відновлено і знову відправлено лікарю.')
+    return redirect('patient_dashboard')
+
+
+@patient_required
+def patient_appointment_detail(request, appointment_id):
+    appointment = get_object_or_404(
+        Appointment.objects.select_related('doctor__user', 'service').prefetch_related('images'),
+        pk=appointment_id,
+        patient=request.user,
+    )
+    return render(
+        request,
+        'clinic/patient_appointment_detail.html',
+        {'appointment': appointment},
+    )
+
+
+@patient_required
+def patient_reschedule_response(request, appointment_id):
+    appointment = get_object_or_404(
+        Appointment,
+        pk=appointment_id,
+        patient=request.user,
+        status=Appointment.STATUS_RESCHEDULE_PROPOSED,
+    )
+    if request.method != 'POST':
+        return redirect('patient_appointment_detail', appointment_id=appointment.id)
+
+    action = request.POST.get('action')
+    if action == 'reject':
+        appointment.status = Appointment.STATUS_CANCELED
+        appointment.save(update_fields=['status'])
+        messages.success(request, 'Запропонований час відхилено. Запис скасовано.')
+        return redirect('patient_dashboard')
+
+    if action != 'accept':
+        messages.error(request, 'Оберіть, чи погоджуєтеся ви з новим часом.')
+        return redirect('patient_appointment_detail', appointment_id=appointment.id)
+
+    schedule = schedule_for_date(appointment.doctor, appointment.date)
+    if (
+        is_past_appointment(appointment.date, appointment.time)
+        or not schedule
+        or not schedule.is_working
+        or appointment.time not in schedule.get_slots()
+        or appointment_conflicts(
+            appointment.doctor,
+            appointment.date,
+            appointment.time,
+            duration_minutes=appointment.duration_minutes,
+            exclude_id=appointment.id,
+        )
+    ):
+        messages.error(request, 'Цей час уже недоступний. Зверніться до лікаря для нового перенесення.')
+        return redirect('patient_appointment_detail', appointment_id=appointment.id)
+
+    appointment.status = Appointment.STATUS_APPROVED
+    appointment.approved_at = timezone.now()
+    appointment.save(update_fields=['status', 'approved_at'])
+    ensure_patient_card_from_appointment(appointment)
+    messages.success(request, 'Новий час прийому підтверджено.')
     return redirect('patient_dashboard')
 
 
@@ -821,6 +895,7 @@ def doctor_appointment_detail(request, appointment_id):
     ).order_by('time')
     active_appointment = active_appointment_for_doctor(doctor)
     patient_card, _ = ensure_patient_card_from_appointment(appointment)
+    reschedule_form = AppointmentRescheduleForm(appointment=appointment)
     return render(
         request,
         'clinic/doctor_appointment_detail.html',
@@ -830,8 +905,87 @@ def doctor_appointment_detail(request, appointment_id):
             'day_appointments': day_appointments,
             'active_appointment': active_appointment,
             'patient_card': patient_card,
+            'reschedule_form': reschedule_form,
+            'show_reschedule_form': request.GET.get('reschedule') == '1',
         },
     )
+
+
+@doctor_required
+def doctor_propose_reschedule(request, appointment_id):
+    doctor = request.user.doctor_profile
+    appointment = get_object_or_404(
+        Appointment,
+        pk=appointment_id,
+        doctor=doctor,
+        patient__isnull=False,
+        status__in=[Appointment.STATUS_PENDING, Appointment.STATUS_APPROVED],
+    )
+    if request.method != 'POST':
+        return redirect(
+            f'{reverse("doctor_appointment_detail", args=[appointment.id])}?reschedule=1#reschedule'
+        )
+
+    form = AppointmentRescheduleForm(request.POST, appointment=appointment)
+    if not form.is_valid():
+        for errors in form.errors.values():
+            messages.error(request, errors[0])
+        return redirect(
+            f'{reverse("doctor_appointment_detail", args=[appointment.id])}?reschedule=1#reschedule'
+        )
+
+    selected_date = form.cleaned_data['date']
+    selected_time = form.cleaned_data['time']
+    duration_minutes = form.cleaned_data['duration_minutes']
+    schedule = form.schedule
+    duration_slots = ceil(duration_minutes / schedule.slot_minutes)
+    if appointment_conflicts(
+        doctor,
+        selected_date,
+        selected_time,
+        duration_slots=duration_slots,
+        duration_minutes=duration_minutes,
+        exclude_id=appointment.id,
+    ):
+        messages.error(request, 'Обраний час перетинається з іншим записом, обідом або кінцем робочого дня.')
+        return redirect(
+            f'{reverse("doctor_appointment_detail", args=[appointment.id])}?reschedule=1#reschedule'
+        )
+
+    appointment.previous_date = appointment.date
+    appointment.previous_time = appointment.time
+    appointment.date = selected_date
+    appointment.time = selected_time
+    appointment.city = schedule.city
+    appointment.address = schedule.address
+    appointment.duration_slots = duration_slots
+    appointment.duration_minutes_exact = duration_minutes
+    appointment.status = Appointment.STATUS_RESCHEDULE_PROPOSED
+    appointment.reschedule_requested_at = timezone.now()
+    try:
+        with transaction.atomic():
+            appointment.save(
+                update_fields=[
+                    'previous_date',
+                    'previous_time',
+                    'date',
+                    'time',
+                    'city',
+                    'address',
+                    'duration_slots',
+                    'duration_minutes_exact',
+                    'status',
+                    'reschedule_requested_at',
+                ]
+            )
+    except IntegrityError:
+        messages.error(request, 'Цей час щойно зайняли. Оберіть інший варіант.')
+        return redirect(
+            f'{reverse("doctor_appointment_detail", args=[appointment.id])}?reschedule=1#reschedule'
+        )
+
+    messages.success(request, 'Новий час надіслано пацієнту на погодження.')
+    return redirect('doctor_appointment_detail', appointment_id=appointment.id)
 
 
 @doctor_required

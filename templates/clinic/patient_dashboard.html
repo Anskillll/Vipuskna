@@ -18,6 +18,22 @@
     </div>
   </section>
 
+  {% for appointment in reschedule_requests %}
+    <aside class="patient-reschedule-alert">
+      <div>
+        <span class="reschedule-eyebrow">Потрібне ваше рішення</span>
+        <strong>Лікар {{ appointment.doctor.full_name }} хоче змінити час прийому</strong>
+        <p>
+          Було {{ appointment.previous_date|date:'d.m.Y' }} о {{ appointment.previous_time|time:'H:i' }}.
+          Новий час: {{ appointment.date|date:'d.m.Y' }} о {{ appointment.time|time:'H:i' }}.
+        </p>
+      </div>
+      <a class="btn reschedule-alert-link" href="{% url 'patient_appointment_detail' appointment.id %}">
+        Переглянути і відповісти
+      </a>
+    </aside>
+  {% endfor %}
+
   {% if profile_incomplete %}
     <aside class="profile-completion-alert">
       <div>
@@ -51,7 +67,7 @@
   <section class="overview-grid">
     <article class="overview-card">
       <span class="overview-label">Мої заявки</span>
-      <strong class="overview-value">{{ pending|length }}</strong>
+      <strong class="overview-value">{{ open_requests_count }}</strong>
     </article>
     <article class="overview-card">
       <span class="overview-label">Підтверджено</span>
