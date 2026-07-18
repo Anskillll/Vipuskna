@@ -439,16 +439,27 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
 
 
 class ServiceForm(FormStyleMixin, forms.ModelForm):
+    photos = MultipleImageField(
+        label='Додати фотографії',
+        required=False,
+        help_text='Можна вибрати одразу декілька фотографій.',
+    )
+
     class Meta:
         model = MedicalService
-        fields = ['name', 'price', 'is_patient_selectable']
+        fields = ['name', 'price', 'description', 'is_patient_selectable', 'photos']
         labels = {
             'name': 'Назва послуги',
             'price': 'Ціна, грн',
+            'description': 'Детальна інформація про послугу',
             'is_patient_selectable': 'Дозволити пацієнтам обирати цю послугу під час запису',
         }
         help_texts = {
+            'description': 'Опишіть процедуру, її особливості, підготовку та іншу важливу інформацію.',
             'is_patient_selectable': 'Увімкніть для основних процедур, які пацієнт може самостійно вибрати онлайн.',
+        }
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 6}),
         }
 
 

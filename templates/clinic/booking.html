@@ -96,7 +96,23 @@
           <input type="hidden" name="doctor" value="{{ selected_doctor.id }}">
           <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
           <input type="hidden" name="time" value="{{ selected_time|time:'H:i' }}">
-          {% include 'clinic/_form_fields.html' with form=reason_form %}
+          {% if reason_form.non_field_errors %}
+            <div class="form-error">{{ reason_form.non_field_errors }}</div>
+          {% endif %}
+          <div class="booking-service-choice">
+            {% include 'clinic/_form_field.html' with field=reason_form.service %}
+            <a
+              class="btn secondary booking-service-details"
+              href="#"
+              target="_blank"
+              rel="noopener"
+              data-service-details
+              data-service-url="{% url 'doctor_detail' selected_doctor.id %}services/"
+              hidden
+            >Детальніше про послугу</a>
+          </div>
+          {% include 'clinic/_form_field.html' with field=reason_form.reason %}
+          {% include 'clinic/_form_field.html' with field=reason_form.photos %}
           <button type="submit">Надіслати заявку</button>
         </form>
       {% else %}
@@ -104,4 +120,23 @@
       {% endif %}
     </section>
   {% endif %}
+
+  <script>
+    (() => {
+      const serviceSelect = document.getElementById('id_service');
+      const detailsLink = document.querySelector('[data-service-details]');
+      if (!serviceSelect || !detailsLink) return;
+
+      const updateDetailsLink = () => {
+        const serviceId = serviceSelect.value;
+        detailsLink.hidden = !serviceId;
+        detailsLink.href = serviceId
+          ? `${detailsLink.dataset.serviceUrl}${serviceId}/`
+          : '#';
+      };
+
+      serviceSelect.addEventListener('change', updateDetailsLink);
+      updateDetailsLink();
+    })();
+  </script>
 {% endblock %}

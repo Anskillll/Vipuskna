@@ -43,6 +43,7 @@ from .models import (
     DoctorPatientCard,
     GalleryImage,
     MedicalService,
+    MedicalServiceImage,
     NewsPost,
     PatientRecordEntry,
     PatientRecordImage,
@@ -654,6 +655,23 @@ def doctor_detail(request, doctor_id):
     )
 
 
+def service_detail(request, doctor_id, service_id):
+    service = get_object_or_404(
+        MedicalService.objects.filter(doctor_id=doctor_id, doctor__user__is_active=True)
+        .select_related('doctor__user')
+        .prefetch_related('images', 'doctor__schedules'),
+        pk=service_id,
+    )
+    return render(
+        request,
+        'clinic/service_detail.html',
+        {
+            'doctor': service.doctor,
+            'service': service,
+        },
+    )
+
+
 @patient_required
 def booking(request):
     refresh_completed_appointments()
@@ -1163,7 +1181,18 @@ def doctor_services(request):
         messages.success(request, 'Послугу видалено.')
         return redirect('doctor_services')
 
-    form = ServiceForm(request.POST or None, instance=instance)
+    if request.method == 'POST' and request.POST.get('action') == 'delete_image':
+        image = get_object_or_404(
+            MedicalServiceImage,
+            pk=request.POST.get('image_id'),
+            service__doctor=doctor,
+        )
+        service_id = image.service_id
+        image.delete()
+        messages.success(request, 'Фотографію послуги видалено.')
+        return redirect(f"{reverse('doctor_services')}?edit={service_id}")
+
+    form = ServiceForm(request.POST or None, request.FILES or None, instance=instance)
     if request.method == 'POST' and form.is_valid():
         service = form.save(commit=False)
         service.doctor = doctor
@@ -1171,6 +1200,8 @@ def doctor_services(request):
             last_order = doctor.services.aggregate(max_order=Max('sort_order'))['max_order']
             service.sort_order = 0 if last_order is None else last_order + 1
         service.save()
+        for photo in form.cleaned_data['photos']:
+            MedicalServiceImage.objects.create(service=service, image=photo)
         messages.success(request, 'Послугу збережено.')
         return redirect('doctor_services')
 
@@ -1179,7 +1210,7 @@ def doctor_services(request):
         'clinic/doctor_services.html',
         {
             'doctor': doctor,
-            'services': doctor.services.all(),
+            'services': doctor.services.prefetch_related('images'),
             'form': form,
             'editing': instance,
         },

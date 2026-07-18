@@ -1,0 +1,70 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}{{ service.name }} - MedClinic{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <div>
+      <a class="back-link" href="{% url 'doctor_detail' doctor.id %}">← До профілю лікаря</a>
+      <h1 class="page-title">{{ service.name }}</h1>
+      <p class="page-subtitle">Детальна інформація про послугу</p>
+    </div>
+  </section>
+
+  <section class="card service-detail-card">
+    <div class="service-detail-head">
+      <div class="service-detail-doctor">
+        {% if doctor.photo_src %}
+          <img class="doctor-photo doctor-photo-lg" src="{{ doctor.photo_src }}" alt="{{ doctor.full_name }}">
+        {% else %}
+          <div class="doctor-photo doctor-photo-lg">{{ doctor.user.first_name|first }}{{ doctor.user.last_name|first }}</div>
+        {% endif %}
+        <div>
+          <span class="service-detail-label">Послугу надає</span>
+          <h2>{{ doctor.full_name }}</h2>
+          <p>{{ doctor.specialization }}</p>
+          <a class="doctor-details-link" href="{% url 'doctor_detail' doctor.id %}">Про лікаря</a>
+        </div>
+      </div>
+      <div class="service-detail-price">
+        <span>Вартість</span>
+        <strong>{{ service.price }} грн</strong>
+      </div>
+    </div>
+
+    <div class="service-detail-description">
+      <h2>Про послугу</h2>
+      {% if service.description %}
+        {{ service.description|linebreaks }}
+      {% else %}
+        <p class="muted">Лікар ще не додав детальний опис цієї послуги.</p>
+      {% endif %}
+    </div>
+
+    {% if service.images.all %}
+      <div class="service-detail-gallery">
+        <div class="section-mini-head">
+          <h2>Фотографії</h2>
+          <span class="section-note">{{ service.images.count }} фото</span>
+        </div>
+        <div class="service-photo-grid">
+          {% for photo in service.images.all %}
+            <a href="{{ photo.image.url }}" target="_blank" rel="noopener">
+              <img src="{{ photo.image.url }}" alt="{{ service.name }}">
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    {% if service.is_patient_selectable %}
+      <div class="service-detail-cta">
+        {% if user.is_authenticated and user.profile.role == 'patient' %}
+          <a class="btn" href="{% url 'booking' %}?doctor={{ doctor.id }}">Записатися до лікаря</a>
+        {% elif not user.is_authenticated %}
+          <a class="btn" href="{% url 'google_login' %}">Увійти для запису</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

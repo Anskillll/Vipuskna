@@ -21,7 +21,7 @@
               <h2>Додати послугу</h2>
             </div>
           </div>
-          <form method="post" class="service-inline-form">
+          <form method="post" enctype="multipart/form-data" class="service-inline-form">
             {% csrf_token %}
             {% include 'clinic/_form_fields.html' with form=form %}
             <div class="actions">
@@ -47,9 +47,29 @@
               Не показується пацієнтам під час запису
             {% endif %}
           </span>
+          {% if service.description %}
+            <p class="service-manager-description">{{ service.description|truncatechars:220 }}</p>
+          {% endif %}
 
           {% if editing.id == service.id %}
-            <form method="post" class="service-inline-form">
+            {% if service.images.all %}
+              <div class="service-image-manager">
+                {% for photo in service.images.all %}
+                  <div class="service-image-manager-item">
+                    <a href="{{ photo.image.url }}" target="_blank" rel="noopener">
+                      <img src="{{ photo.image.url }}" alt="{{ service.name }}">
+                    </a>
+                    <form method="post" onsubmit="return confirm('Видалити цю фотографію?');">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="delete_image">
+                      <input type="hidden" name="image_id" value="{{ photo.id }}">
+                      <button type="submit" class="danger service-image-delete">Видалити фото</button>
+                    </form>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+            <form method="post" enctype="multipart/form-data" class="service-inline-form">
               {% csrf_token %}
               {% include 'clinic/_form_fields.html' with form=form %}
               <div class="actions">
@@ -85,6 +105,7 @@
                   >↓</button>
                 </form>
               </div>
+              <a class="btn secondary" href="{% url 'service_detail' doctor.id service.id %}" target="_blank" rel="noopener">Переглянути сторінку</a>
               <a class="btn secondary" href="{% url 'doctor_services' %}?edit={{ service.id }}">Редагувати</a>
               <form method="post" onsubmit="return confirm('Видалити цю послугу?');">
                 {% csrf_token %}

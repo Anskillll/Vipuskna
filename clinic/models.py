@@ -91,6 +91,7 @@ class MedicalService(models.Model):
     )
     name = models.CharField(max_length=160)
     price = models.PositiveIntegerField(validators=[MinValueValidator(0)])
+    description = models.TextField(blank=True)
     sort_order = models.PositiveIntegerField(default=0)
     is_patient_selectable = models.BooleanField(default=True)
 
@@ -101,6 +102,24 @@ class MedicalService(models.Model):
 
     def __str__(self):
         return f'{self.name} - {self.price} грн'
+
+
+class MedicalServiceImage(models.Model):
+    service = models.ForeignKey(
+        MedicalService,
+        on_delete=models.CASCADE,
+        related_name='images',
+    )
+    image = models.ImageField(upload_to='service_photos/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Фотографія послуги'
+        verbose_name_plural = 'Фотографії послуг'
+        ordering = ['id']
+
+    def __str__(self):
+        return f'Фото: {self.service.name}'
 
 
 class WorkSchedule(models.Model):

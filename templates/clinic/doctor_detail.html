@@ -68,9 +68,15 @@
 
       <section class="doctor-profile-section">
         <h2>Послуги та ціни</h2>
-        <ul class="simple-list">
+        <ul class="simple-list doctor-service-list">
           {% for service in doctor.services.all %}
-            <li><span>{{ service.name }}</span><strong>{{ service.price }} грн</strong></li>
+            <li>
+              <span>{{ service.name }}</span>
+              <span class="doctor-service-actions">
+                <strong>{{ service.price }} грн</strong>
+                <a class="doctor-details-link" href="{% url 'service_detail' doctor.id service.id %}">Детальніше</a>
+              </span>
+            </li>
           {% empty %}
             <li><span>Послуги ще не додані</span><strong></strong></li>
           {% endfor %}

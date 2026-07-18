@@ -17,6 +17,7 @@ from .models import (
     Doctor,
     DoctorPatientCard,
     MedicalService,
+    MedicalServiceImage,
     NewsPost,
     PatientRecordEntry,
     Profile,
@@ -186,10 +187,80 @@ class ClinicModelTests(TestCase):
         form = ServiceForm(instance=self.service)
 
         self.assertIn('is_patient_selectable', form.fields)
+        self.assertIn('description', form.fields)
+        self.assertIn('photos', form.fields)
         self.assertEqual(
             form.fields['is_patient_selectable'].label,
             'Дозволити пацієнтам обирати цю послугу під час запису',
         )
+
+    def test_doctor_can_add_service_description_and_photo(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+        image = SimpleUploadedFile(
+            'service.gif',
+            b'GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff!\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;',
+            content_type='image/gif',
+        )
+
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            response = self.client.post(
+                f"{reverse('doctor_services')}?edit={self.service.id}",
+                data={
+                    'name': self.service.name,
+                    'price': self.service.price,
+                    'description': 'Розгорнутий опис процедури та підготовки до неї.',
+                    'is_patient_selectable': 'on',
+                    'photos': [image],
+                },
+            )
+
+            self.service.refresh_from_db()
+            service_image = MedicalServiceImage.objects.get(service=self.service)
+            detail_response = self.client.get(
+                reverse('service_detail', args=[self.doctor.id, self.service.id])
+            )
+
+            self.assertRedirects(response, reverse('doctor_services'))
+            self.assertEqual(
+                self.service.description,
+                'Розгорнутий опис процедури та підготовки до неї.',
+            )
+            self.assertTrue(service_image.image.name.startswith('service_photos/'))
+            self.assertContains(detail_response, self.service.description)
+            self.assertContains(detail_response, service_image.image.url)
+
+    def test_doctor_cannot_delete_another_doctors_service_photo(self):
+        other_user = User.objects.create_user(
+            username='other-doctor@test.local',
+            password='pass12345',
+        )
+        Profile.objects.create(user=other_user, role=Profile.ROLE_DOCTOR)
+        other_doctor = Doctor.objects.create(
+            user=other_user,
+            specialization='Хірург',
+            phone='+380503333333',
+        )
+        other_service = MedicalService.objects.create(
+            doctor=other_doctor,
+            name='Інша послуга',
+            price=800,
+        )
+        other_image = MedicalServiceImage.objects.create(
+            service=other_service,
+            image='service_photos/other.jpg',
+        )
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.post(
+            reverse('doctor_services'),
+            data={
+                'action': 'delete_image',
+                'image_id': other_image.id,
+            },
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(MedicalServiceImage.objects.filter(pk=other_image.id).exists())
 
     def test_doctor_cards_are_compact_and_detail_page_is_complete(self):
         self.doctor.description = 'Повна інформація про досвід лікаря.'
@@ -220,6 +291,24 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Детальніше')
         self.assertNotContains(response, self.doctor.phone)
         self.assertNotContains(response, self.service.name)
+
+    def test_booking_service_selector_has_details_link(self):
+        self.client.login(username='patient@test.local', password='pass12345')
+        future_date = timezone.localdate() + timedelta(days=7)
+
+        response = self.client.get(
+            reverse('booking'),
+            {
+                'doctor': self.doctor.id,
+                'date': future_date.strftime('%Y-%m-%d'),
+                'time': '09:00',
+            },
+        )
+
+        expected_base = f"{reverse('doctor_detail', args=[self.doctor.id])}services/"
+        self.assertContains(response, 'Детальніше про послугу')
+        self.assertContains(response, f'data-service-url="{expected_base}"')
+        self.assertContains(response, 'data-service-details')
 
     def test_active_appointment_slot_is_unique(self):
         visit_date = timezone.localdate()

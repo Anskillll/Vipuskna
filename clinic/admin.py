@@ -8,6 +8,7 @@ from .models import (
     DoctorPatientCard,
     GalleryImage,
     MedicalService,
+    MedicalServiceImage,
     NewsPost,
     PatientRecordEntry,
     PatientRecordImage,
@@ -28,6 +29,11 @@ class WorkScheduleInline(admin.TabularInline):
 
 class AppointmentImageInline(admin.TabularInline):
     model = AppointmentImage
+    extra = 0
+
+
+class MedicalServiceImageInline(admin.TabularInline):
+    model = MedicalServiceImage
     extra = 0
 
 
@@ -54,6 +60,7 @@ class MedicalServiceAdmin(admin.ModelAdmin):
     list_display = ('name', 'doctor', 'price', 'is_patient_selectable', 'sort_order')
     list_filter = ('doctor__specialization', 'is_patient_selectable')
     search_fields = ('name', 'doctor__user__last_name')
+    inlines = [MedicalServiceImageInline]
 
 
 @admin.register(WorkSchedule)
