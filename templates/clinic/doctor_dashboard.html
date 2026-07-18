@@ -67,12 +67,19 @@
       <section class="doctor-profile-section">
         <div class="doctor-profile-section-head">
           <h2>Графік роботи</h2>
-          <a class="btn secondary doctor-profile-edit-button" href="{% url 'doctor_schedule' %}">Редагувати графік</a>
+          <div class="doctor-profile-section-actions">
+            <a class="btn secondary doctor-profile-edit-button" href="{% url 'doctor_workplaces' %}">Редагувати місця прийому</a>
+            <a class="btn secondary doctor-profile-edit-button" href="{% url 'doctor_schedule' %}">Редагувати графік</a>
+          </div>
         </div>
         <ul class="simple-list">
-          {% for schedule in doctor.schedules.all %}
+          {% for schedule in schedules %}
             <li>
-              <span>{{ schedule.get_weekday_display }} · {{ schedule.city }}</span>
+              <span>
+                {{ schedule.get_weekday_display }} ·
+                {% if schedule.workplace %}{{ schedule.workplace.name }} · {% endif %}
+                {{ schedule.city }}
+              </span>
               <strong>
                 {% if schedule.is_working %}
                   {{ schedule.start_time|time:'H:i' }}-{{ schedule.end_time|time:'H:i' }}

@@ -25,6 +25,7 @@ from .forms import (
     DoctorPatientBookingForm,
     DoctorPatientCardForm,
     DoctorProfileForm,
+    DoctorWorkplaceForm,
     EmailForm,
     GalleryImageForm,
     NewsPostForm,
@@ -41,6 +42,7 @@ from .models import (
     ClinicSettings,
     Doctor,
     DoctorPatientCard,
+    DoctorWorkplace,
     GalleryImage,
     MedicalService,
     MedicalServiceImage,
@@ -642,7 +644,7 @@ def doctor_detail(request, doctor_id):
     doctor = get_object_or_404(
         Doctor.objects.filter(user__is_active=True)
         .select_related('user')
-        .prefetch_related('services', 'schedules'),
+        .prefetch_related('services', 'schedules__workplace'),
         pk=doctor_id,
     )
     return render(
@@ -774,6 +776,7 @@ def doctor_dashboard(request):
         'clinic/doctor_dashboard.html',
         {
             'doctor': doctor,
+            'schedules': doctor.schedules.select_related('workplace'),
             'current_appointment': current_appointment,
             'current_card': current_card,
         },
@@ -1130,7 +1133,7 @@ def doctor_schedule(request):
     if request.method == 'POST':
         weekday = request.POST.get('weekday')
         instance = WorkSchedule.objects.filter(doctor=doctor, weekday=weekday).first()
-        form = WorkScheduleForm(request.POST, instance=instance)
+        form = WorkScheduleForm(request.POST, instance=instance, doctor=doctor)
         if form.is_valid():
             schedule = form.save(commit=False)
             schedule.doctor = doctor
@@ -1141,16 +1144,59 @@ def doctor_schedule(request):
         edit_weekday = request.GET.get('weekday')
         if edit_weekday is not None:
             instance = WorkSchedule.objects.filter(doctor=doctor, weekday=edit_weekday).first()
-        form = WorkScheduleForm(instance=instance)
+        form = WorkScheduleForm(instance=instance, doctor=doctor)
 
-    schedules = doctor.schedules.all()
+    schedules = doctor.schedules.select_related('workplace')
     return render(
         request,
         'clinic/doctor_schedule.html',
         {
             'doctor': doctor,
             'schedules': schedules,
+            'workplaces': doctor.workplaces.all(),
             'form': form,
+        },
+    )
+
+
+@doctor_required
+def doctor_workplaces(request):
+    doctor = request.user.doctor_profile
+    edit_id = request.GET.get('edit')
+    instance = doctor.workplaces.filter(pk=edit_id).first() if edit_id else None
+
+    if request.method == 'POST' and request.POST.get('action') == 'delete':
+        workplace = get_object_or_404(doctor.workplaces, pk=request.POST.get('workplace_id'))
+        if workplace.schedules.exists():
+            messages.error(
+                request,
+                'Це місце використовується у графіку. Спочатку оберіть інше місце для відповідних днів.',
+            )
+        else:
+            workplace.delete()
+            messages.success(request, 'Місце прийому видалено.')
+        return redirect('doctor_workplaces')
+
+    form = DoctorWorkplaceForm(request.POST or None, instance=instance)
+    if request.method == 'POST' and form.is_valid():
+        workplace = form.save(commit=False)
+        workplace.doctor = doctor
+        workplace.save()
+        doctor.schedules.filter(workplace=workplace).update(
+            city=workplace.city,
+            address=workplace.address,
+        )
+        messages.success(request, 'Місце прийому збережено.')
+        return redirect('doctor_workplaces')
+
+    return render(
+        request,
+        'clinic/doctor_workplaces.html',
+        {
+            'doctor': doctor,
+            'workplaces': doctor.workplaces.annotate(schedule_count=Count('schedules')),
+            'form': form,
+            'editing': instance,
         },
     )
 

@@ -885,6 +885,64 @@ a:hover {
   white-space: nowrap;
 }
 
+.doctor-profile-section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.workplace-list {
+  display: grid;
+}
+
+.workplace-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.workplace-row:last-child {
+  border-bottom: 0;
+}
+
+.workplace-row h3 {
+  margin: 0 0 5px;
+  font-size: 18px;
+}
+
+.workplace-row p {
+  margin: 0 0 6px;
+}
+
+.workplace-row span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.workplace-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.workplace-actions form {
+  display: block;
+}
+
+.schedule-workplace-empty {
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+}
+
+.schedule-workplace-empty p {
+  margin: 0;
+}
+
 .doctor-profile-news {
   margin-top: 30px;
   padding-top: 28px;
@@ -2005,6 +2063,23 @@ th {
 
   .doctor-profile-edit-button {
     width: 100%;
+  }
+
+  .doctor-profile-section-actions,
+  .workplace-actions {
+    width: 100%;
+  }
+
+  .doctor-profile-section-actions .btn,
+  .workplace-actions .btn,
+  .workplace-actions form,
+  .workplace-actions button {
+    width: 100%;
+  }
+
+  .workplace-row {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .service-manager {

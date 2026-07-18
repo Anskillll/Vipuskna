@@ -13,6 +13,7 @@ from clinic.models import (
     Appointment,
     Doctor,
     DoctorPatientCard,
+    DoctorWorkplace,
     GalleryImage,
     MedicalService,
     NewsPost,
@@ -379,12 +380,21 @@ class Command(BaseCommand):
             )
 
             city, address = CITIES[(index - 1) % len(CITIES)]
+            workplace, _ = DoctorWorkplace.objects.update_or_create(
+                doctor=doctor,
+                name=f'Демо-клініка «{city}»',
+                defaults={
+                    'city': city,
+                    'address': address,
+                },
+            )
             slot_minutes = 20 if index % 2 else 30
             for weekday in range(5):
                 WorkSchedule.objects.update_or_create(
                     doctor=doctor,
                     weekday=weekday,
                     defaults={
+                        'workplace': workplace,
                         'city': city,
                         'address': address,
                         'start_time': time(9, 0),

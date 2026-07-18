@@ -18,6 +18,7 @@ from .models import (
     ClinicSettings,
     Doctor,
     DoctorPatientCard,
+    DoctorWorkplace,
     MedicalService,
     MedicalServiceImage,
     NewsPost,
@@ -73,8 +74,15 @@ class ClinicModelTests(TestCase):
             name='Консультація',
             approximate_price=500,
         )
+        self.workplace = DoctorWorkplace.objects.create(
+            doctor=self.doctor,
+            name='Тестова клініка',
+            city='Дніпро',
+            address='вул. Тестова, 1',
+        )
         self.schedule = WorkSchedule.objects.create(
             doctor=self.doctor,
+            workplace=self.workplace,
             weekday=timezone.localdate().weekday(),
             city='Дніпро',
             address='вул. Тестова, 1',
@@ -135,11 +143,82 @@ class ClinicModelTests(TestCase):
             self.assertTrue(self.service.description)
             for doctor in demo_doctors:
                 self.assertEqual(doctor.schedules.count(), 5)
+                self.assertEqual(doctor.workplaces.count(), 1)
+                self.assertFalse(doctor.schedules.filter(workplace=None).exists())
                 self.assertGreaterEqual(doctor.services.count(), 5)
                 self.assertTrue(doctor.photo)
                 self.assertTrue(doctor.services.exclude(description='').exists())
             for patient in demo_patients:
                 self.assertTrue(patient.profile.photo)
+
+    def test_doctor_manages_workplaces_and_uses_preset_in_schedule(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+        response = self.client.post(
+            reverse('doctor_workplaces'),
+            data={
+                'name': 'Сімейна стоматологія',
+                'city': 'Київ',
+                'address': 'вул. Хрещатик, 10',
+            },
+        )
+        workplace = DoctorWorkplace.objects.get(
+            doctor=self.doctor,
+            name='Сімейна стоматологія',
+        )
+        weekday = (self.schedule.weekday + 1) % 7
+
+        self.assertRedirects(response, reverse('doctor_workplaces'))
+
+        response = self.client.post(
+            reverse('doctor_schedule'),
+            data={
+                'weekday': weekday,
+                'workplace': workplace.id,
+                'start_time': '10:00',
+                'end_time': '16:00',
+                'slot_minutes': 30,
+                'is_working': 'on',
+            },
+        )
+        schedule = WorkSchedule.objects.get(doctor=self.doctor, weekday=weekday)
+
+        self.assertRedirects(response, reverse('doctor_schedule'))
+        self.assertEqual(schedule.workplace, workplace)
+        self.assertEqual(schedule.city, 'Київ')
+        self.assertEqual(schedule.address, 'вул. Хрещатик, 10')
+
+        response = self.client.post(
+            f"{reverse('doctor_workplaces')}?edit={workplace.id}",
+            data={
+                'name': 'Сімейна стоматологія',
+                'city': 'Київ',
+                'address': 'вул. Хрещатик, 12',
+            },
+        )
+        schedule.refresh_from_db()
+
+        self.assertRedirects(response, reverse('doctor_workplaces'))
+        self.assertEqual(schedule.address, 'вул. Хрещатик, 12')
+
+        dashboard_response = self.client.get(reverse('doctor_dashboard'))
+        schedule_response = self.client.get(reverse('doctor_schedule'))
+        self.assertContains(dashboard_response, 'Редагувати місця прийому')
+        self.assertContains(dashboard_response, workplace.name)
+        self.assertContains(schedule_response, 'Додати місце')
+        self.assertContains(schedule_response, workplace.name)
+        self.assertContains(schedule_response, 'name="workplace"')
+        self.assertNotContains(schedule_response, 'name="city"')
+        self.assertNotContains(schedule_response, 'name="address"')
+
+        delete_response = self.client.post(
+            reverse('doctor_workplaces'),
+            data={
+                'action': 'delete',
+                'workplace_id': workplace.id,
+            },
+        )
+        self.assertRedirects(delete_response, reverse('doctor_workplaces'))
+        self.assertTrue(DoctorWorkplace.objects.filter(pk=workplace.id).exists())
 
     def test_service_editor_expands_inside_selected_service(self):
         self.client.login(username='doctor@test.local', password='pass12345')

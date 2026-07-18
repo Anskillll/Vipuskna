@@ -6,6 +6,7 @@ from .models import (
     ClinicSettings,
     Doctor,
     DoctorPatientCard,
+    DoctorWorkplace,
     GalleryImage,
     MedicalService,
     MedicalServiceImage,
@@ -24,6 +25,11 @@ class MedicalServiceInline(admin.TabularInline):
 
 class WorkScheduleInline(admin.TabularInline):
     model = WorkSchedule
+    extra = 1
+
+
+class DoctorWorkplaceInline(admin.TabularInline):
+    model = DoctorWorkplace
     extra = 1
 
 
@@ -48,7 +54,7 @@ class ProfileAdmin(admin.ModelAdmin):
 class DoctorAdmin(admin.ModelAdmin):
     list_display = ('full_name', 'specialization', 'phone', 'is_active')
     search_fields = ('user__first_name', 'user__last_name', 'specialization', 'phone')
-    inlines = [MedicalServiceInline, WorkScheduleInline]
+    inlines = [DoctorWorkplaceInline, MedicalServiceInline, WorkScheduleInline]
 
     @admin.display(boolean=True, description='Активен')
     def is_active(self, obj):
@@ -67,6 +73,13 @@ class MedicalServiceAdmin(admin.ModelAdmin):
 class WorkScheduleAdmin(admin.ModelAdmin):
     list_display = ('doctor', 'weekday', 'city', 'address', 'start_time', 'end_time', 'is_working')
     list_filter = ('weekday', 'city', 'is_working')
+
+
+@admin.register(DoctorWorkplace)
+class DoctorWorkplaceAdmin(admin.ModelAdmin):
+    list_display = ('name', 'doctor', 'city', 'address')
+    list_filter = ('city',)
+    search_fields = ('name', 'city', 'address', 'doctor__user__last_name')
 
 
 @admin.register(Appointment)

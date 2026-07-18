@@ -51,7 +51,11 @@
         <ul class="simple-list">
           {% for schedule in doctor.schedules.all %}
             <li>
-              <span>{{ schedule.get_weekday_display }} · {{ schedule.city }}{% if schedule.address %}, {{ schedule.address }}{% endif %}</span>
+              <span>
+                {{ schedule.get_weekday_display }} ·
+                {% if schedule.workplace %}{{ schedule.workplace.name }} · {% endif %}
+                {{ schedule.city }}{% if schedule.address %}, {{ schedule.address }}{% endif %}
+              </span>
               <strong>
                 {% if schedule.is_working %}
                   {{ schedule.start_time|time:'H:i' }}-{{ schedule.end_time|time:'H:i' }}

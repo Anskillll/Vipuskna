@@ -3,13 +3,28 @@
 {% block title %}Графік лікаря - MedClinic{% endblock %}
 
 {% block content %}
+  <section class="page-head">
+    <div>
+      <h1 class="page-title">Мій графік</h1>
+      <p class="page-subtitle">Оберіть день, місце прийому та робочий час.</p>
+    </div>
+    <div class="actions">
+      <a class="btn" href="{% url 'doctor_workplaces' %}">Додати місце</a>
+      <a class="btn secondary" href="{% url 'doctor_dashboard' %}">До профілю</a>
+    </div>
+  </section>
+
   <div class="grid grid-2">
     <section class="card">
-      <h1 class="page-title">Мій графік</h1>
+      <h2 class="section-title">Збережений графік</h2>
       <ul class="simple-list">
         {% for schedule in schedules %}
           <li>
-            <span>{{ schedule.get_weekday_display }} · {{ schedule.city }} · {{ schedule.address }}</span>
+            <span>
+              {{ schedule.get_weekday_display }} ·
+              {% if schedule.workplace %}{{ schedule.workplace.name }} · {% endif %}
+              {{ schedule.city }} · {{ schedule.address }}
+            </span>
             <strong>
               {% if schedule.is_working %}
                 {{ schedule.start_time|time:'H:i' }}-{{ schedule.end_time|time:'H:i' }}
@@ -30,14 +45,21 @@
     <section class="card">
       <h2 class="section-title">Змінити день</h2>
       <p class="muted">Обід необов'язковий. Якщо він потрібен, укажіть час початку та тривалість у хвилинах.</p>
-      <form method="post">
-        {% csrf_token %}
-        {% include 'clinic/_form_fields.html' with form=form %}
-        <div class="actions">
-          <button type="submit">Зберегти</button>
-          <a class="btn secondary" href="{% url 'doctor_dashboard' %}">Назад</a>
+      {% if workplaces %}
+        <form method="post">
+          {% csrf_token %}
+          {% include 'clinic/_form_fields.html' with form=form %}
+          <div class="actions">
+            <button type="submit">Зберегти</button>
+            <a class="btn secondary" href="{% url 'doctor_workplaces' %}">Додати місце</a>
+          </div>
+        </form>
+      {% else %}
+        <div class="empty schedule-workplace-empty">
+          <p>Спочатку додайте клініку або кабінет, де ви приймаєте пацієнтів.</p>
+          <a class="btn" href="{% url 'doctor_workplaces' %}">Додати місце прийому</a>
         </div>
-      </form>
+      {% endif %}
     </section>
   </div>
 {% endblock %}

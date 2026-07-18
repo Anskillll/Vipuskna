@@ -1,0 +1,65 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Місця прийому - MedClinic{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <div>
+      <h1 class="page-title">Місця прийому</h1>
+      <p class="page-subtitle">Збережіть клініки та кабінети один раз, а потім обирайте їх у графіку.</p>
+    </div>
+    <a class="btn secondary" href="{% url 'doctor_dashboard' %}">До профілю</a>
+  </section>
+
+  <div class="grid grid-2 workplace-layout">
+    <section class="card">
+      <h2 class="section-title">Збережені місця</h2>
+      <div class="workplace-list">
+        {% for workplace in workplaces %}
+          <article class="workplace-row">
+            <div>
+              <h3>{{ workplace.name }}</h3>
+              <p>{{ workplace.city }}, {{ workplace.address }}</p>
+              <span>
+                {% if workplace.schedule_count %}
+                  Використовується у {{ workplace.schedule_count }} дн. графіка
+                {% else %}
+                  Поки не використовується у графіку
+                {% endif %}
+              </span>
+            </div>
+            <div class="workplace-actions">
+              <a class="btn secondary" href="{% url 'doctor_workplaces' %}?edit={{ workplace.id }}">Редагувати</a>
+              <form method="post" onsubmit="return confirm('Видалити це місце прийому?');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="workplace_id" value="{{ workplace.id }}">
+                <button type="submit" class="danger">Видалити</button>
+              </form>
+            </div>
+          </article>
+        {% empty %}
+          <div class="empty">Місць прийому ще немає. Додайте перше місце праворуч.</div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">
+        {% if editing %}Редагувати місце{% else %}Додати місце{% endif %}
+      </h2>
+      <form method="post">
+        {% csrf_token %}
+        {% include 'clinic/_form_fields.html' with form=form %}
+        <div class="actions">
+          <button type="submit">
+            {% if editing %}Зберегти зміни{% else %}Додати місце{% endif %}
+          </button>
+          {% if editing %}
+            <a class="btn secondary" href="{% url 'doctor_workplaces' %}">Скасувати</a>
+          {% endif %}
+        </div>
+      </form>
+    </section>
+  </div>
+{% endblock %}

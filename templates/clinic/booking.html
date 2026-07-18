@@ -54,11 +54,14 @@
   </div>
 
   <section class="card section-card">
-    <div class="section-mini-head">
-      <h2>2. Вільний час</h2>
-      {% if selected_schedule and selected_schedule.is_working %}
-        <span class="section-note">{{ selected_schedule.city }}, {{ selected_schedule.address }}</span>
-      {% endif %}
+      <div class="section-mini-head">
+        <h2>2. Вільний час</h2>
+        {% if selected_schedule and selected_schedule.is_working %}
+        <span class="section-note">
+          {% if selected_schedule.workplace %}{{ selected_schedule.workplace.name }} · {% endif %}
+          {{ selected_schedule.city }}, {{ selected_schedule.address }}
+        </span>
+        {% endif %}
     </div>
     {% if selected_schedule and selected_schedule.is_working %}
       <div class="slot-grid slot-grid-clean">
@@ -86,6 +89,7 @@
       </div>
       <p class="booking-summary">
         <strong>{{ selected_doctor.full_name }}</strong><br>
+        {% if selected_schedule.workplace %}{{ selected_schedule.workplace.name }} · {% endif %}
         {{ selected_schedule.city }}, {{ selected_schedule.address }}<br>
         {{ selected_date|date:'d.m.Y' }} о {{ selected_time|time:'H:i' }}
       </p>

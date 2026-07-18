@@ -9,6 +9,7 @@ from .models import (
     ClinicSettings,
     Doctor,
     DoctorPatientCard,
+    DoctorWorkplace,
     GalleryImage,
     MedicalService,
     NewsPost,
@@ -392,8 +393,7 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
         model = WorkSchedule
         fields = [
             'weekday',
-            'city',
-            'address',
+            'workplace',
             'start_time',
             'end_time',
             'slot_minutes',
@@ -408,8 +408,7 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
         }
         labels = {
             'weekday': 'День тижня',
-            'city': 'Місто',
-            'address': 'Адреса',
+            'workplace': 'Місце прийому',
             'start_time': 'Початок прийому',
             'end_time': 'Кінець прийому',
             'slot_minutes': 'Тривалість одного слота, хвилин',
@@ -418,20 +417,27 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
             'is_working': 'Робочий день',
         }
 
+    def __init__(self, *args, doctor=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['workplace'].required = False
+        self.fields['workplace'].empty_label = 'Оберіть місце прийому'
+        self.fields['workplace'].queryset = (
+            doctor.workplaces.all()
+            if doctor
+            else DoctorWorkplace.objects.none()
+        )
+
     def clean(self):
         cleaned = super().clean()
         start_time = cleaned.get('start_time')
         end_time = cleaned.get('end_time')
         is_working = cleaned.get('is_working')
-        city = cleaned.get('city')
-        address = cleaned.get('address')
+        workplace = cleaned.get('workplace')
         break_start = cleaned.get('break_start_time')
         break_duration = cleaned.get('break_duration_minutes')
 
-        if is_working and not city:
-            self.add_error('city', 'Укажіть місто прийому.')
-        if is_working and not address:
-            self.add_error('address', 'Укажіть адресу прийому.')
+        if is_working and not workplace:
+            self.add_error('workplace', 'Оберіть місце прийому або спочатку додайте нове.')
         if start_time and end_time and start_time >= end_time:
             self.add_error('end_time', 'Кінець прийому має бути пізніше за початок.')
         if bool(break_start) != bool(break_duration):
@@ -441,6 +447,26 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
             if break_start < start_time or break_end > end_time:
                 self.add_error('break_start_time', 'Обідня перерва має повністю входити в робочий час.')
         return cleaned
+
+    def save(self, commit=True):
+        schedule = super().save(commit=False)
+        if schedule.workplace:
+            schedule.city = schedule.workplace.city
+            schedule.address = schedule.workplace.address
+        if commit:
+            schedule.save()
+        return schedule
+
+
+class DoctorWorkplaceForm(FormStyleMixin, forms.ModelForm):
+    class Meta:
+        model = DoctorWorkplace
+        fields = ['name', 'city', 'address']
+        labels = {
+            'name': 'Назва клініки або кабінету',
+            'city': 'Місто',
+            'address': 'Адреса',
+        }
 
 
 class ServiceForm(FormStyleMixin, forms.ModelForm):

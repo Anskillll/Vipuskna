@@ -83,6 +83,31 @@ class Doctor(models.Model):
         return list(dict.fromkeys(cities))
 
 
+class DoctorWorkplace(models.Model):
+    doctor = models.ForeignKey(
+        Doctor,
+        on_delete=models.CASCADE,
+        related_name='workplaces',
+    )
+    name = models.CharField(max_length=160)
+    city = models.CharField(max_length=100)
+    address = models.CharField(max_length=200)
+
+    class Meta:
+        verbose_name = 'Місце прийому'
+        verbose_name_plural = 'Місця прийому'
+        ordering = ['name', 'city', 'address']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['doctor', 'name'],
+                name='unique_doctor_workplace_name',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.name} — {self.city}, {self.address}'
+
+
 class MedicalService(models.Model):
     doctor = models.ForeignKey(
         Doctor,
@@ -151,6 +176,13 @@ class WorkSchedule(models.Model):
         Doctor,
         on_delete=models.CASCADE,
         related_name='schedules',
+    )
+    workplace = models.ForeignKey(
+        DoctorWorkplace,
+        on_delete=models.SET_NULL,
+        related_name='schedules',
+        null=True,
+        blank=True,
     )
     weekday = models.PositiveSmallIntegerField(choices=WEEKDAY_CHOICES)
     city = models.CharField(max_length=100, blank=True)
