@@ -69,7 +69,7 @@ class ClinicModelTests(TestCase):
         self.service = MedicalService.objects.create(
             doctor=self.doctor,
             name='Консультація',
-            price=500,
+            approximate_price=500,
         )
         self.schedule = WorkSchedule.objects.create(
             doctor=self.doctor,
@@ -115,7 +115,7 @@ class ClinicModelTests(TestCase):
         second_service = MedicalService.objects.create(
             doctor=self.doctor,
             name='Друга послуга',
-            price=900,
+            approximate_price=900,
             sort_order=1,
         )
         self.client.login(username='doctor@test.local', password='pass12345')
@@ -143,19 +143,19 @@ class ClinicModelTests(TestCase):
             reverse('doctor_services'),
             data={
                 'name': 'Остання послуга',
-                'price': 1200,
             },
         )
 
         created_service = MedicalService.objects.get(name='Остання послуга')
         self.assertRedirects(response, reverse('doctor_services'))
         self.assertGreater(created_service.sort_order, self.service.sort_order)
+        self.assertIsNone(created_service.approximate_price)
 
     def test_patient_can_select_only_services_enabled_by_doctor(self):
         hidden_service = MedicalService.objects.create(
             doctor=self.doctor,
             name='Службова процедура',
-            price=300,
+            approximate_price=300,
             sort_order=1,
             is_patient_selectable=False,
         )
@@ -189,6 +189,7 @@ class ClinicModelTests(TestCase):
         self.assertIn('is_patient_selectable', form.fields)
         self.assertIn('description', form.fields)
         self.assertIn('photos', form.fields)
+        self.assertFalse(form.fields['approximate_price'].required)
         self.assertEqual(
             form.fields['is_patient_selectable'].label,
             'Дозволити пацієнтам обирати цю послугу під час запису',
@@ -207,7 +208,7 @@ class ClinicModelTests(TestCase):
                 f"{reverse('doctor_services')}?edit={self.service.id}",
                 data={
                     'name': self.service.name,
-                    'price': self.service.price,
+                    'approximate_price': self.service.approximate_price,
                     'description': 'Розгорнутий опис процедури та підготовки до неї.',
                     'is_patient_selectable': 'on',
                     'photos': [image],
@@ -243,7 +244,7 @@ class ClinicModelTests(TestCase):
         other_service = MedicalService.objects.create(
             doctor=other_doctor,
             name='Інша послуга',
-            price=800,
+            approximate_price=800,
         )
         other_image = MedicalServiceImage.objects.create(
             service=other_service,
@@ -772,7 +773,7 @@ class ClinicModelTests(TestCase):
             MedicalService.objects.create(
                 doctor=self.doctor,
                 name=f'Додаткова послуга {index + 1}',
-                price=600 + index,
+                approximate_price=600 + index,
             )
 
         list_response = self.client.get(reverse('doctors'))

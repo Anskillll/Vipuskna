@@ -94,7 +94,12 @@
         </div>
         <ul class="simple-list">
           {% for service in doctor.services.all %}
-            <li><span>{{ service.name }}</span><strong>{{ service.price }} грн</strong></li>
+            <li>
+              <span>{{ service.name }}</span>
+              {% if service.approximate_price is not None %}
+                <strong>Орієнтовно {{ service.approximate_price }} грн</strong>
+              {% endif %}
+            </li>
           {% empty %}
             <li><span>Послуги ще не додані</span><strong></strong></li>
           {% endfor %}

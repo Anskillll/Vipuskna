@@ -73,7 +73,9 @@
             <li>
               <span>{{ service.name }}</span>
               <span class="doctor-service-actions">
-                <strong>{{ service.price }} грн</strong>
+                {% if service.approximate_price is not None %}
+                  <strong>Орієнтовно {{ service.approximate_price }} грн</strong>
+                {% endif %}
                 <a class="doctor-details-link" href="{% url 'service_detail' doctor.id service.id %}">Детальніше</a>
               </span>
             </li>

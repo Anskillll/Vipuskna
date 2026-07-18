@@ -38,7 +38,13 @@
               <span class="service-manager-label">Послуга {{ forloop.counter }}</span>
               <h2>{{ service.name }}</h2>
             </div>
-            <strong class="service-manager-price">{{ service.price }} грн</strong>
+            <strong class="service-manager-price">
+              {% if service.approximate_price is not None %}
+                ≈ {{ service.approximate_price }} грн
+              {% else %}
+                Орієнтовну вартість не вказано
+              {% endif %}
+            </strong>
           </div>
           <span class="service-booking-state{% if service.is_patient_selectable %} available{% endif %}">
             {% if service.is_patient_selectable %}

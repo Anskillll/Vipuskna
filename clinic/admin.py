@@ -57,7 +57,7 @@ class DoctorAdmin(admin.ModelAdmin):
 
 @admin.register(MedicalService)
 class MedicalServiceAdmin(admin.ModelAdmin):
-    list_display = ('name', 'doctor', 'price', 'is_patient_selectable', 'sort_order')
+    list_display = ('name', 'doctor', 'approximate_price', 'is_patient_selectable', 'sort_order')
     list_filter = ('doctor__specialization', 'is_patient_selectable')
     search_fields = ('name', 'doctor__user__last_name')
     inlines = [MedicalServiceImageInline]

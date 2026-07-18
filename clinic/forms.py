@@ -447,14 +447,15 @@ class ServiceForm(FormStyleMixin, forms.ModelForm):
 
     class Meta:
         model = MedicalService
-        fields = ['name', 'price', 'description', 'is_patient_selectable', 'photos']
+        fields = ['name', 'approximate_price', 'description', 'is_patient_selectable', 'photos']
         labels = {
             'name': 'Назва послуги',
-            'price': 'Ціна, грн',
+            'approximate_price': 'Орієнтовна вартість, грн',
             'description': 'Детальна інформація про послугу',
             'is_patient_selectable': 'Дозволити пацієнтам обирати цю послугу під час запису',
         }
         help_texts = {
+            'approximate_price': 'Необов’язково. Вкажіть приблизну суму, якщо її можна оцінити заздалегідь.',
             'description': 'Опишіть процедуру, її особливості, підготовку та іншу важливу інформацію.',
             'is_patient_selectable': 'Увімкніть для основних процедур, які пацієнт може самостійно вибрати онлайн.',
         }

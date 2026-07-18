@@ -26,10 +26,12 @@
           <a class="doctor-details-link" href="{% url 'doctor_detail' doctor.id %}">Про лікаря</a>
         </div>
       </div>
-      <div class="service-detail-price">
-        <span>Вартість</span>
-        <strong>{{ service.price }} грн</strong>
-      </div>
+      {% if service.approximate_price is not None %}
+        <div class="service-detail-price">
+          <span>Орієнтовна вартість</span>
+          <strong>≈ {{ service.approximate_price }} грн</strong>
+        </div>
+      {% endif %}
     </div>
 
     <div class="service-detail-description">

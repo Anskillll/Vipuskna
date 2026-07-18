@@ -90,7 +90,11 @@ class MedicalService(models.Model):
         related_name='services',
     )
     name = models.CharField(max_length=160)
-    price = models.PositiveIntegerField(validators=[MinValueValidator(0)])
+    approximate_price = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)],
+    )
     description = models.TextField(blank=True)
     sort_order = models.PositiveIntegerField(default=0)
     is_patient_selectable = models.BooleanField(default=True)
@@ -101,7 +105,9 @@ class MedicalService(models.Model):
         ordering = ['sort_order', 'id']
 
     def __str__(self):
-        return f'{self.name} - {self.price} грн'
+        if self.approximate_price is None:
+            return self.name
+        return f'{self.name} - орієнтовно {self.approximate_price} грн'
 
 
 class MedicalServiceImage(models.Model):
