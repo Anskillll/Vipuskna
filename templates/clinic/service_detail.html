@@ -13,18 +13,14 @@
 
   <section class="card service-detail-card">
     <div class="service-detail-head">
-      <div class="service-detail-doctor">
-        {% if doctor.photo_src %}
-          <img class="doctor-photo doctor-photo-lg" src="{{ doctor.photo_src }}" alt="{{ doctor.full_name }}">
+      <div class="service-detail-description service-detail-description-primary">
+        <span class="service-detail-label">Головне про процедуру</span>
+        <h2>Про послугу</h2>
+        {% if service.description %}
+          {{ service.description|linebreaks }}
         {% else %}
-          <div class="doctor-photo doctor-photo-lg">{{ doctor.user.first_name|first }}{{ doctor.user.last_name|first }}</div>
+          <p class="muted">Лікар ще не додав детальний опис цієї послуги.</p>
         {% endif %}
-        <div>
-          <span class="service-detail-label">Послугу надає</span>
-          <h2>{{ doctor.full_name }}</h2>
-          <p>{{ doctor.specialization }}</p>
-          <a class="doctor-details-link" href="{% url 'doctor_detail' doctor.id %}">Про лікаря</a>
-        </div>
       </div>
       {% if service.approximate_price is not None %}
         <div class="service-detail-price">
@@ -34,13 +30,20 @@
       {% endif %}
     </div>
 
-    <div class="service-detail-description">
-      <h2>Про послугу</h2>
-      {% if service.description %}
-        {{ service.description|linebreaks }}
-      {% else %}
-        <p class="muted">Лікар ще не додав детальний опис цієї послуги.</p>
-      {% endif %}
+    <div class="service-detail-provider">
+      <div class="service-detail-doctor">
+        {% if doctor.photo_src %}
+          <img class="doctor-photo doctor-photo-lg" src="{{ doctor.photo_src }}" alt="{{ doctor.full_name }}">
+        {% else %}
+          <div class="doctor-photo doctor-photo-lg">{{ doctor.user.first_name|first }}{{ doctor.user.last_name|first }}</div>
+        {% endif %}
+        <div>
+          <span class="service-detail-label">Лікар, який надає послугу</span>
+          <h2>{{ doctor.full_name }}</h2>
+          <p>{{ doctor.specialization }}</p>
+          <a class="doctor-details-link" href="{% url 'doctor_detail' doctor.id %}">Про лікаря</a>
+        </div>
+      </div>
     </div>
 
     {% if service.images.all %}

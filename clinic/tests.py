@@ -283,6 +283,11 @@ class ClinicModelTests(TestCase):
             self.assertTrue(service_image.image.name.startswith('service_photos/'))
             self.assertContains(detail_response, self.service.description)
             self.assertContains(detail_response, service_image.image.url)
+            content = detail_response.content.decode()
+            self.assertLess(
+                content.index('Головне про процедуру'),
+                content.index('Лікар, який надає послугу'),
+            )
 
     def test_doctor_cannot_delete_another_doctors_service_photo(self):
         other_user = User.objects.create_user(

@@ -1544,9 +1544,13 @@ button:disabled {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 30px;
-  padding-bottom: 28px;
+  gap: 42px;
+  padding-bottom: 30px;
   border-bottom: 1px solid var(--line);
+}
+
+.service-detail-provider {
+  padding-bottom: 2px;
 }
 
 .service-detail-doctor {
@@ -1581,11 +1585,28 @@ button:disabled {
 }
 
 .service-detail-price strong {
-  font-size: 26px;
+  font-size: 22px;
 }
 
 .service-detail-description {
   max-width: 860px;
+}
+
+.service-detail-description-primary {
+  flex: 1;
+  max-width: 920px;
+  padding-left: 22px;
+  border-left: 4px solid var(--primary);
+}
+
+.service-detail-description.service-detail-description-primary h2 {
+  margin-top: 6px;
+  font-size: 28px;
+}
+
+.service-detail-description-primary p {
+  max-width: 840px;
+  font-size: 17px;
 }
 
 .service-detail-description h2,
@@ -2074,6 +2095,14 @@ th {
 
   .service-detail-price {
     justify-items: start;
+  }
+
+  .service-detail-description-primary {
+    padding-left: 16px;
+  }
+
+  .service-detail-description.service-detail-description-primary h2 {
+    font-size: 24px;
   }
 
   .service-photo-grid {
