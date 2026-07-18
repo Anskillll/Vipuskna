@@ -1,0 +1,99 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}{{ doctor.full_name }} - MedClinic{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <div>
+      <a class="back-link" href="{% url 'doctors' %}">← До списку лікарів</a>
+      <h1 class="page-title">Профіль лікаря</h1>
+    </div>
+  </section>
+
+  <section class="card doctor-detail-profile">
+    <div class="doctor-profile-hero">
+      {% if doctor.photo_src %}
+        <img class="doctor-profile-photo" src="{{ doctor.photo_src }}" alt="{{ doctor.full_name }}">
+      {% else %}
+        <div class="doctor-profile-photo doctor-profile-photo-placeholder">{{ doctor.user.first_name|first }}{{ doctor.user.last_name|first }}</div>
+      {% endif %}
+
+      <div class="doctor-profile-identity">
+        <h1>{{ doctor.full_name }}</h1>
+        <p class="doctor-profile-specialization">{{ doctor.specialization }}</p>
+        <p class="doctor-profile-phone">{{ doctor.phone }}</p>
+        <div class="chip-row">
+          {% for city in doctor.cities %}
+            <span class="chip">{{ city }}</span>
+          {% empty %}
+            <span class="chip chip-muted">Міста роботи ще не вказані</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="doctor-profile-actions">
+        {% if user.is_authenticated and user.profile.role == 'patient' %}
+          <a class="btn" href="{% url 'booking' %}?doctor={{ doctor.id }}">Записатися на прийом</a>
+        {% elif not user.is_authenticated %}
+          <a class="btn" href="{% url 'google_login' %}">Увійти для запису</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="doctor-profile-about">
+      <span>Про лікаря</span>
+      <p>{{ doctor.description|default:'Лікар ще не додав інформацію про себе.' }}</p>
+    </div>
+
+    <div class="doctor-profile-sections">
+      <section class="doctor-profile-section">
+        <h2>Графік роботи</h2>
+        <ul class="simple-list">
+          {% for schedule in doctor.schedules.all %}
+            <li>
+              <span>{{ schedule.get_weekday_display }} · {{ schedule.city }}{% if schedule.address %}, {{ schedule.address }}{% endif %}</span>
+              <strong>
+                {% if schedule.is_working %}
+                  {{ schedule.start_time|time:'H:i' }}-{{ schedule.end_time|time:'H:i' }}
+                {% else %}
+                  Вихідний
+                {% endif %}
+              </strong>
+            </li>
+          {% empty %}
+            <li><span>Графік ще не заповнений</span><strong></strong></li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="doctor-profile-section">
+        <h2>Послуги та ціни</h2>
+        <ul class="simple-list">
+          {% for service in doctor.services.all %}
+            <li><span>{{ service.name }}</span><strong>{{ service.price }} грн</strong></li>
+          {% empty %}
+            <li><span>Послуги ще не додані</span><strong></strong></li>
+          {% endfor %}
+        </ul>
+      </section>
+    </div>
+
+    {% if doctor_news %}
+      <section class="doctor-detail-news">
+        <h2>Новини лікаря</h2>
+        <div class="news-grid">
+          {% for post in doctor_news %}
+            <article class="news-card">
+              {% if post.image %}<img src="{{ post.image.url }}" alt="{{ post.title }}">{% endif %}
+              <div class="news-card-body">
+                <span class="news-meta">{{ post.created_at|date:'d.m.Y' }}</span>
+                <h3>{{ post.title }}</h3>
+                <p>{{ post.text|truncatechars:220 }}</p>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+  </section>
+{% endblock %}

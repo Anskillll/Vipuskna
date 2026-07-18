@@ -634,6 +634,8 @@ a:hover {
 
 .doctor-panel {
   border-radius: 26px;
+  display: flex;
+  flex-direction: column;
 }
 
 .doctor-panel-top {
@@ -672,6 +674,55 @@ a:hover {
   margin: 0 0 6px;
   color: #334155;
   font-weight: 700;
+}
+
+.doctor-spec-action-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.doctor-spec-action-row .doctor-spec {
+  margin: 0;
+}
+
+.doctor-details-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.doctor-details-link:hover {
+  border-color: #60a5fa;
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.doctor-compact-actions {
+  margin-top: 22px;
+}
+
+.doctor-detail-profile {
+  padding: 34px;
+}
+
+.doctor-detail-news {
+  margin-top: 30px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+}
+
+.doctor-detail-news > h2 {
+  margin: 0 0 18px;
+  font-size: 22px;
 }
 
 .doctor-meta,
@@ -1367,6 +1418,22 @@ button:disabled {
   font-size: 18px;
 }
 
+.service-booking-state {
+  display: inline-flex;
+  margin-top: 12px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.service-booking-state.available {
+  background: #dcfce7;
+  color: #166534;
+}
+
 .service-manager-actions {
   display: flex;
   align-items: center;
@@ -1746,6 +1813,10 @@ th {
 
   .doctor-dashboard-profile {
     min-height: 0;
+    padding: 22px;
+  }
+
+  .doctor-detail-profile {
     padding: 22px;
   }
 

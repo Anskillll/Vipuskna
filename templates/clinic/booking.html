@@ -44,17 +44,12 @@
           {% endif %}
           <div>
             <h2 class="doctor-name">{{ selected_doctor.full_name }}</h2>
-            <p class="doctor-spec">{{ selected_doctor.specialization }}</p>
-            <p class="doctor-meta">{{ selected_doctor.phone }}</p>
+            <div class="doctor-spec-action-row">
+              <p class="doctor-spec">{{ selected_doctor.specialization }}</p>
+              <a class="doctor-details-link" href="{% url 'doctor_detail' selected_doctor.id %}">Детальніше</a>
+            </div>
           </div>
         </div>
-        <ul class="price-list">
-          {% for service in selected_doctor.services.all %}
-            <li><span>{{ service.name }}</span><strong>{{ service.price }} грн</strong></li>
-          {% empty %}
-            <li><span>Список послуг поки порожній</span><strong></strong></li>
-          {% endfor %}
-        </ul>
       </section>
     {% endif %}
   </div>
@@ -95,14 +90,18 @@
         {{ selected_schedule.city }}, {{ selected_schedule.address }}<br>
         {{ selected_date|date:'d.m.Y' }} о {{ selected_time|time:'H:i' }}
       </p>
-      <form method="post" enctype="multipart/form-data" onsubmit="return confirm('Надіслати заявку на цей час?');">
-        {% csrf_token %}
-        <input type="hidden" name="doctor" value="{{ selected_doctor.id }}">
-        <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
-        <input type="hidden" name="time" value="{{ selected_time|time:'H:i' }}">
-        {% include 'clinic/_form_fields.html' with form=reason_form %}
-        <button type="submit">Надіслати заявку</button>
-      </form>
+      {% if has_bookable_services %}
+        <form method="post" enctype="multipart/form-data" onsubmit="return confirm('Надіслати заявку на цей час?');">
+          {% csrf_token %}
+          <input type="hidden" name="doctor" value="{{ selected_doctor.id }}">
+          <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+          <input type="hidden" name="time" value="{{ selected_time|time:'H:i' }}">
+          {% include 'clinic/_form_fields.html' with form=reason_form %}
+          <button type="submit">Надіслати заявку</button>
+        </form>
+      {% else %}
+        <div class="empty">Лікар ще не визначив послуги, доступні для самостійного онлайн-запису.</div>
+      {% endif %}
     </section>
   {% endif %}
 {% endblock %}

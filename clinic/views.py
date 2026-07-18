@@ -620,7 +620,6 @@ def doctors_list(request):
     doctors = (
         Doctor.objects.filter(user__is_active=True)
         .select_related('user')
-        .prefetch_related('services', 'schedules')
     )
     if query:
         doctors = doctors.filter(
@@ -634,6 +633,23 @@ def doctors_list(request):
         {
             'doctors': doctors.distinct(),
             'query': query,
+        },
+    )
+
+
+def doctor_detail(request, doctor_id):
+    doctor = get_object_or_404(
+        Doctor.objects.filter(user__is_active=True)
+        .select_related('user')
+        .prefetch_related('services', 'schedules'),
+        pk=doctor_id,
+    )
+    return render(
+        request,
+        'clinic/doctor_detail.html',
+        {
+            'doctor': doctor,
+            'doctor_news': doctor.news_posts.filter(is_published=True)[:6],
         },
     )
 
@@ -653,7 +669,7 @@ def booking(request):
         return redirect('patient_edit_profile')
 
     doctors = Doctor.objects.filter(user__is_active=True).select_related('user')
-    selected_doctor = get_object_or_404(Doctor, pk=request.GET.get('doctor')) if request.GET.get('doctor') else doctors.first()
+    selected_doctor = get_object_or_404(doctors, pk=request.GET.get('doctor')) if request.GET.get('doctor') else doctors.first()
     selected_date = parse_date(request.GET.get('date')) if request.GET.get('date') else timezone.localdate()
     if selected_date < timezone.localdate():
         messages.error(request, 'Не можна вибрати минулу дату.')
@@ -661,7 +677,7 @@ def booking(request):
     selected_time = parse_time(request.GET.get('time'))
 
     if request.method == 'POST':
-        selected_doctor = get_object_or_404(Doctor, pk=request.POST.get('doctor'))
+        selected_doctor = get_object_or_404(doctors, pk=request.POST.get('doctor'))
         selected_date = parse_date(request.POST.get('date'))
         selected_time = parse_time(request.POST.get('time'))
         reason_form = BookingReasonForm(request.POST, request.FILES, doctor=selected_doctor)
@@ -705,6 +721,10 @@ def booking(request):
         reason_form = BookingReasonForm(doctor=selected_doctor)
 
     schedule, slots = slots_for_doctor(selected_doctor, selected_date) if selected_doctor else (None, [])
+    has_bookable_services = bool(
+        selected_doctor
+        and selected_doctor.services.filter(is_patient_selectable=True).exists()
+    )
 
     return render(
         request,
@@ -717,6 +737,7 @@ def booking(request):
             'selected_schedule': schedule,
             'slots': slots,
             'reason_form': reason_form,
+            'has_bookable_services': has_bookable_services,
         },
     )
 

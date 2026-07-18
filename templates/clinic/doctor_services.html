@@ -40,6 +40,13 @@
             </div>
             <strong class="service-manager-price">{{ service.price }} грн</strong>
           </div>
+          <span class="service-booking-state{% if service.is_patient_selectable %} available{% endif %}">
+            {% if service.is_patient_selectable %}
+              Доступна пацієнтам для онлайн-запису
+            {% else %}
+              Не показується пацієнтам під час запису
+            {% endif %}
+          </span>
 
           {% if editing.id == service.id %}
             <form method="post" class="service-inline-form">

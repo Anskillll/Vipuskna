@@ -28,6 +28,7 @@ from .forms import (
     DoctorProfileForm,
     PatientProfileForm,
     PatientRecordEntryForm,
+    ServiceForm,
 )
 from .views import active_appointment_for_doctor, appointment_conflicts
 
@@ -148,6 +149,77 @@ class ClinicModelTests(TestCase):
         created_service = MedicalService.objects.get(name='Остання послуга')
         self.assertRedirects(response, reverse('doctor_services'))
         self.assertGreater(created_service.sort_order, self.service.sort_order)
+
+    def test_patient_can_select_only_services_enabled_by_doctor(self):
+        hidden_service = MedicalService.objects.create(
+            doctor=self.doctor,
+            name='Службова процедура',
+            price=300,
+            sort_order=1,
+            is_patient_selectable=False,
+        )
+
+        patient_form = BookingReasonForm(doctor=self.doctor)
+        doctor_form = DoctorPatientBookingForm(doctor=self.doctor)
+        patient_service_ids = list(
+            patient_form.fields['service'].queryset.values_list('id', flat=True)
+        )
+        doctor_service_ids = list(
+            doctor_form.fields['service'].queryset.values_list('id', flat=True)
+        )
+
+        self.assertIn(self.service.id, patient_service_ids)
+        self.assertNotIn(hidden_service.id, patient_service_ids)
+        self.assertIn(hidden_service.id, doctor_service_ids)
+
+        forged_form = BookingReasonForm(
+            data={
+                'service': hidden_service.id,
+                'reason': 'Спроба підставити приховану послугу',
+            },
+            doctor=self.doctor,
+        )
+        self.assertFalse(forged_form.is_valid())
+        self.assertIn('service', forged_form.errors)
+
+    def test_service_form_shows_patient_booking_checkbox(self):
+        form = ServiceForm(instance=self.service)
+
+        self.assertIn('is_patient_selectable', form.fields)
+        self.assertEqual(
+            form.fields['is_patient_selectable'].label,
+            'Дозволити пацієнтам обирати цю послугу під час запису',
+        )
+
+    def test_doctor_cards_are_compact_and_detail_page_is_complete(self):
+        self.doctor.description = 'Повна інформація про досвід лікаря.'
+        self.doctor.save(update_fields=['description'])
+
+        list_response = self.client.get(reverse('doctors'))
+        detail_response = self.client.get(reverse('doctor_detail', args=[self.doctor.id]))
+
+        self.assertContains(list_response, 'Детальніше')
+        self.assertContains(list_response, reverse('doctor_detail', args=[self.doctor.id]))
+        self.assertNotContains(list_response, self.doctor.phone)
+        self.assertNotContains(list_response, self.service.name)
+
+        self.assertContains(detail_response, self.doctor.full_name)
+        self.assertContains(detail_response, self.doctor.phone)
+        self.assertContains(detail_response, self.doctor.specialization)
+        self.assertContains(detail_response, self.doctor.description)
+        self.assertContains(detail_response, self.service.name)
+        self.assertContains(detail_response, 'Графік роботи')
+
+    def test_booking_doctor_summary_is_compact(self):
+        self.client.login(username='patient@test.local', password='pass12345')
+
+        response = self.client.get(reverse('booking'), {'doctor': self.doctor.id})
+
+        self.assertContains(response, self.doctor.full_name)
+        self.assertContains(response, self.doctor.specialization)
+        self.assertContains(response, 'Детальніше')
+        self.assertNotContains(response, self.doctor.phone)
+        self.assertNotContains(response, self.service.name)
 
     def test_active_appointment_slot_is_unique(self):
         visit_date = timezone.localdate()
@@ -606,7 +678,7 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Новина лікаря')
         self.assertContains(response, 'Галерея')
 
-    def test_long_doctor_service_list_can_be_expanded(self):
+    def test_long_doctor_service_list_is_moved_to_detail_page(self):
         for index in range(4):
             MedicalService.objects.create(
                 doctor=self.doctor,
@@ -614,12 +686,14 @@ class ClinicModelTests(TestCase):
                 price=600 + index,
             )
 
-        response = self.client.get(reverse('doctors'))
+        list_response = self.client.get(reverse('doctors'))
+        detail_response = self.client.get(reverse('doctor_detail', args=[self.doctor.id]))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Показати всі послуги')
-        self.assertContains(response, 'class="service-extra" hidden', count=2)
-        self.assertContains(response, 'data-service-toggle')
+        self.assertEqual(list_response.status_code, 200)
+        self.assertNotContains(list_response, 'Додаткова послуга 1')
+        self.assertContains(list_response, 'Детальніше')
+        for index in range(4):
+            self.assertContains(detail_response, f'Додаткова послуга {index + 1}')
 
     def test_authenticated_user_can_open_home_without_login_button(self):
         self.client.login(username='patient@test.local', password='pass12345')
@@ -771,9 +845,9 @@ class ClinicModelTests(TestCase):
         self.assertRedirects(response, reverse('doctor_dashboard'))
         self.assertEqual(self.doctor.description, about_text)
 
-        doctors_response = self.client.get(reverse('doctors'))
-        self.assertContains(doctors_response, 'Про лікаря')
-        self.assertContains(doctors_response, about_text)
+        detail_response = self.client.get(reverse('doctor_detail', args=[self.doctor.id]))
+        self.assertContains(detail_response, 'Про лікаря')
+        self.assertContains(detail_response, about_text)
 
         NewsPost.objects.create(
             doctor=self.doctor,

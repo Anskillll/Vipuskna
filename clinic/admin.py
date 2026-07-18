@@ -51,8 +51,8 @@ class DoctorAdmin(admin.ModelAdmin):
 
 @admin.register(MedicalService)
 class MedicalServiceAdmin(admin.ModelAdmin):
-    list_display = ('name', 'doctor', 'price')
-    list_filter = ('doctor__specialization',)
+    list_display = ('name', 'doctor', 'price', 'is_patient_selectable', 'sort_order')
+    list_filter = ('doctor__specialization', 'is_patient_selectable')
     search_fields = ('name', 'doctor__user__last_name')
 
 

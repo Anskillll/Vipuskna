@@ -92,6 +92,7 @@ class MedicalService(models.Model):
     name = models.CharField(max_length=160)
     price = models.PositiveIntegerField(validators=[MinValueValidator(0)])
     sort_order = models.PositiveIntegerField(default=0)
+    is_patient_selectable = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = 'Медична послуга'

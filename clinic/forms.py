@@ -175,7 +175,7 @@ class BookingReasonForm(FormStyleMixin, forms.Form):
     def __init__(self, *args, doctor=None, **kwargs):
         super().__init__(*args, **kwargs)
         if doctor:
-            queryset = doctor.services.all()
+            queryset = doctor.services.filter(is_patient_selectable=True)
             self.fields['service'].queryset = queryset
             if not self.is_bound:
                 consultation = queryset.filter(name__icontains='консульта').first()
@@ -441,10 +441,14 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
 class ServiceForm(FormStyleMixin, forms.ModelForm):
     class Meta:
         model = MedicalService
-        fields = ['name', 'price']
+        fields = ['name', 'price', 'is_patient_selectable']
         labels = {
             'name': 'Назва послуги',
             'price': 'Ціна, грн',
+            'is_patient_selectable': 'Дозволити пацієнтам обирати цю послугу під час запису',
+        }
+        help_texts = {
+            'is_patient_selectable': 'Увімкніть для основних процедур, які пацієнт може самостійно вибрати онлайн.',
         }
 
 
