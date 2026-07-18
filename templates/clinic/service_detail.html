@@ -30,22 +30,6 @@
       {% endif %}
     </div>
 
-    <div class="service-detail-provider">
-      <div class="service-detail-doctor">
-        {% if doctor.photo_src %}
-          <img class="doctor-photo doctor-photo-lg" src="{{ doctor.photo_src }}" alt="{{ doctor.full_name }}">
-        {% else %}
-          <div class="doctor-photo doctor-photo-lg">{{ doctor.user.first_name|first }}{{ doctor.user.last_name|first }}</div>
-        {% endif %}
-        <div>
-          <span class="service-detail-label">Лікар, який надає послугу</span>
-          <h2>{{ doctor.full_name }}</h2>
-          <p>{{ doctor.specialization }}</p>
-          <a class="doctor-details-link" href="{% url 'doctor_detail' doctor.id %}">Про лікаря</a>
-        </div>
-      </div>
-    </div>
-
     {% if service.images.all %}
       <div class="service-detail-gallery">
         <div class="section-mini-head">

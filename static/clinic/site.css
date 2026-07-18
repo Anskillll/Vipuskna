@@ -1549,26 +1549,6 @@ button:disabled {
   border-bottom: 1px solid var(--line);
 }
 
-.service-detail-provider {
-  padding-bottom: 2px;
-}
-
-.service-detail-doctor {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.service-detail-doctor h2 {
-  margin: 2px 0 4px;
-  font-size: 22px;
-}
-
-.service-detail-doctor p {
-  margin: 0 0 6px;
-  color: var(--muted);
-}
-
 .service-detail-label,
 .service-detail-price span {
   color: var(--muted);
