@@ -1,10 +1,12 @@
 from datetime import datetime, time, timedelta
+from io import StringIO
 import tempfile
 from unittest.mock import patch
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
 from django.db import IntegrityError
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -100,6 +102,44 @@ class ClinicModelTests(TestCase):
         )
 
         self.assertEqual(self.doctor.cities, ['Дніпро'])
+
+    def test_seed_demo_creates_complete_repeatable_dataset(self):
+        output = StringIO()
+
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            call_command(
+                'seed_demo',
+                doctors=2,
+                patients=3,
+                reset=True,
+                stdout=output,
+            )
+            call_command(
+                'seed_demo',
+                doctors=2,
+                patients=3,
+                reset=False,
+                stdout=output,
+            )
+
+            demo_doctors = Doctor.objects.filter(user__username__startswith='demo_doctor_')
+            demo_patients = User.objects.filter(username__startswith='demo_patient_')
+
+            self.service.refresh_from_db()
+            self.assertEqual(demo_doctors.count(), 2)
+            self.assertEqual(demo_patients.count(), 3)
+            self.assertEqual(
+                Appointment.objects.filter(patient__username__startswith='demo_patient_').count(),
+                6,
+            )
+            self.assertTrue(self.service.description)
+            for doctor in demo_doctors:
+                self.assertEqual(doctor.schedules.count(), 5)
+                self.assertGreaterEqual(doctor.services.count(), 5)
+                self.assertTrue(doctor.photo)
+                self.assertTrue(doctor.services.exclude(description='').exists())
+            for patient in demo_patients:
+                self.assertTrue(patient.profile.photo)
 
     def test_service_editor_expands_inside_selected_service(self):
         self.client.login(username='doctor@test.local', password='pass12345')
