@@ -15,7 +15,7 @@
       <div class="section-mini-head">
         <h2>1. Лікар і дата</h2>
       </div>
-      <form method="get">
+      <form method="get" data-booking-auto-submit>
         <div class="field">
           <label for="doctor">Лікар</label>
           <select id="doctor" name="doctor">
@@ -30,7 +30,6 @@
           <label for="date">Дата</label>
           <input id="date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}">
         </div>
-        <button type="submit">Показати час</button>
       </form>
     </section>
 
@@ -123,6 +122,13 @@
 
   <script>
     (() => {
+      const filterForm = document.querySelector('[data-booking-auto-submit]');
+      if (filterForm) {
+        filterForm.querySelectorAll('select, input[type="date"]').forEach((field) => {
+          field.addEventListener('change', () => filterForm.requestSubmit());
+        });
+      }
+
       const serviceSelect = document.getElementById('id_service');
       const detailsLink = document.querySelector('[data-service-details]');
       if (!serviceSelect || !detailsLink) return;

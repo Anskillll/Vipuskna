@@ -327,6 +327,9 @@ class ClinicModelTests(TestCase):
 
         response = self.client.get(reverse('booking'), {'doctor': self.doctor.id})
 
+        self.assertContains(response, 'data-booking-auto-submit')
+        self.assertContains(response, 'filterForm.requestSubmit()')
+        self.assertNotContains(response, 'Показати час')
         self.assertContains(response, self.doctor.full_name)
         self.assertContains(response, self.doctor.specialization)
         self.assertContains(response, 'Детальніше')
