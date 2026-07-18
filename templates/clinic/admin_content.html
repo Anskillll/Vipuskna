@@ -68,7 +68,7 @@
           <div><strong>{{ post.title }}</strong><span>{% if post.doctor %}Лікар: {{ post.doctor.full_name }}{% else %}Новина клініки{% endif %}</span></div>
           <div class="actions">
             <a class="btn secondary" href="{% url 'admin_content' %}?news={{ post.id }}">Редагувати</a>
-            <form method="post" onsubmit="return confirm('Видалити цю новину?');">
+            <form method="post">
               {% csrf_token %}<input type="hidden" name="action" value="delete_news"><input type="hidden" name="news_id" value="{{ post.id }}">
               <button class="danger" type="submit">Видалити</button>
             </form>
@@ -97,7 +97,7 @@
           <strong>{{ item.title|default:'Без підпису' }}</strong>
           <div class="actions">
             <a class="btn secondary" href="{% url 'admin_content' %}?gallery={{ item.id }}">Редагувати</a>
-            <form method="post" onsubmit="return confirm('Видалити це фото?');">
+            <form method="post">
               {% csrf_token %}<input type="hidden" name="action" value="delete_gallery"><input type="hidden" name="gallery_id" value="{{ item.id }}">
               <button class="danger" type="submit">Видалити</button>
             </form>

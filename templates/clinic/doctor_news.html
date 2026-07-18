@@ -36,7 +36,7 @@
             <div><strong>{{ post.title }}</strong><span>{{ post.created_at|date:'d.m.Y' }}{% if not post.is_published %} · приховано{% endif %}</span></div>
             <div class="actions">
               <a class="btn secondary" href="{% url 'doctor_news' %}?edit={{ post.id }}">Редагувати</a>
-              <form method="post" onsubmit="return confirm('Видалити цю новину?');">
+              <form method="post">
                 {% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="post_id" value="{{ post.id }}">
                 <button class="danger" type="submit">Видалити</button>
               </form>

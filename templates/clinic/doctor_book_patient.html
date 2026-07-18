@@ -57,7 +57,7 @@
     <section class="card" style="margin-top: 18px;">
       <h2 class="section-title">Дані пацієнта</h2>
       <p class="muted">{{ selected_date|date:'d.m.Y' }} о {{ selected_time|time:'H:i' }}</p>
-      <form method="post" onsubmit="return confirm('Записати пацієнта на цей час?');">
+      <form method="post">
         {% csrf_token %}
         <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
         <input type="hidden" name="time" value="{{ selected_time|time:'H:i' }}">

@@ -1,5 +1,6 @@
 from datetime import datetime, time, timedelta
 from io import StringIO
+from pathlib import Path
 import tempfile
 from unittest.mock import patch
 
@@ -109,6 +110,14 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Ви вийшли з акаунта.')
         self.assertContains(response, 'data-auto-dismiss')
         self.assertContains(response, 'clinic/flash_messages.js')
+
+    def test_action_forms_use_toasts_without_browser_confirmation_dialogs(self):
+        template_dir = Path(__file__).resolve().parent.parent / 'templates' / 'clinic'
+        templates = list(template_dir.glob('*.html'))
+        rendered_source = '\n'.join(path.read_text(encoding='utf-8') for path in templates)
+
+        self.assertNotIn('confirm(', rendered_source)
+        self.assertNotIn('onsubmit=', rendered_source)
 
     def test_doctor_cities_do_not_repeat(self):
         WorkSchedule.objects.create(
@@ -808,6 +817,7 @@ class ClinicModelTests(TestCase):
         self.assertEqual(appointment.duration_slots, 2)
         self.assertEqual(appointment.duration_minutes_exact, 120)
         self.assertContains(response, 'Заявку підтверджено.')
+        self.assertContains(response, 'data-auto-dismiss')
         self.assertNotContains(response, '120 хв')
 
     def test_doctor_duration_must_match_schedule_slot(self):

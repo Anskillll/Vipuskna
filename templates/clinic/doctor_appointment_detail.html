@@ -55,7 +55,7 @@
       {% if appointment.status == 'pending' %}
         <aside class="card section-card appointment-decision-panel">
           <h2 class="section-title">Рішення лікаря</h2>
-          <form method="post" action="{% url 'doctor_review_appointment' appointment.id %}" onsubmit="return confirm('Підтвердити цю заявку?');">
+          <form method="post" action="{% url 'doctor_review_appointment' appointment.id %}">
             {% csrf_token %}
             <div class="field">
               <label for="detail_duration">Тривалість прийому, хвилин</label>
@@ -65,7 +65,7 @@
             <input type="hidden" name="action" value="approve">
             <button type="submit" class="green">Підтвердити заявку</button>
           </form>
-          <form method="post" action="{% url 'doctor_review_appointment' appointment.id %}" onsubmit="return confirm('Відхилити цю заявку?');">
+          <form method="post" action="{% url 'doctor_review_appointment' appointment.id %}">
             {% csrf_token %}
             <input type="hidden" name="action" value="reject">
             <button type="submit" class="secondary">Відхилити заявку</button>
@@ -81,7 +81,7 @@
           {% if appointment.patient %}
             <a class="btn warning appointment-reschedule-button" href="{% url 'doctor_appointment_detail' appointment.id %}?reschedule=1#reschedule">Перенести прийом</a>
           {% endif %}
-          <form method="post" action="{% url 'doctor_cancel_appointment' appointment.id %}" onsubmit="return confirm('Скасувати цей прийом?');">
+          <form method="post" action="{% url 'doctor_cancel_appointment' appointment.id %}">
             {% csrf_token %}
             <button type="submit" class="danger">Скасувати прийом</button>
           </form>
@@ -92,7 +92,7 @@
           <h2 class="section-title">Очікуємо рішення</h2>
           <p>Було: {{ appointment.previous_date|date:'d.m.Y' }} о {{ appointment.previous_time|time:'H:i' }}</p>
           <p><strong>Новий час: {{ appointment.date|date:'d.m.Y' }} о {{ appointment.time|time:'H:i' }}</strong></p>
-          <form method="post" action="{% url 'doctor_cancel_appointment' appointment.id %}" onsubmit="return confirm('Скасувати цей запис?');">
+          <form method="post" action="{% url 'doctor_cancel_appointment' appointment.id %}">
             {% csrf_token %}
             <button type="submit" class="danger">Скасувати запис</button>
           </form>

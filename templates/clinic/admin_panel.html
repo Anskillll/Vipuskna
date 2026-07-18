@@ -106,7 +106,7 @@
                       {% if item.is_active %}Заблокувати{% else %}Розблокувати{% endif %}
                     </button>
                   </form>
-                  <form method="post" action="{% url 'admin_delete_user' item.id %}" class="compact-form" onsubmit="return confirm('Видалити цього користувача?');">
+                  <form method="post" action="{% url 'admin_delete_user' item.id %}" class="compact-form">
                     {% csrf_token %}
                     <button type="submit" class="danger">Видалити</button>
                   </form>

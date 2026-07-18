@@ -168,7 +168,7 @@
                 <td><span class="status">{{ appointment.get_status_display }}</span></td>
                 <td>
                   {% if appointment.is_future %}
-                    <form method="post" action="{% url 'cancel_appointment' appointment.id %}" onsubmit="return confirm('Скасувати цю заявку?');">
+                    <form method="post" action="{% url 'cancel_appointment' appointment.id %}">
                       {% csrf_token %}
                       <button type="submit" class="danger">Скасувати</button>
                     </form>
@@ -220,7 +220,7 @@
                 <td>{{ appointment.city }}, {{ appointment.address }}</td>
                 <td>
                   {% if appointment.is_future %}
-                    <form method="post" action="{% url 'cancel_appointment' appointment.id %}" onsubmit="return confirm('Скасувати цей запис?');">
+                    <form method="post" action="{% url 'cancel_appointment' appointment.id %}">
                       {% csrf_token %}
                       <button type="submit" class="danger">Скасувати</button>
                     </form>
@@ -290,7 +290,7 @@
               <div class="canceled-appointment-actions">
                 <strong>{{ appointment.get_status_display }}</strong>
                 {% if appointment.can_restore %}
-                  <form method="post" action="{% url 'restore_appointment' appointment.id %}" onsubmit="return confirm('Відновити цю заявку?');">
+                  <form method="post" action="{% url 'restore_appointment' appointment.id %}">
                     {% csrf_token %}
                     <button type="submit" class="green">Відновити</button>
                   </form>

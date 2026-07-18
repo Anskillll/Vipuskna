@@ -100,7 +100,7 @@
         {{ selected_date|date:'d.m.Y' }} о {{ selected_time|time:'H:i' }}
       </p>
       {% if has_bookable_services %}
-        <form method="post" enctype="multipart/form-data" onsubmit="return confirm('Надіслати заявку на цей час?');">
+        <form method="post" enctype="multipart/form-data">
           {% csrf_token %}
           <input type="hidden" name="doctor" value="{{ selected_doctor.id }}">
           <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">

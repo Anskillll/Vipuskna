@@ -79,7 +79,7 @@
                     <a href="{{ photo.image.url }}" target="_blank" rel="noopener">
                       <img src="{{ photo.image.url }}" alt="{{ service.name }}">
                     </a>
-                    <form method="post" onsubmit="return confirm('Видалити цю фотографію?');">
+                    <form method="post">
                       {% csrf_token %}
                       <input type="hidden" name="action" value="delete_image">
                       <input type="hidden" name="image_id" value="{{ photo.id }}">
@@ -127,7 +127,7 @@
               </div>
               <a class="btn secondary" href="{% url 'service_detail' doctor.id service.id %}" target="_blank" rel="noopener">Переглянути сторінку</a>
               <a class="btn secondary" href="{% url 'doctor_services' %}?edit={{ service.id }}">Редагувати</a>
-              <form method="post" onsubmit="return confirm('Видалити цю послугу?');">
+              <form method="post">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="service_id" value="{{ service.id }}">

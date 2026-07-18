@@ -39,7 +39,7 @@
             </div>
             <div class="workplace-actions">
               <a class="btn secondary" href="{% url 'doctor_workplaces' %}?edit={{ workplace.id }}">Редагувати</a>
-              <form method="post" onsubmit="return confirm('Видалити це місце прийому?');">
+              <form method="post">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="workplace_id" value="{{ workplace.id }}">

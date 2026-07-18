@@ -56,12 +56,12 @@
       <aside class="card section-card patient-reschedule-decision">
         <h2 class="section-title">Ваше рішення</h2>
         <p class="section-note">Після відмови цей запис буде скасовано.</p>
-        <form method="post" action="{% url 'patient_reschedule_response' appointment.id %}" onsubmit="return confirm('Погодитися з новим часом прийому?');">
+        <form method="post" action="{% url 'patient_reschedule_response' appointment.id %}">
           {% csrf_token %}
           <input type="hidden" name="action" value="accept">
           <button class="green" type="submit">Погодитися з новим часом</button>
         </form>
-        <form method="post" action="{% url 'patient_reschedule_response' appointment.id %}" onsubmit="return confirm('Відхилити новий час і скасувати запис?');">
+        <form method="post" action="{% url 'patient_reschedule_response' appointment.id %}">
           {% csrf_token %}
           <input type="hidden" name="action" value="reject">
           <button class="danger" type="submit">Відхилити та скасувати</button>
