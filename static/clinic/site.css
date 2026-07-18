@@ -1121,6 +1121,7 @@ button.warning:hover {
 }
 
 .message {
+  max-height: 100px;
   padding: 14px 16px;
   border-radius: 16px;
   background: #ecfdf5;
@@ -1128,6 +1129,22 @@ button.warning:hover {
   color: #166534;
   font-size: 14px;
   font-weight: 600;
+  overflow: hidden;
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease,
+    max-height 200ms ease,
+    padding 200ms ease,
+    border-width 200ms ease;
+}
+
+.message.is-dismissing {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-width: 0;
+  opacity: 0;
+  transform: translateY(-6px);
 }
 
 .message.error {

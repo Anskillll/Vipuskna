@@ -100,6 +100,16 @@ class ClinicModelTests(TestCase):
         self.assertEqual(slots[0].strftime('%H:%M'), '09:00')
         self.assertEqual(slots[1].strftime('%H:%M'), '10:00')
 
+    def test_success_messages_are_marked_for_automatic_dismissal(self):
+        self.client.login(username='patient@test.local', password='pass12345')
+
+        response = self.client.get(reverse('logout'), follow=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Ви вийшли з акаунта.')
+        self.assertContains(response, 'data-auto-dismiss')
+        self.assertContains(response, 'clinic/flash_messages.js')
+
     def test_doctor_cities_do_not_repeat(self):
         WorkSchedule.objects.create(
             doctor=self.doctor,
