@@ -1464,8 +1464,11 @@ class ClinicModelTests(TestCase):
         self.client.logout()
         self.client.login(username='patient@test.local', password='pass12345')
         patient_dashboard_response = self.client.get(reverse('patient_dashboard'))
-        self.assertContains(patient_dashboard_response, 'Фільтр заявок')
-        self.assertContains(patient_dashboard_response, 'data-page-size="5"')
+        self.assertNotContains(patient_dashboard_response, 'Фільтр заявок')
+        self.assertNotContains(patient_dashboard_response, 'Фільтр підтверджених прийомів')
+        self.assertNotContains(patient_dashboard_response, 'Фільтр завершених прийомів')
+        self.assertNotContains(patient_dashboard_response, 'Фільтр скасованих прийомів')
+        self.assertContains(patient_dashboard_response, 'data-live-pagination')
         self.assertContains(patient_dashboard_response, 'data-live-filter-item')
 
     def test_doctor_booking_recognizes_registered_patient_phone_format(self):

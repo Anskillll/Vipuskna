@@ -14,13 +14,9 @@
     };
   };
 
-  document.querySelectorAll('[data-live-filter]').forEach((root) => {
+  document.querySelectorAll('[data-live-filter], [data-live-pagination]').forEach((root) => {
     const input = root.querySelector('[data-live-filter-input]');
     const items = Array.from(root.querySelectorAll('[data-live-filter-item]'));
-    if (!input) {
-      return;
-    }
-
     const count = root.querySelector('[data-live-filter-count]');
     const empty = root.querySelector('[data-live-filter-empty]');
     const clearButton = root.querySelector('[data-live-filter-clear]');
@@ -141,7 +137,7 @@
       });
 
       if (count) {
-        count.textContent = input.value.trim()
+        count.textContent = input && input.value.trim()
           ? `Знайдено: ${matchingItems.length} з ${items.length}`
           : `Усього: ${items.length}`;
       }
@@ -160,7 +156,7 @@
     };
 
     const applyFilter = (resetPage = true) => {
-      const query = searchableParts(input.value);
+      const query = searchableParts(input ? input.value : '');
       const terms = query.normalized ? query.normalized.split(/\s+/) : [];
       matchingItems = indexedItems.filter(({ search }) => (
         terms.every((term) => (
@@ -174,21 +170,23 @@
       renderPage();
     };
 
-    input.addEventListener('input', applyFilter);
-    input.addEventListener('search', applyFilter);
-    valueButtons.forEach((button) => {
-      button.addEventListener('click', () => {
-        input.value = button.dataset.liveFilterValue || '';
-        applyFilter();
-        input.focus();
+    if (input) {
+      input.addEventListener('input', applyFilter);
+      input.addEventListener('search', applyFilter);
+      valueButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          input.value = button.dataset.liveFilterValue || '';
+          applyFilter();
+          input.focus();
+        });
       });
-    });
-    if (clearButton) {
-      clearButton.addEventListener('click', () => {
-        input.value = '';
-        applyFilter();
-        input.focus();
-      });
+      if (clearButton) {
+        clearButton.addEventListener('click', () => {
+          input.value = '';
+          applyFilter();
+          input.focus();
+        });
+      }
     }
     pagination.addEventListener('click', (event) => {
       const button = event.target.closest('[data-live-filter-page]');
