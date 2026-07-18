@@ -51,11 +51,20 @@
     </section>
   </div>
 
-  <section class="card section-card">
+  <section class="card section-card" data-live-filter>
     <div class="section-head"><h2 class="section-title">Усі новини</h2></div>
+    {% if posts %}
+      <div class="live-filter-bar">
+        <div class="live-filter-field">
+          <label for="admin-news-search">Фільтр новин</label>
+          <input id="admin-news-search" type="search" placeholder="Заголовок, текст, лікар або статус" autocomplete="off" data-live-filter-input>
+        </div>
+        <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
+      </div>
+    {% endif %}
     <ul class="content-list">
       {% for post in posts %}
-        <li>
+        <li data-live-filter-item data-filter-extra="{{ post.title|escape }} {{ post.text|escape }} {% if post.doctor %}{{ post.doctor.full_name|escape }} лікар{% else %}клініка{% endif %} {% if post.is_published %}опубліковано{% else %}приховано{% endif %}">
           <div><strong>{{ post.title }}</strong><span>{% if post.doctor %}Лікар: {{ post.doctor.full_name }}{% else %}Новина клініки{% endif %}</span></div>
           <div class="actions">
             <a class="btn secondary" href="{% url 'admin_content' %}?news={{ post.id }}">Редагувати</a>
@@ -67,13 +76,23 @@
         </li>
       {% empty %}<li><span>Новин поки немає.</span></li>{% endfor %}
     </ul>
+    {% if posts %}<div class="empty live-filter-empty" data-live-filter-empty hidden>Новин із такими даними не знайдено.</div>{% endif %}
   </section>
 
-  <section class="card section-card">
+  <section class="card section-card" data-live-filter>
     <div class="section-head"><h2 class="section-title">Фотографії галереї</h2></div>
+    {% if gallery_images %}
+      <div class="live-filter-bar">
+        <div class="live-filter-field">
+          <label for="admin-gallery-search">Фільтр галереї</label>
+          <input id="admin-gallery-search" type="search" placeholder="Назва або підпис фотографії" autocomplete="off" data-live-filter-input>
+        </div>
+        <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
+      </div>
+    {% endif %}
     <div class="admin-gallery-grid">
       {% for item in gallery_images %}
-        <article>
+        <article data-live-filter-item data-filter-extra="{{ item.title|escape }}">
           <img src="{{ item.image.url }}" alt="{{ item.title }}">
           <strong>{{ item.title|default:'Без підпису' }}</strong>
           <div class="actions">
@@ -86,5 +105,6 @@
         </article>
       {% empty %}<div class="empty">Галерея порожня.</div>{% endfor %}
     </div>
+    {% if gallery_images %}<div class="empty live-filter-empty" data-live-filter-empty hidden>Фотографій із таким підписом не знайдено.</div>{% endif %}
   </section>
 {% endblock %}

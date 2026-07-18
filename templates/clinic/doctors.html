@@ -10,19 +10,31 @@
     </div>
   </section>
 
-  <section class="card section-card">
-    <form method="get" class="inline-form">
-      <div class="field field-grow">
-        <label for="q">Пошук</label>
-        <input id="q" name="q" value="{{ query }}" placeholder="Наприклад: терапевт">
+  <div data-live-filter>
+    <section class="card section-card">
+      <div class="live-filter-bar">
+        <div class="live-filter-field">
+          <label for="doctor-search">Фільтр лікарів</label>
+          <input
+            id="doctor-search"
+            type="search"
+            value="{{ query }}"
+            placeholder="Ім'я, спеціальність або місто"
+            autocomplete="off"
+            data-live-filter-input
+          >
+        </div>
+        <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
       </div>
-      <button type="submit">Знайти</button>
-    </form>
-  </section>
+    </section>
 
-  <section class="doctor-grid">
-    {% for doctor in doctors %}
-      <article class="doctor-panel">
+    <section class="doctor-grid">
+      {% for doctor in doctors %}
+      <article
+        class="doctor-panel"
+        data-live-filter-item
+        data-filter-extra="{{ doctor.full_name|escape }} {{ doctor.specialization|escape }} {{ doctor.description|escape }} {% for city in doctor.cities %}{{ city|escape }} {% endfor %}"
+      >
         <div class="doctor-panel-top">
           {% if doctor.photo_src %}
             <img class="doctor-photo doctor-photo-lg" src="{{ doctor.photo_src }}" alt="{{ doctor.full_name }}">
@@ -47,8 +59,12 @@
           {% endif %}
         </div>
       </article>
-    {% empty %}
-      <div class="empty">Лікарів не знайдено.</div>
-    {% endfor %}
-  </section>
+      {% empty %}
+        <div class="empty">Лікарів поки немає.</div>
+      {% endfor %}
+    </section>
+    {% if doctors %}
+      <div class="card section-card empty live-filter-empty" data-live-filter-empty hidden>Лікарів із такими даними не знайдено.</div>
+    {% endif %}
+  </div>
 {% endblock %}

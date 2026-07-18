@@ -255,6 +255,71 @@ a:hover {
   min-height: 46px;
 }
 
+.live-filter-bar {
+  align-items: end;
+  display: grid;
+  gap: 8px 18px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-bottom: 20px;
+}
+
+.live-filter-field {
+  display: grid;
+  gap: 8px;
+}
+
+.live-filter-field label {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.live-filter-field input {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+  min-height: 48px;
+  padding: 0 14px;
+  width: 100%;
+}
+
+.live-filter-field input:focus {
+  border-color: #6f82ff;
+  box-shadow: 0 0 0 3px rgba(70, 92, 245, 0.14);
+  outline: none;
+}
+
+.live-filter-count {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  padding-bottom: 14px;
+  white-space: nowrap;
+}
+
+.live-filter-empty {
+  margin-top: 14px;
+}
+
+[data-live-filter-item][hidden],
+[data-live-filter-group][hidden],
+[data-live-filter-empty][hidden] {
+  display: none !important;
+}
+
+@media (max-width: 620px) {
+  .live-filter-bar {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .live-filter-count {
+    padding-bottom: 0;
+  }
+}
+
 .patient-list-photo {
   width: 42px;
   height: 42px;

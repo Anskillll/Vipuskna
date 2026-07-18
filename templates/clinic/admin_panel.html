@@ -54,9 +54,16 @@
     </article>
   </section>
 
-  <section class="card section-card">
+  <section class="card section-card" data-live-filter>
     <div class="section-head">
       <h2 class="section-title">Користувачі</h2>
+    </div>
+    <div class="live-filter-bar">
+      <div class="live-filter-field">
+        <label for="admin-user-search">Фільтр користувачів</label>
+        <input id="admin-user-search" type="search" placeholder="Ім'я, логін, телефон, роль або статус" autocomplete="off" data-live-filter-input>
+      </div>
+      <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
     </div>
     <div class="table-wrap">
       <table>
@@ -71,7 +78,7 @@
         </thead>
         <tbody>
           {% for item in users %}
-            <tr>
+            <tr data-live-filter-item data-filter-extra="{{ item.get_full_name|escape }} {{ item.username|escape }} {{ item.email|escape }} {{ item.profile.phone|escape }} {% if item.is_staff %}адміністратор{% elif item.profile %}{{ item.profile.get_role_display|escape }}{% endif %} {% if item.is_active %}активний{% else %}заблокований{% endif %}">
               <td>{{ item.get_full_name|default:item.username }}</td>
               <td>{{ item.email }}</td>
               <td>
@@ -110,6 +117,7 @@
         </tbody>
       </table>
     </div>
+    <div class="empty live-filter-empty" data-live-filter-empty hidden>Користувачів із такими даними не знайдено.</div>
   </section>
 
   <div class="grid grid-2">

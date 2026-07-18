@@ -17,17 +17,36 @@
     <a class="page-tab" href="{% url 'doctor_schedule' %}">Графік</a>
   </nav>
 
-  {% regroup appointments by date as appointment_days %}
-  <div class="appointments-by-day">
-    {% for day in appointment_days %}
-      <section class="card section-card appointment-day-group">
+  <div data-live-filter>
+    <div class="card section-card live-filter-bar">
+      <div class="live-filter-field">
+        <label for="appointment-search">Фільтр заявок і прийомів</label>
+        <input
+          id="appointment-search"
+          type="search"
+          placeholder="Пацієнт, телефон, вік, послуга, дата, місце або статус"
+          autocomplete="off"
+          data-live-filter-input
+        >
+      </div>
+      <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
+    </div>
+
+    {% regroup appointments by date as appointment_days %}
+    <div class="appointments-by-day">
+      {% for day in appointment_days %}
+      <section class="card section-card appointment-day-group" data-live-filter-group>
         <div class="appointment-day-head">
           <h2>{{ day.list.0.weekday_name }}, {{ day.grouper|date:'d.m.Y' }}</h2>
-          <span>{{ day.list|length }} запис(ів)</span>
+          <span data-live-filter-group-count data-count-template="{count} запис(ів)">{{ day.list|length }} запис(ів)</span>
         </div>
         <div class="appointment-summary-list">
           {% for appointment in day.list %}
-            <article class="appointment-summary-row appointment-kind-{{ appointment.status }}">
+            <article
+              class="appointment-summary-row appointment-kind-{{ appointment.status }}"
+              data-live-filter-item
+              data-filter-extra="{{ appointment.patient_name|escape }} {{ appointment.patient_phone|escape }} {% if appointment.patient_age %}{{ appointment.patient_age }}{% endif %} {{ appointment.service.name|default:''|escape }} {{ appointment.date|date:'d.m.Y' }} {{ appointment.date|date:'Y-m-d' }} {{ appointment.time|time:'H:i' }} {{ appointment.city|escape }} {{ appointment.address|escape }} {{ appointment.get_status_display|escape }}"
+            >
               <time datetime="{{ appointment.date|date:'Y-m-d' }}T{{ appointment.time|time:'H:i' }}">{{ appointment.time|time:'H:i' }}</time>
               <div class="appointment-summary-person">
                 <div class="appointment-person-name">
@@ -61,8 +80,12 @@
           {% endfor %}
         </div>
       </section>
-    {% empty %}
-      <div class="card section-card empty">Поки що немає заявок або прийомів.</div>
-    {% endfor %}
+      {% empty %}
+        <div class="card section-card empty">Поки що немає заявок або прийомів.</div>
+      {% endfor %}
+    </div>
+    {% if appointments %}
+      <div class="card section-card empty live-filter-empty" data-live-filter-empty hidden>Записів із такими даними не знайдено.</div>
+    {% endif %}
   </div>
 {% endblock %}

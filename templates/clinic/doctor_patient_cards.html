@@ -17,23 +17,21 @@
     <a class="page-tab" href="{% url 'doctor_schedule' %}">Графік</a>
   </nav>
 
-  <section class="card section-card">
-    <form method="get" class="patient-search-form">
-      <label for="patient-search">Пошук пацієнта</label>
-      <div class="patient-search-controls">
+  <section class="card section-card" data-live-filter>
+    <div class="live-filter-bar">
+      <div class="live-filter-field">
+        <label for="patient-search">Фільтр пацієнтів</label>
         <input
           id="patient-search"
           type="search"
-          name="q"
           value="{{ query }}"
-          placeholder="Ім'я, прізвище або телефон"
+          placeholder="Ім'я, прізвище, телефон або вік"
+          autocomplete="off"
+          data-live-filter-input
         >
-        <button type="submit">Знайти</button>
-        {% if query %}
-          <a class="btn secondary" href="{% url 'doctor_patient_cards' %}">Очистити</a>
-        {% endif %}
       </div>
-    </form>
+      <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
+    </div>
     {% if card_rows %}
       <div class="table-wrap">
         <table>
@@ -50,7 +48,10 @@
           </thead>
           <tbody>
             {% for row in card_rows %}
-              <tr>
+              <tr
+                data-live-filter-item
+                data-filter-extra="{{ row.card.full_name|escape }} {{ row.card.patient_phone|escape }} {% if row.card.patient_age %}{{ row.card.patient_age }}{% endif %}"
+              >
                 <td>
                   <div class="patient-list-person">
                     {% if row.card.patient and row.card.patient.profile.photo %}
@@ -84,9 +85,10 @@
           </tbody>
         </table>
       </div>
+      <div class="empty live-filter-empty" data-live-filter-empty hidden>Пацієнтів із такими даними не знайдено.</div>
     {% else %}
       <div class="empty">
-        {% if query %}За запитом «{{ query }}» пацієнтів не знайдено.{% else %}Карток пацієнтів поки немає.{% endif %}
+        Карток пацієнтів поки немає.
       </div>
     {% endif %}
   </section>

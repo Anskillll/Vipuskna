@@ -19,11 +19,20 @@
         {% if editing %}<a class="btn secondary" href="{% url 'doctor_news' %}">Скасувати</a>{% endif %}
       </form>
     </section>
-    <section class="card section-card">
+    <section class="card section-card" data-live-filter>
       <div class="section-head"><h2 class="section-title">Опубліковані матеріали</h2></div>
+      {% if posts %}
+        <div class="live-filter-bar">
+          <div class="live-filter-field">
+            <label for="doctor-news-search">Фільтр новин</label>
+            <input id="doctor-news-search" type="search" placeholder="Заголовок, текст, дата або статус" autocomplete="off" data-live-filter-input>
+          </div>
+          <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
+        </div>
+      {% endif %}
       <ul class="content-list">
         {% for post in posts %}
-          <li>
+          <li data-live-filter-item data-filter-extra="{{ post.title|escape }} {{ post.text|escape }} {{ post.created_at|date:'d.m.Y' }} {% if post.is_published %}опубліковано{% else %}приховано{% endif %}">
             <div><strong>{{ post.title }}</strong><span>{{ post.created_at|date:'d.m.Y' }}{% if not post.is_published %} · приховано{% endif %}</span></div>
             <div class="actions">
               <a class="btn secondary" href="{% url 'doctor_news' %}?edit={{ post.id }}">Редагувати</a>
@@ -35,6 +44,7 @@
           </li>
         {% empty %}<li><span>Ви ще не створювали новин.</span></li>{% endfor %}
       </ul>
+      {% if posts %}<div class="empty live-filter-empty" data-live-filter-empty hidden>Новин із такими даними не знайдено.</div>{% endif %}
     </section>
   </div>
 {% endblock %}

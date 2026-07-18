@@ -1168,6 +1168,8 @@ def doctor_patient_cards(request):
             )
             if normalized_query:
                 term_filter |= Q(patient_phone__icontains=normalized_query)
+            if term.isdigit() and len(term) <= 3:
+                term_filter |= Q(patient__profile__age=int(term))
             cards = cards.filter(term_filter)
     card_rows = []
     for card in cards:

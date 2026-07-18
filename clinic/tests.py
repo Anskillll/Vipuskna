@@ -652,8 +652,9 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'appointment-kind-pending')
         self.assertContains(response, 'appointment-kind-approved')
         self.assertNotContains(response, 'Прихована причина')
-        self.assertNotContains(response, 'Прихована адреса')
-        self.assertNotContains(response, '+380509999991')
+        self.assertContains(response, 'data-live-filter-input')
+        self.assertContains(response, 'data-live-filter-item')
+        self.assertContains(response, '+380509999991')
 
     def test_doctor_views_show_registered_patient_age(self):
         appointment = Appointment.objects.create(
@@ -1334,6 +1335,13 @@ class ClinicModelTests(TestCase):
             patient_last_name='Бондар',
             patient_phone='+380932224455',
         )
+        DoctorPatientCard.objects.create(
+            doctor=self.doctor,
+            patient=self.patient,
+            patient_first_name=self.patient.first_name,
+            patient_last_name=self.patient.last_name,
+            patient_phone=self.patient.profile.phone,
+        )
         self.client.login(username='doctor@test.local', password='pass12345')
 
         response = self.client.get(reverse('doctor_patient_cards'), {'q': 'Марія Коваль'})
@@ -1343,6 +1351,45 @@ class ClinicModelTests(TestCase):
         response = self.client.get(reverse('doctor_patient_cards'), {'q': '093 222 44 55'})
         self.assertContains(response, 'Олег Бондар')
         self.assertNotContains(response, 'Марія Коваль')
+
+        response = self.client.get(reverse('doctor_patient_cards'), {'q': '25'})
+        self.assertContains(response, self.patient.get_full_name())
+        self.assertNotContains(response, 'Марія Коваль')
+
+    def test_list_searches_use_live_filters_without_search_buttons(self):
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name=self.patient.first_name,
+            patient_last_name=self.patient.last_name,
+            patient_phone=self.patient.profile.phone,
+            date=timezone.localdate() + timedelta(days=7),
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Перевірка живого фільтра',
+        )
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        patient_response = self.client.get(reverse('doctor_patient_cards'))
+        appointment_response = self.client.get(reverse('doctor_appointments'))
+
+        self.assertContains(patient_response, 'Фільтр пацієнтів')
+        self.assertContains(patient_response, 'data-live-filter-input')
+        self.assertContains(patient_response, 'data-live-filter-item')
+        self.assertContains(patient_response, str(self.patient.profile.age))
+        self.assertNotContains(patient_response, '>Знайти</button>')
+
+        self.assertContains(appointment_response, 'Фільтр заявок і прийомів')
+        self.assertContains(appointment_response, 'data-live-filter-group')
+        self.assertContains(appointment_response, appointment.patient_phone)
+        self.assertNotContains(appointment_response, '>Знайти</button>')
+
+        public_response = self.client.get(reverse('doctors'))
+        self.assertContains(public_response, 'Фільтр лікарів')
+        self.assertContains(public_response, 'clinic/live_filter.js')
+        self.assertNotContains(public_response, '>Знайти</button>')
 
     def test_doctor_booking_recognizes_registered_patient_phone_format(self):
         self.client.login(username='doctor@test.local', password='pass12345')

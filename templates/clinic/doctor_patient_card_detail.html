@@ -60,14 +60,23 @@
     </form>
   </section>
 
-  <section class="card section-card">
+  <section class="card section-card" data-live-filter>
     <div class="section-head">
       <h2 class="section-title">Розширені записи лікаря</h2>
       <span class="section-note">{{ record_entries|length }} запис(ів)</span>
     </div>
+    {% if record_entries %}
+      <div class="live-filter-bar">
+        <div class="live-filter-field">
+          <label for="record-entry-search">Фільтр записів картки</label>
+          <input id="record-entry-search" type="search" placeholder="Тип, заголовок, текст, рекомендація або дата" autocomplete="off" data-live-filter-input>
+        </div>
+        <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
+      </div>
+    {% endif %}
     <div class="record-timeline">
       {% for entry in record_entries %}
-        <article class="record-entry">
+        <article class="record-entry" data-live-filter-item data-filter-extra="{{ entry.get_kind_display|escape }} {{ entry.title|escape }} {{ entry.details|escape }} {{ entry.recommendations|escape }} {{ entry.created_at|date:'d.m.Y H:i' }}">
           <div class="record-entry-head">
             <div>
               <span class="record-kind">{{ entry.get_kind_display }}</span>
@@ -105,11 +114,19 @@
         <div class="empty">Розширених записів поки немає.</div>
       {% endfor %}
     </div>
+    {% if record_entries %}<div class="empty live-filter-empty" data-live-filter-empty hidden>Записів із такими даними не знайдено.</div>{% endif %}
   </section>
 
-  <section class="card" style="margin-top: 18px;">
+  <section class="card" style="margin-top: 18px;" data-live-filter>
     <h2 class="section-title">Історія записів</h2>
     {% if appointments %}
+      <div class="live-filter-bar">
+        <div class="live-filter-field">
+          <label for="patient-history-search">Фільтр історії</label>
+          <input id="patient-history-search" type="search" placeholder="Дата, час, послуга, статус або причина" autocomplete="off" data-live-filter-input>
+        </div>
+        <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
+      </div>
       <div class="table-wrap">
         <table>
           <thead>
@@ -124,7 +141,7 @@
           </thead>
           <tbody>
             {% for appointment in appointments %}
-              <tr>
+              <tr data-live-filter-item data-filter-extra="{{ appointment.date|date:'d.m.Y' }} {{ appointment.time|time:'H:i' }} {{ appointment.service.name|default:''|escape }} {{ appointment.get_status_display|escape }} {{ appointment.reason|escape }}">
                 <td>{{ appointment.date|date:'d.m.Y' }}</td>
                 <td>{{ appointment.time|time:'H:i' }}</td>
                 <td>{{ appointment.service.name|default:'Не обрано' }}</td>
@@ -136,6 +153,7 @@
           </tbody>
         </table>
       </div>
+      <div class="empty live-filter-empty" data-live-filter-empty hidden>Записів із такими даними не знайдено.</div>
     {% else %}
       <div class="empty">Записів по цьому пацієнту ще немає.</div>
     {% endif %}
