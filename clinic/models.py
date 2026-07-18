@@ -105,7 +105,30 @@ class DoctorWorkplace(models.Model):
         ]
 
     def __str__(self):
-        return f'{self.name} — {self.city}, {self.address}'
+        return self.selection_label
+
+    @property
+    def has_generic_name(self):
+        normalized = ' '.join(self.name.casefold().split())
+        if normalized == 'основне місце прийому':
+            return True
+        if not normalized.startswith('місце прийому'):
+            return False
+        suffix = normalized.removeprefix('місце прийому').strip()
+        return not suffix or suffix.isdigit()
+
+    @property
+    def display_name(self):
+        if self.has_generic_name:
+            return f'Кабінет у м. {self.city}'
+        return self.name
+
+    @property
+    def selection_label(self):
+        location = ', '.join(part for part in (self.city, self.address) if part)
+        if self.has_generic_name:
+            return location
+        return f'{self.name} — {location}' if location else self.name
 
 
 class MedicalService(models.Model):

@@ -53,8 +53,11 @@
             <li>
               <span>
                 {{ schedule.get_weekday_display }} ·
-                {% if schedule.workplace %}{{ schedule.workplace.name }} · {% endif %}
-                {{ schedule.city }}{% if schedule.address %}, {{ schedule.address }}{% endif %}
+                {% if schedule.workplace %}
+                  {{ schedule.workplace.selection_label }}
+                {% else %}
+                  {{ schedule.city }}{% if schedule.address %}, {{ schedule.address }}{% endif %}
+                {% endif %}
               </span>
               <strong>
                 {% if schedule.is_working %}

@@ -21,8 +21,11 @@
       <h2 class="section-title">Інформація про прийом</h2>
       {% if selected_schedule and selected_schedule.is_working %}
         <p class="muted">
-          {% if selected_schedule.workplace %}{{ selected_schedule.workplace.name }} · {% endif %}
-          {{ selected_schedule.city }}, {{ selected_schedule.address }}
+          {% if selected_schedule.workplace %}
+            {{ selected_schedule.workplace.selection_label }}
+          {% else %}
+            {{ selected_schedule.city }}, {{ selected_schedule.address }}
+          {% endif %}
         </p>
         <p class="muted">Тривалість одного слота: {{ selected_schedule.slot_minutes }} хв</p>
       {% else %}

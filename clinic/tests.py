@@ -30,9 +30,11 @@ from .forms import (
     BookingReasonForm,
     DoctorPatientBookingForm,
     DoctorProfileForm,
+    DoctorWorkplaceForm,
     PatientProfileForm,
     PatientRecordEntryForm,
     ServiceForm,
+    WorkScheduleForm,
 )
 from .views import active_appointment_for_doctor, appointment_conflicts
 
@@ -219,6 +221,28 @@ class ClinicModelTests(TestCase):
         )
         self.assertRedirects(delete_response, reverse('doctor_workplaces'))
         self.assertTrue(DoctorWorkplace.objects.filter(pk=workplace.id).exists())
+
+    def test_required_schedule_choices_have_no_empty_placeholders(self):
+        generic_workplace = DoctorWorkplace.objects.create(
+            doctor=self.doctor,
+            name='Місце прийому 2',
+            city='Нікополь',
+            address='вул. Центральна, 5',
+        )
+
+        form = WorkScheduleForm(doctor=self.doctor)
+        weekday_choices = list(form.fields['weekday'].choices)
+        workplace_labels = [str(label) for _, label in form.fields['workplace'].choices]
+
+        self.assertNotEqual(weekday_choices[0][0], '')
+        self.assertIsNone(form.fields['workplace'].empty_label)
+        self.assertTrue(form.fields['workplace'].required)
+        self.assertNotIn('Оберіть місце прийому', form.as_p())
+        self.assertNotIn(generic_workplace.name, workplace_labels)
+        self.assertIn('Нікополь, вул. Центральна, 5', workplace_labels)
+
+        edit_form = DoctorWorkplaceForm(instance=generic_workplace)
+        self.assertEqual(edit_form.initial['name'], 'Кабінет у м. Нікополь')
 
     def test_service_editor_expands_inside_selected_service(self):
         self.client.login(username='doctor@test.local', password='pass12345')

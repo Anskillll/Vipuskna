@@ -461,7 +461,18 @@ class DoctorProfileForm(FormStyleMixin, forms.Form):
         return self.doctor
 
 
+class WorkplaceChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, workplace):
+        return workplace.selection_label
+
+
 class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
+    workplace = WorkplaceChoiceField(
+        label='Місце прийому',
+        queryset=DoctorWorkplace.objects.none(),
+        empty_label=None,
+    )
+
     class Meta:
         model = WorkSchedule
         fields = [
@@ -492,8 +503,11 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
 
     def __init__(self, *args, doctor=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['workplace'].required = False
-        self.fields['workplace'].empty_label = 'Оберіть місце прийому'
+        self.fields['weekday'].choices = [
+            (value, label)
+            for value, label in self.fields['weekday'].choices
+            if value != ''
+        ]
         self.fields['workplace'].queryset = (
             doctor.workplaces.all()
             if doctor
@@ -540,6 +554,11 @@ class DoctorWorkplaceForm(FormStyleMixin, forms.ModelForm):
             'city': 'Місто',
             'address': 'Адреса',
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk and self.instance.has_generic_name and not self.is_bound:
+            self.initial['name'] = self.instance.display_name
 
 
 class ServiceForm(FormStyleMixin, forms.ModelForm):

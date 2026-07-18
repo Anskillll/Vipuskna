@@ -25,9 +25,9 @@
       {% endif %}
       <div class="workplace-list">
         {% for workplace in workplaces %}
-          <article class="workplace-row" data-live-filter-item data-filter-extra="{{ workplace.name|escape }} {{ workplace.city|escape }} {{ workplace.address|escape }}">
+          <article class="workplace-row" data-live-filter-item data-filter-extra="{{ workplace.display_name|escape }} {{ workplace.city|escape }} {{ workplace.address|escape }}">
             <div>
-              <h3>{{ workplace.name }}</h3>
+              <h3>{{ workplace.display_name }}</h3>
               <p>{{ workplace.city }}, {{ workplace.address }}</p>
               <span>
                 {% if workplace.schedule_count %}

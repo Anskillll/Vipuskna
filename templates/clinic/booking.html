@@ -58,8 +58,11 @@
         <h2>2. Вільний час</h2>
         {% if selected_schedule and selected_schedule.is_working %}
         <span class="section-note">
-          {% if selected_schedule.workplace %}{{ selected_schedule.workplace.name }} · {% endif %}
-          {{ selected_schedule.city }}, {{ selected_schedule.address }}
+          {% if selected_schedule.workplace %}
+            {{ selected_schedule.workplace.selection_label }}
+          {% else %}
+            {{ selected_schedule.city }}, {{ selected_schedule.address }}
+          {% endif %}
         </span>
         {% endif %}
     </div>
@@ -89,8 +92,11 @@
       </div>
       <p class="booking-summary">
         <strong>{{ selected_doctor.full_name }}</strong><br>
-        {% if selected_schedule.workplace %}{{ selected_schedule.workplace.name }} · {% endif %}
-        {{ selected_schedule.city }}, {{ selected_schedule.address }}<br>
+        {% if selected_schedule.workplace %}
+          {{ selected_schedule.workplace.selection_label }}
+        {% else %}
+          {{ selected_schedule.city }}, {{ selected_schedule.address }}
+        {% endif %}<br>
         {{ selected_date|date:'d.m.Y' }} о {{ selected_time|time:'H:i' }}
       </p>
       {% if has_bookable_services %}
