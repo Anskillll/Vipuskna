@@ -8,6 +8,7 @@ from .models import (
     DoctorPatientCard,
     DoctorWorkplace,
     GalleryImage,
+    HomeHeroSlide,
     MedicalService,
     MedicalServiceImage,
     NewsPost,
@@ -127,6 +128,13 @@ class DoctorPatientCardAdmin(admin.ModelAdmin):
 @admin.register(ClinicSettings)
 class ClinicSettingsAdmin(admin.ModelAdmin):
     list_display = ('clinic_name',)
+
+
+@admin.register(HomeHeroSlide)
+class HomeHeroSlideAdmin(admin.ModelAdmin):
+    list_display = ('title', 'is_active', 'sort_order', 'created_at')
+    list_editable = ('is_active', 'sort_order')
+    list_filter = ('is_active',)
 
 
 @admin.register(NewsPost)

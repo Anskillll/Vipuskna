@@ -1,110 +1,300 @@
 {% extends 'clinic/base.html' %}
 
-{% block title %}Контент головної сторінки - MedClinic{% endblock %}
+{% block title %}Контент сайту - MedClinic{% endblock %}
+{% block body_class %}admin-content-page{% endblock %}
 
 {% block content %}
-  <section class="page-head">
-    <div>
-      <h1 class="page-title">Головна сторінка</h1>
-      <p class="page-subtitle">Оформлення, новини клініки та галерея.</p>
-    </div>
-  </section>
-
-  <nav class="page-tabs">
-    <a class="page-tab" href="{% url 'admin_panel' %}">Огляд</a>
-    <a class="page-tab active" href="{% url 'admin_content' %}">Контент сайту</a>
-  </nav>
-
-  <section class="card section-card content-editor-section">
-    <div class="section-head"><h2 class="section-title">Оформлення клініки</h2></div>
-    <form method="post" enctype="multipart/form-data">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="save_settings">
-      {% include 'clinic/_form_fields.html' with form=settings_form %}
-      <button type="submit">Зберегти оформлення</button>
-    </form>
-  </section>
-
-  <div class="grid grid-2 content-manager-grid">
-    <section class="card section-card">
-      <div class="section-head"><h2 class="section-title">{% if news_editing %}Редагувати новину{% else %}Нова новина клініки{% endif %}</h2></div>
-      <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="save_news">
-        {% if news_editing %}<input type="hidden" name="news_id" value="{{ news_editing.id }}">{% endif %}
-        {% include 'clinic/_form_fields.html' with form=news_form %}
-        <button type="submit">Зберегти новину</button>
-        {% if news_editing %}<a class="btn secondary" href="{% url 'admin_content' %}">Скасувати</a>{% endif %}
-      </form>
+  <div class="content-admin">
+    <section class="page-head content-admin-head">
+      <div>
+        <span class="content-admin-kicker">Публічна частина сайту</span>
+        <h1 class="page-title">Контент сайту</h1>
+        <p class="page-subtitle">Тут зібрано все, що бачить відвідувач на головній сторінці.</p>
+      </div>
+      <a class="btn secondary" href="{% url 'home' %}" target="_blank" rel="noopener">Переглянути сайт</a>
     </section>
 
-    <section class="card section-card">
-      <div class="section-head"><h2 class="section-title">{% if gallery_editing %}Редагувати фото{% else %}Додати фото в галерею{% endif %}</h2></div>
-      <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="save_gallery">
-        {% if gallery_editing %}<input type="hidden" name="gallery_id" value="{{ gallery_editing.id }}">{% endif %}
-        {% include 'clinic/_form_fields.html' with form=gallery_form %}
-        <button type="submit">Зберегти фото</button>
-        {% if gallery_editing %}<a class="btn secondary" href="{% url 'admin_content' %}">Скасувати</a>{% endif %}
-      </form>
+    <nav class="page-tabs" aria-label="Розділи панелі адміністратора">
+      <a class="page-tab" href="{% url 'admin_panel' %}">Огляд</a>
+      <a class="page-tab active" href="{% url 'admin_content' %}">Контент сайту</a>
+      <a class="page-tab" href="{% url 'admin_add_doctor' %}">Додати лікаря</a>
+      <a class="page-tab" href="/admin/">Системні налаштування</a>
+    </nav>
+
+    <section class="content-admin-summary" aria-label="Опублікований контент">
+      <div>
+        <span>Слайди</span>
+        <strong>{{ content_stats.hero }}</strong>
+      </div>
+      <div>
+        <span>Новини клініки</span>
+        <strong>{{ content_stats.clinic_news }}</strong>
+      </div>
+      <div>
+        <span>Новини лікарів</span>
+        <strong>{{ content_stats.doctor_news }}</strong>
+      </div>
+      <div>
+        <span>Фото галереї</span>
+        <strong>{{ content_stats.gallery }}</strong>
+      </div>
+    </section>
+
+    <nav class="content-admin-jump" aria-label="Швидкий перехід до редактора">
+      <a href="#branding">Оформлення</a>
+      <a href="#hero-slides">Верхні фотографії</a>
+      <a href="#news">Новини</a>
+      <a href="#gallery">Галерея</a>
+    </nav>
+
+    <section id="branding" class="content-admin-section">
+      <header class="content-admin-section-head">
+        <div>
+          <span class="content-admin-step">01</span>
+          <h2>Оформлення клініки</h2>
+          <p>Назва, логотип, фон усіх сторінок та декоративний ефект.</p>
+        </div>
+      </header>
+      <div class="content-admin-branding-grid">
+        <form class="content-admin-form" method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="save_settings">
+          {% include 'clinic/_form_fields.html' with form=settings_form %}
+          <button type="submit">Зберегти оформлення</button>
+        </form>
+        <aside class="content-admin-note">
+          <span>Підказка</span>
+          <h3>Що на що впливає</h3>
+          <p><strong>Логотип</strong> показується у шапці сайту.</p>
+          <p><strong>Фон сайту</strong> залишається позаду внутрішніх сторінок.</p>
+          <p><strong>Верхні фотографії</strong> завантажуються окремо у наступному розділі.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section id="hero-slides" class="content-admin-section">
+      <header class="content-admin-section-head">
+        <div>
+          <span class="content-admin-step">02</span>
+          <h2>Верхні фотографії</h2>
+          <p>Ці кадри змінюються у верхній частині головної сторінки кожні 10 секунд.</p>
+        </div>
+        <span class="content-admin-total">{{ hero_slides|length }} фото</span>
+      </header>
+
+      <div class="content-admin-workspace content-admin-workspace-hero">
+        <div class="hero-admin-list">
+          {% for slide in hero_slides %}
+            <article class="hero-admin-item{% if not slide.is_active %} is-hidden{% endif %}">
+              <img src="{{ slide.image.url }}" alt="{{ slide.title|default:'Фото верхнього слайдера' }}">
+              <div class="hero-admin-copy">
+                <strong>{{ slide.title|default:'Без назви' }}</strong>
+                <span>{% if slide.is_active %}Показується на сайті{% else %}Приховано від відвідувачів{% endif %}</span>
+              </div>
+              <div class="hero-admin-actions">
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="move_hero">
+                  <input type="hidden" name="hero_id" value="{{ slide.id }}">
+                  <input type="hidden" name="direction" value="up">
+                  <button class="content-icon-button" type="submit" title="Перемістити вище" aria-label="Перемістити фотографію вище" {% if forloop.first %}disabled{% endif %}>↑</button>
+                </form>
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="move_hero">
+                  <input type="hidden" name="hero_id" value="{{ slide.id }}">
+                  <input type="hidden" name="direction" value="down">
+                  <button class="content-icon-button" type="submit" title="Перемістити нижче" aria-label="Перемістити фотографію нижче" {% if forloop.last %}disabled{% endif %}>↓</button>
+                </form>
+                <a class="btn secondary compact" href="{% url 'admin_content' %}?hero={{ slide.id }}#hero-slides">Редагувати</a>
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="toggle_hero">
+                  <input type="hidden" name="hero_id" value="{{ slide.id }}">
+                  <button class="secondary compact" type="submit">{% if slide.is_active %}Приховати{% else %}Показати{% endif %}</button>
+                </form>
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete_hero">
+                  <input type="hidden" name="hero_id" value="{{ slide.id }}">
+                  <button class="danger compact" type="submit">Видалити</button>
+                </form>
+              </div>
+            </article>
+          {% empty %}
+            <div class="content-admin-empty">
+              <strong>Власних фотографій ще немає</strong>
+              <p>Поки що на сайті показуються три стандартні кадри. Додайте перше фото, щоб почати керувати слайдером.</p>
+            </div>
+          {% endfor %}
+        </div>
+
+        <aside class="content-editor-panel">
+          <div class="content-editor-panel-head">
+            <span>{% if hero_editing %}Редагування{% else %}Нове фото{% endif %}</span>
+            <h3>{% if hero_editing %}{{ hero_editing.title|default:'Фото без назви' }}{% else %}Додати у слайдер{% endif %}</h3>
+          </div>
+          {% if hero_editing and hero_editing.image %}
+            <img class="content-editor-preview" src="{{ hero_editing.image.url }}" alt="">
+          {% endif %}
+          <form class="content-admin-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="save_hero">
+            {% if hero_editing %}<input type="hidden" name="hero_id" value="{{ hero_editing.id }}">{% endif %}
+            {% include 'clinic/_form_fields.html' with form=hero_form %}
+            <div class="actions">
+              <button type="submit">{% if hero_editing %}Зберегти зміни{% else %}Додати фотографію{% endif %}</button>
+              {% if hero_editing %}
+                <a class="btn secondary" href="{% url 'admin_content' %}#hero-slides">Скасувати</a>
+              {% endif %}
+            </div>
+          </form>
+        </aside>
+      </div>
+    </section>
+
+    <section id="news" class="content-admin-section" data-live-filter data-page-size="6">
+      <header class="content-admin-section-head">
+        <div>
+          <span class="content-admin-step">03</span>
+          <h2>Новини</h2>
+          <p>Новини клініки створює адміністратор, а публікації лікарів тут можна перевірити або виправити.</p>
+        </div>
+        <span class="content-admin-total">{{ posts|length }} публікацій</span>
+      </header>
+
+      <div class="content-admin-workspace">
+        <div class="content-admin-library">
+          {% if posts %}
+            <div class="live-filter-bar">
+              <div class="live-filter-field">
+                <label for="admin-news-search">Знайти новину</label>
+                <input id="admin-news-search" type="search" placeholder="Заголовок, текст, лікар або статус" autocomplete="off" data-live-filter-input>
+              </div>
+              <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
+            </div>
+          {% endif %}
+          <div class="content-admin-rows">
+            {% for post in posts %}
+              <article class="content-admin-row" data-live-filter-item data-filter-extra="{{ post.title|escape }} {{ post.text|escape }} {% if post.doctor %}{{ post.doctor.full_name|escape }} лікар{% else %}клініка{% endif %} {% if post.is_published %}опубліковано{% else %}приховано{% endif %}">
+                {% if post.image %}
+                  <img src="{{ post.image.url }}" alt="">
+                {% else %}
+                  <span class="content-admin-placeholder">N</span>
+                {% endif %}
+                <div>
+                  <strong>{{ post.title }}</strong>
+                  <span>{% if post.doctor %}Лікар: {{ post.doctor.full_name }}{% else %}Новина клініки{% endif %}</span>
+                </div>
+                <span class="content-status{% if not post.is_published %} is-muted{% endif %}">{% if post.is_published %}На сайті{% else %}Приховано{% endif %}</span>
+                <div class="actions">
+                  <a class="btn secondary compact" href="{% url 'admin_content' %}?news={{ post.id }}#news">Редагувати</a>
+                  <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_news">
+                    <input type="hidden" name="news_id" value="{{ post.id }}">
+                    <button class="danger compact" type="submit">Видалити</button>
+                  </form>
+                </div>
+              </article>
+            {% empty %}
+              <div class="content-admin-empty">
+                <strong>Новин ще немає</strong>
+                <p>Створіть першу новину клініки у редакторі праворуч.</p>
+              </div>
+            {% endfor %}
+          </div>
+          {% if posts %}<div class="empty live-filter-empty" data-live-filter-empty hidden>Новин із такими даними не знайдено.</div>{% endif %}
+        </div>
+
+        <aside class="content-editor-panel">
+          <div class="content-editor-panel-head">
+            <span>{% if news_editing %}Редагування{% else %}Нова публікація{% endif %}</span>
+            <h3>{% if news_editing %}{{ news_editing.title }}{% else %}Новина клініки{% endif %}</h3>
+          </div>
+          <form class="content-admin-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="save_news">
+            {% if news_editing %}<input type="hidden" name="news_id" value="{{ news_editing.id }}">{% endif %}
+            {% include 'clinic/_form_fields.html' with form=news_form %}
+            <div class="actions">
+              <button type="submit">Зберегти новину</button>
+              {% if news_editing %}<a class="btn secondary" href="{% url 'admin_content' %}#news">Скасувати</a>{% endif %}
+            </div>
+          </form>
+        </aside>
+      </div>
+    </section>
+
+    <section id="gallery" class="content-admin-section" data-live-filter data-page-size="8">
+      <header class="content-admin-section-head">
+        <div>
+          <span class="content-admin-step">04</span>
+          <h2>Галерея</h2>
+          <p>Фотографії для рухомої стрічки нижче новин на головній сторінці.</p>
+        </div>
+        <span class="content-admin-total">{{ gallery_images|length }} фото</span>
+      </header>
+
+      <div class="content-admin-workspace">
+        <div class="content-admin-library">
+          {% if gallery_images %}
+            <div class="live-filter-bar">
+              <div class="live-filter-field">
+                <label for="admin-gallery-search">Знайти фотографію</label>
+                <input id="admin-gallery-search" type="search" placeholder="Назва або підпис фотографії" autocomplete="off" data-live-filter-input>
+              </div>
+              <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
+            </div>
+          {% endif %}
+          <div class="content-admin-gallery">
+            {% for item in gallery_images %}
+              <article data-live-filter-item data-filter-extra="{{ item.title|escape }} {% if item.is_published %}опубліковано{% else %}приховано{% endif %}">
+                <img src="{{ item.image.url }}" alt="{{ item.title }}">
+                <div>
+                  <strong>{{ item.title|default:'Без підпису' }}</strong>
+                  <span>{% if item.is_published %}Показується на сайті{% else %}Приховано{% endif %}</span>
+                </div>
+                <div class="actions">
+                  <a class="btn secondary compact" href="{% url 'admin_content' %}?gallery={{ item.id }}#gallery">Редагувати</a>
+                  <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_gallery">
+                    <input type="hidden" name="gallery_id" value="{{ item.id }}">
+                    <button class="danger compact" type="submit">Видалити</button>
+                  </form>
+                </div>
+              </article>
+            {% empty %}
+              <div class="content-admin-empty">
+                <strong>Галерея порожня</strong>
+                <p>Додайте фотографії, які мають рухатися стрічкою на головній сторінці.</p>
+              </div>
+            {% endfor %}
+          </div>
+          {% if gallery_images %}<div class="empty live-filter-empty" data-live-filter-empty hidden>Фотографій із таким підписом не знайдено.</div>{% endif %}
+        </div>
+
+        <aside class="content-editor-panel">
+          <div class="content-editor-panel-head">
+            <span>{% if gallery_editing %}Редагування{% else %}Нове фото{% endif %}</span>
+            <h3>{% if gallery_editing %}{{ gallery_editing.title|default:'Фото без підпису' }}{% else %}Додати у галерею{% endif %}</h3>
+          </div>
+          {% if gallery_editing and gallery_editing.image %}
+            <img class="content-editor-preview" src="{{ gallery_editing.image.url }}" alt="">
+          {% endif %}
+          <form class="content-admin-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="save_gallery">
+            {% if gallery_editing %}<input type="hidden" name="gallery_id" value="{{ gallery_editing.id }}">{% endif %}
+            {% include 'clinic/_form_fields.html' with form=gallery_form %}
+            <div class="actions">
+              <button type="submit">Зберегти фотографію</button>
+              {% if gallery_editing %}<a class="btn secondary" href="{% url 'admin_content' %}#gallery">Скасувати</a>{% endif %}
+            </div>
+          </form>
+        </aside>
+      </div>
     </section>
   </div>
-
-  <section class="card section-card" data-live-filter>
-    <div class="section-head"><h2 class="section-title">Усі новини</h2></div>
-    {% if posts %}
-      <div class="live-filter-bar">
-        <div class="live-filter-field">
-          <label for="admin-news-search">Фільтр новин</label>
-          <input id="admin-news-search" type="search" placeholder="Заголовок, текст, лікар або статус" autocomplete="off" data-live-filter-input>
-        </div>
-        <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
-      </div>
-    {% endif %}
-    <ul class="content-list">
-      {% for post in posts %}
-        <li data-live-filter-item data-filter-extra="{{ post.title|escape }} {{ post.text|escape }} {% if post.doctor %}{{ post.doctor.full_name|escape }} лікар{% else %}клініка{% endif %} {% if post.is_published %}опубліковано{% else %}приховано{% endif %}">
-          <div><strong>{{ post.title }}</strong><span>{% if post.doctor %}Лікар: {{ post.doctor.full_name }}{% else %}Новина клініки{% endif %}</span></div>
-          <div class="actions">
-            <a class="btn secondary" href="{% url 'admin_content' %}?news={{ post.id }}">Редагувати</a>
-            <form method="post">
-              {% csrf_token %}<input type="hidden" name="action" value="delete_news"><input type="hidden" name="news_id" value="{{ post.id }}">
-              <button class="danger" type="submit">Видалити</button>
-            </form>
-          </div>
-        </li>
-      {% empty %}<li><span>Новин поки немає.</span></li>{% endfor %}
-    </ul>
-    {% if posts %}<div class="empty live-filter-empty" data-live-filter-empty hidden>Новин із такими даними не знайдено.</div>{% endif %}
-  </section>
-
-  <section class="card section-card" data-live-filter>
-    <div class="section-head"><h2 class="section-title">Фотографії галереї</h2></div>
-    {% if gallery_images %}
-      <div class="live-filter-bar">
-        <div class="live-filter-field">
-          <label for="admin-gallery-search">Фільтр галереї</label>
-          <input id="admin-gallery-search" type="search" placeholder="Назва або підпис фотографії" autocomplete="off" data-live-filter-input>
-        </div>
-        <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
-      </div>
-    {% endif %}
-    <div class="admin-gallery-grid">
-      {% for item in gallery_images %}
-        <article data-live-filter-item data-filter-extra="{{ item.title|escape }}">
-          <img src="{{ item.image.url }}" alt="{{ item.title }}">
-          <strong>{{ item.title|default:'Без підпису' }}</strong>
-          <div class="actions">
-            <a class="btn secondary" href="{% url 'admin_content' %}?gallery={{ item.id }}">Редагувати</a>
-            <form method="post">
-              {% csrf_token %}<input type="hidden" name="action" value="delete_gallery"><input type="hidden" name="gallery_id" value="{{ item.id }}">
-              <button class="danger" type="submit">Видалити</button>
-            </form>
-          </div>
-        </article>
-      {% empty %}<div class="empty">Галерея порожня.</div>{% endfor %}
-    </div>
-    {% if gallery_images %}<div class="empty live-filter-empty" data-live-filter-empty hidden>Фотографій із таким підписом не знайдено.</div>{% endif %}
-  </section>
 {% endblock %}

@@ -22,6 +22,7 @@ from .models import (
     Doctor,
     DoctorPatientCard,
     DoctorWorkplace,
+    HomeHeroSlide,
     MedicalService,
     MedicalServiceImage,
     NewsPost,
@@ -1584,6 +1585,96 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Це ви')
         self.assertContains(response, reverse('admin_edit_user', args=[admin_user.id]))
         self.assertNotContains(response, '<th>Електронна пошта</th>', html=True)
+
+    def test_admin_can_add_home_hero_slide(self):
+        User.objects.create_superuser(
+            username='content-admin@test.local',
+            email='content-admin@test.local',
+            password='pass12345',
+        )
+        self.client.login(username='content-admin@test.local', password='pass12345')
+        image = SimpleUploadedFile(
+            'reception.gif',
+            b'GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff!\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;',
+            content_type='image/gif',
+        )
+
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            response = self.client.post(
+                reverse('admin_content'),
+                data={
+                    'action': 'save_hero',
+                    'hero-title': 'Рецепція клініки',
+                    'hero-image': image,
+                    'hero-is_active': 'on',
+                },
+            )
+
+            self.assertRedirects(
+                response,
+                f"{reverse('admin_content')}#hero-slides",
+                fetch_redirect_response=False,
+            )
+            slide = HomeHeroSlide.objects.get()
+            self.assertEqual(slide.title, 'Рецепція клініки')
+            self.assertTrue(slide.is_active)
+            self.assertEqual(slide.sort_order, 1)
+
+    def test_admin_can_change_home_hero_slide_order(self):
+        User.objects.create_superuser(
+            username='slide-admin@test.local',
+            email='slide-admin@test.local',
+            password='pass12345',
+        )
+        first = HomeHeroSlide.objects.create(title='Перше', image='clinic/hero/first.jpg', sort_order=1)
+        second = HomeHeroSlide.objects.create(title='Друге', image='clinic/hero/second.jpg', sort_order=2)
+        self.client.login(username='slide-admin@test.local', password='pass12345')
+
+        response = self.client.post(
+            reverse('admin_content'),
+            data={'action': 'move_hero', 'hero_id': second.id, 'direction': 'up'},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            list(HomeHeroSlide.objects.values_list('id', flat=True)),
+            [second.id, first.id],
+        )
+
+    def test_home_uses_only_active_admin_hero_slides(self):
+        HomeHeroSlide.objects.create(
+            title='Активний слайд',
+            image='clinic/hero/active.jpg',
+            is_active=True,
+        )
+        HomeHeroSlide.objects.create(
+            title='Прихований слайд',
+            image='clinic/hero/hidden.jpg',
+            is_active=False,
+        )
+
+        response = self.client.get(reverse('home'))
+
+        self.assertContains(response, '/media/clinic/hero/active.jpg')
+        self.assertNotContains(response, '/media/clinic/hero/hidden.jpg')
+        hero_markup = response.content.decode().split('<div class="home-hero-shade">', 1)[0]
+        self.assertNotIn('hero-treatment-room.webp', hero_markup)
+
+    def test_admin_content_screen_has_separate_editing_sections(self):
+        User.objects.create_superuser(
+            username='editor-admin@test.local',
+            email='editor-admin@test.local',
+            password='pass12345',
+        )
+        self.client.login(username='editor-admin@test.local', password='pass12345')
+
+        response = self.client.get(reverse('admin_content'))
+
+        self.assertContains(response, 'Верхні фотографії')
+        self.assertContains(response, 'Додати у слайдер')
+        self.assertContains(response, 'Оформлення клініки')
+        self.assertContains(response, 'Новини')
+        self.assertContains(response, 'Галерея')
 
     def test_home_renders_selected_background_effect(self):
         branding, _ = ClinicSettings.objects.get_or_create(pk=1)

@@ -10,23 +10,35 @@
   <div class="public-home">
     <section class="home-cinematic-hero" data-home-hero>
       <div class="home-hero-slides" aria-live="off">
-        <figure class="home-hero-slide is-active" data-home-slide aria-hidden="false">
-          <img
-            src="{% static 'clinic/home/hero-treatment-room.webp' %}"
-            alt="Сучасний стоматологічний кабінет"
-            fetchpriority="high"
-          >
-        </figure>
-        <figure class="home-hero-slide" data-home-slide aria-hidden="true">
-          <img src="{% static 'clinic/home/hero-reception.webp' %}" alt="Зона очікування клініки">
-        </figure>
-        <figure class="home-hero-slide" data-home-slide aria-hidden="true">
-          <img src="{% static 'clinic/home/hero-consultation.webp' %}" alt="Консультація пацієнта з лікарем">
-        </figure>
-        {% if clinic_branding.home_background %}
-          <figure class="home-hero-slide" data-home-slide aria-hidden="true">
-            <img src="{{ clinic_branding.home_background.url }}" alt="Оформлення клініки">
+        {% if hero_slides %}
+          {% for slide in hero_slides %}
+            <figure class="home-hero-slide{% if forloop.first %} is-active{% endif %}" data-home-slide aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}">
+              <img
+                src="{{ slide.image.url }}"
+                alt="{{ slide.title|default:'Фотографія клініки' }}"
+                {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}
+              >
+            </figure>
+          {% endfor %}
+        {% else %}
+          <figure class="home-hero-slide is-active" data-home-slide aria-hidden="false">
+            <img
+              src="{% static 'clinic/home/hero-treatment-room.webp' %}"
+              alt="Сучасний стоматологічний кабінет"
+              fetchpriority="high"
+            >
           </figure>
+          <figure class="home-hero-slide" data-home-slide aria-hidden="true">
+            <img src="{% static 'clinic/home/hero-reception.webp' %}" alt="Зона очікування клініки">
+          </figure>
+          <figure class="home-hero-slide" data-home-slide aria-hidden="true">
+            <img src="{% static 'clinic/home/hero-consultation.webp' %}" alt="Консультація пацієнта з лікарем">
+          </figure>
+          {% if clinic_branding.home_background %}
+            <figure class="home-hero-slide" data-home-slide aria-hidden="true">
+              <img src="{{ clinic_branding.home_background.url }}" alt="Оформлення клініки">
+            </figure>
+          {% endif %}
         {% endif %}
       </div>
       <div class="home-hero-shade"></div>

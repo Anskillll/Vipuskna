@@ -11,6 +11,7 @@ from .models import (
     DoctorPatientCard,
     DoctorWorkplace,
     GalleryImage,
+    HomeHeroSlide,
     MedicalService,
     NewsPost,
     PatientRecordEntry,
@@ -708,6 +709,20 @@ class ClinicSettingsForm(FormStyleMixin, forms.ModelForm):
         if cleaned_data.get('home_effect') == ClinicSettings.EFFECT_CUSTOM and not cleaned_data.get('particle_image'):
             self.add_error('particle_image', 'Завантажте зображення для власного пресета.')
         return cleaned_data
+
+
+class HomeHeroSlideForm(FormStyleMixin, forms.ModelForm):
+    class Meta:
+        model = HomeHeroSlide
+        fields = ['title', 'image', 'is_active']
+        labels = {
+            'title': 'Коротка назва фотографії',
+            'image': 'Фотографія для верхнього слайдера',
+            'is_active': 'Показувати фотографію на головній сторінці',
+        }
+        help_texts = {
+            'title': 'Назву бачить лише адміністратор. Вона допомагає розрізняти фотографії.',
+        }
 
 
 class NewsPostForm(FormStyleMixin, forms.ModelForm):

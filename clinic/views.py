@@ -29,6 +29,7 @@ from .forms import (
     DoctorWorkplaceForm,
     EmailForm,
     GalleryImageForm,
+    HomeHeroSlideForm,
     NewsPostForm,
     PatientRecordEntryForm,
     PatientProfileForm,
@@ -45,6 +46,7 @@ from .models import (
     DoctorPatientCard,
     DoctorWorkplace,
     GalleryImage,
+    HomeHeroSlide,
     MedicalService,
     MedicalServiceImage,
     NewsPost,
@@ -384,6 +386,7 @@ def home(request):
             ).select_related('doctor__user')[:6],
             'gallery_images': GalleryImage.objects.filter(is_published=True)[:18],
             'featured_doctors': featured_doctors,
+            'hero_slides': HomeHeroSlide.objects.filter(is_active=True),
         },
     )
 
@@ -1511,12 +1514,15 @@ def admin_panel(request):
 @admin_required
 def admin_content(request):
     branding, _ = ClinicSettings.objects.get_or_create(pk=1)
+    hero_id = request.GET.get('hero')
     news_id = request.GET.get('news')
     gallery_id = request.GET.get('gallery')
+    hero_instance = HomeHeroSlide.objects.filter(pk=hero_id).first() if hero_id else None
     news_instance = NewsPost.objects.filter(pk=news_id).first() if news_id else None
     gallery_instance = GalleryImage.objects.filter(pk=gallery_id).first() if gallery_id else None
 
     settings_form = ClinicSettingsForm(instance=branding, prefix='settings')
+    hero_form = HomeHeroSlideForm(instance=hero_instance, prefix='hero')
     news_form = NewsPostForm(instance=news_instance, prefix='news')
     gallery_form = GalleryImageForm(instance=gallery_instance, prefix='gallery')
 
@@ -1526,42 +1532,109 @@ def admin_content(request):
             settings_form = ClinicSettingsForm(request.POST, request.FILES, instance=branding, prefix='settings')
             if settings_form.is_valid():
                 settings_form.save()
-                messages.success(request, 'Оформлення головної сторінки збережено.')
-                return redirect('admin_content')
+                messages.success(request, 'Оформлення клініки збережено.')
+                return redirect(f"{reverse('admin_content')}#branding")
+        elif action == 'save_hero':
+            hero_instance = HomeHeroSlide.objects.filter(pk=request.POST.get('hero_id')).first()
+            hero_form = HomeHeroSlideForm(
+                request.POST,
+                request.FILES,
+                instance=hero_instance,
+                prefix='hero',
+            )
+            if hero_form.is_valid():
+                slide = hero_form.save(commit=False)
+                if not slide.pk:
+                    slide.sort_order = (
+                        HomeHeroSlide.objects.aggregate(last_order=Max('sort_order'))['last_order'] or 0
+                    ) + 1
+                slide.save()
+                messages.success(request, 'Фотографію верхнього слайдера збережено.')
+                return redirect(f"{reverse('admin_content')}#hero-slides")
+        elif action == 'toggle_hero':
+            slide = get_object_or_404(HomeHeroSlide, pk=request.POST.get('hero_id'))
+            slide.is_active = not slide.is_active
+            slide.save(update_fields=['is_active'])
+            state = 'показується' if slide.is_active else 'прихована'
+            messages.success(request, f'Фотографія тепер {state} на головній сторінці.')
+            return redirect(f"{reverse('admin_content')}#hero-slides")
+        elif action == 'move_hero':
+            slide = get_object_or_404(HomeHeroSlide, pk=request.POST.get('hero_id'))
+            direction = request.POST.get('direction')
+            with transaction.atomic():
+                ordered_slides = list(HomeHeroSlide.objects.select_for_update().order_by('sort_order', 'id'))
+                for position, ordered_slide in enumerate(ordered_slides, start=1):
+                    if ordered_slide.sort_order != position:
+                        ordered_slide.sort_order = position
+                        ordered_slide.save(update_fields=['sort_order'])
+                current_index = next(
+                    (index for index, ordered_slide in enumerate(ordered_slides) if ordered_slide.pk == slide.pk),
+                    None,
+                )
+                offset = -1 if direction == 'up' else 1
+                target_index = current_index + offset if current_index is not None else -1
+                if current_index is not None and 0 <= target_index < len(ordered_slides):
+                    neighbour = ordered_slides[target_index]
+                    slide.sort_order, neighbour.sort_order = neighbour.sort_order, slide.sort_order
+                    slide.save(update_fields=['sort_order'])
+                    neighbour.save(update_fields=['sort_order'])
+                    messages.success(request, 'Порядок фотографій змінено.')
+            return redirect(f"{reverse('admin_content')}#hero-slides")
+        elif action == 'delete_hero':
+            get_object_or_404(HomeHeroSlide, pk=request.POST.get('hero_id')).delete()
+            messages.success(request, 'Фотографію верхнього слайдера видалено.')
+            return redirect(f"{reverse('admin_content')}#hero-slides")
         elif action == 'save_news':
-            post = NewsPost.objects.filter(pk=request.POST.get('news_id')).first()
-            news_form = NewsPostForm(request.POST, request.FILES, instance=post, prefix='news')
+            news_instance = NewsPost.objects.filter(pk=request.POST.get('news_id')).first()
+            news_form = NewsPostForm(request.POST, request.FILES, instance=news_instance, prefix='news')
             if news_form.is_valid():
                 news_form.save()
                 messages.success(request, 'Новину збережено.')
-                return redirect('admin_content')
+                return redirect(f"{reverse('admin_content')}#news")
         elif action == 'delete_news':
             get_object_or_404(NewsPost, pk=request.POST.get('news_id')).delete()
             messages.success(request, 'Новину видалено.')
-            return redirect('admin_content')
+            return redirect(f"{reverse('admin_content')}#news")
         elif action == 'save_gallery':
-            image = GalleryImage.objects.filter(pk=request.POST.get('gallery_id')).first()
-            gallery_form = GalleryImageForm(request.POST, request.FILES, instance=image, prefix='gallery')
+            gallery_instance = GalleryImage.objects.filter(pk=request.POST.get('gallery_id')).first()
+            gallery_form = GalleryImageForm(
+                request.POST,
+                request.FILES,
+                instance=gallery_instance,
+                prefix='gallery',
+            )
             if gallery_form.is_valid():
                 gallery_form.save()
                 messages.success(request, 'Фотографію збережено.')
-                return redirect('admin_content')
+                return redirect(f"{reverse('admin_content')}#gallery")
         elif action == 'delete_gallery':
             get_object_or_404(GalleryImage, pk=request.POST.get('gallery_id')).delete()
             messages.success(request, 'Фотографію видалено.')
-            return redirect('admin_content')
+            return redirect(f"{reverse('admin_content')}#gallery")
 
+    hero_slides = HomeHeroSlide.objects.all()
+    posts = NewsPost.objects.select_related('doctor__user').all()
+    gallery_images = GalleryImage.objects.all()
     return render(
         request,
         'clinic/admin_content.html',
         {
             'settings_form': settings_form,
+            'hero_form': hero_form,
             'news_form': news_form,
             'gallery_form': gallery_form,
+            'hero_editing': hero_instance,
             'news_editing': news_instance,
             'gallery_editing': gallery_instance,
-            'posts': NewsPost.objects.select_related('doctor__user').all(),
-            'gallery_images': GalleryImage.objects.all(),
+            'hero_slides': hero_slides,
+            'posts': posts,
+            'gallery_images': gallery_images,
+            'content_stats': {
+                'hero': hero_slides.filter(is_active=True).count(),
+                'clinic_news': posts.filter(doctor__isnull=True, is_published=True).count(),
+                'doctor_news': posts.filter(doctor__isnull=False, is_published=True).count(),
+                'gallery': gallery_images.filter(is_published=True).count(),
+            },
         },
     )
 

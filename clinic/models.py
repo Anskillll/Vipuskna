@@ -555,6 +555,22 @@ class ClinicSettings(models.Model):
         return self.clinic_name
 
 
+class HomeHeroSlide(models.Model):
+    title = models.CharField('Підпис для адміністратора', max_length=160, blank=True)
+    image = models.ImageField('Фотографія', upload_to='clinic/hero/')
+    is_active = models.BooleanField('Показувати у верхньому слайдері', default=True)
+    sort_order = models.PositiveIntegerField('Порядок', default=0)
+    created_at = models.DateTimeField('Створено', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Фото верхнього слайдера'
+        verbose_name_plural = 'Фото верхнього слайдера'
+        ordering = ['sort_order', 'id']
+
+    def __str__(self):
+        return self.title or f'Фото слайдера {self.pk}'
+
+
 class NewsPost(models.Model):
     doctor = models.ForeignKey(
         Doctor,
