@@ -5624,7 +5624,6 @@ body:not(.public-home-page) tbody tr:hover {
 
 body:not(.public-home-page) .status,
 body:not(.public-home-page) .record-kind,
-body:not(.public-home-page) .appointment-kind-label,
 body:not(.public-home-page) .admin-role,
 body:not(.public-home-page) .content-status {
   border-radius: 999px;
@@ -5668,24 +5667,64 @@ body:not(.public-home-page) .appointment-summary-row {
 }
 
 body:not(.public-home-page) .appointment-summary-row.appointment-kind-pending {
-  border-left-color: #b8874f;
-  background: #fffaf2;
+  border-left-color: #d39010;
+  background: #fff1c9;
 }
 
 body:not(.public-home-page) .appointment-summary-row.appointment-kind-approved {
-  border-left-color: #187f73;
-  background: #f2f8f5;
+  border-left-color: #0b8a68;
+  background: #e1f5ea;
+}
+
+body:not(.public-home-page) .appointment-summary-row.appointment-kind-reschedule_proposed {
+  border-left-color: #d08300;
+  background: #ffe9ad;
+}
+
+body:not(.public-home-page) .appointment-summary-row.appointment-kind-completed {
+  border-left-color: #607b85;
+  background: #e8eef2;
 }
 
 body:not(.public-home-page) .appointment-summary-row.appointment-kind-canceled,
 body:not(.public-home-page) .appointment-summary-row.appointment-kind-rejected {
-  border-left-color: #b34c4c;
-  background: #fff6f6;
+  border-left-color: #cf3f3f;
+  background: #ffe1e1;
+}
+
+body:not(.public-home-page) .appointment-kind-pending .appointment-kind-label {
+  background: #ffdf83;
+  color: #6f4600;
+}
+
+body:not(.public-home-page) .appointment-kind-approved .appointment-kind-label {
+  background: #bcebd6;
+  color: #075b43;
+}
+
+body:not(.public-home-page) .appointment-kind-reschedule_proposed .appointment-kind-label {
+  background: #ffc94d;
+  color: #5b3700;
+}
+
+body:not(.public-home-page) .appointment-kind-completed .appointment-kind-label {
+  background: #d4e0e6;
+  color: #334f58;
+}
+
+body:not(.public-home-page) .appointment-kind-canceled .appointment-kind-label,
+body:not(.public-home-page) .appointment-kind-rejected .appointment-kind-label {
+  background: #ffc4c4;
+  color: #8f2020;
 }
 
 body:not(.public-home-page) .appointment-summary-row time,
 body:not(.public-home-page) .day-appointment-time {
-  color: #187f73;
+  color: #087d6d;
+}
+
+body:not(.public-home-page) .appointment-summary-row > span {
+  color: #334b47;
 }
 
 body:not(.public-home-page) .day-appointment-item {
