@@ -28,7 +28,13 @@
         </div>
         <div class="field">
           <label for="date">Дата</label>
-          <input id="date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+          <input
+            id="date"
+            type="date"
+            name="date"
+            value="{{ selected_date|date:'Y-m-d' }}"
+            min="{{ earliest_booking_date|date:'Y-m-d' }}"
+          >
         </div>
       </form>
     </section>

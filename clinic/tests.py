@@ -591,7 +591,36 @@ class ClinicModelTests(TestCase):
         )
 
         self.assertEqual(Appointment.objects.count(), 0)
-        self.assertContains(response, 'Не можна записатися на минулу дату або час.')
+        self.assertContains(response, 'Записатися можна лише починаючи із завтрашнього дня.')
+
+    def test_patient_cannot_book_today(self):
+        self.client.login(username='patient@test.local', password='pass12345')
+        today = timezone.localdate()
+
+        response = self.client.post(
+            reverse('booking'),
+            data={
+                'doctor': self.doctor.id,
+                'date': today.strftime('%Y-%m-%d'),
+                'time': '10:00',
+                'service': self.service.id,
+                'reason': 'Спроба запису на сьогодні',
+            },
+            follow=True,
+        )
+
+        self.assertEqual(Appointment.objects.count(), 0)
+        self.assertContains(response, 'Записатися можна лише починаючи із завтрашнього дня.')
+
+    def test_booking_calendar_starts_from_tomorrow(self):
+        self.client.login(username='patient@test.local', password='pass12345')
+        tomorrow = timezone.localdate() + timedelta(days=1)
+
+        response = self.client.get(reverse('booking'), {'date': timezone.localdate().isoformat()})
+
+        self.assertEqual(response.context['selected_date'], tomorrow)
+        self.assertContains(response, f'min="{tomorrow.isoformat()}"')
+        self.assertContains(response, f'value="{tomorrow.isoformat()}"')
 
     def test_patient_does_not_choose_appointment_duration(self):
         self.assertNotIn('duration_slots', BookingReasonForm(doctor=self.doctor).fields)

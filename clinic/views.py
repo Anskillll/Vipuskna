@@ -764,6 +764,7 @@ def service_detail(request, doctor_id, service_id):
 @patient_required
 def booking(request):
     refresh_completed_appointments()
+    earliest_booking_date = timezone.localdate() + timedelta(days=1)
     if not (
         request.user.first_name.strip()
         and request.user.last_name.strip()
@@ -777,10 +778,11 @@ def booking(request):
 
     doctors = Doctor.objects.filter(user__is_active=True).select_related('user')
     selected_doctor = get_object_or_404(doctors, pk=request.GET.get('doctor')) if request.GET.get('doctor') else doctors.first()
-    selected_date = parse_date(request.GET.get('date')) if request.GET.get('date') else timezone.localdate()
-    if selected_date < timezone.localdate():
-        messages.error(request, 'Не можна вибрати минулу дату.')
-        selected_date = timezone.localdate()
+    selected_date = parse_date(request.GET.get('date')) if request.GET.get('date') else earliest_booking_date
+    if not selected_date or selected_date < earliest_booking_date:
+        if request.GET.get('date'):
+            messages.error(request, 'Записатися можна лише починаючи із завтрашнього дня.')
+        selected_date = earliest_booking_date
     selected_time = parse_time(request.GET.get('time'))
 
     if request.method == 'POST':
@@ -788,42 +790,47 @@ def booking(request):
         selected_date = parse_date(request.POST.get('date'))
         selected_time = parse_time(request.POST.get('time'))
         reason_form = BookingReasonForm(request.POST, request.FILES, doctor=selected_doctor)
-        schedule, slots = slots_for_doctor(selected_doctor, selected_date)
-        available_times = [slot['time'] for slot in slots if not slot['busy']]
+        if not selected_date or selected_date < earliest_booking_date:
+            messages.error(request, 'Записатися можна лише починаючи із завтрашнього дня.')
+            selected_date = earliest_booking_date
+            selected_time = None
+        else:
+            schedule, slots = slots_for_doctor(selected_doctor, selected_date)
+            available_times = [slot['time'] for slot in slots if not slot['busy']]
 
-        if is_past_appointment(selected_date, selected_time):
-            messages.error(request, 'Не можна записатися на минулу дату або час.')
-        elif not selected_time or selected_time not in available_times:
-            messages.error(request, 'Цей час уже недоступний.')
-        elif reason_form.is_valid() and schedule:
-            duration_slots = 1
-            if appointment_conflicts(selected_doctor, selected_date, selected_time, duration_slots=1):
+            if is_past_appointment(selected_date, selected_time):
                 messages.error(request, 'Цей час уже недоступний.')
-            else:
-                try:
-                    appointment = Appointment.objects.create(
-                        doctor=selected_doctor,
-                        service=reason_form.cleaned_data['service'],
-                        patient=request.user,
-                        patient_first_name=request.user.first_name,
-                        patient_last_name=request.user.last_name,
-                        patient_phone=request.user.profile.phone,
-                        patient_email=request.user.email,
-                        date=selected_date,
-                        time=selected_time,
-                        city=schedule.city,
-                        address=schedule.address,
-                        reason=reason_form.cleaned_data['reason'],
-                        duration_slots=duration_slots,
-                        status=Appointment.STATUS_PENDING,
-                    )
-                    for photo in reason_form.cleaned_data['photos']:
-                        AppointmentImage.objects.create(appointment=appointment, image=photo)
-                    ensure_patient_card_from_appointment(appointment)
-                    messages.success(request, 'Заявку відправлено лікарю на підтвердження.')
-                    return redirect('patient_dashboard')
-                except IntegrityError:
+            elif not selected_time or selected_time not in available_times:
+                messages.error(request, 'Цей час уже недоступний.')
+            elif reason_form.is_valid() and schedule:
+                duration_slots = 1
+                if appointment_conflicts(selected_doctor, selected_date, selected_time, duration_slots=1):
                     messages.error(request, 'Цей час уже недоступний.')
+                else:
+                    try:
+                        appointment = Appointment.objects.create(
+                            doctor=selected_doctor,
+                            service=reason_form.cleaned_data['service'],
+                            patient=request.user,
+                            patient_first_name=request.user.first_name,
+                            patient_last_name=request.user.last_name,
+                            patient_phone=request.user.profile.phone,
+                            patient_email=request.user.email,
+                            date=selected_date,
+                            time=selected_time,
+                            city=schedule.city,
+                            address=schedule.address,
+                            reason=reason_form.cleaned_data['reason'],
+                            duration_slots=duration_slots,
+                            status=Appointment.STATUS_PENDING,
+                        )
+                        for photo in reason_form.cleaned_data['photos']:
+                            AppointmentImage.objects.create(appointment=appointment, image=photo)
+                        ensure_patient_card_from_appointment(appointment)
+                        messages.success(request, 'Заявку відправлено лікарю на підтвердження.')
+                        return redirect('patient_dashboard')
+                    except IntegrityError:
+                        messages.error(request, 'Цей час уже недоступний.')
     else:
         reason_form = BookingReasonForm(doctor=selected_doctor)
 
@@ -840,6 +847,7 @@ def booking(request):
             'doctors': doctors,
             'selected_doctor': selected_doctor,
             'selected_date': selected_date,
+            'earliest_booking_date': earliest_booking_date,
             'selected_time': selected_time,
             'selected_schedule': schedule,
             'slots': slots,
