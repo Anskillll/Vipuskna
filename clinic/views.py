@@ -367,13 +367,23 @@ def sync_patient_cards_for_doctor(doctor):
 
 
 def home(request):
+    featured_doctors = (
+        Doctor.objects.filter(user__is_active=True)
+        .select_related('user')
+        .annotate(home_appointments=Count('appointments'))
+        .order_by('-home_appointments', 'user__last_name', 'user__first_name')[:4]
+    )
     return render(
         request,
         'clinic/home.html',
         {
-            'clinic_news': NewsPost.objects.filter(doctor__isnull=True, is_published=True)[:12],
-            'doctor_news': NewsPost.objects.filter(doctor__isnull=False, is_published=True).select_related('doctor__user')[:12],
+            'clinic_news': NewsPost.objects.filter(doctor__isnull=True, is_published=True)[:6],
+            'doctor_news': NewsPost.objects.filter(
+                doctor__isnull=False,
+                is_published=True,
+            ).select_related('doctor__user')[:6],
             'gallery_images': GalleryImage.objects.filter(is_published=True)[:18],
+            'featured_doctors': featured_doctors,
         },
     )
 

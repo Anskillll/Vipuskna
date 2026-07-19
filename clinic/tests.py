@@ -1137,6 +1137,17 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Новина клініки')
         self.assertContains(response, 'Новина лікаря')
         self.assertContains(response, 'Галерея')
+        self.assertContains(response, 'data-home-slide')
+        self.assertContains(response, 'data-home-reveal-header')
+        self.assertContains(response, 'clinic/home.js')
+
+        content = response.content.decode()
+        self.assertLess(content.index('Новини клініки'), content.index('Новини лікарів'))
+        self.assertLess(content.index('Новини лікарів'), content.index('id="home-gallery-title"'))
+        self.assertLess(content.index('id="home-gallery-title"'), content.index('Наші провідні лікарі'))
+
+        home_script = (Path(settings.BASE_DIR) / 'static' / 'clinic' / 'home.js').read_text(encoding='utf-8')
+        self.assertIn('10000', home_script)
 
     def test_long_doctor_service_list_is_moved_to_detail_page(self):
         for index in range(4):
@@ -1591,7 +1602,7 @@ class ClinicModelTests(TestCase):
 
         response = self.client.get(reverse('patient_dashboard'))
 
-        self.assertContains(response, 'class="has-site-background"')
+        self.assertContains(response, 'has-site-background')
         self.assertContains(response, '/media/clinic/branding/site-background.jpg')
 
     def test_home_renders_interactive_dental_field_preset(self):
@@ -1602,9 +1613,11 @@ class ClinicModelTests(TestCase):
         response = self.client.get(reverse('home'))
 
         self.assertContains(response, 'data-particle-effect="dental_field"')
-        self.assertContains(response, 'pointermove')
-        self.assertContains(response, '110 : 260')
-        self.assertContains(response, 'separateDentalParticles')
+        self.assertContains(response, 'clinic/home.js')
+        home_script = (Path(settings.BASE_DIR) / 'static' / 'clinic' / 'home.js').read_text(encoding='utf-8')
+        self.assertIn('pointermove', home_script)
+        self.assertIn('110 : 260', home_script)
+        self.assertIn('separateDentalParticles', home_script)
 
     def test_doctor_can_create_only_own_news(self):
         self.client.login(username='doctor@test.local', password='pass12345')

@@ -8,12 +8,17 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260719-4">
+  {% if clinic_branding.logo %}
+    <link rel="icon" href="{{ clinic_branding.logo.url }}">
+  {% else %}
+    <link rel="icon" href="data:,">
+  {% endif %}
+  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260719-6">
   <script src="{% static 'clinic/live_filter.js' %}?v=20260719-4" defer></script>
   <script src="{% static 'clinic/flash_messages.js' %}?v=20260719-1" defer></script>
 </head>
-<body{% if clinic_branding.home_background %} class="has-site-background" style="--site-bg: url('{{ clinic_branding.home_background.url }}');"{% endif %}>
-  <header class="topbar">
+<body class="{% if clinic_branding.home_background %}has-site-background {% endif %}{% block body_class %}{% endblock %}"{% if clinic_branding.home_background %} style="--site-bg: url('{{ clinic_branding.home_background.url }}');"{% endif %}>
+  <header class="topbar {% block topbar_class %}{% endblock %}"{% block topbar_attributes %}{% endblock %}>
     <div class="topbar-inner">
       <a class="brand" href="{% url 'home' %}">
         {% if clinic_branding.logo %}

@@ -1,237 +1,251 @@
 {% extends 'clinic/base.html' %}
+{% load static %}
 
 {% block title %}{{ clinic_branding.clinic_name }}{% endblock %}
+{% block body_class %}public-home-page{% endblock %}
+{% block topbar_class %}home-reveal-topbar{% endblock %}
+{% block topbar_attributes %} data-home-reveal-header{% endblock %}
 
 {% block content %}
-  <section class="public-home"{% if clinic_branding.home_background %} style="--home-bg: url('{{ clinic_branding.home_background.url }}');"{% endif %}>
-    <div class="public-home-overlay"></div>
-    {% if clinic_branding.home_effect != 'none' %}
-      <div class="home-particles" data-particle-effect="{{ clinic_branding.home_effect }}"{% if clinic_branding.particle_image %} data-particle-image="{{ clinic_branding.particle_image.url }}"{% endif %} aria-hidden="true"></div>
-    {% endif %}
-    <div class="public-home-inner">
-      <header class="public-home-intro">
-        {% if clinic_branding.logo %}
-          <img class="public-home-logo" src="{{ clinic_branding.logo.url }}" alt="{{ clinic_branding.clinic_name }}">
+  <div class="public-home">
+    <section class="home-cinematic-hero" data-home-hero>
+      <div class="home-hero-slides" aria-live="off">
+        <figure class="home-hero-slide is-active" data-home-slide aria-hidden="false">
+          <img
+            src="{% static 'clinic/home/hero-treatment-room.webp' %}"
+            alt="Сучасний стоматологічний кабінет"
+            fetchpriority="high"
+          >
+        </figure>
+        <figure class="home-hero-slide" data-home-slide aria-hidden="true">
+          <img src="{% static 'clinic/home/hero-reception.webp' %}" alt="Зона очікування клініки">
+        </figure>
+        <figure class="home-hero-slide" data-home-slide aria-hidden="true">
+          <img src="{% static 'clinic/home/hero-consultation.webp' %}" alt="Консультація пацієнта з лікарем">
+        </figure>
+        {% if clinic_branding.home_background %}
+          <figure class="home-hero-slide" data-home-slide aria-hidden="true">
+            <img src="{{ clinic_branding.home_background.url }}" alt="Оформлення клініки">
+          </figure>
         {% endif %}
-        <h1>{{ clinic_branding.clinic_name }}</h1>
-        <p>Новини, корисна інформація та події нашої клініки.</p>
-        <div class="home-center-actions">
+      </div>
+      <div class="home-hero-shade"></div>
+
+      {% if clinic_branding.home_effect != 'none' %}
+        <div
+          class="home-particles home-hero-particles"
+          data-particle-effect="{{ clinic_branding.home_effect }}"
+          {% if clinic_branding.particle_image %}data-particle-image="{{ clinic_branding.particle_image.url }}"{% endif %}
+          aria-hidden="true"
+        ></div>
+      {% endif %}
+
+      <nav class="home-hero-nav" aria-label="Головна навігація">
+        <a class="home-hero-brand" href="{% url 'home' %}">
+          {% if clinic_branding.logo %}
+            <img src="{{ clinic_branding.logo.url }}" alt="">
+          {% endif %}
+          <span>{{ clinic_branding.clinic_name }}</span>
+        </a>
+        <div class="home-hero-nav-links">
+          <a href="{% url 'doctors' %}">Лікарі</a>
           {% if not user.is_authenticated %}
-            <a class="btn btn-large" href="{% url 'google_login' %}">Увійти через Google</a>
-            <a class="btn secondary btn-large" href="{% url 'claim_patient' %}">Вас уже реєстрував лікар?</a>
-            <a class="btn secondary btn-large" href="{% url 'doctors' %}">Переглянути лікарів</a>
+            <a href="{% url 'doctor_login' %}">Лікар</a>
+            <a href="{% url 'admin_login' %}">Адмін</a>
           {% elif user.is_staff %}
-            <a class="btn btn-large" href="{% url 'admin_panel' %}">Перейти до панелі адміністратора</a>
+            <a href="{% url 'admin_panel' %}">Панель адміністратора</a>
+            <a href="{% url 'logout' %}">Вийти</a>
           {% elif user.profile.role == 'doctor' %}
-            <a class="btn btn-large" href="{% url 'doctor_dashboard' %}">Перейти до кабінету лікаря</a>
+            <a href="{% url 'doctor_dashboard' %}">Кабінет лікаря</a>
+            <a href="{% url 'logout' %}">Вийти</a>
           {% else %}
-            <a class="btn btn-large" href="{% url 'booking' %}">Записатися на прийом</a>
-            <a class="btn secondary btn-large" href="{% url 'doctors' %}">Переглянути лікарів</a>
+            <a href="{% url 'patient_dashboard' %}">Мій кабінет</a>
+            <a href="{% url 'logout' %}">Вийти</a>
           {% endif %}
         </div>
-      </header>
+      </nav>
 
-      <div class="public-content-panel">
-        <nav class="content-tabs" aria-label="Розділи головної сторінки">
-          <button class="content-tab active" type="button" data-home-tab="clinic-news">Новини клініки</button>
-          <button class="content-tab" type="button" data-home-tab="doctor-news">Новини лікарів</button>
-          <button class="content-tab" type="button" data-home-tab="gallery">Галерея</button>
-        </nav>
-
-        <section class="home-tab-panel active" data-home-panel="clinic-news">
-          <div class="news-grid">
-            {% for post in clinic_news %}
-              <article class="news-card">
-                {% if post.image %}<img src="{{ post.image.url }}" alt="{{ post.title }}">{% endif %}
-                <div class="news-card-body">
-                  <span class="news-meta">{{ post.created_at|date:'d.m.Y' }}</span>
-                  <h2>{{ post.title }}</h2>
-                  <p>{{ post.text|linebreaksbr }}</p>
-                </div>
-              </article>
-            {% empty %}
-              <div class="empty">Новин клініки поки немає.</div>
-            {% endfor %}
-          </div>
-        </section>
-
-        <section class="home-tab-panel" data-home-panel="doctor-news">
-          <div class="news-grid">
-            {% for post in doctor_news %}
-              <article class="news-card">
-                {% if post.image %}<img src="{{ post.image.url }}" alt="{{ post.title }}">{% endif %}
-                <div class="news-card-body">
-                  <span class="news-meta">{{ post.doctor.full_name }} · {{ post.created_at|date:'d.m.Y' }}</span>
-                  <h2>{{ post.title }}</h2>
-                  <p>{{ post.text|linebreaksbr }}</p>
-                </div>
-              </article>
-            {% empty %}
-              <div class="empty">Новин від лікарів поки немає.</div>
-            {% endfor %}
-          </div>
-        </section>
-
-        <section class="home-tab-panel" data-home-panel="gallery">
-          <div class="clinic-gallery">
-            {% for item in gallery_images %}
-              <figure>
-                <img src="{{ item.image.url }}" alt="{{ item.title|default:'Фото клініки' }}">
-                {% if item.title %}<figcaption>{{ item.title }}</figcaption>{% endif %}
-              </figure>
-            {% empty %}
-              <div class="empty">Фотографій у галереї поки немає.</div>
-            {% endfor %}
-          </div>
-        </section>
+      <div class="home-hero-copy">
+        <span class="home-section-kicker">Стоматологічна клініка</span>
+        <h1>{{ clinic_branding.clinic_name }}</h1>
+        <p>Уважна стоматологія для спокійного і зрозумілого лікування.</p>
+        <div class="home-hero-actions">
+          {% if not user.is_authenticated %}
+            <a href="{% url 'google_login' %}">Увійти через Google <span aria-hidden="true">→</span></a>
+            <a href="{% url 'doctors' %}">Переглянути лікарів <span aria-hidden="true">→</span></a>
+            <a class="home-hero-minor-link" href="{% url 'claim_patient' %}">Вас уже реєстрував лікар?</a>
+          {% elif user.is_staff %}
+            <a href="{% url 'admin_panel' %}">Перейти до панелі адміністратора <span aria-hidden="true">→</span></a>
+          {% elif user.profile.role == 'doctor' %}
+            <a href="{% url 'doctor_dashboard' %}">Перейти до кабінету лікаря <span aria-hidden="true">→</span></a>
+          {% else %}
+            <a href="{% url 'booking' %}">Записатися на прийом <span aria-hidden="true">→</span></a>
+            <a href="{% url 'doctors' %}">Переглянути лікарів <span aria-hidden="true">→</span></a>
+          {% endif %}
+        </div>
       </div>
-    </div>
-  </section>
 
-  <script>
-    document.querySelectorAll('[data-home-tab]').forEach(function (button) {
-      button.addEventListener('click', function () {
-        document.querySelectorAll('[data-home-tab]').forEach(function (item) { item.classList.remove('active'); });
-        document.querySelectorAll('[data-home-panel]').forEach(function (item) { item.classList.remove('active'); });
-        button.classList.add('active');
-        document.querySelector('[data-home-panel="' + button.dataset.homeTab + '"]').classList.add('active');
-      });
-    });
+      <div class="home-slider-controls" data-home-slider-controls>
+        <button type="button" data-home-slide-prev aria-label="Попереднє фото">←</button>
+        <div class="home-slider-dots" data-home-slider-dots></div>
+        <button type="button" data-home-slide-next aria-label="Наступне фото">→</button>
+      </div>
 
-    (function () {
-      const layer = document.querySelector('[data-particle-effect]');
-      if (!layer || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      <a class="home-scroll-cue" href="#clinic-news">
+        <span>Новини клініки</span>
+        <span aria-hidden="true">↓</span>
+      </a>
+    </section>
 
-      const effect = layer.dataset.particleEffect;
-      const isTeeth = effect === 'teeth';
-      const isCustom = effect === 'custom';
-      const isDentalField = effect === 'dental_field';
-      const symbol = isTeeth ? '🦷' : '+';
-      const amount = isDentalField ? (window.innerWidth < 680 ? 110 : 260) : (window.innerWidth < 680 ? 14 : 28);
-      const particles = [];
-      const pointer = { x: -1000, y: -1000 };
+    <section id="clinic-news" class="home-section home-clinic-news">
+      <div class="home-section-inner">
+        <header class="home-section-head">
+          <div>
+            <span class="home-section-kicker">У клініці</span>
+            <h2>Новини клініки</h2>
+          </div>
+          <p>Події, зміни в роботі та важлива інформація для пацієнтів.</p>
+        </header>
 
-      if (isDentalField) {
-        window.addEventListener('pointermove', function (event) {
-          const rect = layer.getBoundingClientRect();
-          pointer.x = event.clientX - rect.left;
-          pointer.y = event.clientY - rect.top;
-        });
-        window.addEventListener('pointerleave', function () {
-          pointer.x = -1000;
-          pointer.y = -1000;
-        });
-      }
+        <div class="home-news-grid">
+          {% for post in clinic_news %}
+            <article class="home-news-card">
+              {% if post.image %}
+                <img src="{{ post.image.url }}" alt="{{ post.title }}" loading="lazy">
+              {% endif %}
+              <div class="home-news-body">
+                <time datetime="{{ post.created_at|date:'Y-m-d' }}">{{ post.created_at|date:'d.m.Y' }}</time>
+                <h3>{{ post.title }}</h3>
+                <p>{{ post.text|linebreaksbr }}</p>
+              </div>
+            </article>
+          {% empty %}
+            <div class="home-empty-state">Новин клініки поки немає.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
 
-      for (let index = 0; index < amount; index += 1) {
-        const element = document.createElement(isCustom ? 'img' : 'span');
-        const dentalKind = index % 3;
-        element.className = isCustom
-          ? 'home-particle custom-particle'
-          : (isDentalField
-            ? 'home-particle dental-particle ' + (dentalKind === 0 ? 'dental-tooth' : (dentalKind === 1 ? 'braced-tooth' : 'dental-braces'))
-            : (isTeeth ? 'home-particle tooth' : 'home-particle medical-cross'));
-        if (isCustom) {
-          element.src = layer.dataset.particleImage;
-          element.alt = '';
-        } else if (isDentalField) {
-          element.textContent = dentalKind === 2 ? '▦' : '🦷';
-        } else {
-          element.textContent = symbol;
-        }
-        layer.appendChild(element);
-        particles.push({
-          index: index,
-          element: element,
-          x: Math.random() * Math.max(1, layer.clientWidth - 32),
-          y: Math.random() * Math.max(1, layer.clientHeight - 32),
-          vx: (isDentalField ? Math.random() * 0.35 + 0.08 : Math.random() * 2.2 + 1.6) * (Math.random() > 0.5 ? 1 : -1),
-          vy: (isDentalField ? Math.random() * 0.35 + 0.08 : Math.random() * 2.2 + 1.6) * (Math.random() > 0.5 ? 1 : -1),
-          rotation: Math.random() * 360,
-          spin: (Math.random() * 2 + 1) * (Math.random() > 0.5 ? 1 : -1),
-        });
-      }
+    <section class="home-section home-doctor-news">
+      <div class="home-section-inner">
+        <header class="home-section-head">
+          <div>
+            <span class="home-section-kicker">Від наших фахівців</span>
+            <h2>Новини лікарів</h2>
+          </div>
+          <p>Пояснення, рекомендації та професійні спостереження лікарів.</p>
+        </header>
 
-      function separateDentalParticles() {
-        const cellSize = 28;
-        const minimumDistance = 22;
-        const grid = new Map();
+        <div class="home-doctor-news-list">
+          {% for post in doctor_news %}
+            <article class="home-doctor-news-item">
+              <div class="home-doctor-news-author">
+                {% if post.doctor.photo_src %}
+                  <img src="{{ post.doctor.photo_src }}" alt="{{ post.doctor.full_name }}" loading="lazy">
+                {% endif %}
+                <div>
+                  <strong>{{ post.doctor.full_name }}</strong>
+                  <span>{{ post.doctor.specialization }} · {{ post.created_at|date:'d.m.Y' }}</span>
+                </div>
+              </div>
+              {% if post.image %}
+                <img class="home-doctor-news-image" src="{{ post.image.url }}" alt="{{ post.title }}" loading="lazy">
+              {% endif %}
+              <h3>{{ post.title }}</h3>
+              <p>{{ post.text|linebreaksbr }}</p>
+            </article>
+          {% empty %}
+            <div class="home-empty-state">Новин від лікарів поки немає.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
 
-        particles.forEach(function (particle) {
-          const cellX = Math.floor(particle.x / cellSize);
-          const cellY = Math.floor(particle.y / cellSize);
-          const key = cellX + ':' + cellY;
-          if (!grid.has(key)) grid.set(key, []);
-          grid.get(key).push(particle);
-        });
+    <section class="home-section home-gallery-section" aria-labelledby="home-gallery-title">
+      <div class="home-section-inner">
+        <header class="home-section-head">
+          <div>
+            <span class="home-section-kicker">Простір клініки</span>
+            <h2 id="home-gallery-title">Галерея</h2>
+          </div>
+          <p>Кабінети, команда та звичайні моменти нашої роботи.</p>
+        </header>
+      </div>
 
-        particles.forEach(function (particle) {
-          const cellX = Math.floor(particle.x / cellSize);
-          const cellY = Math.floor(particle.y / cellSize);
-          for (let offsetX = -1; offsetX <= 1; offsetX += 1) {
-            for (let offsetY = -1; offsetY <= 1; offsetY += 1) {
-              const neighbours = grid.get((cellX + offsetX) + ':' + (cellY + offsetY)) || [];
-              neighbours.forEach(function (other) {
-                if (other.index <= particle.index) return;
-                const dx = particle.x - other.x;
-                const dy = particle.y - other.y;
-                const distance = Math.sqrt(dx * dx + dy * dy) || 0.01;
-                if (distance >= minimumDistance) return;
-                const force = (minimumDistance - distance) / minimumDistance * 0.18;
-                const forceX = dx / distance * force;
-                const forceY = dy / distance * force;
-                particle.vx += forceX;
-                particle.vy += forceY;
-                other.vx -= forceX;
-                other.vy -= forceY;
-              });
-            }
-          }
-        });
-      }
+      <div class="home-photo-reel">
+        <div class="home-photo-track">
+          <figure>
+            <img src="{% static 'clinic/home/hero-treatment-room.webp' %}" alt="Стоматологічний кабінет" loading="lazy">
+            <figcaption>Кабінет</figcaption>
+          </figure>
+          <figure>
+            <img src="{% static 'clinic/home/hero-reception.webp' %}" alt="Зона очікування" loading="lazy">
+            <figcaption>Зона очікування</figcaption>
+          </figure>
+          <figure>
+            <img src="{% static 'clinic/home/hero-consultation.webp' %}" alt="Консультація" loading="lazy">
+            <figcaption>Консультація</figcaption>
+          </figure>
+          {% for item in gallery_images %}
+            <figure>
+              <img src="{{ item.image.url }}" alt="{{ item.title|default:'Фото клініки' }}" loading="lazy">
+              {% if item.title %}<figcaption>{{ item.title }}</figcaption>{% endif %}
+            </figure>
+          {% endfor %}
 
-      function moveParticles() {
-        const width = layer.clientWidth;
-        const height = layer.clientHeight;
-        if (isDentalField) separateDentalParticles();
-        particles.forEach(function (particle) {
-          const size = particle.element.offsetWidth;
-          if (isDentalField) {
-            const centerX = particle.x + size / 2;
-            const centerY = particle.y + size / 2;
-            const dx = centerX - pointer.x;
-            const dy = centerY - pointer.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance > 0 && distance < 150) {
-              const force = (150 - distance) / 150 * 1.25;
-              particle.vx += dx / distance * force;
-              particle.vy += dy / distance * force;
-            }
-            particle.vx *= 0.985;
-            particle.vy *= 0.985;
-            const speed = Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy);
-            if (speed > 5) {
-              particle.vx = particle.vx / speed * 5;
-              particle.vy = particle.vy / speed * 5;
-            }
-          }
-          particle.x += particle.vx;
-          particle.y += particle.vy;
-          particle.rotation += particle.spin;
-          if (particle.x <= 0 || particle.x + size >= width) {
-            particle.vx *= -1;
-            particle.x = Math.max(0, Math.min(particle.x, width - size));
-          }
-          if (particle.y <= 0 || particle.y + size >= height) {
-            particle.vy *= -1;
-            particle.y = Math.max(0, Math.min(particle.y, height - size));
-          }
-          particle.element.style.transform = 'translate(' + particle.x + 'px, ' + particle.y + 'px) rotate(' + particle.rotation + 'deg)';
-        });
-        window.requestAnimationFrame(moveParticles);
-      }
+          <figure aria-hidden="true">
+            <img src="{% static 'clinic/home/hero-treatment-room.webp' %}" alt="" loading="lazy">
+            <figcaption>Кабінет</figcaption>
+          </figure>
+          <figure aria-hidden="true">
+            <img src="{% static 'clinic/home/hero-reception.webp' %}" alt="" loading="lazy">
+            <figcaption>Зона очікування</figcaption>
+          </figure>
+          <figure aria-hidden="true">
+            <img src="{% static 'clinic/home/hero-consultation.webp' %}" alt="" loading="lazy">
+            <figcaption>Консультація</figcaption>
+          </figure>
+          {% for item in gallery_images %}
+            <figure aria-hidden="true">
+              <img src="{{ item.image.url }}" alt="" loading="lazy">
+              {% if item.title %}<figcaption>{{ item.title }}</figcaption>{% endif %}
+            </figure>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
 
-      moveParticles();
-    }());
-  </script>
+    <section id="featured-doctors" class="home-section home-doctors-section">
+      <div class="home-section-inner">
+        <header class="home-section-head">
+          <div>
+            <span class="home-section-kicker">Команда</span>
+            <h2>Наші провідні лікарі</h2>
+          </div>
+          <a class="home-section-link" href="{% url 'doctors' %}">Усі лікарі <span aria-hidden="true">→</span></a>
+        </header>
+
+        <div class="home-doctors-grid">
+          {% for doctor in featured_doctors %}
+            <a class="home-doctor-card" href="{% url 'doctor_detail' doctor.id %}">
+              {% if doctor.photo_src %}
+                <img src="{{ doctor.photo_src }}" alt="{{ doctor.full_name }}" loading="lazy">
+              {% else %}
+                <span class="home-doctor-photo-placeholder">{{ doctor.full_name|slice:':1' }}</span>
+              {% endif %}
+              <span class="home-doctor-card-copy">
+                <strong>{{ doctor.full_name }}</strong>
+                <span>{{ doctor.specialization }}</span>
+                {% if doctor.description %}<small>{{ doctor.description|truncatewords:18 }}</small>{% endif %}
+              </span>
+            </a>
+          {% empty %}
+            <div class="home-empty-state">Лікарів поки немає.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="{% static 'clinic/home.js' %}?v=20260719-1" defer></script>
 {% endblock %}
