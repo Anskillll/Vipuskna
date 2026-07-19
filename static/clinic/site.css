@@ -4448,10 +4448,11 @@ button.compact {
 }
 
 .home-hero-copy h1 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
   font-size: 80px;
-  font-weight: 400;
+  font-weight: 600;
   line-height: 0.95;
+  letter-spacing: 0;
   margin: 0;
   max-width: 900px;
 }
@@ -4588,10 +4589,11 @@ button.compact {
 }
 
 .home-section-head h2 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
   font-size: 46px;
-  font-weight: 400;
-  line-height: 1;
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: 0;
   margin: 0;
 }
 
@@ -4638,10 +4640,11 @@ button.compact {
 
 .home-news-body h3,
 .home-doctor-news-item h3 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
   font-size: 25px;
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1.16;
+  letter-spacing: 0;
   margin: 10px 0 13px;
 }
 
@@ -4807,8 +4810,9 @@ button.compact {
   background: #dfe9e6;
   color: #187f73;
   display: flex;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
   font-size: 68px;
+  font-weight: 600;
   justify-content: center;
 }
 
@@ -4819,10 +4823,11 @@ button.compact {
 }
 
 .home-doctor-card-copy strong {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
   font-size: 23px;
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1.1;
+  letter-spacing: 0;
 }
 
 .home-doctor-card-copy > span {
@@ -5127,10 +5132,11 @@ body:not(.public-home-page) .page-head {
 }
 
 body:not(.public-home-page) .page-title {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
   font-size: 50px;
-  font-weight: 400;
-  line-height: 1;
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: 0;
 }
 
 body:not(.public-home-page) .page-subtitle {
@@ -5172,10 +5178,11 @@ body:not(.public-home-page) .section-mini-head h3,
 body:not(.public-home-page) .doctor-profile-section-head h2,
 body:not(.public-home-page) .doctor-detail-news > h2,
 body:not(.public-home-page) .record-entry-editor h2 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
   font-size: 28px;
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1.1;
+  letter-spacing: 0;
 }
 
 body:not(.public-home-page) .section-note {
@@ -5439,9 +5446,10 @@ body:not(.public-home-page) .overview-label {
 }
 
 body:not(.public-home-page) .overview-value {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
   font-size: 38px;
-  font-weight: 400;
+  font-weight: 500;
+  letter-spacing: 0;
 }
 
 body:not(.public-home-page) .action-board {
@@ -5465,9 +5473,10 @@ body:not(.public-home-page) .content-admin-kicker {
 }
 
 body:not(.public-home-page) .action-group h3 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
   font-size: 25px;
-  font-weight: 400;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 body:not(.public-home-page) .doctor-grid {
@@ -5488,8 +5497,9 @@ body:not(.public-home-page) .doctor-photo {
 body:not(.public-home-page) .doctor-name,
 body:not(.public-home-page) .doctor-profile-identity h1,
 body:not(.public-home-page) .service-manager-item h2 {
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 400;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 body:not(.public-home-page) .doctor-name {
@@ -5646,9 +5656,10 @@ body:not(.public-home-page) .appointment-day-head {
 }
 
 body:not(.public-home-page) .appointment-day-head h2 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
   font-size: 27px;
-  font-weight: 400;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 body:not(.public-home-page) .appointment-summary-row {
@@ -5807,8 +5818,9 @@ body:not(.public-home-page) .content-admin-step {
 
 body:not(.public-home-page) .admin-command-bar h2,
 body:not(.public-home-page) .content-admin-section-head h2 {
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 400;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 body:not(.public-home-page) .admin-summary-grid {
@@ -5831,8 +5843,9 @@ body:not(.public-home-page) .admin-stat::before {
 }
 
 body:not(.public-home-page) .admin-stat strong {
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 400;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0;
 }
 
 body:not(.public-home-page) .admin-role-staff {
