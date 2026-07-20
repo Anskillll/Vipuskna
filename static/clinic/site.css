@@ -5741,6 +5741,18 @@ body:not(.public-home-page) .btn.current-record-create {
   font-size: 13px;
 }
 
+.current-records-preview-action {
+  display: flex;
+  justify-content: flex-end;
+  margin: -14px 0 20px;
+}
+
+body:not(.public-home-page) .current-records-preview-action .btn {
+  min-height: 36px;
+  padding: 8px 13px;
+  font-size: 13px;
+}
+
 body:not(.public-home-page) .table-wrap {
   border: 1px solid #dce3df;
   border-radius: 6px;

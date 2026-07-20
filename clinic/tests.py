@@ -1837,6 +1837,50 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, create_url)
         self.assertNotContains(response, 'Відкрити прийом і додати матеріали')
 
+    def test_doctor_can_preview_records_menu_without_active_visit(self):
+        card = DoctorPatientCard.objects.create(
+            doctor=self.doctor,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            patient_email='patient@test.local',
+        )
+        entry = PatientRecordEntry.objects.create(
+            card=card,
+            doctor=self.doctor,
+            kind=PatientRecordEntry.KIND_NOTE,
+            title='Запис для перевірки',
+            details='Попередній запис цього лікаря.',
+        )
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.get(reverse('doctor_dashboard'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['records_dialog_card'], card)
+        self.assertQuerySetEqual(response.context['records_dialog_entries'], [entry])
+        self.assertContains(response, 'Перевірити меню записів')
+        self.assertContains(response, 'Тестовий перегляд')
+        self.assertContains(response, 'Запис для перевірки')
+        self.assertContains(
+            response,
+            f"{reverse('doctor_patient_card_detail', args=[card.id])}#new-entry",
+        )
+        self.assertNotContains(response, 'current-visit-banner')
+
+    def test_new_doctor_can_preview_empty_records_menu(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.get(reverse('doctor_dashboard'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.context['records_dialog_card'])
+        self.assertContains(response, 'Перевірити меню записів')
+        self.assertContains(response, 'Меню записів пацієнта')
+        self.assertContains(response, 'Карток пацієнтів поки немає.')
+        self.assertNotContains(response, 'Створити новий запис')
+
     def test_doctor_can_add_extended_patient_record(self):
         self.client.login(username='doctor@test.local', password='pass12345')
         card = DoctorPatientCard.objects.create(

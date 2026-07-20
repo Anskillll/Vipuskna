@@ -870,6 +870,14 @@ def doctor_dashboard(request):
         current_entries = current_card.record_entries.select_related(
             'appointment__service',
         ).prefetch_related('images')
+    records_dialog_card = current_card or doctor.patient_cards.select_related(
+        'patient__profile',
+    ).order_by('-updated_at').first()
+    records_dialog_entries = PatientRecordEntry.objects.none()
+    if records_dialog_card:
+        records_dialog_entries = records_dialog_card.record_entries.select_related(
+            'appointment__service',
+        ).prefetch_related('images')
     return render(
         request,
         'clinic/doctor_dashboard.html',
@@ -879,6 +887,8 @@ def doctor_dashboard(request):
             'current_appointment': current_appointment,
             'current_card': current_card,
             'current_entries': current_entries,
+            'records_dialog_card': records_dialog_card,
+            'records_dialog_entries': records_dialog_entries,
         },
     )
 
