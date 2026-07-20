@@ -13,7 +13,7 @@
   {% else %}
     <link rel="icon" href="data:,">
   {% endif %}
-  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260720-5">
+  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260720-6">
   <script src="{% static 'clinic/live_filter.js' %}?v=20260719-4" defer></script>
   <script src="{% static 'clinic/flash_messages.js' %}?v=20260719-1" defer></script>
 </head>
@@ -62,9 +62,11 @@
         </div>
       {% endif %}
 
-      {% if doctor_visit_show %}
-        {% include 'clinic/_doctor_visit_banner.html' %}
-      {% endif %}
+      {% block doctor_visit_banner %}
+        {% if doctor_visit_show %}
+          {% include 'clinic/_doctor_visit_banner.html' %}
+        {% endif %}
+      {% endblock %}
 
       {% block content %}{% endblock %}
     </div>

@@ -1882,6 +1882,15 @@ class ClinicModelTests(TestCase):
         self.assertContains(profile_response, 'Перевірка активного прийому')
         self.assertContains(profile_response, 'current-visit-banner is-preview')
 
+        home_response = self.client.get(reverse('home'))
+        home_content = home_response.content.decode()
+        self.assertContains(home_response, 'home-doctor-visit-banner')
+        self.assertContains(home_response, 'current-visit-banner is-preview', count=1)
+        self.assertLess(
+            home_content.index('home-hero-nav'),
+            home_content.index('home-doctor-visit-banner'),
+        )
+
         stop_response = self.client.post(
             reverse('doctor_visit_preview_stop'),
             data={'next': reverse('doctor_edit_profile')},

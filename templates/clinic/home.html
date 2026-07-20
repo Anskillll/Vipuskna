@@ -5,10 +5,11 @@
 {% block body_class %}public-home-page{% endblock %}
 {% block topbar_class %}home-reveal-topbar{% endblock %}
 {% block topbar_attributes %} data-home-reveal-header{% endblock %}
+{% block doctor_visit_banner %}{% endblock %}
 
 {% block content %}
   <div class="public-home">
-    <section class="home-cinematic-hero" data-home-hero>
+    <section class="home-cinematic-hero{% if doctor_visit_show %} has-doctor-visit{% endif %}" data-home-hero>
       <div class="home-hero-slides" aria-live="off">
         {% if hero_slides %}
           {% for slide in hero_slides %}
@@ -76,6 +77,12 @@
           {% endif %}
         </div>
       </nav>
+
+      {% if doctor_visit_show %}
+        <div class="home-doctor-visit-banner">
+          {% include 'clinic/_doctor_visit_banner.html' %}
+        </div>
+      {% endif %}
 
       <div class="home-hero-copy">
         <span class="home-section-kicker">Стоматологічна клініка</span>

@@ -4425,6 +4425,85 @@ button.compact {
   border-bottom-color: #fff;
 }
 
+.home-doctor-visit-banner {
+  left: 50%;
+  position: absolute;
+  top: 88px;
+  transform: translateX(-50%);
+  width: min(1220px, calc(100% - 48px));
+  z-index: 7;
+}
+
+.home-doctor-visit-banner .current-visit-banner {
+  margin: 0;
+}
+
+.current-visit-banner {
+  border: 1px solid #31a878;
+  border-left: 6px solid #159a63;
+  border-radius: 8px;
+  background: #dffbea;
+  box-shadow: 0 14px 34px rgba(21, 154, 99, 0.16);
+}
+
+.current-visit-banner .current-visit-label {
+  color: #08734a;
+}
+
+.current-visit-banner h2 {
+  color: #0d4f39;
+}
+
+.current-visit-banner p {
+  color: #286350;
+}
+
+.current-visit-banner.is-preview {
+  border-color: #e1a80d;
+  border-left-color: #e1a80d;
+  background: #fff4bd;
+  box-shadow: 0 14px 34px rgba(190, 131, 0, 0.18);
+}
+
+.current-visit-banner.is-preview .current-visit-label {
+  color: #875700;
+}
+
+.current-visit-banner.is-preview h2 {
+  color: #5f3d00;
+}
+
+.current-visit-banner.is-preview p {
+  color: #76591b;
+}
+
+.current-visit-banner .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 10px 16px;
+  border: 1px solid #187f73;
+  border-radius: 6px;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.current-visit-banner .current-visit-button,
+.current-visit-banner .current-visit-button:hover {
+  background: #187f73;
+  color: #fff;
+}
+
+.current-visit-banner .current-visit-stop,
+.current-visit-banner .current-visit-stop:hover {
+  border-color: #bd8a17;
+  background: rgba(255, 255, 255, 0.64);
+  color: #684600;
+}
+
 .home-hero-copy {
   left: max(32px, calc((100% - 1160px) / 2));
   max-width: 760px;
@@ -4885,6 +4964,20 @@ button.compact {
   .home-cinematic-hero {
     height: calc(100svh - 28px);
     min-height: 560px;
+  }
+
+  .home-cinematic-hero.has-doctor-visit {
+    height: 760px;
+    min-height: 760px;
+  }
+
+  .home-doctor-visit-banner {
+    top: 76px;
+    width: calc(100% - 24px);
+  }
+
+  .home-cinematic-hero.has-doctor-visit .home-hero-copy {
+    top: 64%;
   }
 
   .home-hero-nav {
