@@ -102,6 +102,18 @@ class ClinicModelTests(TestCase):
             slot_minutes=60,
         )
 
+    def test_site_uses_semantic_color_accents(self):
+        css_path = Path(settings.BASE_DIR) / 'static' / 'clinic' / 'site.css'
+        css = css_path.read_text(encoding='utf-8')
+
+        self.assertIn('--clinic-teal:', css)
+        self.assertIn('--clinic-blue:', css)
+        self.assertIn('--clinic-amber:', css)
+        self.assertIn('--clinic-green:', css)
+        self.assertIn('--clinic-red:', css)
+        self.assertIn('.status.pending', css)
+        self.assertIn('.status.approved', css)
+
     def create_other_doctor(self, slot_minutes=20):
         doctor_user = User.objects.create_user(
             username='other-doctor@test.local',

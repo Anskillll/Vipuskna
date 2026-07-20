@@ -7343,3 +7343,489 @@ body:not(.public-home-page) .message.is-dismissing {
     grid-template-columns: 1fr;
   }
 }
+
+/* Site-wide semantic color accents. */
+:root {
+  --clinic-teal: #0c8f80;
+  --clinic-teal-dark: #08695f;
+  --clinic-blue: #2d6f9f;
+  --clinic-amber: #b96f16;
+  --clinic-green: #197b56;
+  --clinic-red: #a63d46;
+  --clinic-violet: #67558e;
+  --clinic-ink: #173d38;
+}
+
+body:not(.public-home-page) {
+  --primary: var(--clinic-teal);
+  --primary-dark: var(--clinic-teal-dark);
+}
+
+body:not(.public-home-page) .topbar {
+  box-shadow:
+    inset 0 3px 0 var(--clinic-teal),
+    0 8px 24px rgba(20, 60, 54, 0.07);
+}
+
+body:not(.public-home-page) .brand-mark {
+  border-color: #8dcfc4;
+  background: #dff8f2;
+  color: var(--clinic-teal-dark);
+}
+
+body:not(.public-home-page) .nav .nav-cta,
+body:not(.public-home-page) .btn.patient-booking-button {
+  border-color: var(--clinic-teal);
+  background: var(--clinic-teal);
+  box-shadow: 0 6px 16px rgba(12, 143, 128, 0.2);
+}
+
+body:not(.public-home-page) .nav .nav-cta:hover,
+body:not(.public-home-page) .btn.patient-booking-button:hover {
+  border-color: var(--clinic-teal-dark);
+  background: var(--clinic-teal-dark);
+  box-shadow: 0 8px 20px rgba(8, 105, 95, 0.24);
+}
+
+body:not(.public-home-page) .page-head > div:first-child {
+  position: relative;
+  padding-left: 18px;
+}
+
+body:not(.public-home-page) .page-head > div:first-child::before {
+  position: absolute;
+  top: 4px;
+  bottom: 3px;
+  left: 0;
+  width: 5px;
+  border-radius: 3px;
+  background: var(--clinic-teal);
+  content: "";
+}
+
+body:not(.public-home-page) .page-title {
+  color: #143d38;
+}
+
+body:not(.public-home-page) .page-tab {
+  transition: color 160ms ease, border-color 160ms ease;
+}
+
+body:not(.public-home-page) .page-tab:hover {
+  border-bottom-color: #4ab4a6;
+  color: var(--clinic-teal-dark);
+}
+
+body:not(.public-home-page) .page-tab.active {
+  border-bottom-width: 4px;
+  border-bottom-color: var(--clinic-teal);
+  color: var(--clinic-teal-dark);
+  font-weight: 800;
+}
+
+body:not(.public-home-page) .section-card {
+  border-top: 3px solid #a8d8cf;
+}
+
+body:not(.public-home-page) .section-mini-head,
+body:not(.public-home-page) .section-head {
+  position: relative;
+}
+
+body:not(.public-home-page) .section-mini-head h2,
+body:not(.public-home-page) .section-title {
+  color: var(--clinic-ink);
+}
+
+body:not(.public-home-page) .section-mini-head h2::after,
+body:not(.public-home-page) .section-title::after {
+  display: block;
+  width: 42px;
+  height: 3px;
+  margin-top: 9px;
+  border-radius: 2px;
+  background: #55b9ad;
+  content: "";
+}
+
+body:not(.public-home-page) .live-filter-bar {
+  border-left: 4px solid var(--clinic-blue);
+  background: #f2f8fc;
+}
+
+body:not(.public-home-page) .live-filter-field label,
+body:not(.public-home-page) .field > label {
+  color: #244b46;
+  font-weight: 700;
+}
+
+body:not(.public-home-page) input:not([type="checkbox"]):focus,
+body:not(.public-home-page) select:focus,
+body:not(.public-home-page) textarea:focus {
+  border-color: #16a491;
+  outline-color: rgba(22, 164, 145, 0.18);
+  box-shadow: 0 0 0 1px rgba(22, 164, 145, 0.08);
+}
+
+body:not(.public-home-page) input[type="checkbox"] {
+  accent-color: var(--clinic-teal);
+}
+
+body:not(.public-home-page) .table-wrap {
+  border-top: 3px solid var(--clinic-blue);
+}
+
+body:not(.public-home-page) thead {
+  background: #eaf4f7;
+}
+
+body:not(.public-home-page) th {
+  color: #28566a;
+}
+
+body:not(.public-home-page) tbody tr:nth-child(even) {
+  background: rgba(241, 247, 246, 0.66);
+}
+
+body:not(.public-home-page) tbody tr:hover {
+  background: #e8f5f2;
+}
+
+body:not(.public-home-page) .live-pagination button.active {
+  border-color: var(--clinic-blue);
+  background: var(--clinic-blue);
+  box-shadow: 0 4px 12px rgba(45, 111, 159, 0.2);
+}
+
+body:not(.public-home-page) .btn,
+body:not(.public-home-page) button {
+  border-color: var(--clinic-teal);
+  background: var(--clinic-teal);
+  box-shadow: 0 5px 14px rgba(12, 143, 128, 0.17);
+}
+
+body:not(.public-home-page) .btn:hover,
+body:not(.public-home-page) button:hover {
+  border-color: var(--clinic-teal-dark);
+  background: var(--clinic-teal-dark);
+  box-shadow: 0 7px 18px rgba(8, 105, 95, 0.22);
+}
+
+body:not(.public-home-page) .btn.secondary,
+body:not(.public-home-page) button.secondary {
+  border-color: #31534d;
+  background: #31534d;
+  color: #fff;
+}
+
+body:not(.public-home-page) .btn.secondary:hover,
+body:not(.public-home-page) button.secondary:hover {
+  border-color: #203d38;
+  background: #203d38;
+  color: #fff;
+}
+
+body:not(.public-home-page) .btn.green,
+body:not(.public-home-page) button.green,
+body:not(.public-home-page) .btn.current-visit-button {
+  border-color: var(--clinic-green);
+  background: var(--clinic-green);
+  box-shadow: 0 5px 14px rgba(25, 123, 86, 0.2);
+}
+
+body:not(.public-home-page) .btn.green:hover,
+body:not(.public-home-page) button.green:hover {
+  border-color: #105f41;
+  background: #105f41;
+}
+
+body:not(.public-home-page) .btn.danger,
+body:not(.public-home-page) button.danger {
+  border-color: var(--clinic-red);
+  background: var(--clinic-red);
+  color: #fff;
+  box-shadow: 0 5px 14px rgba(166, 61, 70, 0.2);
+}
+
+body:not(.public-home-page) .btn.danger:hover,
+body:not(.public-home-page) button.danger:hover {
+  border-color: #7e2d34;
+  background: #7e2d34;
+}
+
+body:not(.public-home-page) .btn.warning,
+body:not(.public-home-page) button.warning,
+body:not(.public-home-page) .btn.profile-completion-link,
+body:not(.public-home-page) .btn.reschedule-alert-link {
+  border-color: #925a18;
+  background: #925a18;
+  color: #fff;
+  box-shadow: 0 5px 14px rgba(146, 90, 24, 0.18);
+}
+
+body:not(.public-home-page) .btn.warning:hover,
+body:not(.public-home-page) button.warning:hover,
+body:not(.public-home-page) .btn.profile-completion-link:hover,
+body:not(.public-home-page) .btn.reschedule-alert-link:hover {
+  border-color: #714311;
+  background: #714311;
+}
+
+body:not(.public-home-page) .status.pending {
+  border: 1px solid #e5bd68;
+  background: #fff0c9;
+  color: #70490b;
+}
+
+body:not(.public-home-page) .status.approved {
+  border: 1px solid #8ed1b8;
+  background: #d9f4e8;
+  color: #125d42;
+}
+
+body:not(.public-home-page) .status.completed {
+  border: 1px solid #a9bfcc;
+  background: #e5eef3;
+  color: #365866;
+}
+
+body:not(.public-home-page) .status.canceled,
+body:not(.public-home-page) .status.rejected {
+  border: 1px solid #e0a4aa;
+  background: #f9dfe2;
+  color: #83323a;
+}
+
+body:not(.public-home-page) .status.reschedule_proposed {
+  border: 1px solid #e2b05e;
+  background: #ffe9bd;
+  color: #74480c;
+}
+
+body:not(.public-home-page) .overview-card {
+  position: relative;
+  border-top: 4px solid var(--clinic-teal);
+}
+
+body:not(.public-home-page) .overview-card:nth-child(4n + 2) {
+  border-top-color: var(--clinic-blue);
+}
+
+body:not(.public-home-page) .overview-card:nth-child(4n + 3) {
+  border-top-color: var(--clinic-amber);
+}
+
+body:not(.public-home-page) .overview-card:nth-child(4n + 4) {
+  border-top-color: var(--clinic-violet);
+}
+
+body:not(.public-home-page) .overview-card:nth-child(4n + 2) .overview-value {
+  color: var(--clinic-blue);
+}
+
+body:not(.public-home-page) .overview-card:nth-child(4n + 3) .overview-value {
+  color: var(--clinic-amber);
+}
+
+body:not(.public-home-page) .overview-card:nth-child(4n + 4) .overview-value {
+  color: var(--clinic-violet);
+}
+
+body:not(.public-home-page) .action-group {
+  border-top: 4px solid var(--clinic-teal);
+}
+
+body:not(.public-home-page) .action-group:nth-child(2n) {
+  border-top-color: var(--clinic-blue);
+}
+
+body:not(.public-home-page) .doctor-panel {
+  border-top: 4px solid #45ad9f;
+}
+
+body:not(.public-home-page) .doctor-panel:nth-child(3n + 2) {
+  border-top-color: #5794bd;
+}
+
+body:not(.public-home-page) .doctor-panel:nth-child(3n + 3) {
+  border-top-color: #c88732;
+}
+
+body:not(.public-home-page) .doctor-dashboard-profile,
+body:not(.public-home-page) .patient-dashboard-profile {
+  border-top: 5px solid var(--clinic-teal);
+}
+
+body:not(.public-home-page) .doctor-profile-about {
+  border-left-color: var(--clinic-blue);
+  background: #eef6fb;
+}
+
+body:not(.public-home-page) .service-manager-item {
+  border-left: 4px solid var(--clinic-teal);
+}
+
+body:not(.public-home-page) .service-manager-item:nth-child(3n + 2) {
+  border-left-color: var(--clinic-blue);
+}
+
+body:not(.public-home-page) .service-manager-item:nth-child(3n + 3) {
+  border-left-color: var(--clinic-amber);
+}
+
+body:not(.public-home-page) .service-manager-item.editing {
+  border-color: #d69a42;
+  background: #fffaf0;
+}
+
+body:not(.public-home-page) .service-manager-create {
+  border-left-color: var(--clinic-violet);
+}
+
+body:not(.public-home-page) .workplace-row {
+  border-left: 4px solid var(--clinic-blue);
+  padding-left: 16px;
+}
+
+body:not(.public-home-page) .booking-layout > .section-card:first-child {
+  border-top-color: var(--clinic-teal);
+}
+
+body:not(.public-home-page) .booking-layout .doctor-summary {
+  border-top-color: var(--clinic-blue);
+}
+
+body:not(.public-home-page) .booking-layout + .section-card {
+  border-top-color: var(--clinic-green);
+}
+
+body:not(.public-home-page) .booking-final {
+  border-top-color: var(--clinic-violet);
+}
+
+body:not(.public-home-page) .time-pill:hover,
+body:not(.public-home-page) .time-pill.active {
+  border-color: var(--clinic-blue);
+  background: var(--clinic-blue);
+  box-shadow: 0 5px 14px rgba(45, 111, 159, 0.18);
+}
+
+body:not(.public-home-page) .appointment-photo-section,
+body:not(.public-home-page) .record-entry-editor {
+  border-top-color: var(--clinic-blue);
+}
+
+body:not(.public-home-page) .appointment-decision-panel {
+  border-top-color: var(--clinic-green);
+}
+
+body:not(.public-home-page) .appointment-reschedule-panel,
+body:not(.public-home-page) .reschedule-waiting-panel,
+body:not(.public-home-page) .patient-reschedule-decision {
+  border-top-color: var(--clinic-amber);
+}
+
+body:not(.public-home-page) .admin-command-bar {
+  border-left-color: var(--clinic-violet);
+  background: #f8f5ff;
+}
+
+body:not(.public-home-page) .admin-stat-patients {
+  border-left-color: var(--clinic-blue);
+}
+
+body:not(.public-home-page) .admin-stat-doctors {
+  border-left-color: var(--clinic-violet);
+}
+
+body:not(.public-home-page) .admin-stat-appointments {
+  border-left-color: var(--clinic-teal);
+}
+
+body:not(.public-home-page) .admin-stat-pending {
+  border-left-color: var(--clinic-amber);
+  background: #fff9e9;
+}
+
+body:not(.public-home-page) .patient-dashboard-stat:nth-child(1) strong {
+  color: var(--clinic-amber);
+}
+
+body:not(.public-home-page) .patient-dashboard-stat:nth-child(2) strong {
+  color: var(--clinic-green);
+}
+
+body:not(.public-home-page) .patient-dashboard-stat:nth-child(3) strong {
+  color: var(--clinic-blue);
+}
+
+body:not(.public-home-page) .patient-dashboard-stat:nth-child(4) strong {
+  color: var(--clinic-violet);
+}
+
+body:not(.public-home-page) #pending .patient-section-kicker {
+  color: var(--clinic-amber);
+}
+
+body:not(.public-home-page) #approved .patient-section-kicker {
+  color: var(--clinic-green);
+}
+
+body:not(.public-home-page) #records .patient-section-kicker {
+  color: var(--clinic-blue);
+}
+
+body:not(.public-home-page) #history .patient-section-kicker {
+  color: var(--clinic-violet);
+}
+
+.public-home-page .home-clinic-news .home-section-kicker {
+  color: var(--clinic-teal-dark);
+}
+
+.public-home-page .home-doctor-news .home-section-kicker {
+  color: var(--clinic-blue);
+}
+
+.public-home-page .home-gallery-section .home-section-kicker {
+  color: var(--clinic-amber);
+}
+
+.public-home-page .home-doctors-section .home-section-kicker {
+  color: var(--clinic-violet);
+}
+
+.public-home-page .home-news-card {
+  border-top: 4px solid var(--clinic-teal);
+}
+
+.public-home-page .home-doctor-news-item {
+  border-top: 4px solid var(--clinic-blue);
+}
+
+.public-home-page .home-doctor-card {
+  border-bottom: 4px solid var(--clinic-violet);
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline-color: #24b8a5;
+}
+
+@media (max-width: 680px) {
+  body:not(.public-home-page) .page-head > div:first-child {
+    padding-left: 13px;
+  }
+
+  body:not(.public-home-page) .page-head > div:first-child::before {
+    width: 4px;
+  }
+
+  body:not(.public-home-page) .section-mini-head h2::after,
+  body:not(.public-home-page) .section-title::after {
+    width: 34px;
+  }
+}
