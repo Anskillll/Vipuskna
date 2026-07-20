@@ -6429,3 +6429,148 @@ body:not(.public-home-page) .doctor-profile-section-actions {
     width: calc(100% - 24px);
   }
 }
+
+/* High-contrast actions and compact toast notifications. */
+body:not(.public-home-page) .btn.secondary,
+body:not(.public-home-page) button.secondary {
+  border-color: #314c47;
+  background: #314c47;
+  color: #fff;
+  box-shadow: 0 5px 14px rgba(28, 53, 48, 0.16);
+}
+
+body:not(.public-home-page) .btn.secondary:hover,
+body:not(.public-home-page) button.secondary:hover {
+  border-color: #203b36;
+  background: #203b36;
+  color: #fff;
+  box-shadow: 0 7px 18px rgba(28, 53, 48, 0.22);
+}
+
+body:not(.public-home-page) .btn.danger,
+body:not(.public-home-page) button.danger {
+  border-color: #943d43;
+  background: #943d43;
+  color: #fff;
+  box-shadow: 0 5px 14px rgba(112, 35, 42, 0.16);
+}
+
+body:not(.public-home-page) .btn.danger:hover,
+body:not(.public-home-page) button.danger:hover {
+  border-color: #762e34;
+  background: #762e34;
+  color: #fff;
+  box-shadow: 0 7px 18px rgba(112, 35, 42, 0.22);
+}
+
+body:not(.public-home-page) .btn.warning,
+body:not(.public-home-page) button.warning,
+body:not(.public-home-page) .btn.profile-completion-link,
+body:not(.public-home-page) .btn.reschedule-alert-link {
+  border-color: #815b2f;
+  background: #815b2f;
+  color: #fff;
+  box-shadow: 0 5px 14px rgba(91, 58, 23, 0.16);
+}
+
+body:not(.public-home-page) .btn.warning:hover,
+body:not(.public-home-page) button.warning:hover,
+body:not(.public-home-page) .btn.profile-completion-link:hover,
+body:not(.public-home-page) .btn.reschedule-alert-link:hover {
+  border-color: #684722;
+  background: #684722;
+  color: #fff;
+  box-shadow: 0 7px 18px rgba(91, 58, 23, 0.22);
+}
+
+body:not(.public-home-page) .current-visit-banner .current-visit-stop,
+body:not(.public-home-page) .current-visit-banner .current-visit-stop:hover {
+  border-color: #815b2f;
+  background: #815b2f;
+  color: #fff;
+}
+
+.messages,
+.public-home-page .messages,
+body:not(.public-home-page) .messages {
+  top: auto;
+  right: 24px;
+  bottom: 24px;
+  left: auto;
+  width: min(390px, calc(100% - 32px));
+  transform: none;
+  justify-items: stretch;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.message,
+.public-home-page .message,
+body:not(.public-home-page) .message {
+  width: 100%;
+  max-height: 150px;
+  padding: 14px 16px;
+  border: 1px solid #43625c;
+  border-left: 5px solid #5aa994;
+  border-radius: 8px;
+  background: #20332f;
+  color: #f2faf7;
+  box-shadow: 0 16px 36px rgba(12, 27, 24, 0.3);
+  pointer-events: auto;
+}
+
+.message.success,
+.public-home-page .message.success,
+body:not(.public-home-page) .message.success {
+  border-color: #3c7568;
+  border-left-color: #63c2a8;
+  background: #173b34;
+  color: #effcf8;
+}
+
+.message.error,
+.public-home-page .message.error,
+body:not(.public-home-page) .message.error {
+  border-color: #865057;
+  border-left-color: #df737d;
+  background: #45272b;
+  color: #fff4f5;
+}
+
+.message.warning,
+.public-home-page .message.warning,
+body:not(.public-home-page) .message.warning {
+  border-color: #806538;
+  border-left-color: #e2ae4e;
+  background: #40341f;
+  color: #fff8e8;
+}
+
+.message.info,
+.public-home-page .message.info,
+body:not(.public-home-page) .message.info {
+  border-color: #496a7d;
+  border-left-color: #69a9c9;
+  background: #243740;
+  color: #eff9ff;
+}
+
+.message.is-dismissing,
+.public-home-page .message.is-dismissing,
+body:not(.public-home-page) .message.is-dismissing {
+  padding-top: 0;
+  padding-bottom: 0;
+  border-width: 0;
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+@media (max-width: 620px) {
+  .messages,
+  .public-home-page .messages,
+  body:not(.public-home-page) .messages {
+    right: 12px;
+    bottom: 12px;
+    width: calc(100% - 24px);
+  }
+}
