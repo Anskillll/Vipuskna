@@ -109,6 +109,24 @@
               {% endfor %}
             </div>
           {% endif %}
+          {% if entry.videos.all %}
+            <div class="record-videos">
+              {% for item in entry.videos.all %}
+                <figure>
+                  <video controls preload="metadata">
+                    <source src="{{ item.video.url }}">
+                    Ваш браузер не підтримує відтворення відео.
+                  </video>
+                  <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_video">
+                    <input type="hidden" name="video_id" value="{{ item.id }}">
+                    <button type="submit" class="secondary">Видалити відео</button>
+                  </form>
+                </figure>
+              {% endfor %}
+            </div>
+          {% endif %}
         </article>
       {% empty %}
         <div class="empty">Розширених записів поки немає.</div>

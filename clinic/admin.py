@@ -3,6 +3,8 @@ from django.contrib import admin
 from .models import (
     Appointment,
     AppointmentImage,
+    AppointmentVideo,
+    AuditLog,
     ClinicSettings,
     Doctor,
     DoctorPatientCard,
@@ -11,9 +13,11 @@ from .models import (
     HomeHeroSlide,
     MedicalService,
     MedicalServiceImage,
+    MedicalServiceVideo,
     NewsPost,
     PatientRecordEntry,
     PatientRecordImage,
+    PatientRecordVideo,
     Profile,
     WorkSchedule,
 )
@@ -43,8 +47,18 @@ class AppointmentImageInline(admin.TabularInline):
     extra = 0
 
 
+class AppointmentVideoInline(admin.TabularInline):
+    model = AppointmentVideo
+    extra = 0
+
+
 class MedicalServiceImageInline(admin.TabularInline):
     model = MedicalServiceImage
+    extra = 0
+
+
+class MedicalServiceVideoInline(admin.TabularInline):
+    model = MedicalServiceVideo
     extra = 0
 
 
@@ -75,7 +89,7 @@ class MedicalServiceAdmin(admin.ModelAdmin):
     list_display = ('name', 'doctor', 'approximate_price', 'is_patient_selectable', 'sort_order')
     list_filter = ('doctor__specialization', 'is_patient_selectable')
     search_fields = ('name', 'doctor__user__last_name')
-    inlines = [MedicalServiceImageInline]
+    inlines = [MedicalServiceImageInline, MedicalServiceVideoInline]
 
 
 @admin.register(WorkSchedule)
@@ -101,7 +115,7 @@ class AppointmentAdmin(admin.ModelAdmin):
         'patient_phone',
         'doctor__user__last_name',
     )
-    inlines = [AppointmentImageInline]
+    inlines = [AppointmentImageInline, AppointmentVideoInline]
 
     @admin.display(description="Ім'я пацієнта")
     def patient_display_name(self, obj):
@@ -155,9 +169,36 @@ class PatientRecordImageInline(admin.TabularInline):
     extra = 0
 
 
+class PatientRecordVideoInline(admin.TabularInline):
+    model = PatientRecordVideo
+    extra = 0
+
+
 @admin.register(PatientRecordEntry)
 class PatientRecordEntryAdmin(admin.ModelAdmin):
     list_display = ('title', 'card', 'doctor', 'kind', 'created_at')
     list_filter = ('kind', 'doctor')
     search_fields = ('title', 'details', 'card__patient_first_name', 'card__patient_last_name')
-    inlines = [PatientRecordImageInline]
+    inlines = [PatientRecordImageInline, PatientRecordVideoInline]
+
+
+@admin.register(AuditLog)
+class AuditLogAdmin(admin.ModelAdmin):
+    list_display = ('created_at', 'actor', 'action', 'target_type', 'target_label')
+    list_filter = ('action', 'target_type', 'created_at')
+    search_fields = ('actor__username', 'action', 'target_label', 'details')
+    readonly_fields = (
+        'actor',
+        'action',
+        'target_type',
+        'target_id',
+        'target_label',
+        'details',
+        'created_at',
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

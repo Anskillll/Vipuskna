@@ -5,6 +5,9 @@ from django.core.validators import MaxValueValidator, MinValueValidator, RegexVa
 from django.db import models
 from django.utils import timezone
 
+from .storage import private_media_storage
+from .validators import validate_image_upload, validate_video_upload
+
 
 phone_validator = RegexValidator(
     regex=r'^\+?\d[\d\s().-]{7,18}$',
@@ -29,7 +32,12 @@ class Profile(models.Model):
     )
     role = models.CharField('Роль', max_length=20, choices=ROLE_CHOICES)
     phone = models.CharField('Телефон', max_length=25, validators=[phone_validator], blank=True, default='')
-    photo = models.ImageField('Фото профілю', upload_to='patient_photos/', blank=True)
+    photo = models.ImageField(
+        'Фото профілю',
+        upload_to='patient_photos/',
+        validators=[validate_image_upload],
+        blank=True,
+    )
     age = models.PositiveSmallIntegerField(
         'Вік',
         null=True,
@@ -40,6 +48,13 @@ class Profile(models.Model):
     class Meta:
         verbose_name = 'Профіль'
         verbose_name_plural = 'Профілі'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['phone'],
+                condition=models.Q(role='patient') & ~models.Q(phone=''),
+                name='unique_patient_profile_phone',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.user.get_full_name()} ({self.get_role_display()})'
@@ -54,7 +69,12 @@ class Doctor(models.Model):
     )
     specialization = models.CharField('Спеціальність', max_length=120)
     phone = models.CharField('Телефон', max_length=25, validators=[phone_validator])
-    photo = models.ImageField('Фото лікаря', upload_to='doctor_photos/', blank=True)
+    photo = models.ImageField(
+        'Фото лікаря',
+        upload_to='doctor_photos/',
+        validators=[validate_image_upload],
+        blank=True,
+    )
     photo_url = models.URLField('Посилання на фото', blank=True)
     description = models.TextField('Інформація про лікаря', blank=True)
 
@@ -171,7 +191,11 @@ class MedicalServiceImage(models.Model):
         related_name='images',
         verbose_name='Послуга',
     )
-    image = models.ImageField('Фотографія', upload_to='service_photos/')
+    image = models.ImageField(
+        'Фотографія',
+        upload_to='service_photos/',
+        validators=[validate_image_upload],
+    )
     created_at = models.DateTimeField('Додано', auto_now_add=True)
 
     class Meta:
@@ -181,6 +205,29 @@ class MedicalServiceImage(models.Model):
 
     def __str__(self):
         return f'Фото: {self.service.name}'
+
+
+class MedicalServiceVideo(models.Model):
+    service = models.ForeignKey(
+        MedicalService,
+        on_delete=models.CASCADE,
+        related_name='videos',
+        verbose_name='Послуга',
+    )
+    video = models.FileField(
+        'Відео',
+        upload_to='service_videos/',
+        validators=[validate_video_upload],
+    )
+    created_at = models.DateTimeField('Додано', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Відео послуги'
+        verbose_name_plural = 'Відео послуг'
+        ordering = ['id']
+
+    def __str__(self):
+        return f'Відео: {self.service.name}'
 
 
 class WorkSchedule(models.Model):
@@ -396,6 +443,14 @@ class Appointment(models.Model):
         return True
 
     @property
+    def can_cancel(self):
+        return self.status in {
+            self.STATUS_PENDING,
+            self.STATUS_APPROVED,
+            self.STATUS_RESCHEDULE_PROPOSED,
+        } and self.is_future
+
+    @property
     def end_time(self):
         return (
             datetime.combine(self.date, self.time)
@@ -419,7 +474,12 @@ class AppointmentImage(models.Model):
         related_name='images',
         verbose_name='Заявка',
     )
-    image = models.ImageField('Фотографія', upload_to='appointment_images/%Y/%m/')
+    image = models.ImageField(
+        'Фотографія',
+        upload_to='appointment_images/%Y/%m/',
+        storage=private_media_storage,
+        validators=[validate_image_upload],
+    )
     uploaded_at = models.DateTimeField('Завантажено', auto_now_add=True)
 
     class Meta:
@@ -428,6 +488,29 @@ class AppointmentImage(models.Model):
 
     def __str__(self):
         return f'Фото до заявки {self.appointment_id}'
+
+
+class AppointmentVideo(models.Model):
+    appointment = models.ForeignKey(
+        Appointment,
+        on_delete=models.CASCADE,
+        related_name='videos',
+        verbose_name='Заявка',
+    )
+    video = models.FileField(
+        'Відео',
+        upload_to='appointment_videos/%Y/%m/',
+        storage=private_media_storage,
+        validators=[validate_video_upload],
+    )
+    uploaded_at = models.DateTimeField('Завантажено', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Відео до заявки'
+        verbose_name_plural = 'Відео до заявок'
+
+    def __str__(self):
+        return f'Відео до заявки {self.appointment_id}'
 
 
 class DoctorPatientCard(models.Model):
@@ -532,7 +615,12 @@ class PatientRecordImage(models.Model):
         related_name='images',
         verbose_name='Медичний запис',
     )
-    image = models.ImageField('Фотографія', upload_to='patient_records/%Y/%m/')
+    image = models.ImageField(
+        'Фотографія',
+        upload_to='patient_records/%Y/%m/',
+        storage=private_media_storage,
+        validators=[validate_image_upload],
+    )
     uploaded_at = models.DateTimeField('Завантажено', auto_now_add=True)
 
     class Meta:
@@ -541,6 +629,54 @@ class PatientRecordImage(models.Model):
 
     def __str__(self):
         return f'Фото до запису {self.entry_id}'
+
+
+class PatientRecordVideo(models.Model):
+    entry = models.ForeignKey(
+        PatientRecordEntry,
+        on_delete=models.CASCADE,
+        related_name='videos',
+        verbose_name='Медичний запис',
+    )
+    video = models.FileField(
+        'Відео',
+        upload_to='patient_record_videos/%Y/%m/',
+        storage=private_media_storage,
+        validators=[validate_video_upload],
+    )
+    uploaded_at = models.DateTimeField('Завантажено', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Відео медичного запису'
+        verbose_name_plural = 'Відео медичних записів'
+
+    def __str__(self):
+        return f'Відео до запису {self.entry_id}'
+
+
+class AuditLog(models.Model):
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='clinic_audit_events',
+        verbose_name='Хто виконав дію',
+    )
+    action = models.CharField('Дія', max_length=80)
+    target_type = models.CharField('Тип об’єкта', max_length=80)
+    target_id = models.CharField('Ідентифікатор об’єкта', max_length=80, blank=True)
+    target_label = models.CharField('Назва об’єкта', max_length=240, blank=True)
+    details = models.TextField('Деталі', blank=True)
+    created_at = models.DateTimeField('Час', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Подія журналу'
+        verbose_name_plural = 'Журнал дій'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.created_at:%d.%m.%Y %H:%M} — {self.action}'
 
 
 class ClinicSettings(models.Model):
@@ -558,10 +694,25 @@ class ClinicSettings(models.Model):
     ]
 
     clinic_name = models.CharField('Назва клініки', max_length=120, default='MedClinic')
-    logo = models.ImageField('Логотип клініки', upload_to='clinic/branding/', blank=True)
-    home_background = models.ImageField('Фон сайту', upload_to='clinic/branding/', blank=True)
+    logo = models.ImageField(
+        'Логотип клініки',
+        upload_to='clinic/branding/',
+        validators=[validate_image_upload],
+        blank=True,
+    )
+    home_background = models.ImageField(
+        'Фон сайту',
+        upload_to='clinic/branding/',
+        validators=[validate_image_upload],
+        blank=True,
+    )
     home_effect = models.CharField('Анімований ефект', max_length=20, choices=EFFECT_CHOICES, default=EFFECT_NONE)
-    particle_image = models.ImageField('Зображення частинок', upload_to='clinic/branding/particles/', blank=True)
+    particle_image = models.ImageField(
+        'Зображення частинок',
+        upload_to='clinic/branding/particles/',
+        validators=[validate_image_upload],
+        blank=True,
+    )
 
     class Meta:
         verbose_name = 'Оформлення клініки'
@@ -573,7 +724,11 @@ class ClinicSettings(models.Model):
 
 class HomeHeroSlide(models.Model):
     title = models.CharField('Підпис для адміністратора', max_length=160, blank=True)
-    image = models.ImageField('Фотографія', upload_to='clinic/hero/')
+    image = models.ImageField(
+        'Фотографія',
+        upload_to='clinic/hero/',
+        validators=[validate_image_upload],
+    )
     is_active = models.BooleanField('Показувати у верхньому слайдері', default=True)
     sort_order = models.PositiveIntegerField('Порядок', default=0)
     created_at = models.DateTimeField('Створено', auto_now_add=True)
@@ -598,7 +753,12 @@ class NewsPost(models.Model):
     )
     title = models.CharField('Заголовок', max_length=180)
     text = models.TextField('Текст новини')
-    image = models.ImageField('Зображення', upload_to='clinic/news/', blank=True)
+    image = models.ImageField(
+        'Зображення',
+        upload_to='clinic/news/',
+        validators=[validate_image_upload],
+        blank=True,
+    )
     is_published = models.BooleanField('Опубліковано', default=True)
     created_at = models.DateTimeField('Створено', auto_now_add=True)
     updated_at = models.DateTimeField('Оновлено', auto_now=True)
@@ -618,7 +778,11 @@ class NewsPost(models.Model):
 
 class GalleryImage(models.Model):
     title = models.CharField('Підпис до фото', max_length=160, blank=True)
-    image = models.ImageField('Фотографія', upload_to='clinic/gallery/')
+    image = models.ImageField(
+        'Фотографія',
+        upload_to='clinic/gallery/',
+        validators=[validate_image_upload],
+    )
     is_published = models.BooleanField('Опубліковано', default=True)
     created_at = models.DateTimeField('Створено', auto_now_add=True)
 

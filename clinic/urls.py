@@ -4,6 +4,7 @@ from . import views
 
 
 urlpatterns = [
+    path('private-media/<path:path>', views.private_media, name='private_media'),
     path('', views.home, name='home'),
     path('login/', views.login_view, name='patient_login'),
     path('doctor/login/', views.login_view, {'role': 'doctor'}, name='doctor_login'),

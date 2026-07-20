@@ -8,6 +8,7 @@ from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.db import IntegrityError
@@ -18,6 +19,8 @@ from django.utils import timezone
 from .models import (
     Appointment,
     AppointmentImage,
+    AppointmentVideo,
+    AuditLog,
     ClinicSettings,
     Doctor,
     DoctorPatientCard,
@@ -27,6 +30,8 @@ from .models import (
     MedicalServiceImage,
     NewsPost,
     PatientRecordEntry,
+    PatientRecordImage,
+    PatientRecordVideo,
     Profile,
     WorkSchedule,
 )
@@ -35,11 +40,19 @@ from .forms import (
     DoctorPatientBookingForm,
     DoctorProfileForm,
     DoctorWorkplaceForm,
+    MultipleImageField,
+    MultipleVideoField,
     PatientProfileForm,
     PatientRecordEntryForm,
     ServiceForm,
     UsernameLoginForm,
     WorkScheduleForm,
+)
+from .validators import (
+    MAX_IMAGE_BYTES,
+    MAX_VIDEO_BYTES,
+    validate_image_upload,
+    validate_video_upload,
 )
 from .views import (
     active_appointment_for_doctor,
@@ -48,6 +61,9 @@ from .views import (
 )
 
 
+@override_settings(
+    PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'],
+)
 class ClinicModelTests(TestCase):
     def setUp(self):
         self.patient = User.objects.create_user(
@@ -872,7 +888,7 @@ class ClinicModelTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Детальний опис заявки')
-        self.assertContains(response, 'Фотографії до заявки')
+        self.assertContains(response, 'Фото та відео до заявки')
 
     def test_doctor_appointments_are_grouped_and_show_only_summary(self):
         first_date = timezone.localdate() + timedelta(days=7)
@@ -2215,3 +2231,204 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'План лікування')
         self.assertContains(response, 'Інформація для пацієнта.')
         self.assertNotContains(response, 'Внутрішня нотатка')
+
+    def test_private_appointment_photo_requires_related_user(self):
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            date=timezone.localdate() + timedelta(days=7),
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Приватне фото',
+        )
+        relative_path = 'appointment_images/tests/private.gif'
+        file_path = Path(settings.PRIVATE_MEDIA_ROOT) / relative_path
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_bytes(
+            b'GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff'
+            b'!\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01'
+            b'\x00\x00\x02\x02D\x01\x00;'
+        )
+        image = AppointmentImage.objects.create(appointment=appointment, image=relative_path)
+        url = reverse('private_media', args=[relative_path])
+
+        self.assertEqual(self.client.get(url).status_code, 403)
+        self.assertIn(self.client.get(f'/media/{relative_path}').status_code, {403, 404})
+
+        unrelated = User.objects.create_user(username='unrelated@test.local', password='pass12345')
+        Profile.objects.create(
+            user=unrelated,
+            role=Profile.ROLE_PATIENT,
+            phone='+380503333333',
+        )
+        self.client.login(username='unrelated@test.local', password='pass12345')
+        self.assertEqual(self.client.get(url).status_code, 403)
+
+        self.client.login(username='patient@test.local', password='pass12345')
+        patient_response = self.client.get(url)
+        self.assertEqual(patient_response.status_code, 200)
+        patient_response.close()
+
+        self.client.login(username='doctor@test.local', password='pass12345')
+        doctor_response = self.client.get(url)
+        self.assertEqual(doctor_response.status_code, 200)
+        doctor_response.close()
+        image.delete()
+
+    def test_video_limits_and_signature_validation(self):
+        valid_video = SimpleUploadedFile(
+            'visit.mp4',
+            b'\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42',
+            content_type='video/mp4',
+        )
+        validate_video_upload(valid_video)
+
+        invalid_video = SimpleUploadedFile(
+            'visit.mp4',
+            b'not a real video',
+            content_type='video/mp4',
+        )
+        with self.assertRaisesMessage(ValidationError, 'Файл не містить підтримуваного відео'):
+            validate_video_upload(invalid_video)
+
+        oversized_video = SimpleUploadedFile(
+            'large.mp4',
+            b'\x00\x00\x00\x18ftypmp42',
+            content_type='video/mp4',
+        )
+        oversized_video.size = MAX_VIDEO_BYTES + 1
+        with self.assertRaisesMessage(ValidationError, 'Відео завелике'):
+            validate_video_upload(oversized_video)
+
+        too_many_videos = [
+            SimpleUploadedFile(
+                f'visit-{index}.mp4',
+                b'\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42',
+                content_type='video/mp4',
+            )
+            for index in range(3)
+        ]
+        with self.assertRaisesMessage(ValidationError, 'не більше 2 відео'):
+            MultipleVideoField().clean(too_many_videos)
+
+    def test_image_size_and_count_limits(self):
+        gif_data = (
+            b'GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff'
+            b'!\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01'
+            b'\x00\x00\x02\x02D\x01\x00;'
+        )
+        oversized_image = SimpleUploadedFile(
+            'large.gif',
+            gif_data,
+            content_type='image/gif',
+        )
+        oversized_image.size = MAX_IMAGE_BYTES + 1
+        with self.assertRaisesMessage(ValidationError, 'Фотографія завелика'):
+            validate_image_upload(oversized_image)
+
+        too_many_images = [
+            SimpleUploadedFile(
+                f'photo-{index}.gif',
+                gif_data,
+                content_type='image/gif',
+            )
+            for index in range(7)
+        ]
+        with self.assertRaisesMessage(ValidationError, 'не більше 6 фотографій'):
+            MultipleImageField().clean(too_many_images)
+
+    def test_patient_profile_rejects_phone_used_by_another_patient(self):
+        other_patient = User.objects.create_user(username='phone-owner@test.local')
+        Profile.objects.create(
+            user=other_patient,
+            role=Profile.ROLE_PATIENT,
+            phone='+380504444444',
+        )
+        form = PatientProfileForm(
+            data={
+                'first_name': self.patient.first_name,
+                'last_name': self.patient.last_name,
+                'age': 25,
+                'phone': '+38 (050) 444-44-44',
+            },
+            user=self.patient,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('phone', form.errors)
+
+    def test_admin_archives_user_without_deleting_medical_history(self):
+        admin_user = User.objects.create_superuser(
+            username='security-admin',
+            email='admin@test.local',
+            password='pass12345',
+        )
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            date=timezone.localdate() + timedelta(days=7),
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Історія має зберегтися',
+        )
+        self.client.login(username='security-admin', password='pass12345')
+
+        self.client.post(reverse('admin_delete_user', args=[self.patient.id]))
+
+        self.patient.refresh_from_db()
+        self.assertFalse(self.patient.is_active)
+        self.assertTrue(User.objects.filter(pk=self.patient.pk).exists())
+        self.assertTrue(Appointment.objects.filter(pk=appointment.pk).exists())
+        self.assertTrue(
+            AuditLog.objects.filter(
+                actor=admin_user,
+                action='Архівовано акаунт',
+                target_id=str(self.patient.pk),
+            ).exists()
+        )
+
+    def test_past_appointment_cannot_be_canceled_by_direct_post(self):
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            date=timezone.localdate() - timedelta(days=1),
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Минулий прийом',
+            status=Appointment.STATUS_APPROVED,
+        )
+
+        self.client.login(username='patient@test.local', password='pass12345')
+        self.client.post(reverse('cancel_appointment', args=[appointment.id]))
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, Appointment.STATUS_APPROVED)
+
+        self.client.login(username='doctor@test.local', password='pass12345')
+        self.client.post(reverse('doctor_cancel_appointment', args=[appointment.id]))
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, Appointment.STATUS_APPROVED)
+
+        User.objects.create_superuser(
+            username='appointment-admin',
+            email='appointment-admin@test.local',
+            password='pass12345',
+        )
+        self.client.login(username='appointment-admin', password='pass12345')
+        self.client.post(reverse('admin_cancel_appointment', args=[appointment.id]))
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, Appointment.STATUS_APPROVED)

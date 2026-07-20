@@ -1,19 +1,24 @@
 from datetime import datetime, timedelta
 from functools import wraps
 from math import ceil
+import mimetypes
 from urllib.parse import urlencode
 
 from allauth.socialaccount.models import SocialAccount
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
+from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Max, Q
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.views.static import serve
 
 from .forms import (
     AdminDoctorCreateForm,
@@ -42,6 +47,8 @@ from .context_processors import DOCTOR_VISIT_PREVIEW_SESSION_KEY
 from .models import (
     Appointment,
     AppointmentImage,
+    AppointmentVideo,
+    AuditLog,
     ClinicSettings,
     Doctor,
     DoctorPatientCard,
@@ -50,9 +57,11 @@ from .models import (
     HomeHeroSlide,
     MedicalService,
     MedicalServiceImage,
+    MedicalServiceVideo,
     NewsPost,
     PatientRecordEntry,
     PatientRecordImage,
+    PatientRecordVideo,
     Profile,
     WorkSchedule,
 )
@@ -74,6 +83,101 @@ UKRAINIAN_WEEKDAYS = (
     'Субота',
     'Неділя',
 )
+
+
+def write_audit_log(request, action, target, details=''):
+    AuditLog.objects.create(
+        actor=request.user if request.user.is_authenticated else None,
+        action=action,
+        target_type=str(target._meta.verbose_name),
+        target_id=str(target.pk or ''),
+        target_label=str(target)[:240],
+        details=details,
+    )
+
+
+def private_media(request, path):
+    if not request.user.is_authenticated:
+        raise PermissionDenied
+
+    item = None
+    field = None
+    appointment = None
+    entry = None
+
+    if path.startswith('appointment_images/'):
+        item = get_object_or_404(
+            AppointmentImage.objects.select_related('appointment__doctor__user'),
+            image=path,
+        )
+        field = item.image
+        appointment = item.appointment
+    elif path.startswith('appointment_videos/'):
+        item = get_object_or_404(
+            AppointmentVideo.objects.select_related('appointment__doctor__user'),
+            video=path,
+        )
+        field = item.video
+        appointment = item.appointment
+    elif path.startswith('patient_records/'):
+        item = get_object_or_404(
+            PatientRecordImage.objects.select_related(
+                'entry__doctor__user',
+                'entry__card__patient',
+                'entry__appointment__patient',
+            ),
+            image=path,
+        )
+        field = item.image
+        entry = item.entry
+    elif path.startswith('patient_record_videos/'):
+        item = get_object_or_404(
+            PatientRecordVideo.objects.select_related(
+                'entry__doctor__user',
+                'entry__card__patient',
+                'entry__appointment__patient',
+            ),
+            video=path,
+        )
+        field = item.video
+        entry = item.entry
+    else:
+        raise PermissionDenied
+
+    allowed = request.user.is_staff
+    if appointment:
+        allowed = allowed or appointment.doctor.user_id == request.user.id
+        allowed = allowed or appointment.patient_id == request.user.id
+    if entry:
+        allowed = allowed or entry.doctor.user_id == request.user.id
+        patient_can_see = entry.kind in {
+            PatientRecordEntry.KIND_TREATMENT,
+            PatientRecordEntry.KIND_RECOMMENDATION,
+        }
+        patient_id = entry.card.patient_id or (
+            entry.appointment.patient_id if entry.appointment_id else None
+        )
+        allowed = allowed or (patient_can_see and patient_id == request.user.id)
+    if not allowed:
+        raise PermissionDenied
+
+    content_type = mimetypes.guess_type(field.name)[0] or 'application/octet-stream'
+    response = FileResponse(field.open('rb'), content_type=content_type)
+    response['Cache-Control'] = 'private, max-age=3600'
+    response['X-Content-Type-Options'] = 'nosniff'
+    return response
+
+
+def public_media(request, path):
+    private_prefixes = (
+        'appointment_images/',
+        'appointment_videos/',
+        'patient_records/',
+        'patient_record_videos/',
+    )
+    if path.replace('\\', '/').startswith(private_prefixes):
+        raise PermissionDenied
+    return serve(request, path, document_root=settings.MEDIA_ROOT)
 
 
 def user_role(user):
@@ -606,7 +710,7 @@ def patient_dashboard(request):
             kind__in=[PatientRecordEntry.KIND_TREATMENT, PatientRecordEntry.KIND_RECOMMENDATION],
         )
         .select_related('doctor__user', 'appointment__service')
-        .prefetch_related('images')
+        .prefetch_related('images', 'videos')
         .distinct()
     )
     return render(
@@ -639,18 +743,28 @@ def patient_dashboard(request):
 def patient_edit_profile(request):
     form = PatientProfileForm(request.POST or None, request.FILES or None, user=request.user)
     if request.method == 'POST' and form.is_valid():
-        form.save()
-        messages.success(request, 'Профіль оновлено.')
-        return redirect('patient_dashboard')
+        try:
+            with transaction.atomic():
+                form.save()
+                write_audit_log(request, 'Оновлено профіль пацієнта', request.user.profile)
+        except IntegrityError:
+            form.add_error('phone', 'Цей номер телефону вже прив’язаний до іншого пацієнта.')
+        else:
+            messages.success(request, 'Профіль оновлено.')
+            return redirect('patient_dashboard')
     return render(request, 'clinic/patient_edit_profile.html', {'form': form})
 
 
 @patient_required
 def patient_change_password(request):
+    if not request.user.has_usable_password():
+        messages.info(request, 'Ви входите через Google, тому окремий пароль MedClinic не потрібен.')
+        return redirect('patient_dashboard')
     form = PasswordChangeForm(request.user, request.POST or None)
     if request.method == 'POST' and form.is_valid():
         user = form.save()
         update_session_auth_hash(request, user)
+        write_audit_log(request, 'Змінено пароль пацієнта', request.user.profile)
         messages.success(request, 'Пароль змінено.')
         return redirect('patient_dashboard')
     return render(request, 'clinic/change_password.html', {'form': form})
@@ -668,10 +782,13 @@ def cancel_appointment(request, appointment_id):
             Appointment.STATUS_RESCHEDULE_PROPOSED,
         ],
     )
-    if request.method == 'POST':
+    if request.method == 'POST' and appointment.can_cancel:
         appointment.status = Appointment.STATUS_CANCELED
         appointment.save(update_fields=['status'])
+        write_audit_log(request, 'Скасовано запис пацієнтом', appointment)
         messages.success(request, 'Запис скасовано.')
+    elif request.method == 'POST':
+        messages.error(request, 'Цей запис уже не можна скасувати.')
     return redirect('patient_dashboard')
 
 
@@ -707,6 +824,7 @@ def restore_appointment(request, appointment_id):
         else:
             appointment.status = Appointment.STATUS_PENDING
             appointment.save(update_fields=['status'])
+            write_audit_log(request, 'Відновлено заявку пацієнтом', appointment)
             messages.success(request, 'Заявку відновлено і знову відправлено лікарю.')
     return redirect('patient_dashboard')
 
@@ -714,7 +832,7 @@ def restore_appointment(request, appointment_id):
 @patient_required
 def patient_appointment_detail(request, appointment_id):
     appointment = get_object_or_404(
-        Appointment.objects.select_related('doctor__user', 'service').prefetch_related('images'),
+        Appointment.objects.select_related('doctor__user', 'service').prefetch_related('images', 'videos'),
         pk=appointment_id,
         patient=request.user,
     )
@@ -740,6 +858,7 @@ def patient_reschedule_response(request, appointment_id):
     if action == 'reject':
         appointment.status = Appointment.STATUS_CANCELED
         appointment.save(update_fields=['status'])
+        write_audit_log(request, 'Відхилено запропонований час', appointment)
         messages.success(request, 'Запропонований час відхилено. Запис скасовано.')
         return redirect('patient_dashboard')
 
@@ -779,6 +898,7 @@ def patient_reschedule_response(request, appointment_id):
     appointment.approved_at = timezone.now()
     appointment.save(update_fields=['status', 'approved_at'])
     ensure_patient_card_from_appointment(appointment)
+    write_audit_log(request, 'Погоджено новий час', appointment)
     messages.success(request, 'Новий час прийому підтверджено.')
     return redirect('patient_dashboard')
 
@@ -827,7 +947,7 @@ def service_detail(request, doctor_id, service_id):
     service = get_object_or_404(
         MedicalService.objects.filter(doctor_id=doctor_id, doctor__user__is_active=True)
         .select_related('doctor__user')
-        .prefetch_related('images', 'doctor__schedules'),
+        .prefetch_related('images', 'videos', 'doctor__schedules'),
         pk=service_id,
     )
     return render(
@@ -921,7 +1041,10 @@ def booking(request):
                         )
                         for photo in reason_form.cleaned_data['photos']:
                             AppointmentImage.objects.create(appointment=appointment, image=photo)
+                        for video in reason_form.cleaned_data['videos']:
+                            AppointmentVideo.objects.create(appointment=appointment, video=video)
                         ensure_patient_card_from_appointment(appointment)
+                        write_audit_log(request, 'Створено заявку', appointment)
                         messages.success(request, 'Заявку відправлено лікарю на підтвердження.')
                         return redirect('patient_dashboard')
                     except IntegrityError:
@@ -1023,7 +1146,7 @@ def doctor_appointment_detail(request, appointment_id):
     refresh_completed_appointments()
     doctor = request.user.doctor_profile
     appointment = get_object_or_404(
-        doctor.appointments.select_related('service', 'patient__profile').prefetch_related('images'),
+        doctor.appointments.select_related('service', 'patient__profile').prefetch_related('images', 'videos'),
         pk=appointment_id,
     )
     appointment.weekday_name = UKRAINIAN_WEEKDAYS[appointment.date.weekday()]
@@ -1138,6 +1261,7 @@ def doctor_propose_reschedule(request, appointment_id):
             f'{reverse("doctor_appointment_detail", args=[appointment.id])}?reschedule=1#reschedule'
         )
 
+    write_audit_log(request, 'Запропоновано новий час', appointment)
     messages.success(request, 'Новий час надіслано пацієнту на погодження.')
     return redirect('doctor_appointment_detail', appointment_id=appointment.id)
 
@@ -1158,6 +1282,7 @@ def doctor_review_appointment(request, appointment_id):
             appointment.status = Appointment.STATUS_REJECTED
             appointment.save(update_fields=['status'])
             ensure_patient_card_from_appointment(appointment)
+            write_audit_log(request, 'Відхилено заявку лікарем', appointment)
             messages.success(request, 'Заявку відхилено.')
             return redirect('doctor_appointments')
 
@@ -1197,6 +1322,7 @@ def doctor_review_appointment(request, appointment_id):
                 appointment.approved_at = timezone.now()
                 appointment.save(update_fields=['duration_slots', 'duration_minutes_exact', 'status', 'approved_at'])
                 ensure_patient_card_from_appointment(appointment)
+                write_audit_log(request, 'Підтверджено заявку лікарем', appointment)
                 messages.success(request, 'Заявку підтверджено.')
                 return redirect('doctor_appointments')
         else:
@@ -1212,11 +1338,14 @@ def doctor_cancel_appointment(request, appointment_id):
         pk=appointment_id,
         doctor=request.user.doctor_profile,
     )
-    if request.method == 'POST':
+    if request.method == 'POST' and appointment.can_cancel:
         appointment.status = Appointment.STATUS_CANCELED
         appointment.save(update_fields=['status'])
         ensure_patient_card_from_appointment(appointment)
+        write_audit_log(request, 'Скасовано запис лікарем', appointment)
         messages.success(request, 'Запис пацієнта скасовано.')
+    elif request.method == 'POST':
+        messages.error(request, 'Цей запис уже не можна скасувати.')
     return redirect('doctor_appointment_detail', appointment_id=appointment.id)
 
 
@@ -1309,6 +1438,7 @@ def doctor_book_patient(request):
                         approved_at=timezone.now(),
                     )
                     ensure_patient_card_from_appointment(appointment)
+                    write_audit_log(request, 'Лікар записав пацієнта', appointment)
                     messages.success(request, f'Пацієнта записано.{match_message}')
                     return redirect('doctor_appointments')
                 except IntegrityError:
@@ -1393,6 +1523,7 @@ def doctor_patient_card_detail(request, card_id):
 
     if action == 'update_card' and form.is_valid():
         form.save()
+        write_audit_log(request, 'Оновлено картку пацієнта', card)
         messages.success(request, 'Картку пацієнта оновлено.')
         return redirect('doctor_patient_card_detail', card_id=card.id)
 
@@ -1411,11 +1542,15 @@ def doctor_patient_card_detail(request, card_id):
         entry.save()
         for photo in entry_form.cleaned_data['photos']:
             PatientRecordImage.objects.create(entry=entry, image=photo)
+        for video in entry_form.cleaned_data['videos']:
+            PatientRecordVideo.objects.create(entry=entry, video=video)
+        write_audit_log(request, 'Додано запис до картки', entry)
         messages.success(request, 'Новий запис додано до картки пацієнта.')
         return redirect('doctor_patient_card_detail', card_id=card.id)
 
     if action == 'delete_entry':
         entry = get_object_or_404(card.record_entries, pk=request.POST.get('entry_id'), doctor=doctor)
+        write_audit_log(request, 'Видалено запис із картки', entry)
         entry.delete()
         messages.success(request, 'Запис із картки видалено.')
         return redirect('doctor_patient_card_detail', card_id=card.id)
@@ -1428,7 +1563,20 @@ def doctor_patient_card_detail(request, card_id):
             entry__doctor=doctor,
         )
         image.delete()
+        write_audit_log(request, 'Видалено фото з картки', card)
         messages.success(request, 'Фотографію видалено.')
+        return redirect('doctor_patient_card_detail', card_id=card.id)
+
+    if action == 'delete_video':
+        video = get_object_or_404(
+            PatientRecordVideo,
+            pk=request.POST.get('video_id'),
+            entry__card=card,
+            entry__doctor=doctor,
+        )
+        video.delete()
+        write_audit_log(request, 'Видалено відео з картки', card)
+        messages.success(request, 'Відео видалено.')
         return redirect('doctor_patient_card_detail', card_id=card.id)
 
     appointments = doctor.appointments.filter(patient_phone=card.patient_phone).select_related('service').order_by('-date', '-time')
@@ -1448,7 +1596,10 @@ def doctor_patient_card_detail(request, card_id):
             'card': card,
             'form': form,
             'entry_form': entry_form,
-            'record_entries': card.record_entries.select_related('appointment__service').prefetch_related('images'),
+            'record_entries': card.record_entries.select_related('appointment__service').prefetch_related(
+                'images',
+                'videos',
+            ),
             'selected_appointment': selected_appointment,
             'appointments': appointments,
             'completed_visits': completed_visits,
@@ -1471,6 +1622,7 @@ def doctor_schedule(request):
             schedule = form.save(commit=False)
             schedule.doctor = doctor
             schedule.save()
+            write_audit_log(request, 'Збережено графік лікаря', schedule)
             messages.success(request, 'Графік збережено.')
             return redirect('doctor_schedule')
     else:
@@ -1506,6 +1658,7 @@ def doctor_workplaces(request):
                 'Це місце використовується у графіку. Спочатку оберіть інше місце для відповідних днів.',
             )
         else:
+            write_audit_log(request, 'Видалено місце прийому', workplace)
             workplace.delete()
             messages.success(request, 'Місце прийому видалено.')
         return redirect('doctor_workplaces')
@@ -1519,6 +1672,7 @@ def doctor_workplaces(request):
             city=workplace.city,
             address=workplace.address,
         )
+        write_audit_log(request, 'Збережено місце прийому', workplace)
         messages.success(request, 'Місце прийому збережено.')
         return redirect('doctor_workplaces')
 
@@ -1551,11 +1705,13 @@ def doctor_services(request):
             for position, item in enumerate(services):
                 item.sort_order = position
             MedicalService.objects.bulk_update(services, ['sort_order'])
+            write_audit_log(request, 'Змінено порядок послуг', service)
             messages.success(request, 'Порядок послуг оновлено.')
         return redirect('doctor_services')
 
     if request.method == 'POST' and request.POST.get('action') == 'delete':
         service = get_object_or_404(doctor.services, pk=request.POST.get('service_id'))
+        write_audit_log(request, 'Видалено послугу', service)
         service.delete()
         messages.success(request, 'Послугу видалено.')
         return redirect('doctor_services')
@@ -1567,8 +1723,22 @@ def doctor_services(request):
             service__doctor=doctor,
         )
         service_id = image.service_id
+        write_audit_log(request, 'Видалено фото послуги', image.service)
         image.delete()
         messages.success(request, 'Фотографію послуги видалено.')
+        return redirect(f"{reverse('doctor_services')}?edit={service_id}")
+
+    if request.method == 'POST' and request.POST.get('action') == 'delete_video':
+        video = get_object_or_404(
+            MedicalServiceVideo,
+            pk=request.POST.get('video_id'),
+            service__doctor=doctor,
+        )
+        service_id = video.service_id
+        service = video.service
+        write_audit_log(request, 'Видалено відео послуги', service)
+        video.delete()
+        messages.success(request, 'Відео послуги видалено.')
         return redirect(f"{reverse('doctor_services')}?edit={service_id}")
 
     form = ServiceForm(request.POST or None, request.FILES or None, instance=instance)
@@ -1581,6 +1751,9 @@ def doctor_services(request):
         service.save()
         for photo in form.cleaned_data['photos']:
             MedicalServiceImage.objects.create(service=service, image=photo)
+        for video in form.cleaned_data['videos']:
+            MedicalServiceVideo.objects.create(service=service, video=video)
+        write_audit_log(request, 'Збережено послугу', service)
         messages.success(request, 'Послугу збережено.')
         return redirect('doctor_services')
 
@@ -1589,7 +1762,7 @@ def doctor_services(request):
         'clinic/doctor_services.html',
         {
             'doctor': doctor,
-            'services': doctor.services.prefetch_related('images'),
+            'services': doctor.services.prefetch_related('images', 'videos'),
             'form': form,
             'editing': instance,
         },
@@ -1602,6 +1775,7 @@ def doctor_edit_profile(request):
     form = DoctorProfileForm(request.POST or None, request.FILES or None, doctor=doctor)
     if request.method == 'POST' and form.is_valid():
         form.save()
+        write_audit_log(request, 'Оновлено профіль лікаря', doctor)
         messages.success(request, 'Профіль лікаря оновлено.')
         return redirect('doctor_dashboard')
     return render(request, 'clinic/doctor_edit_profile.html', {'form': form, 'doctor': doctor})
@@ -1613,6 +1787,7 @@ def doctor_change_password(request):
     if request.method == 'POST' and form.is_valid():
         user = form.save()
         update_session_auth_hash(request, user)
+        write_audit_log(request, 'Змінено пароль лікаря', request.user.doctor_profile)
         messages.success(request, 'Пароль змінено.')
         return redirect('doctor_dashboard')
     return render(request, 'clinic/change_password.html', {'form': form})
@@ -1626,6 +1801,7 @@ def doctor_news(request):
 
     if request.method == 'POST' and request.POST.get('action') == 'delete':
         post = get_object_or_404(doctor.news_posts, pk=request.POST.get('post_id'))
+        write_audit_log(request, 'Видалено новину лікаря', post)
         post.delete()
         messages.success(request, 'Новину видалено.')
         return redirect('doctor_news')
@@ -1635,6 +1811,7 @@ def doctor_news(request):
         post = form.save(commit=False)
         post.doctor = doctor
         post.save()
+        write_audit_log(request, 'Збережено новину лікаря', post)
         messages.success(request, 'Новину збережено.')
         return redirect('doctor_news')
 
@@ -1649,8 +1826,8 @@ def doctor_news(request):
 def admin_panel(request):
     refresh_completed_appointments()
     stats = {
-        'patients': Profile.objects.filter(role=Profile.ROLE_PATIENT).count(),
-        'doctors': Doctor.objects.count(),
+        'patients': Profile.objects.filter(role=Profile.ROLE_PATIENT, user__is_active=True).count(),
+        'doctors': Doctor.objects.filter(user__is_active=True).count(),
         'appointments': Appointment.objects.count(),
         'pending': Appointment.objects.filter(status=Appointment.STATUS_PENDING).count(),
     }
@@ -1671,6 +1848,7 @@ def admin_panel(request):
                 .order_by('user__last_name', 'user__first_name')
             ),
             'appointments': appointments,
+            'audit_events': AuditLog.objects.select_related('actor')[:12],
         },
     )
 
@@ -1695,7 +1873,8 @@ def admin_content(request):
         if action == 'save_settings':
             settings_form = ClinicSettingsForm(request.POST, request.FILES, instance=branding, prefix='settings')
             if settings_form.is_valid():
-                settings_form.save()
+                saved_branding = settings_form.save()
+                write_audit_log(request, 'Оновлено оформлення сайту', saved_branding)
                 messages.success(request, 'Оформлення клініки збережено.')
                 return redirect(f"{reverse('admin_content')}#branding")
         elif action == 'save_hero':
@@ -1713,12 +1892,14 @@ def admin_content(request):
                         HomeHeroSlide.objects.aggregate(last_order=Max('sort_order'))['last_order'] or 0
                     ) + 1
                 slide.save()
+                write_audit_log(request, 'Збережено фото верхнього слайдера', slide)
                 messages.success(request, 'Фотографію верхнього слайдера збережено.')
                 return redirect(f"{reverse('admin_content')}#hero-slides")
         elif action == 'toggle_hero':
             slide = get_object_or_404(HomeHeroSlide, pk=request.POST.get('hero_id'))
             slide.is_active = not slide.is_active
             slide.save(update_fields=['is_active'])
+            write_audit_log(request, 'Змінено видимість фото слайдера', slide)
             state = 'показується' if slide.is_active else 'прихована'
             messages.success(request, f'Фотографія тепер {state} на головній сторінці.')
             return redirect(f"{reverse('admin_content')}#hero-slides")
@@ -1742,21 +1923,27 @@ def admin_content(request):
                     slide.sort_order, neighbour.sort_order = neighbour.sort_order, slide.sort_order
                     slide.save(update_fields=['sort_order'])
                     neighbour.save(update_fields=['sort_order'])
+                    write_audit_log(request, 'Змінено порядок фото слайдера', slide)
                     messages.success(request, 'Порядок фотографій змінено.')
             return redirect(f"{reverse('admin_content')}#hero-slides")
         elif action == 'delete_hero':
-            get_object_or_404(HomeHeroSlide, pk=request.POST.get('hero_id')).delete()
+            slide = get_object_or_404(HomeHeroSlide, pk=request.POST.get('hero_id'))
+            write_audit_log(request, 'Видалено фото слайдера', slide)
+            slide.delete()
             messages.success(request, 'Фотографію верхнього слайдера видалено.')
             return redirect(f"{reverse('admin_content')}#hero-slides")
         elif action == 'save_news':
             news_instance = NewsPost.objects.filter(pk=request.POST.get('news_id')).first()
             news_form = NewsPostForm(request.POST, request.FILES, instance=news_instance, prefix='news')
             if news_form.is_valid():
-                news_form.save()
+                post = news_form.save()
+                write_audit_log(request, 'Збережено новину клініки', post)
                 messages.success(request, 'Новину збережено.')
                 return redirect(f"{reverse('admin_content')}#news")
         elif action == 'delete_news':
-            get_object_or_404(NewsPost, pk=request.POST.get('news_id')).delete()
+            post = get_object_or_404(NewsPost, pk=request.POST.get('news_id'))
+            write_audit_log(request, 'Видалено новину', post)
+            post.delete()
             messages.success(request, 'Новину видалено.')
             return redirect(f"{reverse('admin_content')}#news")
         elif action == 'save_gallery':
@@ -1768,11 +1955,14 @@ def admin_content(request):
                 prefix='gallery',
             )
             if gallery_form.is_valid():
-                gallery_form.save()
+                gallery_item = gallery_form.save()
+                write_audit_log(request, 'Збережено фото галереї', gallery_item)
                 messages.success(request, 'Фотографію збережено.')
                 return redirect(f"{reverse('admin_content')}#gallery")
         elif action == 'delete_gallery':
-            get_object_or_404(GalleryImage, pk=request.POST.get('gallery_id')).delete()
+            gallery_item = get_object_or_404(GalleryImage, pk=request.POST.get('gallery_id'))
+            write_audit_log(request, 'Видалено фото галереї', gallery_item)
+            gallery_item.delete()
             messages.success(request, 'Фотографію видалено.')
             return redirect(f"{reverse('admin_content')}#gallery")
 
@@ -1808,6 +1998,7 @@ def admin_add_doctor(request):
     form = AdminDoctorCreateForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
         user = form.save()
+        write_audit_log(request, 'Додано лікаря', user.doctor_profile)
         messages.success(request, f'Лікаря додано. Логін для входу: {user.username}')
         return redirect('admin_panel')
     return render(request, 'clinic/admin_add_doctor.html', {'form': form})
@@ -1818,9 +2009,15 @@ def admin_edit_user(request, user_id):
     edited_user = get_object_or_404(User, pk=user_id)
     form = AdminUserEditForm(request.POST or None, user=edited_user)
     if request.method == 'POST' and form.is_valid():
-        form.save()
-        messages.success(request, 'Дані користувача оновлено.')
-        return redirect('admin_panel')
+        try:
+            with transaction.atomic():
+                form.save()
+                write_audit_log(request, 'Оновлено користувача', edited_user)
+        except IntegrityError:
+            form.add_error('phone', 'Цей номер телефону вже прив’язаний до іншого пацієнта.')
+        else:
+            messages.success(request, 'Дані користувача оновлено.')
+            return redirect('admin_panel')
     return render(
         request,
         'clinic/admin_edit_user.html',
@@ -1840,6 +2037,8 @@ def admin_toggle_user(request, user_id):
         else:
             edited_user.is_active = not edited_user.is_active
             edited_user.save(update_fields=['is_active'])
+            action = 'Відновлено акаунт' if edited_user.is_active else 'Заблоковано акаунт'
+            write_audit_log(request, action, edited_user)
             messages.success(request, 'Статус акаунта змінено.')
     return redirect('admin_panel')
 
@@ -1849,19 +2048,26 @@ def admin_delete_user(request, user_id):
     edited_user = get_object_or_404(User, pk=user_id)
     if request.method == 'POST':
         if edited_user == request.user:
-            messages.error(request, 'Не можна видалити самого себе.')
+            messages.error(request, 'Не можна архівувати самого себе.')
+        elif not edited_user.is_active:
+            messages.info(request, 'Цей акаунт уже неактивний.')
         else:
-            edited_user.delete()
-            messages.success(request, 'Акаунт видалено.')
+            edited_user.is_active = False
+            edited_user.save(update_fields=['is_active'])
+            write_audit_log(request, 'Архівовано акаунт', edited_user)
+            messages.success(request, 'Акаунт перенесено до архіву. Дані та історію збережено.')
     return redirect('admin_panel')
 
 
 @admin_required
 def admin_cancel_appointment(request, appointment_id):
     appointment = get_object_or_404(Appointment, pk=appointment_id)
-    if request.method == 'POST':
+    if request.method == 'POST' and appointment.can_cancel:
         appointment.status = Appointment.STATUS_CANCELED
         appointment.save(update_fields=['status'])
         ensure_patient_card_from_appointment(appointment)
+        write_audit_log(request, 'Скасовано запис адміністратором', appointment)
         messages.success(request, 'Запис скасовано адміністратором.')
+    elif request.method == 'POST':
+        messages.error(request, 'Цей запис уже не можна скасувати.')
     return redirect('admin_panel')

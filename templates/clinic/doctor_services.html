@@ -89,6 +89,24 @@
                 {% endfor %}
               </div>
             {% endif %}
+            {% if service.videos.all %}
+              <div class="service-video-manager">
+                {% for item in service.videos.all %}
+                  <div class="service-video-manager-item">
+                    <video controls preload="metadata">
+                      <source src="{{ item.video.url }}">
+                      Ваш браузер не підтримує відтворення відео.
+                    </video>
+                    <form method="post">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="delete_video">
+                      <input type="hidden" name="video_id" value="{{ item.id }}">
+                      <button type="submit" class="danger service-image-delete">Видалити відео</button>
+                    </form>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
             <form method="post" enctype="multipart/form-data" class="service-inline-form">
               {% csrf_token %}
               {% include 'clinic/_form_fields.html' with form=form %}

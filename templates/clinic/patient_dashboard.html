@@ -91,7 +91,9 @@
         <div class="patient-profile-actions">
           <a class="btn patient-booking-button" href="{% url 'booking' %}">Створити запис</a>
           <a class="btn secondary" href="{% url 'patient_edit_profile' %}">Редагувати профіль</a>
-          <a class="patient-password-link" href="{% url 'patient_change_password' %}">Змінити пароль</a>
+          {% if user.has_usable_password %}
+            <a class="patient-password-link" href="{% url 'patient_change_password' %}">Змінити пароль</a>
+          {% endif %}
         </div>
       </div>
 
@@ -210,6 +212,16 @@
                   <a href="{{ item.image.url }}" target="_blank" rel="noopener">
                     <img src="{{ item.image.url }}" alt="Матеріал від лікаря">
                   </a>
+                {% endfor %}
+              </div>
+            {% endif %}
+            {% if entry.videos.all %}
+              <div class="patient-record-videos">
+                {% for item in entry.videos.all %}
+                  <video controls preload="metadata">
+                    <source src="{{ item.video.url }}">
+                    Ваш браузер не підтримує відтворення відео.
+                  </video>
                 {% endfor %}
               </div>
             {% endif %}

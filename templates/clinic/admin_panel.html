@@ -125,10 +125,12 @@
                           {% if item.is_active %}Заблокувати{% else %}Розблокувати{% endif %}
                         </button>
                       </form>
-                      <form method="post" action="{% url 'admin_delete_user' item.id %}" class="compact-form">
-                        {% csrf_token %}
-                        <button type="submit" class="danger">Видалити</button>
-                      </form>
+                      {% if item.is_active %}
+                        <form method="post" action="{% url 'admin_delete_user' item.id %}" class="compact-form">
+                          {% csrf_token %}
+                          <button type="submit" class="danger">Архівувати</button>
+                        </form>
+                      {% endif %}
                     {% endif %}
                   </div>
                 </td>
@@ -201,5 +203,33 @@
         </div>
       </section>
     </div>
+
+    <section class="card section-card admin-audit-section">
+      <div class="section-head admin-section-head">
+        <div>
+          <h2 class="section-title">Журнал дій</h2>
+          <p class="section-note">Останні зміни, виконані адміністраторами, лікарями та пацієнтами.</p>
+        </div>
+      </div>
+      <div class="admin-compact-list">
+        {% for event in audit_events %}
+          <article class="admin-audit-row">
+            <time datetime="{{ event.created_at|date:'c' }}">
+              {{ event.created_at|date:'d.m.Y H:i' }}
+            </time>
+            <div class="admin-list-main">
+              <strong>{{ event.action }}</strong>
+              <span>
+                {{ event.actor.get_full_name|default:event.actor.username|default:'Система' }}
+                · {{ event.target_type }}{% if event.target_label %}: {{ event.target_label }}{% endif %}
+              </span>
+              {% if event.details %}<small>{{ event.details }}</small>{% endif %}
+            </div>
+          </article>
+        {% empty %}
+          <div class="empty">Журнал дій поки порожній.</div>
+        {% endfor %}
+      </div>
+    </section>
   </div>
 {% endblock %}

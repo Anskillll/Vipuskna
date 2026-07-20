@@ -18,6 +18,12 @@ from .models import (
     Profile,
     WorkSchedule,
 )
+from .validators import (
+    MAX_IMAGE_COUNT,
+    MAX_VIDEO_COUNT,
+    validate_image_upload,
+    validate_video_upload,
+)
 
 
 User = get_user_model()
@@ -33,6 +39,16 @@ def normalize_phone_number(value):
     if len(digits) == 10 and digits.startswith('0'):
         digits = f'38{digits}'
     return f'+{digits}' if digits else ''
+
+
+def patient_phone_is_used(phone, exclude_user=None):
+    normalized = normalize_phone_number(phone)
+    if not normalized:
+        return False
+    profiles = Profile.objects.filter(role=Profile.ROLE_PATIENT).exclude(phone='')
+    if exclude_user:
+        profiles = profiles.exclude(user=exclude_user)
+    return any(normalize_phone_number(item.phone) == normalized for item in profiles.only('phone'))
 
 
 class FormStyleMixin:
@@ -56,6 +72,12 @@ class RegisterForm(FormStyleMixin, forms.Form):
         if User.objects.filter(email__iexact=email).exists() or User.objects.filter(username__iexact=email).exists():
             raise forms.ValidationError('Користувач із такою електронною поштою вже зареєстрований.')
         return email
+
+    def clean_phone(self):
+        phone = normalize_phone_number(self.cleaned_data['phone'])
+        if patient_phone_is_used(phone):
+            raise forms.ValidationError('Цей номер телефону вже прив’язаний до іншого пацієнта.')
+        return phone
 
     def save(self):
         user = User.objects.create_user(
@@ -111,6 +133,7 @@ class PatientProfileForm(FormStyleMixin, forms.Form):
     photo = forms.ImageField(
         label='Нове фото профілю',
         required=False,
+        validators=[validate_image_upload],
         help_text='Залиште поле порожнім, якщо не хочете змінювати поточне фото.',
         widget=forms.FileInput(attrs={'accept': 'image/*'}),
     )
@@ -130,7 +153,10 @@ class PatientProfileForm(FormStyleMixin, forms.Form):
         super().__init__(*args, initial=initial, **kwargs)
 
     def clean_phone(self):
-        return normalize_phone_number(self.cleaned_data['phone'])
+        phone = normalize_phone_number(self.cleaned_data['phone'])
+        if patient_phone_is_used(phone, exclude_user=self.user):
+            raise forms.ValidationError('Цей номер телефону вже прив’язаний до іншого пацієнта.')
+        return phone
 
     def save(self):
         self.user.first_name = self.cleaned_data['first_name']
@@ -149,13 +175,36 @@ class MultipleImageInput(forms.ClearableFileInput):
 
 
 class MultipleImageField(forms.ImageField):
-    widget = MultipleImageInput(attrs={'multiple': True})
+    widget = MultipleImageInput(attrs={'multiple': True, 'accept': 'image/*'})
+    default_validators = [validate_image_upload]
 
     def clean(self, data, initial=None):
+        files = list(data) if isinstance(data, (list, tuple)) else ([data] if data else [])
+        if len(files) > MAX_IMAGE_COUNT:
+            raise forms.ValidationError(f'Можна додати не більше {MAX_IMAGE_COUNT} фотографій за один раз.')
         single_clean = super().clean
-        if isinstance(data, (list, tuple)):
-            return [single_clean(item, initial) for item in data]
-        return [single_clean(data, initial)] if data else []
+        return [single_clean(item, initial) for item in files]
+
+
+class MultipleVideoInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleVideoField(forms.FileField):
+    widget = MultipleVideoInput(
+        attrs={
+            'multiple': True,
+            'accept': 'video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov',
+        }
+    )
+    default_validators = [validate_video_upload]
+
+    def clean(self, data, initial=None):
+        files = list(data) if isinstance(data, (list, tuple)) else ([data] if data else [])
+        if len(files) > MAX_VIDEO_COUNT:
+            raise forms.ValidationError(f'Можна додати не більше {MAX_VIDEO_COUNT} відео за один раз.')
+        single_clean = super().clean
+        return [single_clean(item, initial) for item in files]
 
 
 class ServiceChoiceField(forms.ModelChoiceField):
@@ -176,7 +225,12 @@ class BookingReasonForm(FormStyleMixin, forms.Form):
     photos = MultipleImageField(
         label='Фотографії до заявки',
         required=False,
-        help_text='Можна додати декілька фотографій або знімків одночасно.',
+        help_text='До 6 фотографій, не більше 8 МБ кожна.',
+    )
+    videos = MultipleVideoField(
+        label='Відео до заявки',
+        required=False,
+        help_text='До 2 відео у форматі MP4, WEBM або MOV, не більше 50 МБ кожне.',
     )
 
     def __init__(self, *args, doctor=None, **kwargs):
@@ -382,7 +436,12 @@ class PatientRecordEntryForm(FormStyleMixin, forms.ModelForm):
     photos = MultipleImageField(
         label='Фотографії та знімки',
         required=False,
-        help_text='Можна вибрати одразу декілька файлів.',
+        help_text='До 6 фотографій, не більше 8 МБ кожна.',
+    )
+    videos = MultipleVideoField(
+        label='Відео',
+        required=False,
+        help_text='До 2 відео у форматі MP4, WEBM або MOV, не більше 50 МБ кожне.',
     )
 
     class Meta:
@@ -408,7 +467,11 @@ class DoctorProfileForm(FormStyleMixin, forms.Form):
     last_name = forms.CharField(label='Прізвище', max_length=80)
     phone = forms.CharField(label='Телефон', validators=[phone_validator])
     specialization = forms.CharField(label='Спеціальність', max_length=120)
-    photo = forms.ImageField(label='Фото з пристрою', required=False)
+    photo = forms.ImageField(
+        label='Фото з пристрою',
+        required=False,
+        validators=[validate_image_upload],
+    )
     photo_url = forms.URLField(label='Посилання на фото', required=False)
     description = forms.CharField(
         label='Коротко про себе',
@@ -566,12 +629,24 @@ class ServiceForm(FormStyleMixin, forms.ModelForm):
     photos = MultipleImageField(
         label='Додати фотографії',
         required=False,
-        help_text='Можна вибрати одразу декілька фотографій.',
+        help_text='До 6 фотографій, не більше 8 МБ кожна.',
+    )
+    videos = MultipleVideoField(
+        label='Додати відео',
+        required=False,
+        help_text='До 2 відео у форматі MP4, WEBM або MOV, не більше 50 МБ кожне.',
     )
 
     class Meta:
         model = MedicalService
-        fields = ['name', 'approximate_price', 'description', 'is_patient_selectable', 'photos']
+        fields = [
+            'name',
+            'approximate_price',
+            'description',
+            'is_patient_selectable',
+            'photos',
+            'videos',
+        ]
         labels = {
             'name': 'Назва послуги',
             'approximate_price': 'Орієнтовна вартість, грн',
@@ -587,6 +662,24 @@ class ServiceForm(FormStyleMixin, forms.ModelForm):
             'description': forms.Textarea(attrs={'rows': 6}),
         }
 
+    def clean_photos(self):
+        photos = self.cleaned_data.get('photos', [])
+        existing_count = self.instance.images.count() if self.instance.pk else 0
+        if existing_count + len(photos) > MAX_IMAGE_COUNT:
+            raise forms.ValidationError(
+                f'Для однієї послуги можна зберегти не більше {MAX_IMAGE_COUNT} фотографій.'
+            )
+        return photos
+
+    def clean_videos(self):
+        videos = self.cleaned_data.get('videos', [])
+        existing_count = self.instance.videos.count() if self.instance.pk else 0
+        if existing_count + len(videos) > MAX_VIDEO_COUNT:
+            raise forms.ValidationError(
+                f'Для однієї послуги можна зберегти не більше {MAX_VIDEO_COUNT} відео.'
+            )
+        return videos
+
 
 class AdminDoctorCreateForm(FormStyleMixin, forms.Form):
     username = forms.CharField(label='Логін', max_length=150)
@@ -596,7 +689,11 @@ class AdminDoctorCreateForm(FormStyleMixin, forms.Form):
     phone = forms.CharField(label='Телефон', validators=[phone_validator])
     password = forms.CharField(label='Пароль', widget=forms.PasswordInput)
     specialization = forms.CharField(label='Спеціальність', max_length=120)
-    photo = forms.ImageField(label='Фото з пристрою', required=False)
+    photo = forms.ImageField(
+        label='Фото з пристрою',
+        required=False,
+        validators=[validate_image_upload],
+    )
     description = forms.CharField(
         label='Опис',
         required=False,
@@ -677,6 +774,14 @@ class AdminUserEditForm(FormStyleMixin, forms.Form):
         if email and qs.exists():
             raise forms.ValidationError('Ця електронна пошта вже використовується.')
         return email
+
+    def clean_phone(self):
+        phone = normalize_phone_number(self.cleaned_data.get('phone', ''))
+        profile = getattr(self.user, 'profile', None)
+        if profile and profile.role == Profile.ROLE_PATIENT:
+            if patient_phone_is_used(phone, exclude_user=self.user):
+                raise forms.ValidationError('Цей номер телефону вже прив’язаний до іншого пацієнта.')
+        return phone
 
     def save(self):
         self.user.username = self.cleaned_data['username']

@@ -98,6 +98,16 @@
             {% endfor %}
           </div>
         {% endif %}
+        {% if entry.videos.all %}
+          <div class="current-record-videos">
+            {% for item in entry.videos.all %}
+              <video controls preload="metadata">
+                <source src="{{ item.video.url }}">
+                Ваш браузер не підтримує відтворення відео.
+              </video>
+            {% endfor %}
+          </div>
+        {% endif %}
       </article>
     {% empty %}
       <div class="current-records-empty">

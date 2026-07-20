@@ -5,8 +5,9 @@ __pycache__/
 *.sqlite3
 .env
 .env.*
+!.env.example
 media/
+private_media/
 .idea/
 .vscode/
 .DS_Store
-

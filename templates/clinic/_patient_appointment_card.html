@@ -52,13 +52,11 @@
       <a class="btn secondary patient-appointment-details" href="{% url 'patient_appointment_detail' appointment.id %}">
         Детальніше
       </a>
-      {% if appointment.status == 'pending' or appointment.status == 'approved' or appointment.status == 'reschedule_proposed' %}
-        {% if appointment.is_future %}
-          <form method="post" action="{% url 'cancel_appointment' appointment.id %}">
-            {% csrf_token %}
-            <button type="submit" class="danger">Скасувати</button>
-          </form>
-        {% endif %}
+      {% if appointment.can_cancel %}
+        <form method="post" action="{% url 'cancel_appointment' appointment.id %}">
+          {% csrf_token %}
+          <button type="submit" class="danger">Скасувати</button>
+        </form>
       {% elif appointment.can_restore %}
         <form method="post" action="{% url 'restore_appointment' appointment.id %}">
           {% csrf_token %}

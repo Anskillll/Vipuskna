@@ -46,6 +46,23 @@
       </div>
     {% endif %}
 
+    {% if service.videos.all %}
+      <div class="service-detail-gallery">
+        <div class="section-mini-head">
+          <h2>Відео</h2>
+          <span class="section-note">{{ service.videos.count }} відео</span>
+        </div>
+        <div class="service-video-gallery">
+          {% for item in service.videos.all %}
+            <video controls preload="metadata">
+              <source src="{{ item.video.url }}">
+              Ваш браузер не підтримує відтворення відео.
+            </video>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
     {% if service.is_patient_selectable %}
       <div class="service-detail-cta">
         {% if user.is_authenticated and user.profile.role == 'patient' %}

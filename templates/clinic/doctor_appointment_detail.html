@@ -36,17 +36,24 @@
 
       <section class="card section-card appointment-photo-section">
         <div class="section-head">
-          <h2 class="section-title">Фотографії до заявки</h2>
-          <span class="section-note">{{ appointment.images.all|length }} файл(ів)</span>
+          <h2 class="section-title">Фото та відео до заявки</h2>
+          <span class="section-note">{{ appointment.images.count|add:appointment.videos.count }} файл(ів)</span>
         </div>
         <div class="appointment-photo-grid">
           {% for item in appointment.images.all %}
             <a href="{{ item.image.url }}" target="_blank" rel="noopener">
               <img src="{{ item.image.url }}" alt="Фото до заявки {{ appointment.id }}">
             </a>
-          {% empty %}
-            <div class="empty">Пацієнт не додав фотографій до цієї заявки.</div>
           {% endfor %}
+          {% for item in appointment.videos.all %}
+            <video controls preload="metadata">
+              <source src="{{ item.video.url }}">
+              Ваш браузер не підтримує відтворення відео.
+            </video>
+          {% endfor %}
+          {% if not appointment.images.all and not appointment.videos.all %}
+            <div class="empty">Пацієнт не додав фото або відео до цієї заявки.</div>
+          {% endif %}
         </div>
       </section>
     </div>

@@ -69,4 +69,26 @@
       </aside>
     {% endif %}
   </div>
+
+  {% if appointment.images.all or appointment.videos.all %}
+    <section class="card section-card appointment-photo-section">
+      <div class="section-head">
+        <h2 class="section-title">Додані вами матеріали</h2>
+        <span class="section-note">{{ appointment.images.count|add:appointment.videos.count }} файл(ів)</span>
+      </div>
+      <div class="appointment-photo-grid">
+        {% for item in appointment.images.all %}
+          <a href="{{ item.image.url }}" target="_blank" rel="noopener">
+            <img src="{{ item.image.url }}" alt="Фото до заявки {{ appointment.id }}">
+          </a>
+        {% endfor %}
+        {% for item in appointment.videos.all %}
+          <video controls preload="metadata">
+            <source src="{{ item.video.url }}">
+            Ваш браузер не підтримує відтворення відео.
+          </video>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
 {% endblock %}

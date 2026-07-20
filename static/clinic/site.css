@@ -2541,6 +2541,72 @@ th {
   }
 }
 
+.appointment-photo-grid video,
+.record-videos video,
+.patient-record-videos video,
+.current-record-videos video,
+.service-video-manager video,
+.service-video-gallery video {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  border: 1px solid #c9d7d3;
+  border-radius: 8px;
+  background: #122925;
+  object-fit: contain;
+}
+
+.record-videos,
+.patient-record-videos,
+.current-record-videos,
+.service-video-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.service-video-manager {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.service-video-manager-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.admin-audit-section {
+  margin-top: 22px;
+}
+
+.admin-audit-row {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 18px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+
+.admin-audit-row time,
+.admin-audit-row small {
+  color: var(--muted);
+}
+
+@media (max-width: 680px) {
+  .record-videos,
+  .patient-record-videos,
+  .current-record-videos,
+  .service-video-gallery,
+  .service-video-manager-item,
+  .admin-audit-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .current-visit-banner {
   display: flex;
   align-items: center;
