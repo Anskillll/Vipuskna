@@ -1565,6 +1565,33 @@ class ClinicModelTests(TestCase):
                 self.assertRedirects(response, reverse('patient_dashboard'))
                 self.assertTrue(self.patient.profile.photo.name.startswith('patient_photos/'))
 
+    def test_patient_dashboard_shows_doctor_photo_on_appointment_card(self):
+        self.doctor.photo_url = 'https://example.com/doctor-photo.jpg'
+        self.doctor.save(update_fields=['photo_url'])
+        Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name=self.patient.first_name,
+            patient_last_name=self.patient.last_name,
+            patient_phone=self.patient.profile.phone,
+            date=timezone.localdate() + timedelta(days=7),
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Перевірка нового кабінету',
+            status=Appointment.STATUS_PENDING,
+        )
+        self.client.login(username='patient@test.local', password='pass12345')
+
+        response = self.client.get(reverse('patient_dashboard'))
+
+        self.assertContains(response, 'patient-dashboard-profile')
+        self.assertContains(response, 'patient-appointment-doctor')
+        self.assertContains(response, self.doctor.photo_url)
+        self.assertContains(response, self.doctor.full_name)
+        self.assertContains(response, self.doctor.specialization)
+
     def test_incomplete_patient_profile_shows_notice_and_blocks_booking(self):
         self.patient.profile.age = None
         self.patient.profile.save(update_fields=['age'])

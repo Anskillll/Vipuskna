@@ -6574,3 +6574,732 @@ body:not(.public-home-page) .message.is-dismissing {
     width: calc(100% - 24px);
   }
 }
+
+/* Patient cabinet: profile overview and appointment cards. */
+.patient-dashboard {
+  display: grid;
+  gap: 34px;
+  padding-bottom: 34px;
+}
+
+.patient-dashboard-tabs {
+  margin-bottom: -8px;
+}
+
+.patient-dashboard-alert {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  margin: -10px 0 0;
+  padding: 18px 20px;
+}
+
+.patient-alert-doctor img,
+.patient-alert-doctor-placeholder {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid #c7d8d3;
+  border-radius: 6px;
+  background: #e2efeb;
+  color: #176b61;
+  font-size: 14px;
+  font-weight: 800;
+  object-fit: cover;
+}
+
+.patient-alert-copy {
+  min-width: 0;
+}
+
+.patient-alert-copy strong,
+.patient-alert-copy p {
+  display: block;
+}
+
+.patient-alert-copy p {
+  margin: 5px 0 0;
+}
+
+.patient-phone-alert {
+  border: 1px solid #d7b369;
+  border-left: 4px solid #a87424;
+  border-radius: 6px;
+  background: #fff8e9;
+  color: #60471d;
+}
+
+.patient-dashboard-profile {
+  padding: 34px;
+  overflow: hidden;
+}
+
+.patient-profile-hero {
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 26px;
+}
+
+.patient-dashboard-photo {
+  width: 116px;
+  height: 116px;
+  border: 1px solid #cbd9d5;
+  border-radius: 8px;
+  background: #e2efeb;
+  object-fit: cover;
+}
+
+.patient-dashboard-photo-placeholder {
+  display: grid;
+  place-items: center;
+  color: #176b61;
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.patient-profile-label,
+.patient-section-kicker {
+  display: block;
+  color: #187f73;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.patient-profile-identity h1 {
+  margin: 8px 0 12px;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+.patient-profile-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.patient-profile-facts span {
+  padding: 7px 10px;
+  border: 1px solid #c7d8d3;
+  border-radius: 4px;
+  background: #edf5f3;
+  color: #244b44;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.patient-profile-facts .patient-fact-missing {
+  border-color: #dec99e;
+  background: #fff8e8;
+  color: #77531f;
+}
+
+.patient-profile-actions {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr);
+  gap: 10px;
+  min-width: 210px;
+}
+
+.patient-profile-actions .btn {
+  width: 100%;
+}
+
+.patient-profile-actions .patient-booking-button {
+  min-height: 48px;
+}
+
+.patient-password-link {
+  padding: 4px 8px;
+  color: #526762;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: underline;
+  text-decoration-color: #a8b9b5;
+  text-underline-offset: 4px;
+}
+
+.patient-password-link:hover {
+  color: #126d63;
+  text-decoration-color: #126d63;
+}
+
+.patient-dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 30px;
+  border-top: 1px solid #dce5e2;
+}
+
+.patient-dashboard-stat {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 22px 22px 0;
+  border-left: 1px solid #dce5e2;
+  color: #183c36;
+}
+
+.patient-dashboard-stat:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.patient-dashboard-stat:hover strong {
+  color: #126d63;
+}
+
+.patient-dashboard-stat span {
+  color: #61716e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.patient-dashboard-stat strong {
+  font-size: 30px;
+  line-height: 1;
+  transition: color 160ms ease;
+}
+
+.patient-dashboard-stat small {
+  color: #84908e;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.patient-dashboard-section {
+  scroll-margin-top: 100px;
+}
+
+.patient-dashboard-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+
+.patient-dashboard-section-head h2 {
+  margin: 5px 0 4px;
+  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.patient-dashboard-section-head p {
+  margin: 0;
+  color: #657572;
+  font-size: 14px;
+}
+
+.patient-section-count {
+  display: grid;
+  flex: 0 0 36px;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #c3d6d0;
+  border-radius: 50%;
+  background: #e8f2ef;
+  color: #176b61;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.patient-appointment-list {
+  display: grid;
+  gap: 12px;
+}
+
+.patient-appointment-card {
+  overflow: hidden;
+  border: 1px solid #d5e0dd;
+  border-left: 4px solid #c19232;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 12px 28px rgba(35, 69, 62, 0.08);
+}
+
+.patient-appointment-card-approved {
+  border-left-color: #238a70;
+}
+
+.patient-appointment-card-completed {
+  border-left-color: #73827f;
+}
+
+.patient-appointment-card-canceled,
+.patient-appointment-card-rejected {
+  border-left-color: #a74b51;
+}
+
+.patient-appointment-card-reschedule_proposed {
+  border-left-color: #b67827;
+}
+
+.patient-appointment-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 17px 20px 14px;
+}
+
+.patient-appointment-doctor {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 12px;
+}
+
+.patient-appointment-doctor img,
+.patient-appointment-doctor-placeholder {
+  display: grid;
+  flex: 0 0 54px;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border: 1px solid #c8d7d3;
+  border-radius: 6px;
+  background: #e3efec;
+  color: #176b61;
+  font-size: 14px;
+  font-weight: 800;
+  object-fit: cover;
+}
+
+.patient-appointment-doctor > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.patient-appointment-doctor small,
+.patient-appointment-card-body small {
+  color: #788682;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.patient-appointment-doctor strong {
+  overflow: hidden;
+  color: #153a34;
+  font-size: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.patient-appointment-doctor span {
+  color: #187f73;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.patient-appointment-card .status {
+  flex: 0 0 auto;
+  border: 1px solid #dfc57e;
+  background: #fff2c9;
+  color: #73530d;
+}
+
+.patient-appointment-card .status.approved {
+  border-color: #9ed7c4;
+  background: #dcf5e9;
+  color: #126448;
+}
+
+.patient-appointment-card .status.completed {
+  border-color: #ccd5d2;
+  background: #edf1f0;
+  color: #53625f;
+}
+
+.patient-appointment-card .status.canceled,
+.patient-appointment-card .status.rejected {
+  border-color: #e5b1b5;
+  background: #fbe3e5;
+  color: #84353b;
+}
+
+.patient-appointment-card .status.reschedule_proposed {
+  border-color: #e1bd7c;
+  background: #fff0cf;
+  color: #7e5314;
+}
+
+.patient-appointment-card-body {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.1fr) minmax(165px, 0.75fr) minmax(220px, 1fr);
+  gap: 22px;
+  padding: 15px 20px;
+  border-top: 1px solid #e0e7e5;
+  border-bottom: 1px solid #e0e7e5;
+  background: #f8faf9;
+}
+
+.patient-appointment-service,
+.patient-appointment-fact {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+  gap: 4px;
+}
+
+.patient-appointment-service strong,
+.patient-appointment-fact strong {
+  color: #183c36;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.patient-appointment-fact span {
+  color: #63736f;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.patient-appointment-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 58px;
+  gap: 16px;
+  padding: 10px 20px;
+}
+
+.patient-appointment-card-actions > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.patient-appointment-card-actions form {
+  margin: 0;
+}
+
+.patient-appointment-card-actions .btn,
+.patient-appointment-card-actions button {
+  min-height: 40px;
+}
+
+.patient-restore-note {
+  margin-right: auto;
+  color: #18724e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.patient-dashboard-empty {
+  display: grid;
+  justify-items: start;
+  gap: 7px;
+  min-height: 116px;
+  padding: 24px;
+  border: 1px dashed #bfcfca;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #536763;
+}
+
+.patient-dashboard-empty strong {
+  color: #183c36;
+  font-size: 17px;
+}
+
+.patient-dashboard-empty p {
+  margin: 0;
+  color: #657572;
+  font-size: 14px;
+}
+
+.patient-dashboard-empty .btn {
+  margin-top: 5px;
+}
+
+.patient-record-filter {
+  padding: 16px;
+  border: 1px solid #d5e0dd;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.patient-record-doctor-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.patient-record-doctor-row img,
+.patient-record-doctor-row > span {
+  display: grid;
+  flex: 0 0 34px;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #c8d7d3;
+  border-radius: 5px;
+  background: #e3efec;
+  color: #176b61;
+  font-size: 10px;
+  font-weight: 800;
+  object-fit: cover;
+}
+
+.patient-record-doctor-row .patient-record-doctor {
+  margin: 0;
+}
+
+.patient-dashboard .patient-record-item {
+  box-shadow: 0 10px 24px rgba(35, 69, 62, 0.07);
+}
+
+.patient-history-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 22px;
+  scroll-margin-top: 100px;
+}
+
+.patient-history-section {
+  min-width: 0;
+}
+
+.patient-appointment-list-compact .patient-appointment-card-body {
+  grid-template-columns: 1fr 1fr;
+}
+
+.patient-appointment-list-compact .patient-appointment-place {
+  grid-column: 1 / -1;
+}
+
+.patient-appointment-list-compact .patient-appointment-card-actions {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+.patient-appointment-list-compact .patient-restore-note {
+  margin: 0;
+}
+
+.patient-appointment-list-compact .patient-appointment-card-actions > div {
+  justify-content: flex-end;
+  width: 100%;
+}
+
+@media (max-width: 980px) {
+  .patient-profile-hero {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+
+  .patient-dashboard-photo {
+    width: 96px;
+    height: 96px;
+  }
+
+  .patient-profile-actions {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+  }
+
+  .patient-password-link {
+    grid-column: 1 / -1;
+  }
+
+  .patient-dashboard-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .patient-dashboard-stat {
+    padding: 20px 0;
+    border-top: 1px solid #dce5e2;
+    border-left: 0;
+  }
+
+  .patient-dashboard-stat:nth-child(odd) {
+    padding-right: 20px;
+  }
+
+  .patient-dashboard-stat:nth-child(even) {
+    padding-left: 20px;
+    border-left: 1px solid #dce5e2;
+  }
+
+  .patient-dashboard-stat:nth-child(-n + 2) {
+    border-top: 0;
+  }
+
+  .patient-appointment-card-body {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .patient-appointment-place {
+    grid-column: 1 / -1;
+  }
+
+  .patient-history-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .patient-dashboard {
+    gap: 28px;
+  }
+
+  .patient-dashboard-tabs {
+    display: flex;
+    width: 100%;
+    margin-right: 0;
+    margin-left: 0;
+    padding: 0 0 8px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+
+  .patient-dashboard-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .patient-dashboard-tabs .page-tab {
+    flex: 0 0 auto;
+  }
+
+  .patient-dashboard-alert {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    padding: 16px;
+  }
+
+  .patient-dashboard-alert .btn {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .patient-dashboard-profile {
+    padding: 22px 18px;
+  }
+
+  .patient-profile-hero {
+    grid-template-columns: 78px minmax(0, 1fr);
+    align-items: start;
+    gap: 16px;
+  }
+
+  .patient-dashboard-photo {
+    width: 78px;
+    height: 78px;
+  }
+
+  .patient-profile-identity h1 {
+    margin-top: 5px;
+    font-size: 27px;
+  }
+
+  .patient-profile-facts {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .patient-profile-facts span {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .patient-profile-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .patient-password-link {
+    grid-column: auto;
+  }
+
+  .patient-dashboard-stats {
+    grid-template-columns: 1fr;
+    margin-top: 24px;
+  }
+
+  .patient-dashboard-stat,
+  .patient-dashboard-stat:nth-child(odd),
+  .patient-dashboard-stat:nth-child(even) {
+    padding: 16px 0;
+    border-top: 1px solid #dce5e2;
+    border-left: 0;
+  }
+
+  .patient-dashboard-stat:first-child {
+    border-top: 0;
+  }
+
+  .patient-dashboard-section-head {
+    align-items: flex-start;
+  }
+
+  .patient-dashboard-section-head h2 {
+    font-size: 24px;
+  }
+
+  .patient-appointment-card-head {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 15px;
+  }
+
+  .patient-appointment-doctor {
+    width: 100%;
+  }
+
+  .patient-appointment-card .status {
+    margin-left: 66px;
+  }
+
+  .patient-appointment-card-body,
+  .patient-appointment-list-compact .patient-appointment-card-body {
+    grid-template-columns: 1fr;
+    gap: 15px;
+    padding: 15px;
+  }
+
+  .patient-appointment-place,
+  .patient-appointment-list-compact .patient-appointment-place {
+    grid-column: auto;
+  }
+
+  .patient-appointment-card-actions,
+  .patient-appointment-list-compact .patient-appointment-card-actions {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 12px 15px 15px;
+  }
+
+  .patient-appointment-card-actions > div,
+  .patient-appointment-list-compact .patient-appointment-card-actions > div {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .patient-appointment-card-actions .btn,
+  .patient-appointment-card-actions button {
+    width: 100%;
+  }
+
+  .patient-records-grid {
+    grid-template-columns: 1fr;
+  }
+}

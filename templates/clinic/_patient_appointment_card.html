@@ -1,0 +1,65 @@
+<article
+  class="patient-appointment-card patient-appointment-card-{{ appointment.status }}{% if compact %} patient-appointment-card-compact{% endif %}"
+  data-live-filter-item
+>
+  <header class="patient-appointment-card-head">
+    <div class="patient-appointment-doctor">
+      {% if appointment.doctor.photo_src %}
+        <img src="{{ appointment.doctor.photo_src }}" alt="{{ appointment.doctor.full_name }}">
+      {% else %}
+        <span class="patient-appointment-doctor-placeholder" aria-hidden="true">
+          {{ appointment.doctor.user.first_name|first }}{{ appointment.doctor.user.last_name|first }}
+        </span>
+      {% endif %}
+      <div>
+        <small>Лікар</small>
+        <strong>{{ appointment.doctor.full_name }}</strong>
+        <span>{{ appointment.doctor.specialization }}</span>
+      </div>
+    </div>
+    <span class="status {{ appointment.status }}">{{ appointment.get_status_display }}</span>
+  </header>
+
+  <div class="patient-appointment-card-body">
+    <div class="patient-appointment-service">
+      <small>Послуга</small>
+      <strong>{{ appointment.service.name|default:'Послугу не обрано' }}</strong>
+    </div>
+    <div class="patient-appointment-fact">
+      <small>Дата і час</small>
+      <strong>{{ appointment.date|date:'d.m.Y' }} о {{ appointment.time|time:'H:i' }}</strong>
+      {% if appointment.status == 'approved' or appointment.status == 'completed' %}
+        <span>{{ appointment.duration_minutes }} хв</span>
+      {% endif %}
+    </div>
+    <div class="patient-appointment-fact patient-appointment-place">
+      <small>Місце прийому</small>
+      <strong>{{ appointment.city }}</strong>
+      <span>{{ appointment.address }}</span>
+    </div>
+  </div>
+
+  <footer class="patient-appointment-card-actions">
+    {% if appointment.can_restore %}
+      <span class="patient-restore-note">Цей запис ще можна відновити</span>
+    {% endif %}
+    <div>
+      <a class="btn secondary patient-appointment-details" href="{% url 'patient_appointment_detail' appointment.id %}">
+        Детальніше
+      </a>
+      {% if appointment.status == 'pending' or appointment.status == 'approved' or appointment.status == 'reschedule_proposed' %}
+        {% if appointment.is_future %}
+          <form method="post" action="{% url 'cancel_appointment' appointment.id %}">
+            {% csrf_token %}
+            <button type="submit" class="danger">Скасувати</button>
+          </form>
+        {% endif %}
+      {% elif appointment.can_restore %}
+        <form method="post" action="{% url 'restore_appointment' appointment.id %}">
+          {% csrf_token %}
+          <button type="submit" class="green">Відновити</button>
+        </form>
+      {% endif %}
+    </div>
+  </footer>
+</article>
