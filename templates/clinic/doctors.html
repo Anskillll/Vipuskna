@@ -43,15 +43,12 @@
           {% endif %}
           <div>
             <h2 class="doctor-name">{{ doctor.full_name }}</h2>
-            <div class="doctor-spec-action-row">
-              <p class="doctor-spec">{{ doctor.specialization }}</p>
-              <a class="doctor-details-link" href="{% url 'doctor_detail' doctor.id %}">Детальніше</a>
-            </div>
+            <p class="doctor-spec">{{ doctor.specialization }}</p>
           </div>
         </div>
 
         <div class="actions doctor-compact-actions">
-          <a class="btn secondary" href="{% url 'doctor_detail' doctor.id %}">Переглянути профіль</a>
+          <a class="btn secondary" href="{% url 'doctor_detail' doctor.id %}">Детальніше</a>
           {% if user.is_authenticated and user.profile.role == 'patient' %}
             <a class="btn" href="{% url 'booking' %}?doctor={{ doctor.id }}">Записатися</a>
           {% else %}

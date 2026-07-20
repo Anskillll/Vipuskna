@@ -530,7 +530,12 @@ class ClinicModelTests(TestCase):
         detail_response = self.client.get(reverse('doctor_detail', args=[self.doctor.id]))
 
         self.assertContains(list_response, 'Детальніше')
-        self.assertContains(list_response, reverse('doctor_detail', args=[self.doctor.id]))
+        self.assertContains(
+            list_response,
+            reverse('doctor_detail', args=[self.doctor.id]),
+            count=1,
+        )
+        self.assertNotContains(list_response, 'Переглянути профіль')
         self.assertNotContains(list_response, self.doctor.phone)
         self.assertNotContains(list_response, self.service.name)
 
