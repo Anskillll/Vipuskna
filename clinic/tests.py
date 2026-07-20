@@ -1783,6 +1783,60 @@ class ClinicModelTests(TestCase):
 
         self.assertEqual(active, appointment)
 
+    def test_current_visit_opens_patient_records_before_full_card(self):
+        fixed_now = timezone.make_aware(datetime(2026, 7, 20, 10, 30))
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            patient_email='patient@test.local',
+            date=fixed_now.date(),
+            time=time(10, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Поточний прийом',
+            duration_minutes_exact=60,
+            status=Appointment.STATUS_APPROVED,
+        )
+        card = DoctorPatientCard.objects.create(
+            doctor=self.doctor,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            patient_email='patient@test.local',
+        )
+        entry = PatientRecordEntry.objects.create(
+            card=card,
+            doctor=self.doctor,
+            appointment=appointment,
+            kind=PatientRecordEntry.KIND_TREATMENT,
+            title='План лікування',
+            details='Запис лікаря про поточного пацієнта.',
+            recommendations='Дотримуватися рекомендацій.',
+        )
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        with patch('clinic.views.timezone.localtime', return_value=fixed_now):
+            response = self.client.get(reverse('doctor_dashboard'))
+
+        create_url = (
+            f"{reverse('doctor_patient_card_detail', args=[card.id])}"
+            f"?appointment={appointment.id}#new-entry"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertQuerySetEqual(response.context['current_entries'], [entry])
+        self.assertContains(response, 'Переглянути записи пацієнта')
+        self.assertContains(response, 'Записи про Тест Пацієнт')
+        self.assertContains(response, 'План лікування')
+        self.assertContains(response, 'Запис лікаря про поточного пацієнта.')
+        self.assertContains(response, 'Створити новий запис')
+        self.assertContains(response, create_url)
+        self.assertNotContains(response, 'Відкрити прийом і додати матеріали')
+
     def test_doctor_can_add_extended_patient_record(self):
         self.client.login(username='doctor@test.local', password='pass12345')
         card = DoctorPatientCard.objects.create(

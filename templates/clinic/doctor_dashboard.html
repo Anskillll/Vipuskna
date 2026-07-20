@@ -1,4 +1,5 @@
 {% extends 'clinic/base.html' %}
+{% load static %}
 
 {% block title %}Кабінет лікаря - MedClinic{% endblock %}
 
@@ -20,10 +21,77 @@
           {{ current_appointment.duration_minutes }} хв
         </p>
       </div>
-      <a class="btn current-visit-button" href="{% url 'doctor_patient_card_detail' current_card.id %}?appointment={{ current_appointment.id }}#new-entry">
-        Відкрити прийом і додати матеріали
-      </a>
+      <button
+        type="button"
+        class="btn current-visit-button"
+        data-current-records-open
+        aria-haspopup="dialog"
+        aria-controls="current-patient-records"
+      >
+        Переглянути записи пацієнта
+      </button>
     </section>
+
+    <dialog id="current-patient-records" class="current-records-dialog" data-current-records-dialog>
+      <div class="current-records-dialog-head">
+        <div>
+          <span class="current-visit-label">Поточний пацієнт</span>
+          <h2>Записи про {{ current_card.full_name }}</h2>
+          <p>Інформація, яку ви додавали під час попередніх прийомів.</p>
+        </div>
+        <button
+          type="button"
+          class="current-records-close"
+          data-current-records-close
+          aria-label="Закрити"
+          title="Закрити"
+        >×</button>
+      </div>
+
+      <div class="current-records-list">
+        {% for entry in current_entries %}
+          <article class="current-record-item">
+            <div class="current-record-item-head">
+              <div>
+                <span class="record-kind">{{ entry.get_kind_display }}</span>
+                <h3>{{ entry.title }}</h3>
+              </div>
+              <time datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at|date:'d.m.Y H:i' }}</time>
+            </div>
+            <div class="record-entry-text">{{ entry.details|linebreaks }}</div>
+            {% if entry.recommendations %}
+              <div class="record-recommendations">
+                <strong>Рекомендації</strong>
+                {{ entry.recommendations|linebreaks }}
+              </div>
+            {% endif %}
+            {% if entry.images.all %}
+              <div class="current-record-images">
+                {% for item in entry.images.all %}
+                  <a href="{{ item.image.url }}" target="_blank" rel="noopener">
+                    <img src="{{ item.image.url }}" alt="Фото до запису {{ entry.title }}">
+                  </a>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </article>
+        {% empty %}
+          <div class="current-records-empty">
+            <strong>Записів про цього пацієнта ще немає.</strong>
+            <span>Створіть перший запис у картці пацієнта.</span>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="current-records-dialog-actions">
+        <a
+          class="btn secondary current-record-create"
+          href="{% url 'doctor_patient_card_detail' current_card.id %}?appointment={{ current_appointment.id }}#new-entry"
+        >
+          Створити новий запис
+        </a>
+      </div>
+    </dialog>
   {% endif %}
 
   <section class="card doctor-dashboard-profile">
@@ -137,4 +205,8 @@
       </ul>
     </section>
   </section>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="{% static 'clinic/current_visit.js' %}?v=20260720-1" defer></script>
 {% endblock %}

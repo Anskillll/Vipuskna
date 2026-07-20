@@ -864,8 +864,12 @@ def doctor_dashboard(request):
     sync_patient_cards_for_doctor(doctor)
     current_appointment = active_appointment_for_doctor(doctor)
     current_card = None
+    current_entries = PatientRecordEntry.objects.none()
     if current_appointment:
         current_card, _ = ensure_patient_card_from_appointment(current_appointment)
+        current_entries = current_card.record_entries.select_related(
+            'appointment__service',
+        ).prefetch_related('images')
     return render(
         request,
         'clinic/doctor_dashboard.html',
@@ -874,6 +878,7 @@ def doctor_dashboard(request):
             'schedules': doctor.schedules.select_related('workplace'),
             'current_appointment': current_appointment,
             'current_card': current_card,
+            'current_entries': current_entries,
         },
     )
 
