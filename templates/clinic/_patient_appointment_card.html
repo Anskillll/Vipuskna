@@ -1,5 +1,5 @@
 <article
-  class="patient-appointment-card patient-appointment-card-{{ appointment.status }}{% if compact %} patient-appointment-card-compact{% endif %}"
+  class="patient-appointment-card patient-appointment-card-{{ appointment.status }}{% if compact %} patient-appointment-card-compact{% endif %}{% if featured %} patient-appointment-card-featured{% endif %}"
   data-live-filter-item
 >
   <header class="patient-appointment-card-head">
@@ -17,7 +17,12 @@
         <span>{{ appointment.doctor.specialization }}</span>
       </div>
     </div>
-    <span class="status {{ appointment.status }}">{{ appointment.get_status_display }}</span>
+    <div class="patient-appointment-badges">
+      {% if featured %}
+        <span class="patient-nearest-badge">Найближчий прийом</span>
+      {% endif %}
+      <span class="status {{ appointment.status }}">{{ appointment.get_status_display }}</span>
+    </div>
   </header>
 
   <div class="patient-appointment-card-body">

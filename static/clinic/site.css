@@ -6835,6 +6835,40 @@ body:not(.public-home-page) .message.is-dismissing {
   border-left-color: #238a70;
 }
 
+.patient-appointment-card-featured {
+  position: relative;
+  border-color: #18a892;
+  border-left-color: #0e806f;
+  background: linear-gradient(100deg, #e1fff8 0%, #f2fffc 48%, #ffffff 100%);
+  box-shadow:
+    0 0 0 3px rgba(31, 190, 164, 0.12),
+    0 18px 38px rgba(13, 128, 111, 0.18);
+}
+
+.patient-appointment-card-featured .patient-appointment-card-body {
+  border-color: #bce9df;
+  background: rgba(232, 255, 249, 0.72);
+}
+
+.patient-appointment-badges {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.patient-nearest-badge {
+  padding: 7px 10px;
+  border: 1px solid #0e806f;
+  border-radius: 4px;
+  background: #0e806f;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 5px 14px rgba(14, 128, 111, 0.2);
+}
+
 .patient-appointment-card-completed {
   border-left-color: #73827f;
 }
@@ -7265,6 +7299,12 @@ body:not(.public-home-page) .message.is-dismissing {
   }
 
   .patient-appointment-card .status {
+    margin-left: 0;
+  }
+
+  .patient-appointment-badges {
+    align-items: flex-start;
+    flex-direction: column;
     margin-left: 66px;
   }
 

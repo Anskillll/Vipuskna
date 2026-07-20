@@ -1592,6 +1592,31 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, self.doctor.full_name)
         self.assertContains(response, self.doctor.specialization)
 
+    def test_patient_dashboard_highlights_only_nearest_approved_appointment(self):
+        for day_offset in (7, 14):
+            Appointment.objects.create(
+                doctor=self.doctor,
+                service=self.service,
+                patient=self.patient,
+                patient_first_name=self.patient.first_name,
+                patient_last_name=self.patient.last_name,
+                patient_phone=self.patient.profile.phone,
+                date=timezone.localdate() + timedelta(days=day_offset),
+                time=time(9, 0),
+                city='Дніпро',
+                address='вул. Тестова, 1',
+                reason='Майбутній прийом',
+                status=Appointment.STATUS_APPROVED,
+            )
+        self.client.login(username='patient@test.local', password='pass12345')
+
+        response = self.client.get(reverse('patient_dashboard'))
+        content = response.content.decode()
+
+        self.assertContains(response, 'Найближчий прийом')
+        self.assertEqual(content.count('patient-appointment-card-featured'), 1)
+        self.assertEqual(content.count('patient-nearest-badge'), 1)
+
     def test_incomplete_patient_profile_shows_notice_and_blocks_booking(self):
         self.patient.profile.age = None
         self.patient.profile.save(update_fields=['age'])

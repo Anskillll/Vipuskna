@@ -155,7 +155,7 @@
       {% if approved %}
         <div class="patient-appointment-list">
           {% for appointment in approved %}
-            {% include 'clinic/_patient_appointment_card.html' with appointment=appointment %}
+            {% include 'clinic/_patient_appointment_card.html' with appointment=appointment featured=forloop.first %}
           {% endfor %}
         </div>
       {% else %}
