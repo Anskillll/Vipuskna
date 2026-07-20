@@ -377,6 +377,22 @@ class Appointment(models.Model):
             item_end = item_start + timedelta(minutes=appointment.duration_minutes)
             if target_start < item_end and target_end > item_start:
                 return False
+
+        if self.patient:
+            patient_appointments = (
+                Appointment.objects.filter(
+                    patient=self.patient,
+                    date=self.date,
+                )
+                .exclude(pk=self.pk)
+                .exclude(status=self.STATUS_CANCELED)
+                .exclude(status=self.STATUS_REJECTED)
+            )
+            for appointment in patient_appointments:
+                item_start = datetime.combine(appointment.date, appointment.time)
+                item_end = item_start + timedelta(minutes=appointment.duration_minutes)
+                if target_start < item_end and target_end > item_start:
+                    return False
         return True
 
     @property

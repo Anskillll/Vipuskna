@@ -41,7 +41,11 @@ from .forms import (
     UsernameLoginForm,
     WorkScheduleForm,
 )
-from .views import active_appointment_for_doctor, appointment_conflicts
+from .views import (
+    active_appointment_for_doctor,
+    appointment_conflicts,
+    patient_appointment_conflicts,
+)
 
 
 class ClinicModelTests(TestCase):
@@ -97,6 +101,45 @@ class ClinicModelTests(TestCase):
             end_time=time(11, 0),
             slot_minutes=60,
         )
+
+    def create_other_doctor(self, slot_minutes=20):
+        doctor_user = User.objects.create_user(
+            username='other-doctor@test.local',
+            password='pass12345',
+            first_name='Інший',
+            last_name='Лікар',
+        )
+        Profile.objects.create(
+            user=doctor_user,
+            role=Profile.ROLE_DOCTOR,
+            phone='+380503333333',
+        )
+        doctor = Doctor.objects.create(
+            user=doctor_user,
+            specialization='Ортодонт',
+            phone='+380503333333',
+        )
+        workplace = DoctorWorkplace.objects.create(
+            doctor=doctor,
+            name='Інша клініка',
+            city='Київ',
+            address='вул. Інша, 2',
+        )
+        WorkSchedule.objects.create(
+            doctor=doctor,
+            workplace=workplace,
+            weekday=self.schedule.weekday,
+            city='Київ',
+            address='вул. Інша, 2',
+            start_time=time(9, 0),
+            end_time=time(11, 0),
+            slot_minutes=slot_minutes,
+        )
+        service = MedicalService.objects.create(
+            doctor=doctor,
+            name='Огляд ортодонта',
+        )
+        return doctor, service
 
     def test_schedule_creates_hour_slots(self):
         slots = self.schedule.get_slots()
@@ -573,6 +616,129 @@ class ClinicModelTests(TestCase):
 
         self.assertFalse(appointment_conflicts(self.doctor, visit_date, time(9, 0), duration_slots=2))
         self.assertTrue(appointment_conflicts(self.doctor, visit_date, time(9, 0), duration_slots=3))
+
+    def test_patient_cannot_book_same_time_with_another_doctor(self):
+        other_doctor, other_service = self.create_other_doctor()
+        visit_date = timezone.localdate() + timedelta(days=7)
+        Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            date=visit_date,
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Перший прийом',
+            duration_minutes_exact=60,
+            status=Appointment.STATUS_APPROVED,
+        )
+        self.client.login(username='patient@test.local', password='pass12345')
+
+        response = self.client.post(
+            reverse('booking'),
+            data={
+                'doctor': other_doctor.id,
+                'date': visit_date.isoformat(),
+                'time': '09:00',
+                'service': other_service.id,
+                'reason': 'Другий прийом на той самий час',
+            },
+            follow=True,
+        )
+
+        self.assertFalse(
+            Appointment.objects.filter(
+                doctor=other_doctor,
+                patient=self.patient,
+                date=visit_date,
+            ).exists()
+        )
+        self.assertContains(
+            response,
+            'У цей час у вас уже є інша заявка або прийом. Оберіть вільний час.',
+        )
+
+    def test_patient_conflict_uses_full_appointment_duration(self):
+        visit_date = timezone.localdate() + timedelta(days=7)
+        Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            date=visit_date,
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Тривалий прийом',
+            duration_minutes_exact=60,
+            status=Appointment.STATUS_APPROVED,
+        )
+
+        self.assertTrue(
+            patient_appointment_conflicts(
+                self.patient,
+                visit_date,
+                time(9, 40),
+                20,
+            )
+        )
+        self.assertFalse(
+            patient_appointment_conflicts(
+                self.patient,
+                visit_date,
+                time(10, 0),
+                20,
+            )
+        )
+
+    def test_doctor_cannot_book_registered_patient_during_another_appointment(self):
+        other_doctor, other_service = self.create_other_doctor()
+        visit_date = timezone.localdate() + timedelta(days=7)
+        Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            date=visit_date,
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Запис до першого лікаря',
+            duration_minutes_exact=60,
+            status=Appointment.STATUS_APPROVED,
+        )
+        self.client.login(username='other-doctor@test.local', password='pass12345')
+
+        response = self.client.post(
+            reverse('doctor_book_patient'),
+            data={
+                'date': visit_date.isoformat(),
+                'time': '09:00',
+                'patient': self.patient.id,
+                'service': other_service.id,
+                'duration_minutes': 20,
+                'reason': 'Спроба запису до другого лікаря',
+            },
+        )
+
+        self.assertFalse(
+            Appointment.objects.filter(
+                doctor=other_doctor,
+                patient=self.patient,
+                date=visit_date,
+            ).exists()
+        )
+        self.assertContains(
+            response,
+            'У цей час пацієнт уже має іншу заявку або прийом.',
+        )
 
     def test_patient_cannot_book_past_date(self):
         self.client.login(username='patient@test.local', password='pass12345')

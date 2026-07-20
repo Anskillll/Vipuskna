@@ -223,7 +223,57 @@ def appointment_conflicts(
     return False
 
 
-def slots_for_doctor(doctor, selected_date):
+def patient_appointment_conflicts(
+    patient,
+    selected_date,
+    selected_time,
+    duration_minutes,
+    patient_phone='',
+    exclude_id=None,
+):
+    if not selected_date or not selected_time or not duration_minutes:
+        return False
+
+    identity_filter = Q(patient=patient) if patient else None
+    normalized_phone = normalize_phone_number(
+        patient_phone
+        or (
+            patient.profile.phone
+            if patient and hasattr(patient, 'profile')
+            else ''
+        )
+    )
+    if normalized_phone:
+        phone_filter = Q(patient_phone=normalized_phone)
+        identity_filter = (
+            identity_filter | phone_filter
+            if identity_filter is not None
+            else phone_filter
+        )
+    if identity_filter is None:
+        return False
+
+    target_start = datetime.combine(selected_date, selected_time)
+    target_end = target_start + timedelta(minutes=duration_minutes)
+    appointments = (
+        Appointment.objects.filter(
+            identity_filter,
+            date=selected_date,
+            status__in=BLOCKING_APPOINTMENT_STATUSES,
+        )
+        .exclude(pk=exclude_id)
+        .select_related('doctor')
+        .order_by('time')
+    )
+    for appointment in appointments:
+        item_start = datetime.combine(appointment.date, appointment.time)
+        item_end = item_start + timedelta(minutes=appointment.duration_minutes)
+        if target_start < item_end and target_end > item_start:
+            return True
+    return False
+
+
+def slots_for_doctor(doctor, selected_date, patient=None, patient_phone=''):
     schedule = schedule_for_date(doctor, selected_date)
     if not schedule:
         return None, []
@@ -234,6 +284,12 @@ def slots_for_doctor(doctor, selected_date):
             'time': slot,
             'busy': appointment_conflicts(doctor, selected_date, slot, duration_slots=1) or (
                 selected_date == now.date() and slot <= now.time().replace(second=0, microsecond=0)
+            ) or patient_appointment_conflicts(
+                patient,
+                selected_date,
+                slot,
+                schedule.slot_minutes,
+                patient_phone=patient_phone,
             ),
         }
         for slot in schedule.get_slots()
@@ -628,15 +684,26 @@ def restore_appointment(request, appointment_id):
         status=Appointment.STATUS_CANCELED,
     )
     if request.method == 'POST':
-        if not appointment.can_restore or appointment_conflicts(
-            appointment.doctor,
-            appointment.date,
-            appointment.time,
-            duration_slots=appointment.duration_slots,
-            duration_minutes=appointment.duration_minutes,
-            exclude_id=appointment.id,
+        if (
+            not appointment.can_restore
+            or appointment_conflicts(
+                appointment.doctor,
+                appointment.date,
+                appointment.time,
+                duration_slots=appointment.duration_slots,
+                duration_minutes=appointment.duration_minutes,
+                exclude_id=appointment.id,
+            )
+            or patient_appointment_conflicts(
+                appointment.patient,
+                appointment.date,
+                appointment.time,
+                appointment.duration_minutes,
+                patient_phone=appointment.patient_phone,
+                exclude_id=appointment.id,
+            )
         ):
-            messages.error(request, 'Цей запис уже не можна відновити.')
+            messages.error(request, 'Цей запис уже не можна відновити: час зайнятий іншим прийомом.')
         else:
             appointment.status = Appointment.STATUS_PENDING
             appointment.save(update_fields=['status'])
@@ -693,8 +760,19 @@ def patient_reschedule_response(request, appointment_id):
             duration_minutes=appointment.duration_minutes,
             exclude_id=appointment.id,
         )
+        or patient_appointment_conflicts(
+            appointment.patient,
+            appointment.date,
+            appointment.time,
+            appointment.duration_minutes,
+            patient_phone=appointment.patient_phone,
+            exclude_id=appointment.id,
+        )
     ):
-        messages.error(request, 'Цей час уже недоступний. Зверніться до лікаря для нового перенесення.')
+        messages.error(
+            request,
+            'Цей час уже недоступний або перетинається з іншим прийомом. Зверніться до лікаря для нового перенесення.',
+        )
         return redirect('patient_appointment_detail', appointment_id=appointment.id)
 
     appointment.status = Appointment.STATUS_APPROVED
@@ -796,11 +874,27 @@ def booking(request):
             selected_date = earliest_booking_date
             selected_time = None
         else:
-            schedule, slots = slots_for_doctor(selected_doctor, selected_date)
+            schedule, slots = slots_for_doctor(
+                selected_doctor,
+                selected_date,
+                patient=request.user,
+                patient_phone=request.user.profile.phone,
+            )
             available_times = [slot['time'] for slot in slots if not slot['busy']]
 
             if is_past_appointment(selected_date, selected_time):
                 messages.error(request, 'Цей час уже недоступний.')
+            elif selected_time and schedule and patient_appointment_conflicts(
+                request.user,
+                selected_date,
+                selected_time,
+                schedule.slot_minutes,
+                patient_phone=request.user.profile.phone,
+            ):
+                messages.error(
+                    request,
+                    'У цей час у вас уже є інша заявка або прийом. Оберіть вільний час.',
+                )
             elif not selected_time or selected_time not in available_times:
                 messages.error(request, 'Цей час уже недоступний.')
             elif reason_form.is_valid() and schedule:
@@ -835,7 +929,16 @@ def booking(request):
     else:
         reason_form = BookingReasonForm(doctor=selected_doctor)
 
-    schedule, slots = slots_for_doctor(selected_doctor, selected_date) if selected_doctor else (None, [])
+    schedule, slots = (
+        slots_for_doctor(
+            selected_doctor,
+            selected_date,
+            patient=request.user,
+            patient_phone=request.user.profile.phone,
+        )
+        if selected_doctor
+        else (None, [])
+    )
     has_bookable_services = bool(
         selected_doctor
         and selected_doctor.services.filter(is_patient_selectable=True).exists()
@@ -987,6 +1090,22 @@ def doctor_propose_reschedule(request, appointment_id):
             f'{reverse("doctor_appointment_detail", args=[appointment.id])}?reschedule=1#reschedule'
         )
 
+    if patient_appointment_conflicts(
+        appointment.patient,
+        selected_date,
+        selected_time,
+        duration_minutes,
+        patient_phone=appointment.patient_phone,
+        exclude_id=appointment.id,
+    ):
+        messages.error(
+            request,
+            'У цей час пацієнт уже має іншу заявку або прийом. Оберіть інший час.',
+        )
+        return redirect(
+            f'{reverse("doctor_appointment_detail", args=[appointment.id])}?reschedule=1#reschedule'
+        )
+
     appointment.previous_date = appointment.date
     appointment.previous_time = appointment.time
     appointment.date = selected_date
@@ -1059,6 +1178,18 @@ def doctor_review_appointment(request, appointment_id):
                 exclude_id=appointment.id,
             ):
                 messages.error(request, 'На цей час не вистачає вільних слотів для такої тривалості.')
+            elif patient_appointment_conflicts(
+                appointment.patient,
+                appointment.date,
+                appointment.time,
+                duration_minutes,
+                patient_phone=appointment.patient_phone,
+                exclude_id=appointment.id,
+            ):
+                messages.error(
+                    request,
+                    'У цей час пацієнт уже має іншу заявку або прийом.',
+                )
             else:
                 appointment.duration_slots = duration_slots
                 appointment.duration_minutes_exact = duration_minutes
@@ -1146,6 +1277,17 @@ def doctor_book_patient(request):
                 duration_minutes=duration_minutes,
             ):
                 messages.error(request, 'Для такої тривалості недостатньо вільного часу.')
+            elif patient_appointment_conflicts(
+                patient,
+                selected_date,
+                selected_time,
+                duration_minutes,
+                patient_phone=patient_phone,
+            ):
+                messages.error(
+                    request,
+                    'У цей час пацієнт уже має іншу заявку або прийом.',
+                )
             else:
                 try:
                     appointment = Appointment.objects.create(
