@@ -1,0 +1,125 @@
+<section class="current-visit-banner{% if doctor_visit_is_preview %} is-preview{% endif %}">
+  <div>
+    <span class="current-visit-label">
+      {% if doctor_visit_is_preview %}Тестовий режим{% else %}Прийом триває зараз{% endif %}
+    </span>
+    {% if doctor_visit_is_preview %}
+      <h2>Перевірка активного прийому</h2>
+      <p>
+        {% if doctor_visit_card %}
+          Так виглядатиме робота із клієнтом {{ doctor_visit_card.full_name }}.
+        {% else %}
+          Так виглядатиме блок активного прийому після появи картки пацієнта.
+        {% endif %}
+      </p>
+    {% else %}
+      <h2>Зараз працюєте з клієнтом {{ doctor_visit_appointment.patient_name }}</h2>
+      <p>
+        {{ doctor_visit_appointment.service.name|default:'Послугу не вказано' }} ·
+        {{ doctor_visit_appointment.time|time:'H:i' }}–{{ doctor_visit_appointment.end_time|time:'H:i' }} ·
+        {{ doctor_visit_appointment.duration_minutes }} хв
+      </p>
+    {% endif %}
+  </div>
+
+  <div class="current-visit-banner-actions">
+    <button
+      type="button"
+      class="btn current-visit-button"
+      data-current-records-open
+      aria-haspopup="dialog"
+      aria-controls="current-patient-records"
+    >
+      Переглянути записи пацієнта
+    </button>
+    {% if doctor_visit_is_preview %}
+      <form method="post" action="{% url 'doctor_visit_preview_stop' %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button type="submit" class="btn secondary current-visit-stop">Завершити перевірку</button>
+      </form>
+    {% endif %}
+  </div>
+</section>
+
+<dialog id="current-patient-records" class="current-records-dialog" data-current-records-dialog>
+  <div class="current-records-dialog-head">
+    <div>
+      <span class="current-visit-label">
+        {% if doctor_visit_is_preview %}Тестовий перегляд{% else %}Поточний пацієнт{% endif %}
+      </span>
+      <h2>
+        {% if doctor_visit_card %}
+          Записи про {{ doctor_visit_card.full_name }}
+        {% else %}
+          Меню записів пацієнта
+        {% endif %}
+      </h2>
+      <p>
+        {% if doctor_visit_is_preview %}
+          Так виглядатиме меню записів під час активного прийому.
+        {% else %}
+          Інформація, яку ви додавали під час попередніх прийомів.
+        {% endif %}
+      </p>
+    </div>
+    <button
+      type="button"
+      class="current-records-close"
+      data-current-records-close
+      aria-label="Закрити"
+      title="Закрити"
+    >×</button>
+  </div>
+
+  <div class="current-records-list">
+    {% for entry in doctor_visit_entries %}
+      <article class="current-record-item">
+        <div class="current-record-item-head">
+          <div>
+            <span class="record-kind">{{ entry.get_kind_display }}</span>
+            <h3>{{ entry.title }}</h3>
+          </div>
+          <time datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at|date:'d.m.Y H:i' }}</time>
+        </div>
+        <div class="record-entry-text">{{ entry.details|linebreaks }}</div>
+        {% if entry.recommendations %}
+          <div class="record-recommendations">
+            <strong>Рекомендації</strong>
+            {{ entry.recommendations|linebreaks }}
+          </div>
+        {% endif %}
+        {% if entry.images.all %}
+          <div class="current-record-images">
+            {% for item in entry.images.all %}
+              <a href="{{ item.image.url }}" target="_blank" rel="noopener">
+                <img src="{{ item.image.url }}" alt="Фото до запису {{ entry.title }}">
+              </a>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </article>
+    {% empty %}
+      <div class="current-records-empty">
+        {% if doctor_visit_card %}
+          <strong>Записів про цього пацієнта ще немає.</strong>
+          <span>Створіть перший запис у картці пацієнта.</span>
+        {% else %}
+          <strong>Карток пацієнтів поки немає.</strong>
+          <span>Після появи першої картки тут відображатимуться записи лікаря.</span>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if doctor_visit_card %}
+    <div class="current-records-dialog-actions">
+      <a
+        class="btn secondary current-record-create"
+        href="{% url 'doctor_patient_card_detail' doctor_visit_card.id %}{% if doctor_visit_appointment %}?appointment={{ doctor_visit_appointment.id }}{% endif %}#new-entry"
+      >
+        Створити новий запис
+      </a>
+    </div>
+  {% endif %}
+</dialog>

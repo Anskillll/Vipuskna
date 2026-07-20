@@ -5587,14 +5587,64 @@ body:not(.public-home-page) .patient-reschedule-alert {
 }
 
 body:not(.public-home-page) .current-visit-banner {
-  border: 1px solid #1f6c61;
+  border: 1px solid #31a878;
+  border-left: 6px solid #159a63;
   border-radius: 8px;
-  background: #193f3a;
-  box-shadow: none;
+  background: #dffbea;
+  box-shadow: 0 14px 34px rgba(21, 154, 99, 0.16);
 }
 
 body:not(.public-home-page) .current-visit-label {
-  color: #bce1d8;
+  color: #08734a;
+}
+
+body:not(.public-home-page) .current-visit-banner h2 {
+  color: #0d4f39;
+}
+
+body:not(.public-home-page) .current-visit-banner p {
+  color: #286350;
+}
+
+body:not(.public-home-page) .current-visit-banner.is-preview {
+  border-color: #e1a80d;
+  border-left-color: #e1a80d;
+  background: #fff4bd;
+  box-shadow: 0 14px 34px rgba(190, 131, 0, 0.18);
+}
+
+body:not(.public-home-page) .current-visit-banner.is-preview .current-visit-label {
+  color: #875700;
+}
+
+body:not(.public-home-page) .current-visit-banner.is-preview h2 {
+  color: #5f3d00;
+}
+
+body:not(.public-home-page) .current-visit-banner.is-preview p {
+  color: #76591b;
+}
+
+.current-visit-banner-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.current-visit-banner-actions form {
+  margin: 0;
+}
+
+body:not(.public-home-page) .current-visit-banner-actions .btn {
+  height: 100%;
+  min-height: 42px;
+}
+
+body:not(.public-home-page) .current-visit-stop {
+  border-color: #bd8a17;
+  background: rgba(255, 255, 255, 0.64);
+  color: #684600;
 }
 
 .current-records-dialog {
@@ -6151,6 +6201,16 @@ body:not(.public-home-page) .doctor-profile-section-actions {
 }
 
 @media (max-width: 620px) {
+  .current-visit-banner-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .current-visit-banner-actions form,
+  .current-visit-banner-actions .btn {
+    width: 100%;
+  }
+
   .current-records-dialog {
     width: calc(100% - 20px);
     max-height: calc(100vh - 20px);

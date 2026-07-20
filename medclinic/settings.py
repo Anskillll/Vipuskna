@@ -69,6 +69,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'clinic.context_processors.clinic_branding',
+                'clinic.context_processors.doctor_visit_status',
             ],
         },
     },

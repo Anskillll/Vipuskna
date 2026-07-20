@@ -1828,7 +1828,11 @@ class ClinicModelTests(TestCase):
             f"?appointment={appointment.id}#new-entry"
         )
         self.assertEqual(response.status_code, 200)
-        self.assertQuerySetEqual(response.context['current_entries'], [entry])
+        self.assertFalse(response.context['doctor_visit_is_preview'])
+        self.assertEqual(response.context['doctor_visit_card'], card)
+        self.assertQuerySetEqual(response.context['doctor_visit_entries'], [entry])
+        self.assertContains(response, 'current-visit-banner')
+        self.assertContains(response, 'Прийом триває зараз')
         self.assertContains(response, 'Переглянути записи пацієнта')
         self.assertContains(response, 'Записи про Тест Пацієнт')
         self.assertContains(response, 'План лікування')
@@ -1855,28 +1859,48 @@ class ClinicModelTests(TestCase):
         )
         self.client.login(username='doctor@test.local', password='pass12345')
 
-        response = self.client.get(reverse('doctor_dashboard'))
+        initial_response = self.client.get(reverse('doctor_dashboard'))
+        response = self.client.post(reverse('doctor_visit_preview_start'), follow=True)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['records_dialog_card'], card)
-        self.assertQuerySetEqual(response.context['records_dialog_entries'], [entry])
-        self.assertContains(response, 'Перевірити меню записів')
+        self.assertContains(initial_response, 'Перевірити активний прийом')
+        self.assertNotContains(initial_response, 'current-visit-banner')
+        self.assertTrue(response.context['doctor_visit_is_preview'])
+        self.assertEqual(response.context['doctor_visit_card'], card)
+        self.assertQuerySetEqual(response.context['doctor_visit_entries'], [entry])
+        self.assertContains(response, 'Перевірка активного прийому')
+        self.assertContains(response, 'Тестовий режим')
+        self.assertContains(response, 'current-visit-banner is-preview')
         self.assertContains(response, 'Тестовий перегляд')
         self.assertContains(response, 'Запис для перевірки')
         self.assertContains(
             response,
             f"{reverse('doctor_patient_card_detail', args=[card.id])}#new-entry",
         )
-        self.assertNotContains(response, 'current-visit-banner')
+
+        profile_response = self.client.get(reverse('doctor_edit_profile'))
+        self.assertContains(profile_response, 'Перевірка активного прийому')
+        self.assertContains(profile_response, 'current-visit-banner is-preview')
+
+        stop_response = self.client.post(
+            reverse('doctor_visit_preview_stop'),
+            data={'next': reverse('doctor_edit_profile')},
+            follow=True,
+        )
+        self.assertRedirects(stop_response, reverse('doctor_edit_profile'))
+        self.assertNotContains(stop_response, 'current-visit-banner is-preview')
 
     def test_new_doctor_can_preview_empty_records_menu(self):
         self.client.login(username='doctor@test.local', password='pass12345')
 
-        response = self.client.get(reverse('doctor_dashboard'))
+        initial_response = self.client.get(reverse('doctor_dashboard'))
+        response = self.client.post(reverse('doctor_visit_preview_start'), follow=True)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIsNone(response.context['records_dialog_card'])
-        self.assertContains(response, 'Перевірити меню записів')
+        self.assertContains(initial_response, 'Перевірити активний прийом')
+        self.assertIsNone(response.context['doctor_visit_card'])
+        self.assertTrue(response.context['doctor_visit_is_preview'])
+        self.assertContains(response, 'Перевірка активного прийому')
         self.assertContains(response, 'Меню записів пацієнта')
         self.assertContains(response, 'Карток пацієнтів поки немає.')
         self.assertNotContains(response, 'Створити новий запис')

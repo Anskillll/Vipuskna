@@ -38,6 +38,7 @@ from .forms import (
     WorkScheduleForm,
     normalize_phone_number,
 )
+from .context_processors import DOCTOR_VISIT_PREVIEW_SESSION_KEY
 from .models import (
     Appointment,
     AppointmentImage,
@@ -862,35 +863,33 @@ def doctor_dashboard(request):
     refresh_completed_appointments()
     doctor = request.user.doctor_profile
     sync_patient_cards_for_doctor(doctor)
-    current_appointment = active_appointment_for_doctor(doctor)
-    current_card = None
-    current_entries = PatientRecordEntry.objects.none()
-    if current_appointment:
-        current_card, _ = ensure_patient_card_from_appointment(current_appointment)
-        current_entries = current_card.record_entries.select_related(
-            'appointment__service',
-        ).prefetch_related('images')
-    records_dialog_card = current_card or doctor.patient_cards.select_related(
-        'patient__profile',
-    ).order_by('-updated_at').first()
-    records_dialog_entries = PatientRecordEntry.objects.none()
-    if records_dialog_card:
-        records_dialog_entries = records_dialog_card.record_entries.select_related(
-            'appointment__service',
-        ).prefetch_related('images')
     return render(
         request,
         'clinic/doctor_dashboard.html',
         {
             'doctor': doctor,
             'schedules': doctor.schedules.select_related('workplace'),
-            'current_appointment': current_appointment,
-            'current_card': current_card,
-            'current_entries': current_entries,
-            'records_dialog_card': records_dialog_card,
-            'records_dialog_entries': records_dialog_entries,
         },
     )
+
+
+@doctor_required
+def doctor_visit_preview_start(request):
+    if request.method == 'POST':
+        doctor = request.user.doctor_profile
+        card = doctor.patient_cards.order_by('-updated_at').first()
+        request.session[DOCTOR_VISIT_PREVIEW_SESSION_KEY] = card.id if card else 0
+    return redirect('doctor_dashboard')
+
+
+@doctor_required
+def doctor_visit_preview_stop(request):
+    if request.method == 'POST':
+        request.session.pop(DOCTOR_VISIT_PREVIEW_SESSION_KEY, None)
+    next_url = request.POST.get('next', '') if request.method == 'POST' else ''
+    if not next_url.startswith('/') or next_url.startswith('//'):
+        next_url = reverse('doctor_dashboard')
+    return redirect(next_url)
 
 
 @doctor_required
