@@ -1149,7 +1149,19 @@ class ClinicModelTests(TestCase):
 
         self.assertContains(dashboard_response, 'хоче змінити час прийому')
         self.assertContains(dashboard_response, reverse('patient_appointment_detail', args=[appointment.id]))
+        self.assertContains(dashboard_response, 'Деталі')
+        self.assertContains(dashboard_response, 'aria-label="Погодитися з новим часом"')
+        self.assertContains(dashboard_response, 'aria-label="Відхилити та скасувати запис"')
         self.assertContains(patient_detail_response, 'Погодитися з новим часом')
+        self.assertNotContains(patient_detail_response, 'patient-reschedule-decision')
+        self.assertContains(
+            patient_detail_response,
+            f'{original_date.strftime("%d.%m.%Y")}, 09:00',
+        )
+        self.assertContains(
+            patient_detail_response,
+            f'{proposed_date.strftime("%d.%m.%Y")}, 10:00',
+        )
         self.assertContains(patient_detail_response, original_date.strftime('%d.%m.%Y'))
         self.assertContains(patient_detail_response, proposed_date.strftime('%d.%m.%Y'))
 

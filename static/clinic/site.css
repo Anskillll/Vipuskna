@@ -2607,6 +2607,120 @@ th {
   }
 }
 
+.patient-reschedule-alert {
+  gap: 16px;
+  padding: 16px 20px;
+}
+
+.patient-reschedule-alert strong {
+  font-size: 18px;
+}
+
+.patient-reschedule-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.reschedule-quick-form {
+  margin: 0;
+}
+
+body:not(.public-home-page) .btn.reschedule-alert-link {
+  min-height: 38px;
+  padding: 9px 14px;
+  font-size: 13px;
+  box-shadow: none;
+}
+
+body:not(.public-home-page) button.reschedule-icon-action {
+  display: inline-grid;
+  width: 38px;
+  min-width: 38px;
+  height: 38px;
+  min-height: 38px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 5px 13px rgba(21, 43, 38, 0.18);
+}
+
+body:not(.public-home-page) button.reschedule-icon-action.accept {
+  background: #168b5d;
+}
+
+body:not(.public-home-page) button.reschedule-icon-action.accept:hover {
+  background: #0f6e49;
+  transform: translateY(-1px);
+}
+
+body:not(.public-home-page) button.reschedule-icon-action.reject {
+  background: #b6424c;
+}
+
+body:not(.public-home-page) button.reschedule-icon-action.reject:hover {
+  background: #91333c;
+  transform: translateY(-1px);
+}
+
+.reschedule-comparison {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 18px;
+  padding: 18px 20px;
+}
+
+.reschedule-time {
+  min-width: 154px;
+  gap: 4px;
+  padding: 10px 12px;
+}
+
+.reschedule-time strong {
+  white-space: nowrap;
+}
+
+.detail-reschedule-actions {
+  padding-left: 2px;
+}
+
+.patient-appointment-layout-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 900px) {
+  .reschedule-comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-reschedule-actions {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 680px) {
+  .patient-reschedule-alert {
+    align-items: stretch;
+  }
+
+  .patient-reschedule-actions {
+    justify-content: flex-end;
+  }
+
+  .reschedule-time {
+    min-width: 0;
+  }
+
+  .reschedule-time strong {
+    white-space: normal;
+  }
+}
+
 .current-visit-banner {
   display: flex;
   align-items: center;

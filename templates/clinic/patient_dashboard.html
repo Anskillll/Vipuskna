@@ -27,13 +27,35 @@
           <span class="reschedule-eyebrow">Потрібне ваше рішення</span>
           <strong>Лікар {{ appointment.doctor.full_name }} хоче змінити час прийому</strong>
           <p>
-            Було {{ appointment.previous_date|date:'d.m.Y' }} о {{ appointment.previous_time|time:'H:i' }}.
-            Новий час: {{ appointment.date|date:'d.m.Y' }} о {{ appointment.time|time:'H:i' }}.
+            Було {{ appointment.previous_date|date:'d.m.Y' }}, {{ appointment.previous_time|time:'H:i' }}.
+            Запропоновано {{ appointment.date|date:'d.m.Y' }}, {{ appointment.time|time:'H:i' }}.
           </p>
         </div>
-        <a class="btn reschedule-alert-link" href="{% url 'patient_appointment_detail' appointment.id %}">
-          Переглянути і відповісти
-        </a>
+        <div class="patient-reschedule-actions" aria-label="Рішення щодо нового часу">
+          <a class="btn reschedule-alert-link" href="{% url 'patient_appointment_detail' appointment.id %}">
+            Деталі
+          </a>
+          <form method="post" action="{% url 'patient_reschedule_response' appointment.id %}" class="reschedule-quick-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="accept">
+            <button
+              class="reschedule-icon-action accept"
+              type="submit"
+              aria-label="Погодитися з новим часом"
+              title="Погодитися з новим часом"
+            >✓</button>
+          </form>
+          <form method="post" action="{% url 'patient_reschedule_response' appointment.id %}" class="reschedule-quick-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reject">
+            <button
+              class="reschedule-icon-action reject"
+              type="submit"
+              aria-label="Відхилити та скасувати запис"
+              title="Відхилити та скасувати запис"
+            >×</button>
+          </form>
+        </div>
       </aside>
     {% endfor %}
 

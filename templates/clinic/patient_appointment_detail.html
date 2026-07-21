@@ -22,20 +22,40 @@
       <div class="reschedule-times">
         <article class="reschedule-time old">
           <span>Було</span>
-          <strong>{{ appointment.previous_date|date:'d.m.Y' }}</strong>
-          <b>{{ appointment.previous_time|time:'H:i' }}</b>
+          <strong>{{ appointment.previous_date|date:'d.m.Y' }}, {{ appointment.previous_time|time:'H:i' }}</strong>
         </article>
         <span class="reschedule-arrow" aria-hidden="true">→</span>
         <article class="reschedule-time new">
           <span>Запропоновано</span>
-          <strong>{{ appointment.date|date:'d.m.Y' }}</strong>
-          <b>{{ appointment.time|time:'H:i' }}</b>
+          <strong>{{ appointment.date|date:'d.m.Y' }}, {{ appointment.time|time:'H:i' }}</strong>
         </article>
+      </div>
+      <div class="patient-reschedule-actions detail-reschedule-actions" aria-label="Ваше рішення">
+        <form method="post" action="{% url 'patient_reschedule_response' appointment.id %}" class="reschedule-quick-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="accept">
+          <button
+            class="reschedule-icon-action accept"
+            type="submit"
+            aria-label="Погодитися з новим часом"
+            title="Погодитися з новим часом"
+          >✓</button>
+        </form>
+        <form method="post" action="{% url 'patient_reschedule_response' appointment.id %}" class="reschedule-quick-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="reject">
+          <button
+            class="reschedule-icon-action reject"
+            type="submit"
+            aria-label="Відхилити та скасувати запис"
+            title="Відхилити та скасувати запис"
+          >×</button>
+        </form>
       </div>
     </section>
   {% endif %}
 
-  <div class="patient-appointment-layout">
+  <div class="patient-appointment-layout patient-appointment-layout-single">
     <section class="card section-card">
       <div class="section-head"><h2 class="section-title">Інформація про прийом</h2></div>
       <dl class="detail-list">
@@ -52,22 +72,6 @@
       </div>
     </section>
 
-    {% if appointment.status == 'reschedule_proposed' %}
-      <aside class="card section-card patient-reschedule-decision">
-        <h2 class="section-title">Ваше рішення</h2>
-        <p class="section-note">Після відмови цей запис буде скасовано.</p>
-        <form method="post" action="{% url 'patient_reschedule_response' appointment.id %}">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="accept">
-          <button class="green" type="submit">Погодитися з новим часом</button>
-        </form>
-        <form method="post" action="{% url 'patient_reschedule_response' appointment.id %}">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="reject">
-          <button class="danger" type="submit">Відхилити та скасувати</button>
-        </form>
-      </aside>
-    {% endif %}
   </div>
 
   {% if appointment.images.all or appointment.videos.all %}
