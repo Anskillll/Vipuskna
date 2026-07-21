@@ -532,12 +532,16 @@ def ensure_patient_card_from_appointment(appointment):
 def unclaimed_records_for_phone(phone):
     appointments = [
         appointment
-        for appointment in Appointment.objects.filter(patient__isnull=True).only('id', 'patient_phone')
+        for appointment in Appointment.objects.filter(patient__isnull=True)
+        .only('id', 'patient_phone', 'patient_first_name', 'patient_last_name', 'created_at')
+        .order_by('-created_at')
         if normalize_phone_number(appointment.patient_phone) == phone
     ]
     cards = [
         card
-        for card in DoctorPatientCard.objects.filter(patient__isnull=True).only('id', 'patient_phone')
+        for card in DoctorPatientCard.objects.filter(patient__isnull=True)
+        .only('id', 'patient_phone', 'patient_first_name', 'patient_last_name', 'updated_at')
+        .order_by('-updated_at')
         if normalize_phone_number(card.patient_phone) == phone
     ]
     return appointments, cards
@@ -720,8 +724,13 @@ def claim_patient_complete(request):
         return redirect('patient_dashboard')
 
     appointments, cards = unclaimed_records_for_phone(phone)
+    doctor_identity = appointments[0] if appointments else (cards[0] if cards else None)
 
     with transaction.atomic():
+        if doctor_identity:
+            request.user.first_name = doctor_identity.patient_first_name.strip()
+            request.user.last_name = doctor_identity.patient_last_name.strip()
+            request.user.save(update_fields=['first_name', 'last_name'])
         profile.phone = phone
         profile.save(update_fields=['phone'])
         Appointment.objects.filter(pk__in=[item.pk for item in appointments]).update(patient=request.user)

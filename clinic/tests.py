@@ -1554,8 +1554,8 @@ class ClinicModelTests(TestCase):
         google_user = User.objects.create_user(
             username='google-patient@test.local',
             email='google-patient@test.local',
-            first_name='Новий',
-            last_name='Пацієнт',
+            first_name='Імʼя Google',
+            last_name='Прізвище Google',
         )
         profile = Profile.objects.create(
             user=google_user,
@@ -1578,9 +1578,12 @@ class ClinicModelTests(TestCase):
         appointment.refresh_from_db()
         card.refresh_from_db()
         profile.refresh_from_db()
+        google_user.refresh_from_db()
         self.assertEqual(appointment.patient, google_user)
         self.assertEqual(card.patient, google_user)
         self.assertEqual(profile.phone, phone)
+        self.assertEqual(google_user.first_name, 'Новий')
+        self.assertEqual(google_user.last_name, 'Пацієнт')
         self.assertNotIn('patient_claim_phone', self.client.session)
 
     def test_claiming_records_requires_linked_google_account(self):
