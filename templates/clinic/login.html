@@ -4,14 +4,16 @@
 
 {% block content %}
   <div class="card standalone-form-card">
-    {% if role == 'doctor' %}
+    {% if role == 'administration' %}
+      <h1 class="page-title">Вхід для адміністрації</h1>
+    {% elif role == 'doctor' %}
       <h1 class="page-title">Вхід для лікаря</h1>
     {% elif role == 'admin' %}
       <h1 class="page-title">Вхід для адміністратора</h1>
     {% else %}
       <h1 class="page-title">Вхід</h1>
     {% endif %}
-    <p class="muted">Використайте логін і пароль.</p>
+    <p class="muted">Використайте логін і пароль лікаря або адміністратора.</p>
 
     <form method="post">
       {% csrf_token %}

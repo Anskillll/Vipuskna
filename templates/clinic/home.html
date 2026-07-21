@@ -63,8 +63,7 @@
         <div class="home-hero-nav-links">
           <a href="{% url 'doctors' %}">Лікарі</a>
           {% if not user.is_authenticated %}
-            <a href="{% url 'doctor_login' %}">Лікар</a>
-            <a href="{% url 'admin_login' %}">Адмін</a>
+            <a href="{% url 'administration_login' %}">Вхід для адміністрації</a>
           {% elif user.is_staff %}
             <a href="{% url 'admin_panel' %}">Панель адміністратора</a>
             <a href="{% url 'logout' %}">Вийти</a>

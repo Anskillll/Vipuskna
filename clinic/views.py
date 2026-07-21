@@ -222,7 +222,7 @@ def doctor_required(view_func):
                 return redirect('home')
             return view_func(request, *args, **kwargs)
         messages.error(request, 'Увійдіть як лікар.')
-        return redirect('doctor_login')
+        return redirect('administration_login')
 
     return wrapper
 
@@ -233,7 +233,7 @@ def admin_required(view_func):
         if request.user.is_authenticated and request.user.is_staff:
             return view_func(request, *args, **kwargs)
         messages.error(request, 'Увійдіть як адміністратор.')
-        return redirect('admin_login')
+        return redirect('administration_login')
 
     return wrapper
 
@@ -572,7 +572,11 @@ def login_view(request, role='patient'):
         user = form.get_user(request)
         if user and user.is_active:
             actual_role = user_role(user)
-            if role == 'admin' and not user.is_staff:
+            if role == 'administration' and not (
+                user.is_staff or actual_role == Profile.ROLE_DOCTOR
+            ):
+                messages.error(request, 'Цей акаунт не належить лікарю або адміністратору.')
+            elif role == 'admin' and not user.is_staff:
                 messages.error(request, 'Цей акаунт не є акаунтом адміністратора.')
             elif role == 'doctor' and actual_role != Profile.ROLE_DOCTOR:
                 messages.error(request, 'Цей акаунт не є акаунтом лікаря.')

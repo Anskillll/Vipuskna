@@ -42,8 +42,7 @@
           {% endif %}
           <a href="{% url 'logout' %}">Вийти</a>
         {% else %}
-          <a href="{% url 'doctor_login' %}">Лікар</a>
-          <a href="{% url 'admin_login' %}">Адмін</a>
+          <a href="{% url 'administration_login' %}">Вхід для адміністрації</a>
         {% endif %}
       </nav>
     </div>

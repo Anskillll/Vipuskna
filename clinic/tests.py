@@ -2444,3 +2444,44 @@ class ClinicModelTests(TestCase):
         self.client.post(reverse('admin_cancel_appointment', args=[appointment.id]))
         appointment.refresh_from_db()
         self.assertEqual(appointment.status, Appointment.STATUS_APPROVED)
+
+    def test_administration_login_page_is_shared(self):
+        response = self.client.get(reverse('administration_login'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Вхід для адміністрації')
+        self.assertContains(response, 'логін і пароль лікаря або адміністратора')
+
+    def test_shared_administration_login_detects_doctor(self):
+        response = self.client.post(
+            reverse('administration_login'),
+            data={'username': 'doctor@test.local', 'password': 'pass12345'},
+        )
+
+        self.assertRedirects(response, reverse('doctor_dashboard'))
+        self.assertEqual(int(self.client.session['_auth_user_id']), self.doctor.user_id)
+
+    def test_shared_administration_login_detects_admin(self):
+        admin_user = User.objects.create_superuser(
+            username='shared-login-admin',
+            email='shared-login-admin@test.local',
+            password='pass12345',
+        )
+
+        response = self.client.post(
+            reverse('administration_login'),
+            data={'username': admin_user.username, 'password': 'pass12345'},
+        )
+
+        self.assertRedirects(response, reverse('admin_panel'))
+        self.assertEqual(int(self.client.session['_auth_user_id']), admin_user.id)
+
+    def test_patient_cannot_use_shared_administration_login(self):
+        response = self.client.post(
+            reverse('administration_login'),
+            data={'username': 'patient@test.local', 'password': 'pass12345'},
+            follow=True,
+        )
+
+        self.assertContains(response, 'Цей акаунт не належить лікарю або адміністратору.')
+        self.assertNotIn('_auth_user_id', self.client.session)
