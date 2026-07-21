@@ -240,7 +240,7 @@ def doctor_required(view_func):
     def wrapper(request, *args, **kwargs):
         if request.user.is_authenticated and user_role(request.user) == Profile.ROLE_DOCTOR:
             if not request.user.is_active:
-                messages.error(request, 'Ваш акаунт заблоковано.')
+                messages.error(request, 'Ваш акаунт архівовано.')
                 return redirect('home')
             return view_func(request, *args, **kwargs)
         messages.error(request, 'Увійдіть як лікар.')
@@ -2078,13 +2078,14 @@ def admin_toggle_user(request, user_id):
     edited_user = get_object_or_404(User, pk=user_id)
     if request.method == 'POST':
         if edited_user == request.user:
-            messages.error(request, 'Не можна заблокувати самого себе.')
+            messages.error(request, 'Не можна архівувати самого себе.')
         else:
             edited_user.is_active = not edited_user.is_active
             edited_user.save(update_fields=['is_active'])
-            action = 'Відновлено акаунт' if edited_user.is_active else 'Заблоковано акаунт'
+            action = 'Відновлено акаунт' if edited_user.is_active else 'Архівовано акаунт'
             write_audit_log(request, action, edited_user)
-            messages.success(request, 'Статус акаунта змінено.')
+            message = 'Акаунт відновлено.' if edited_user.is_active else 'Акаунт перенесено до архіву.'
+            messages.success(request, message)
     return redirect('admin_panel')
 
 
@@ -2093,14 +2094,21 @@ def admin_delete_user(request, user_id):
     edited_user = get_object_or_404(User, pk=user_id)
     if request.method == 'POST':
         if edited_user == request.user:
-            messages.error(request, 'Не можна архівувати самого себе.')
-        elif not edited_user.is_active:
-            messages.info(request, 'Цей акаунт уже неактивний.')
+            messages.error(request, 'Не можна видалити власний акаунт.')
+        elif not hasattr(edited_user, 'profile') or edited_user.profile.role != Profile.ROLE_PATIENT:
+            messages.error(request, 'Назавжди видаляти можна лише профілі пацієнтів.')
+        elif edited_user.is_active:
+            messages.error(request, 'Спочатку перенесіть профіль пацієнта до архіву.')
         else:
-            edited_user.is_active = False
-            edited_user.save(update_fields=['is_active'])
-            write_audit_log(request, 'Архівовано акаунт', edited_user)
-            messages.success(request, 'Акаунт перенесено до архіву. Дані та історію збережено.')
+            profile_photo = edited_user.profile.photo
+            write_audit_log(request, 'Назавжди видалено профіль пацієнта', edited_user)
+            edited_user.delete()
+            if profile_photo and profile_photo.name:
+                profile_photo.storage.delete(profile_photo.name)
+            messages.success(
+                request,
+                'Профіль пацієнта видалено назавжди. Історію прийомів і медичні записи збережено.',
+            )
     return redirect('admin_panel')
 
 

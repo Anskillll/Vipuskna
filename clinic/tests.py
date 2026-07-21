@@ -2513,7 +2513,7 @@ class ClinicModelTests(TestCase):
         )
         self.client.login(username='security-admin', password='pass12345')
 
-        self.client.post(reverse('admin_delete_user', args=[self.patient.id]))
+        self.client.post(reverse('admin_toggle_user', args=[self.patient.id]))
 
         self.patient.refresh_from_db()
         self.assertFalse(self.patient.is_active)
@@ -2526,6 +2526,72 @@ class ClinicModelTests(TestCase):
                 target_id=str(self.patient.pk),
             ).exists()
         )
+
+    def test_admin_can_permanently_delete_archived_patient_profile(self):
+        admin_user = User.objects.create_superuser(
+            username='delete-admin',
+            email='delete-admin@test.local',
+            password='pass12345',
+        )
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            date=timezone.localdate() + timedelta(days=7),
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Історія після видалення профілю',
+        )
+        card = DoctorPatientCard.objects.create(
+            doctor=self.doctor,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+        )
+        patient_id = self.patient.id
+        self.patient.is_active = False
+        self.patient.save(update_fields=['is_active'])
+        self.client.login(username='delete-admin', password='pass12345')
+
+        response = self.client.post(
+            reverse('admin_delete_user', args=[patient_id]),
+            follow=True,
+        )
+
+        self.assertFalse(User.objects.filter(pk=patient_id).exists())
+        appointment.refresh_from_db()
+        card.refresh_from_db()
+        self.assertIsNone(appointment.patient)
+        self.assertIsNone(card.patient)
+        self.assertContains(response, 'Профіль пацієнта видалено назавжди')
+        self.assertTrue(
+            AuditLog.objects.filter(
+                actor=admin_user,
+                action='Назавжди видалено профіль пацієнта',
+                target_id=str(patient_id),
+            ).exists()
+        )
+
+    def test_admin_must_archive_patient_before_permanent_deletion(self):
+        admin_user = User.objects.create_superuser(
+            username='careful-admin',
+            email='careful-admin@test.local',
+            password='pass12345',
+        )
+        self.client.login(username='careful-admin', password='pass12345')
+
+        response = self.client.post(
+            reverse('admin_delete_user', args=[self.patient.id]),
+            follow=True,
+        )
+
+        self.assertTrue(User.objects.filter(pk=self.patient.id).exists())
+        self.assertContains(response, 'Спочатку перенесіть профіль пацієнта до архіву.')
 
     def test_past_appointment_cannot_be_canceled_by_direct_post(self):
         appointment = Appointment.objects.create(

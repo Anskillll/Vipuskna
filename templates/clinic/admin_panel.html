@@ -89,7 +89,7 @@
           </thead>
           <tbody>
             {% for item in users %}
-              <tr data-live-filter-item data-filter-extra="{{ item.get_full_name|escape }} {{ item.username|escape }} {{ item.profile.phone|escape }} {% if item.is_staff %}адміністратор{% elif item.profile %}{{ item.profile.get_role_display|escape }}{% endif %} {% if item.is_active %}активний{% else %}заблокований{% endif %}">
+              <tr data-live-filter-item data-filter-extra="{{ item.get_full_name|escape }} {{ item.username|escape }} {{ item.profile.phone|escape }} {% if item.is_staff %}адміністратор{% elif item.profile %}{{ item.profile.get_role_display|escape }}{% endif %} {% if item.is_active %}активний{% else %}архівований{% endif %}">
                 <td>
                   <div class="admin-user-identity">
                     <strong>{{ item.get_full_name|default:item.username }}</strong>
@@ -112,7 +112,7 @@
                   {% elif item.is_active %}
                     <span class="status completed">Активний</span>
                   {% else %}
-                    <span class="status canceled">Заблокований</span>
+                    <span class="status canceled">В архіві</span>
                   {% endif %}
                 </td>
                 <td>
@@ -122,13 +122,13 @@
                       <form method="post" action="{% url 'admin_toggle_user' item.id %}" class="compact-form">
                         {% csrf_token %}
                         <button type="submit" class="{% if item.is_active %}warning{% else %}green{% endif %}">
-                          {% if item.is_active %}Заблокувати{% else %}Розблокувати{% endif %}
+                          {% if item.is_active %}Архівувати{% else %}Відновити{% endif %}
                         </button>
                       </form>
-                      {% if item.is_active %}
+                      {% if not item.is_active and item.profile.role == 'patient' %}
                         <form method="post" action="{% url 'admin_delete_user' item.id %}" class="compact-form">
                           {% csrf_token %}
-                          <button type="submit" class="danger">Архівувати</button>
+                          <button type="submit" class="danger">Видалити назавжди</button>
                         </form>
                       {% endif %}
                     {% endif %}
@@ -165,7 +165,7 @@
                 {% if doctor.user.is_active %}
                   <span class="status completed">Активний</span>
                 {% else %}
-                  <span class="status canceled">Заблокований</span>
+                  <span class="status canceled">В архіві</span>
                 {% endif %}
                 <a href="{% url 'doctor_detail' doctor.id %}">Профіль</a>
               </div>
