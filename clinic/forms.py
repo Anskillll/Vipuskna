@@ -309,7 +309,13 @@ class DoctorPatientBookingForm(FormStyleMixin, forms.Form):
             return cleaned_data
 
         if cleaned_data.get('phone'):
-            cleaned_data['phone'] = normalize_phone_number(cleaned_data['phone'])
+            phone = normalize_phone_number(cleaned_data['phone'])
+            cleaned_data['phone'] = phone
+            if patient_phone_is_used(phone):
+                self.add_error(
+                    'phone',
+                    'Цей номер належить зареєстрованому пацієнту. Знайдіть і виберіть його вище.',
+                )
 
         for field_name in ('first_name', 'last_name', 'phone'):
             if not cleaned_data.get(field_name):

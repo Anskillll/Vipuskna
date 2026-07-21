@@ -1865,7 +1865,7 @@ class ClinicModelTests(TestCase):
         self.assertContains(patient_dashboard_response, 'data-live-pagination')
         self.assertContains(patient_dashboard_response, 'data-live-filter-item')
 
-    def test_doctor_booking_recognizes_registered_patient_phone_format(self):
+    def test_doctor_booking_rejects_manual_phone_of_registered_patient(self):
         self.client.login(username='doctor@test.local', password='pass12345')
         visit_date = timezone.localdate() + timedelta(days=7)
 
@@ -1885,11 +1885,33 @@ class ClinicModelTests(TestCase):
             follow=True,
         )
 
-        appointment = Appointment.objects.get(reason='Перевірка наявного номера')
+        self.assertFalse(Appointment.objects.filter(reason='Перевірка наявного номера').exists())
+        self.assertContains(response, 'Цей номер належить зареєстрованому пацієнту')
+        self.assertContains(response, 'data-patient-picker')
+        self.assertContains(response, 'Почніть вводити ім’я, прізвище або телефон')
+        self.assertContains(response, 'clinic/patient_picker.js')
+
+    def test_doctor_can_book_registered_patient_after_selecting_search_result(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+        visit_date = timezone.localdate() + timedelta(days=7)
+
+        response = self.client.post(
+            reverse('doctor_book_patient'),
+            data={
+                'date': visit_date.strftime('%Y-%m-%d'),
+                'time': '09:00',
+                'patient': self.patient.id,
+                'service': self.service.id,
+                'duration_minutes': 60,
+                'reason': 'Пацієнта обрано через пошук',
+            },
+        )
+
+        self.assertRedirects(response, reverse('doctor_appointments'))
+        appointment = Appointment.objects.get(reason='Пацієнта обрано через пошук')
         self.assertEqual(appointment.patient, self.patient)
         self.assertEqual(appointment.patient_first_name, self.patient.first_name)
         self.assertEqual(appointment.patient_last_name, self.patient.last_name)
-        self.assertContains(response, 'Номер уже належить зареєстрованому пацієнту')
 
     def test_doctor_booking_reuses_unregistered_patient_card_by_phone(self):
         self.client.login(username='doctor@test.local', password='pass12345')

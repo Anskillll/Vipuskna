@@ -1428,10 +1428,7 @@ def doctor_book_patient(request):
             duration_minutes = form.cleaned_data['duration_minutes']
             duration_slots = ceil(duration_minutes / slot_minutes)
             selected_patient = form.cleaned_data.get('patient')
-            patient = selected_patient or find_patient_by_contacts(
-                '',
-                form.cleaned_data['phone'],
-            )
+            patient = selected_patient
             existing_card = find_doctor_card_by_phone(doctor, form.cleaned_data['phone'])
             patient_phone = normalize_phone_number(
                 patient.profile.phone if patient and patient.profile.phone else form.cleaned_data['phone']
@@ -1442,8 +1439,6 @@ def doctor_book_patient(request):
             if patient:
                 patient_first_name = patient.first_name or patient_first_name
                 patient_last_name = patient.last_name or patient_last_name
-                if not selected_patient:
-                    match_message = ' Номер уже належить зареєстрованому пацієнту, запис додано до його кабінету.'
             elif existing_card:
                 patient_first_name = existing_card.patient_first_name
                 patient_last_name = existing_card.patient_last_name
