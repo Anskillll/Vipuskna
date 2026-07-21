@@ -118,7 +118,7 @@ class ClaimPatientForm(FormStyleMixin, forms.Form):
     phone = forms.CharField(
         label='Номер телефону',
         validators=[phone_validator],
-        help_text='Введіть той самий номер, який ви повідомили лікарю.',
+        help_text='Введіть свій номер або той самий номер, який ви повідомили лікарю.',
     )
 
     def clean_phone(self):

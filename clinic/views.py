@@ -42,6 +42,7 @@ from .forms import (
     UsernameLoginForm,
     WorkScheduleForm,
     normalize_phone_number,
+    patient_phone_is_used,
 )
 from .context_processors import DOCTOR_VISIT_PREVIEW_SESSION_KEY
 from .models import (
@@ -651,9 +652,12 @@ def claim_patient(request):
     form = ClaimPatientForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         phone = form.cleaned_data['phone']
-        appointments, cards = unclaimed_records_for_phone(phone)
-        if not appointments and not cards:
-            form.add_error('phone', 'Записів із таким номером не знайдено. Перевірте номер або зверніться до лікаря.')
+        exclude_user = request.user if request.user.is_authenticated else None
+        if patient_phone_is_used(phone, exclude_user=exclude_user):
+            form.add_error(
+                'phone',
+                'Цей номер уже прив’язаний до кабінету. Увійдіть через Google, щоб відкрити його.',
+            )
         else:
             complete_url = reverse('claim_patient_complete')
             if request.user.is_authenticated and SocialAccount.objects.filter(
@@ -716,10 +720,6 @@ def claim_patient_complete(request):
         return redirect('patient_dashboard')
 
     appointments, cards = unclaimed_records_for_phone(phone)
-    if not appointments and not cards:
-        request.session.pop('patient_claim_phone', None)
-        messages.error(request, 'Неприв’язаних записів із цим номером більше немає.')
-        return redirect('patient_dashboard')
 
     with transaction.atomic():
         profile.phone = phone
@@ -728,7 +728,10 @@ def claim_patient_complete(request):
         DoctorPatientCard.objects.filter(pk__in=[item.pk for item in cards]).update(patient=request.user)
 
     request.session.pop('patient_claim_phone', None)
-    messages.success(request, 'Записи лікаря прив’язано до вашого кабінету.')
+    if appointments or cards:
+        messages.success(request, 'Кабінет створено, а записи лікаря прив’язано до нього.')
+    else:
+        messages.success(request, 'Ваш кабінет створено. Заповніть особисті дані у профілі.')
     return redirect('patient_dashboard')
 
 

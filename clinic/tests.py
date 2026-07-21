@@ -1451,6 +1451,60 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'next=%2Fpatient%2Fclaim%2Fcomplete%2F')
         self.assertEqual(self.client.session['patient_claim_phone'], phone)
 
+    def test_guest_can_register_with_phone_without_doctor_records(self):
+        phone = '+380501234577'
+
+        response = self.client.post(
+            reverse('claim_patient'),
+            data={'phone': phone},
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse('home'))
+        self.assertContains(response, 'Увійдіть через Google для подальшої роботи із сайтом.')
+        self.assertEqual(self.client.session['patient_claim_phone'], phone)
+
+    def test_google_login_creates_empty_patient_profile_for_new_phone(self):
+        phone = '+380501234578'
+        google_user = User.objects.create_user(
+            username='new-google-patient@test.local',
+            email='new-google-patient@test.local',
+        )
+        profile = Profile.objects.create(
+            user=google_user,
+            role=Profile.ROLE_PATIENT,
+            phone='',
+        )
+        SocialAccount.objects.create(
+            user=google_user,
+            provider='google',
+            uid='new-google-patient-uid',
+        )
+        self.client.force_login(google_user)
+        session = self.client.session
+        session['patient_claim_phone'] = phone
+        session.save()
+
+        response = self.client.get(reverse('claim_patient_complete'), follow=True)
+
+        self.assertRedirects(response, reverse('patient_dashboard'))
+        self.assertContains(response, 'Ваш кабінет створено. Заповніть особисті дані у профілі.')
+        self.assertContains(response, 'Редагувати профіль')
+        profile.refresh_from_db()
+        self.assertEqual(profile.phone, phone)
+        self.assertFalse(Appointment.objects.filter(patient=google_user).exists())
+        self.assertNotIn('patient_claim_phone', self.client.session)
+
+    def test_phone_registration_rejects_number_of_existing_patient(self):
+        response = self.client.post(
+            reverse('claim_patient'),
+            data={'phone': self.patient.profile.phone},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Цей номер уже прив’язаний до кабінету.')
+        self.assertNotIn('patient_claim_phone', self.client.session)
+
     def test_guest_booking_requires_google_login(self):
         response = self.client.get(reverse('booking'), follow=True)
 

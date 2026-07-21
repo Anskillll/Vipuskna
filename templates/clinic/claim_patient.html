@@ -1,16 +1,16 @@
 {% extends 'clinic/base.html' %}
 
-{% block title %}Знайти записи лікаря - MedClinic{% endblock %}
+{% block title %}Реєстрація пацієнта - MedClinic{% endblock %}
 
 {% block content %}
   <div class="claim-patient-page">
     <section class="card claim-patient-card">
-      <h1 class="page-title">Вас уже реєстрував лікар?</h1>
-      <p class="page-subtitle">Введіть номер телефону із запису. Після перевірки ви повернетеся на головну сторінку, де зможете увійти через Google і безпечно прив’язати свої прийоми.</p>
+      <h1 class="page-title">Реєстрація за номером телефону</h1>
+      <p class="page-subtitle">Введіть свій номер телефону. Якщо лікар уже створював для вас записи, вони будуть прив’язані автоматично. Після перевірки потрібно увійти через Google.</p>
       <form method="post">
         {% csrf_token %}
         {% include 'clinic/_form_fields.html' %}
-        <button type="submit">Перевірити номер</button>
+        <button type="submit">Продовжити</button>
       </form>
       <a class="back-link" href="{% url 'home' %}">← Повернутися на головну</a>
     </section>
