@@ -7898,8 +7898,16 @@ textarea:focus-visible {
 
 /* Compact patient response to a doctor's rescheduling proposal. */
 .patient-reschedule-alert {
+  display: grid;
+  grid-template-columns: 68px minmax(280px, 1fr) auto auto;
   gap: 16px;
   padding: 16px 20px;
+}
+
+.patient-reschedule-alert .patient-alert-doctor img,
+.patient-reschedule-alert .patient-alert-doctor-placeholder {
+  width: 68px;
+  height: 68px;
 }
 
 .patient-reschedule-alert strong {
@@ -7915,11 +7923,11 @@ textarea:focus-visible {
 
 .reschedule-alert-times {
   gap: 8px;
-  margin-left: auto;
 }
 
 .patient-reschedule-actions {
   gap: 8px;
+  justify-self: end;
 }
 
 .reschedule-quick-form {
@@ -8007,13 +8015,12 @@ body:not(.public-home-page) button.reschedule-icon-action.reject:hover {
 
 @media (max-width: 1080px) {
   .patient-reschedule-alert {
-    flex-wrap: wrap;
+    grid-template-columns: 68px minmax(0, 1fr) auto;
   }
 
   .reschedule-alert-times {
-    order: 3;
-    width: 100%;
-    margin-left: 64px;
+    grid-column: 2 / -1;
+    justify-self: start;
   }
 }
 
@@ -8029,16 +8036,16 @@ body:not(.public-home-page) button.reschedule-icon-action.reject:hover {
 
 @media (max-width: 680px) {
   .patient-reschedule-alert {
+    grid-template-columns: 68px minmax(0, 1fr);
     align-items: stretch;
   }
 
   .reschedule-alert-times {
-    order: 0;
-    width: auto;
-    margin-left: 0;
+    grid-column: 1 / -1;
   }
 
   .patient-reschedule-actions {
+    grid-column: 1 / -1;
     justify-content: flex-end;
   }
 
