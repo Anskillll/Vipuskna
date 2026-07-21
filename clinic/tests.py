@@ -25,6 +25,7 @@ from .models import (
     Doctor,
     DoctorPatientCard,
     DoctorWorkplace,
+    GalleryImage,
     HomeHeroSlide,
     MedicalService,
     MedicalServiceImage,
@@ -272,6 +273,97 @@ class ClinicModelTests(TestCase):
                 self.assertTrue(doctor.services.exclude(description='').exists())
             for patient in demo_patients:
                 self.assertTrue(patient.profile.photo)
+
+    def test_clean_fake_data_keeps_selected_people_and_shared_data(self):
+        admin_user = User.objects.create_superuser(
+            username='admin@test.local',
+            password='pass12345',
+        )
+        extra_patient = User.objects.create_user(
+            username='extra-patient@test.local',
+            first_name='Зайвий',
+            last_name='Пацієнт',
+        )
+        Profile.objects.create(
+            user=extra_patient,
+            role=Profile.ROLE_PATIENT,
+            phone='+380504444444',
+        )
+        other_doctor, _ = self.create_other_doctor()
+        visit_date = timezone.localdate() + timedelta(days=7)
+        kept_appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name=self.patient.first_name,
+            patient_last_name=self.patient.last_name,
+            patient_phone=self.patient.profile.phone,
+            date=visit_date,
+            time=time(9, 0),
+            city=self.schedule.city,
+            address=self.schedule.address,
+            reason='Контроль',
+        )
+        Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=extra_patient,
+            patient_first_name=extra_patient.first_name,
+            patient_last_name=extra_patient.last_name,
+            patient_phone=extra_patient.profile.phone,
+            date=visit_date,
+            time=time(10, 0),
+            city=self.schedule.city,
+            address=self.schedule.address,
+            reason='Демонстраційний запис',
+        )
+        kept_card = DoctorPatientCard.objects.create(
+            doctor=self.doctor,
+            patient=self.patient,
+            patient_first_name=self.patient.first_name,
+            patient_last_name=self.patient.last_name,
+            patient_phone=self.patient.profile.phone,
+        )
+        DoctorPatientCard.objects.create(
+            doctor=self.doctor,
+            patient=extra_patient,
+            patient_first_name=extra_patient.first_name,
+            patient_last_name=extra_patient.last_name,
+            patient_phone=extra_patient.profile.phone,
+        )
+        NewsPost.objects.create(doctor=other_doctor, title='Демо', text='Демо')
+        GalleryImage.objects.create(title='Демо', image='clinic/gallery/demo.jpg')
+        hero = HomeHeroSlide.objects.create(
+            title='Справжній слайд',
+            image='clinic/hero/real.jpg',
+        )
+
+        call_command(
+            'clean_fake_data',
+            admin_username=admin_user.username,
+            doctor_username=self.doctor.user.username,
+            patient_username=self.patient.username,
+            apply=True,
+            stdout=StringIO(),
+        )
+
+        self.assertSetEqual(
+            set(User.objects.values_list('id', flat=True)),
+            {admin_user.id, self.doctor.user_id, self.patient.id},
+        )
+        self.assertSetEqual(
+            set(Appointment.objects.values_list('id', flat=True)),
+            {kept_appointment.id},
+        )
+        self.assertSetEqual(
+            set(DoctorPatientCard.objects.values_list('id', flat=True)),
+            {kept_card.id},
+        )
+        self.assertTrue(MedicalService.objects.filter(pk=self.service.pk).exists())
+        self.assertTrue(HomeHeroSlide.objects.filter(pk=hero.pk).exists())
+        self.assertFalse(NewsPost.objects.exists())
+        self.assertFalse(GalleryImage.objects.exists())
+        self.assertEqual(AuditLog.objects.count(), 1)
 
     def test_doctor_manages_workplaces_and_uses_preset_in_schedule(self):
         self.client.login(username='doctor@test.local', password='pass12345')
