@@ -54,8 +54,8 @@
         </a>
         <a href="#approved" class="patient-dashboard-stat">
           <span>Майбутні прийоми</span>
-          <strong>0</strong>
-          <small>Доступні після Google-входу</small>
+          <strong>{{ future_appointments|length }}</strong>
+          <small>Знайдено за вашим номером</small>
         </a>
         <a href="#records" class="patient-dashboard-stat">
           <span>Матеріали від лікарів</span>
@@ -91,10 +91,52 @@
             <h2>Підтверджені прийоми</h2>
           </div>
         </div>
-        <div class="patient-dashboard-empty">
-          <strong>Дані поки захищено</strong>
-          <p>Google-вхід потрібен, щоб безпечно показати прив’язані прийоми.</p>
-        </div>
+        {% if future_appointments %}
+          <div class="patient-appointment-list pending-appointment-list">
+            {% for appointment in future_appointments %}
+              <article class="patient-appointment-card patient-appointment-card-{{ appointment.status }}">
+                <header class="patient-appointment-card-head">
+                  <div class="patient-appointment-doctor">
+                    {% if appointment.doctor.photo_src %}
+                      <img src="{{ appointment.doctor.photo_src }}" alt="{{ appointment.doctor.full_name }}">
+                    {% else %}
+                      <span class="patient-appointment-doctor-placeholder" aria-hidden="true">
+                        {{ appointment.doctor.user.first_name|first }}{{ appointment.doctor.user.last_name|first }}
+                      </span>
+                    {% endif %}
+                    <div>
+                      <small>Лікар</small>
+                      <strong>{{ appointment.doctor.full_name }}</strong>
+                      <span>{{ appointment.doctor.specialization }}</span>
+                    </div>
+                  </div>
+                  <span class="status {{ appointment.status }}">{{ appointment.get_status_display }}</span>
+                </header>
+                <div class="patient-appointment-card-body">
+                  <div class="patient-appointment-service">
+                    <small>Послуга</small>
+                    <strong>{{ appointment.service.name|default:'Послугу не обрано' }}</strong>
+                  </div>
+                  <div class="patient-appointment-fact">
+                    <small>Дата і час</small>
+                    <strong>{{ appointment.date|date:'d.m.Y' }} о {{ appointment.time|time:'H:i' }}</strong>
+                    <span>{{ appointment.duration_minutes }} хв</span>
+                  </div>
+                  <div class="patient-appointment-fact patient-appointment-place">
+                    <small>Місце прийому</small>
+                    <strong>{{ appointment.city }}</strong>
+                    <span>{{ appointment.address }}</span>
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="patient-dashboard-empty">
+            <strong>Майбутніх прийомів поки немає</strong>
+            <p>Коли лікар створить прийом на цей номер, він з’явиться тут.</p>
+          </div>
+        {% endif %}
       </section>
 
       <section id="records" class="patient-dashboard-section">

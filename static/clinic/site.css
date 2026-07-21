@@ -8124,6 +8124,14 @@ textarea:focus-visible {
   box-shadow: 0 12px 28px rgba(29, 65, 58, 0.08);
 }
 
+.pending-patient-sections #approved {
+  grid-column: 1 / -1;
+}
+
+.pending-appointment-list .patient-appointment-card {
+  box-shadow: none;
+}
+
 .pending-patient-sections .patient-dashboard-empty {
   min-height: 118px;
 }
@@ -8131,5 +8139,9 @@ textarea:focus-visible {
 @media (max-width: 780px) {
   .pending-patient-sections {
     grid-template-columns: 1fr;
+  }
+
+  .pending-patient-sections #approved {
+    grid-column: auto;
   }
 }

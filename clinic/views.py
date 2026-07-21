@@ -712,6 +712,20 @@ def pending_patient_dashboard(request):
 
     google_url = reverse('google_login')
     complete_url = reverse('claim_patient_complete')
+    unclaimed_appointments, _ = unclaimed_records_for_phone(phone)
+    future_candidates = (
+        Appointment.objects.filter(
+            pk__in=[appointment.pk for appointment in unclaimed_appointments],
+            status__in=[
+                Appointment.STATUS_PENDING,
+                Appointment.STATUS_APPROVED,
+                Appointment.STATUS_RESCHEDULE_PROPOSED,
+            ],
+        )
+        .select_related('doctor__user', 'service')
+        .order_by('date', 'time')
+    )
+    future_appointments = [appointment for appointment in future_candidates if appointment.is_future]
     return render(
         request,
         'clinic/pending_patient_dashboard.html',
@@ -719,6 +733,7 @@ def pending_patient_dashboard(request):
             'pending_phone': phone,
             'pending_identity': pending_patient_identity(phone),
             'pending_google_login_url': f'{google_url}?{urlencode({"next": complete_url})}',
+            'future_appointments': future_appointments,
         },
     )
 

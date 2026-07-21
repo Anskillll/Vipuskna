@@ -1451,6 +1451,9 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'next=%2Fpatient%2Fclaim%2Fcomplete%2F')
         self.assertContains(response, 'Новий Пацієнт')
         self.assertContains(response, phone)
+        self.assertContains(response, 'Підтверджені прийоми')
+        self.assertContains(response, self.service.name)
+        self.assertContains(response, (timezone.localdate() + timedelta(days=7)).strftime('%d.%m.%Y'))
         self.assertNotContains(response, 'Запис створив лікар')
         self.assertEqual(self.client.session['patient_claim_phone'], phone)
 
