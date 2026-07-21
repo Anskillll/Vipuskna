@@ -26,10 +26,17 @@
         <div class="patient-alert-copy">
           <span class="reschedule-eyebrow">Потрібне ваше рішення</span>
           <strong>Лікар {{ appointment.doctor.full_name }} хоче змінити час прийому</strong>
-          <p>
-            Було {{ appointment.previous_date|date:'d.m.Y' }}, {{ appointment.previous_time|time:'H:i' }}.
-            Запропоновано {{ appointment.date|date:'d.m.Y' }}, {{ appointment.time|time:'H:i' }}.
-          </p>
+        </div>
+        <div class="reschedule-alert-times" aria-label="Порівняння часу прийому">
+          <article class="reschedule-time alert-reschedule-time old">
+            <span>Було</span>
+            <strong>{{ appointment.previous_date|date:'d.m.Y' }}, {{ appointment.previous_time|time:'H:i' }}</strong>
+          </article>
+          <span class="reschedule-arrow" aria-hidden="true">→</span>
+          <article class="reschedule-time alert-reschedule-time new">
+            <span>Запропоновано</span>
+            <strong>{{ appointment.date|date:'d.m.Y' }}, {{ appointment.time|time:'H:i' }}</strong>
+          </article>
         </div>
         <div class="patient-reschedule-actions" aria-label="Рішення щодо нового часу">
           <a class="btn reschedule-alert-link" href="{% url 'patient_appointment_detail' appointment.id %}">
