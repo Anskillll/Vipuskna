@@ -79,6 +79,11 @@ class ClinicModelTests(TestCase):
             phone='+380501111111',
             age=25,
         )
+        SocialAccount.objects.create(
+            user=self.patient,
+            provider='google',
+            uid='test-patient-google-uid',
+        )
         doctor_user = User.objects.create_user(
             username='doctor@test.local',
             email='doctor@test.local',
@@ -1437,11 +1442,39 @@ class ClinicModelTests(TestCase):
         response = self.client.post(
             reverse('claim_patient'),
             data={'phone': '050 123 45 67'},
+            follow=True,
         )
 
-        self.assertEqual(response.status_code, 302)
-        self.assertIn(reverse('google_login'), response.url)
+        self.assertRedirects(response, reverse('home'))
+        self.assertContains(response, 'Увійдіть через Google для подальшої роботи із сайтом.')
+        self.assertContains(response, 'claim-google-message')
+        self.assertContains(response, 'next=%2Fpatient%2Fclaim%2Fcomplete%2F')
         self.assertEqual(self.client.session['patient_claim_phone'], phone)
+
+    def test_guest_booking_requires_google_login(self):
+        response = self.client.get(reverse('booking'), follow=True)
+
+        self.assertRedirects(response, reverse('home'))
+        self.assertContains(response, 'Спочатку увійдіть в акаунт Google.')
+
+    def test_local_patient_without_google_cannot_use_patient_cabinet(self):
+        local_patient = User.objects.create_user(
+            username='local-only-patient',
+            password='pass12345',
+        )
+        Profile.objects.create(
+            user=local_patient,
+            role=Profile.ROLE_PATIENT,
+            phone='+380501234599',
+            age=30,
+        )
+        self.client.force_login(local_patient)
+
+        response = self.client.get(reverse('patient_dashboard'), follow=True)
+
+        self.assertRedirects(response, reverse('home'))
+        self.assertContains(response, 'Спочатку увійдіть в акаунт Google.')
+        self.assertNotIn('_auth_user_id', self.client.session)
 
     def test_google_patient_can_claim_appointments_and_cards_by_phone(self):
         phone = '+380501234568'
@@ -2280,6 +2313,12 @@ class ClinicModelTests(TestCase):
         )
         self.client.login(username='unrelated@test.local', password='pass12345')
         self.assertEqual(self.client.get(url).status_code, 403)
+
+        appointment.patient = unrelated
+        appointment.save(update_fields=['patient'])
+        self.assertEqual(self.client.get(url).status_code, 403)
+        appointment.patient = self.patient
+        appointment.save(update_fields=['patient'])
 
         self.client.login(username='patient@test.local', password='pass12345')
         patient_response = self.client.get(url)

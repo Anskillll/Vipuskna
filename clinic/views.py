@@ -145,9 +145,15 @@ def private_media(request, path):
         raise PermissionDenied
 
     allowed = request.user.is_staff
+    has_patient_google = SocialAccount.objects.filter(
+        user=request.user,
+        provider='google',
+    ).exists()
     if appointment:
         allowed = allowed or appointment.doctor.user_id == request.user.id
-        allowed = allowed or appointment.patient_id == request.user.id
+        allowed = allowed or (
+            appointment.patient_id == request.user.id and has_patient_google
+        )
     if entry:
         allowed = allowed or entry.doctor.user_id == request.user.id
         patient_can_see = entry.kind in {
@@ -157,7 +163,11 @@ def private_media(request, path):
         patient_id = entry.card.patient_id or (
             entry.appointment.patient_id if entry.appointment_id else None
         )
-        allowed = allowed or (patient_can_see and patient_id == request.user.id)
+        allowed = allowed or (
+            patient_can_see
+            and patient_id == request.user.id
+            and has_patient_google
+        )
     if not allowed:
         raise PermissionDenied
 
@@ -205,9 +215,20 @@ def redirect_by_role(user):
 def patient_required(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
-        if request.user.is_authenticated and user_role(request.user) == Profile.ROLE_PATIENT:
-            return view_func(request, *args, **kwargs)
-        messages.error(request, 'Увійдіть як пацієнт.')
+        if request.user.is_authenticated:
+            if user_role(request.user) == Profile.ROLE_PATIENT:
+                has_google = SocialAccount.objects.filter(
+                    user=request.user,
+                    provider='google',
+                ).exists()
+                if has_google:
+                    return view_func(request, *args, **kwargs)
+                logout(request)
+                messages.error(request, 'Спочатку увійдіть в акаунт Google.')
+                return redirect('home')
+            messages.error(request, 'Ця функція доступна лише пацієнтам.')
+            return redirect_by_role(request.user)
+        messages.error(request, 'Спочатку увійдіть в акаунт Google.')
         return redirect('home')
 
     return wrapper
@@ -548,6 +569,12 @@ def home(request):
             'gallery_images': GalleryImage.objects.filter(is_published=True)[:18],
             'featured_doctors': featured_doctors,
             'hero_slides': HomeHeroSlide.objects.filter(is_active=True),
+            'patient_google_login_url': (
+                f'{reverse("google_login")}?'
+                f'{urlencode({"next": reverse("claim_patient_complete")})}'
+                if request.session.get('patient_claim_phone')
+                else reverse('google_login')
+            ),
         },
     )
 
@@ -628,15 +655,22 @@ def claim_patient(request):
         if not appointments and not cards:
             form.add_error('phone', 'Записів із таким номером не знайдено. Перевірте номер або зверніться до лікаря.')
         else:
-            request.session['patient_claim_phone'] = phone
             complete_url = reverse('claim_patient_complete')
             if request.user.is_authenticated and SocialAccount.objects.filter(
                 user=request.user,
                 provider='google',
             ).exists():
+                request.session['patient_claim_phone'] = phone
                 return redirect(complete_url)
-            google_url = reverse('google_login')
-            return redirect(f'{google_url}?{urlencode({"next": complete_url})}')
+            if request.user.is_authenticated:
+                logout(request)
+            request.session['patient_claim_phone'] = phone
+            messages.info(
+                request,
+                'Увійдіть через Google для подальшої роботи із сайтом.',
+                extra_tags='claim-google-message',
+            )
+            return redirect('home')
 
     return render(request, 'clinic/claim_patient.html', {'form': form})
 

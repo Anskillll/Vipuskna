@@ -8015,3 +8015,10 @@ textarea:focus-visible {
   width: 64px;
   height: 64px;
 }
+
+.messages.claim-google-messages,
+.public-home-page .messages.claim-google-messages {
+  top: 24px;
+  bottom: auto;
+  width: min(460px, calc(100% - 32px));
+}

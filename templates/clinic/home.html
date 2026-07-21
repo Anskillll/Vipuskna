@@ -89,7 +89,7 @@
         <p>Уважна стоматологія для спокійного і зрозумілого лікування.</p>
         <div class="home-hero-actions">
           {% if not user.is_authenticated %}
-            <a href="{% url 'google_login' %}">Увійти через Google <span aria-hidden="true">→</span></a>
+            <a href="{{ patient_google_login_url }}">Увійти через Google <span aria-hidden="true">→</span></a>
             <a href="{% url 'doctors' %}">Переглянути лікарів <span aria-hidden="true">→</span></a>
             <a class="home-hero-minor-link" href="{% url 'claim_patient' %}">Вас уже реєстрував лікар?</a>
           {% elif user.is_staff %}
