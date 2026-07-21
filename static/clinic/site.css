@@ -8009,3 +8009,9 @@ textarea:focus-visible {
     width: 34px;
   }
 }
+
+.patient-reschedule-alert .patient-alert-doctor img,
+.patient-reschedule-alert .patient-alert-doctor-placeholder {
+  width: 64px;
+  height: 64px;
+}
