@@ -9,6 +9,8 @@ __pycache__/
 media/
 private_media/
 .backups/
+.django-server*.log
+.telegram-bot*.log
 .idea/
 .vscode/
 .DS_Store

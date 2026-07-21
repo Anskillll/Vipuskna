@@ -679,6 +679,92 @@ class AuditLog(models.Model):
         return f'{self.created_at:%d.%m.%Y %H:%M} — {self.action}'
 
 
+class TelegramConnection(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='telegram_connection',
+        verbose_name='Користувач',
+    )
+    chat_id = models.BigIntegerField('Telegram chat ID', unique=True)
+    username = models.CharField('Telegram username', max_length=64, blank=True)
+    first_name = models.CharField("Ім'я у Telegram", max_length=120, blank=True)
+    is_active = models.BooleanField('Отримувати сповіщення', default=True)
+    linked_at = models.DateTimeField('Підключено', auto_now_add=True)
+    updated_at = models.DateTimeField('Оновлено', auto_now=True)
+
+    class Meta:
+        verbose_name = 'Підключення Telegram'
+        verbose_name_plural = 'Підключення Telegram'
+
+    def __str__(self):
+        return f'{self.user} — {self.chat_id}'
+
+
+class TelegramLinkToken(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='telegram_link_tokens',
+        verbose_name='Користувач',
+    )
+    token = models.CharField('Одноразовий код', max_length=64, unique=True)
+    expires_at = models.DateTimeField('Діє до')
+    used_at = models.DateTimeField('Використано', null=True, blank=True)
+    created_at = models.DateTimeField('Створено', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Код підключення Telegram'
+        verbose_name_plural = 'Коди підключення Telegram'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.user} — {self.expires_at:%d.%m.%Y %H:%M}'
+
+
+class TelegramNotification(models.Model):
+    STATUS_PENDING = 'pending'
+    STATUS_SENT = 'sent'
+    STATUS_FAILED = 'failed'
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Очікує'),
+        (STATUS_SENT, 'Надіслано'),
+        (STATUS_FAILED, 'Помилка'),
+    ]
+
+    appointment = models.ForeignKey(
+        Appointment,
+        on_delete=models.CASCADE,
+        related_name='telegram_notifications',
+        verbose_name='Запис на прийом',
+    )
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='telegram_notifications',
+        verbose_name='Одержувач',
+    )
+    event_key = models.CharField('Ключ події', max_length=180, unique=True)
+    kind = models.CharField('Тип сповіщення', max_length=40)
+    status = models.CharField(
+        'Статус',
+        max_length=12,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+    )
+    error = models.TextField('Помилка', blank=True)
+    created_at = models.DateTimeField('Створено', auto_now_add=True)
+    sent_at = models.DateTimeField('Надіслано', null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Сповіщення Telegram'
+        verbose_name_plural = 'Сповіщення Telegram'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.kind}: {self.recipient}'
+
+
 class ClinicSettings(models.Model):
     EFFECT_NONE = 'none'
     EFFECT_TEETH = 'teeth'

@@ -1,7 +1,10 @@
 from datetime import datetime, timedelta
 from functools import wraps
+import hmac
+import json
 from math import ceil
 import mimetypes
+import requests
 from urllib.parse import urlencode
 
 from allauth.socialaccount.models import SocialAccount
@@ -14,10 +17,12 @@ from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Max, Q
-from django.http import FileResponse
+from django.http import FileResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.views.static import serve
 
 from .forms import (
@@ -64,7 +69,16 @@ from .models import (
     PatientRecordImage,
     PatientRecordVideo,
     Profile,
+    TelegramConnection,
     WorkSchedule,
+)
+from .telegram import (
+    TelegramError,
+    create_link_url,
+    notify_doctor_new_request,
+    notify_doctor_patient_action,
+    notify_patient_status,
+    process_update,
 )
 
 
@@ -95,6 +109,58 @@ def write_audit_log(request, action, target, details=''):
         target_label=str(target)[:240],
         details=details,
     )
+
+
+@login_required
+def telegram_connect(request):
+    role = user_role(request.user)
+    if request.user.is_staff or role not in {Profile.ROLE_PATIENT, Profile.ROLE_DOCTOR}:
+        messages.error(request, 'Підключення Telegram доступне пацієнтам і лікарям.')
+        return redirect_by_role(request.user)
+
+    if role == Profile.ROLE_PATIENT and not SocialAccount.objects.filter(
+        user=request.user,
+        provider='google',
+    ).exists():
+        messages.error(request, 'Спочатку увійдіть через Google, а потім підключіть Telegram.')
+        return redirect('home')
+
+    try:
+        return redirect(create_link_url(request.user))
+    except TelegramError as error:
+        messages.error(request, str(error))
+        return redirect_by_role(request.user)
+
+
+@login_required
+@require_POST
+def telegram_disconnect(request):
+    disconnected = TelegramConnection.objects.filter(user=request.user).update(is_active=False)
+    if disconnected:
+        messages.success(request, 'Telegram-сповіщення вимкнено.')
+    return redirect_by_role(request.user)
+
+
+@csrf_exempt
+def telegram_webhook(request):
+    if request.method != 'POST':
+        return JsonResponse({'ok': False}, status=405)
+
+    expected_secret = settings.TELEGRAM_WEBHOOK_SECRET
+    received_secret = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')
+    if not expected_secret:
+        return JsonResponse({'ok': False}, status=503)
+    if not hmac.compare_digest(received_secret, expected_secret):
+        return JsonResponse({'ok': False}, status=403)
+
+    try:
+        update = json.loads(request.body.decode('utf-8'))
+        process_update(update)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({'ok': False}, status=400)
+    except (TelegramError, requests.RequestException):
+        return JsonResponse({'ok': False}, status=503)
+    return JsonResponse({'ok': True})
 
 
 def private_media(request, path):
@@ -891,6 +957,11 @@ def cancel_appointment(request, appointment_id):
         appointment.status = Appointment.STATUS_CANCELED
         appointment.save(update_fields=['status'])
         write_audit_log(request, 'Скасовано запис пацієнтом', appointment)
+        notify_doctor_patient_action(
+            appointment,
+            'patient_canceled',
+            'Пацієнт скасував запис',
+        )
         messages.success(request, 'Запис скасовано.')
     elif request.method == 'POST':
         messages.error(request, 'Цей запис уже не можна скасувати.')
@@ -930,6 +1001,7 @@ def restore_appointment(request, appointment_id):
             appointment.status = Appointment.STATUS_PENDING
             appointment.save(update_fields=['status'])
             write_audit_log(request, 'Відновлено заявку пацієнтом', appointment)
+            notify_doctor_new_request(appointment, event='restored')
             messages.success(request, 'Заявку відновлено і знову відправлено лікарю.')
     return redirect('patient_dashboard')
 
@@ -964,6 +1036,11 @@ def patient_reschedule_response(request, appointment_id):
         appointment.status = Appointment.STATUS_CANCELED
         appointment.save(update_fields=['status'])
         write_audit_log(request, 'Відхилено запропонований час', appointment)
+        notify_doctor_patient_action(
+            appointment,
+            'reschedule_rejected',
+            'Пацієнт відхилив новий час',
+        )
         messages.success(request, 'Запропонований час відхилено. Запис скасовано.')
         return redirect('patient_dashboard')
 
@@ -1004,6 +1081,11 @@ def patient_reschedule_response(request, appointment_id):
     appointment.save(update_fields=['status', 'approved_at'])
     ensure_patient_card_from_appointment(appointment)
     write_audit_log(request, 'Погоджено новий час', appointment)
+    notify_doctor_patient_action(
+        appointment,
+        'reschedule_accepted',
+        'Пацієнт погодив новий час',
+    )
     messages.success(request, 'Новий час прийому підтверджено.')
     return redirect('patient_dashboard')
 
@@ -1150,6 +1232,7 @@ def booking(request):
                             AppointmentVideo.objects.create(appointment=appointment, video=video)
                         ensure_patient_card_from_appointment(appointment)
                         write_audit_log(request, 'Створено заявку', appointment)
+                        notify_doctor_new_request(appointment)
                         messages.success(request, 'Заявку відправлено лікарю на підтвердження.')
                         return redirect('patient_dashboard')
                     except IntegrityError:
@@ -1367,6 +1450,11 @@ def doctor_propose_reschedule(request, appointment_id):
         )
 
     write_audit_log(request, 'Запропоновано новий час', appointment)
+    notify_patient_status(
+        appointment,
+        f'reschedule_{int(appointment.reschedule_requested_at.timestamp())}',
+        'Лікар пропонує змінити час прийому',
+    )
     messages.success(request, 'Новий час надіслано пацієнту на погодження.')
     return redirect('doctor_appointment_detail', appointment_id=appointment.id)
 
@@ -1388,6 +1476,11 @@ def doctor_review_appointment(request, appointment_id):
             appointment.save(update_fields=['status'])
             ensure_patient_card_from_appointment(appointment)
             write_audit_log(request, 'Відхилено заявку лікарем', appointment)
+            notify_patient_status(
+                appointment,
+                'rejected',
+                'Лікар відхилив заявку на прийом',
+            )
             messages.success(request, 'Заявку відхилено.')
             return redirect('doctor_appointments')
 
@@ -1428,6 +1521,11 @@ def doctor_review_appointment(request, appointment_id):
                 appointment.save(update_fields=['duration_slots', 'duration_minutes_exact', 'status', 'approved_at'])
                 ensure_patient_card_from_appointment(appointment)
                 write_audit_log(request, 'Підтверджено заявку лікарем', appointment)
+                notify_patient_status(
+                    appointment,
+                    'approved',
+                    'Лікар підтвердив вашу заявку',
+                )
                 messages.success(request, 'Заявку підтверджено.')
                 return redirect('doctor_appointments')
         else:
@@ -1448,6 +1546,11 @@ def doctor_cancel_appointment(request, appointment_id):
         appointment.save(update_fields=['status'])
         ensure_patient_card_from_appointment(appointment)
         write_audit_log(request, 'Скасовано запис лікарем', appointment)
+        notify_patient_status(
+            appointment,
+            'doctor_canceled',
+            'Лікар скасував прийом',
+        )
         messages.success(request, 'Запис пацієнта скасовано.')
     elif request.method == 'POST':
         messages.error(request, 'Цей запис уже не можна скасувати.')
@@ -1539,6 +1642,11 @@ def doctor_book_patient(request):
                     )
                     ensure_patient_card_from_appointment(appointment)
                     write_audit_log(request, 'Лікар записав пацієнта', appointment)
+                    notify_patient_status(
+                        appointment,
+                        'doctor_created',
+                        'Лікар створив для вас запис',
+                    )
                     messages.success(request, f'Пацієнта записано.{match_message}')
                     return redirect('doctor_appointments')
                 except IntegrityError:
@@ -2175,6 +2283,11 @@ def admin_cancel_appointment(request, appointment_id):
         appointment.save(update_fields=['status'])
         ensure_patient_card_from_appointment(appointment)
         write_audit_log(request, 'Скасовано запис адміністратором', appointment)
+        notify_patient_status(
+            appointment,
+            'admin_canceled',
+            'Адміністратор скасував прийом',
+        )
         messages.success(request, 'Запис скасовано адміністратором.')
     elif request.method == 'POST':
         messages.error(request, 'Цей запис уже не можна скасувати.')

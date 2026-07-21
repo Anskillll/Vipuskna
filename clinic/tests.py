@@ -2,7 +2,8 @@ from datetime import datetime, time, timedelta
 from io import StringIO
 from pathlib import Path
 import tempfile
-from unittest.mock import patch
+from unittest.mock import Mock, patch
+from urllib.parse import parse_qs, urlparse
 
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
@@ -34,6 +35,9 @@ from .models import (
     PatientRecordImage,
     PatientRecordVideo,
     Profile,
+    TelegramConnection,
+    TelegramLinkToken,
+    TelegramNotification,
     WorkSchedule,
 )
 from .forms import (
@@ -59,6 +63,12 @@ from .views import (
     active_appointment_for_doctor,
     appointment_conflicts,
     patient_appointment_conflicts,
+)
+from .telegram import (
+    create_link_url,
+    notify_doctor_new_request,
+    process_update,
+    send_tomorrow_reminders,
 )
 
 
@@ -364,6 +374,116 @@ class ClinicModelTests(TestCase):
         self.assertFalse(NewsPost.objects.exists())
         self.assertFalse(GalleryImage.objects.exists())
         self.assertEqual(AuditLog.objects.count(), 1)
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+    )
+    def test_telegram_deep_link_connects_account_only_once(self):
+        link = create_link_url(self.patient)
+        token = parse_qs(urlparse(link).query)['start'][0]
+        client = Mock()
+        update = {
+            'message': {
+                'text': f'/start {token}',
+                'chat': {'id': 10001, 'type': 'private'},
+                'from': {'id': 10001, 'username': 'patient_tg', 'first_name': 'Пацієнт'},
+            },
+        }
+
+        self.assertTrue(process_update(update, client=client))
+        connection = TelegramConnection.objects.get(user=self.patient)
+        self.assertEqual(connection.chat_id, 10001)
+        self.assertEqual(connection.username, 'patient_tg')
+        self.assertTrue(connection.is_active)
+        self.assertIsNotNone(TelegramLinkToken.objects.get(token=token).used_at)
+
+        self.assertFalse(process_update(update, client=client))
+        self.assertEqual(TelegramConnection.objects.filter(user=self.patient).count(), 1)
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+    )
+    def test_patient_sees_telegram_connect_banner_and_gets_deep_link(self):
+        self.client.login(username=self.patient.username, password='pass12345')
+
+        dashboard = self.client.get(reverse('patient_dashboard'))
+        connect = self.client.get(reverse('telegram_connect'))
+
+        self.assertContains(dashboard, 'Приєднайте Telegram-бота')
+        self.assertEqual(connect.status_code, 302)
+        self.assertTrue(connect.url.startswith('https://t.me/myclinic_ua_bot?start='))
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+        SITE_BASE_URL='http://testserver',
+    )
+    def test_new_patient_request_notifies_connected_doctor_once(self):
+        TelegramConnection.objects.create(user=self.doctor.user, chat_id=20002)
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name=self.patient.first_name,
+            patient_last_name=self.patient.last_name,
+            patient_phone=self.patient.profile.phone,
+            date=timezone.localdate() + timedelta(days=2),
+            time=time(9, 0),
+            city=self.schedule.city,
+            address=self.schedule.address,
+            reason='Консультація',
+            status=Appointment.STATUS_PENDING,
+        )
+
+        with patch('clinic.telegram.TelegramBotClient.send_message') as send_message:
+            self.assertTrue(notify_doctor_new_request(appointment))
+            self.assertFalse(notify_doctor_new_request(appointment))
+
+        self.assertEqual(send_message.call_count, 1)
+        self.assertEqual(send_message.call_args.args[0], 20002)
+        notification = TelegramNotification.objects.get()
+        self.assertEqual(notification.recipient, self.doctor.user)
+        self.assertEqual(notification.status, TelegramNotification.STATUS_SENT)
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+        SITE_BASE_URL='http://testserver',
+    )
+    def test_day_before_reminder_is_sent_only_to_patient_after_18(self):
+        TelegramConnection.objects.create(user=self.patient, chat_id=30003)
+        TelegramConnection.objects.create(user=self.doctor.user, chat_id=40004)
+        local_today = timezone.localdate()
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name=self.patient.first_name,
+            patient_last_name=self.patient.last_name,
+            patient_phone=self.patient.profile.phone,
+            date=local_today + timedelta(days=1),
+            time=time(9, 0),
+            city=self.schedule.city,
+            address=self.schedule.address,
+            reason='Консультація',
+            status=Appointment.STATUS_APPROVED,
+            approved_at=timezone.now(),
+        )
+        before_18 = timezone.make_aware(datetime.combine(local_today, time(17, 59)))
+        after_18 = timezone.make_aware(datetime.combine(local_today, time(18, 1)))
+
+        with patch('clinic.telegram.TelegramBotClient.send_message') as send_message:
+            self.assertEqual(send_tomorrow_reminders(now=before_18), 0)
+            self.assertEqual(send_tomorrow_reminders(now=after_18), 1)
+            self.assertEqual(send_tomorrow_reminders(now=after_18), 0)
+
+        self.assertEqual(send_message.call_count, 1)
+        self.assertEqual(send_message.call_args.args[0], 30003)
+        notification = TelegramNotification.objects.get(appointment=appointment)
+        self.assertEqual(notification.recipient, self.patient)
+        self.assertEqual(notification.kind, 'day_before_reminder')
 
     def test_doctor_manages_workplaces_and_uses_preset_in_schedule(self):
         self.client.login(username='doctor@test.local', password='pass12345')

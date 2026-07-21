@@ -13,7 +13,7 @@
   {% else %}
     <link rel="icon" href="data:,">
   {% endif %}
-  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260721-6">
+  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260722-1">
   <script src="{% static 'clinic/live_filter.js' %}?v=20260719-4" defer></script>
   <script src="{% static 'clinic/flash_messages.js' %}?v=20260719-1" defer></script>
 </head>
@@ -55,6 +55,11 @@
 
   <main class="main">
     <div class="container">
+      {% block telegram_banner %}
+        {% if telegram_show_connect %}
+          {% include 'clinic/_telegram_connect_banner.html' %}
+        {% endif %}
+      {% endblock %}
       {% if messages %}
         <div class="messages{% if request.session.patient_claim_phone %} claim-google-messages{% endif %}">
           {% for message in messages %}

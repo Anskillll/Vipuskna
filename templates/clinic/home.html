@@ -6,6 +6,7 @@
 {% block topbar_class %}home-reveal-topbar{% endblock %}
 {% block topbar_attributes %} data-home-reveal-header{% endblock %}
 {% block doctor_visit_banner %}{% endblock %}
+{% block telegram_banner %}{% endblock %}
 
 {% block content %}
   <div class="public-home">
@@ -76,6 +77,12 @@
           {% endif %}
         </div>
       </nav>
+
+      {% if telegram_show_connect %}
+        <div class="home-telegram-connect-banner">
+          {% include 'clinic/_telegram_connect_banner.html' %}
+        </div>
+      {% endif %}
 
       {% if doctor_visit_show %}
         <div class="home-doctor-visit-banner">

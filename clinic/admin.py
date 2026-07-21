@@ -19,6 +19,9 @@ from .models import (
     PatientRecordImage,
     PatientRecordVideo,
     Profile,
+    TelegramConnection,
+    TelegramLinkToken,
+    TelegramNotification,
     WorkSchedule,
 )
 
@@ -195,6 +198,46 @@ class AuditLogAdmin(admin.ModelAdmin):
         'target_label',
         'details',
         'created_at',
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(TelegramConnection)
+class TelegramConnectionAdmin(admin.ModelAdmin):
+    list_display = ('user', 'username', 'chat_id', 'is_active', 'linked_at')
+    list_filter = ('is_active', 'linked_at')
+    search_fields = ('user__username', 'user__first_name', 'user__last_name', 'username', 'chat_id')
+    readonly_fields = ('chat_id', 'username', 'first_name', 'linked_at', 'updated_at')
+
+
+@admin.register(TelegramLinkToken)
+class TelegramLinkTokenAdmin(admin.ModelAdmin):
+    list_display = ('user', 'created_at', 'expires_at', 'used_at')
+    readonly_fields = ('user', 'token', 'created_at', 'expires_at', 'used_at')
+
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(TelegramNotification)
+class TelegramNotificationAdmin(admin.ModelAdmin):
+    list_display = ('created_at', 'recipient', 'kind', 'status', 'appointment')
+    list_filter = ('status', 'kind', 'created_at')
+    search_fields = ('recipient__username', 'appointment__patient_phone', 'event_key', 'error')
+    readonly_fields = (
+        'appointment',
+        'recipient',
+        'event_key',
+        'kind',
+        'status',
+        'error',
+        'created_at',
+        'sent_at',
     )
 
     def has_add_permission(self, request):

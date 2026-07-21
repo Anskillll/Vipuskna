@@ -1,8 +1,17 @@
 from datetime import datetime
 
+from allauth.socialaccount.models import SocialAccount
+from django.conf import settings
 from django.utils import timezone
 
-from .models import Appointment, ClinicSettings, Doctor, PatientRecordEntry
+from .models import (
+    Appointment,
+    ClinicSettings,
+    Doctor,
+    PatientRecordEntry,
+    Profile,
+    TelegramConnection,
+)
 
 
 DOCTOR_VISIT_PREVIEW_SESSION_KEY = 'doctor_visit_preview_card_id'
@@ -76,4 +85,28 @@ def doctor_visit_status(request):
             'doctor_visit_entries': entries,
         }
     )
+    return context
+
+
+def telegram_status(request):
+    context = {
+        'telegram_enabled': bool(settings.TELEGRAM_BOT_TOKEN and settings.TELEGRAM_BOT_USERNAME),
+        'telegram_connected': False,
+        'telegram_show_connect': False,
+    }
+    if not context['telegram_enabled'] or not request.user.is_authenticated or request.user.is_staff:
+        return context
+
+    try:
+        role = request.user.profile.role
+    except Profile.DoesNotExist:
+        role = Profile.ROLE_DOCTOR if hasattr(request.user, 'doctor_profile') else None
+
+    eligible = role == Profile.ROLE_DOCTOR
+    if role == Profile.ROLE_PATIENT:
+        eligible = SocialAccount.objects.filter(user=request.user, provider='google').exists()
+
+    connected = TelegramConnection.objects.filter(user=request.user, is_active=True).exists()
+    context['telegram_connected'] = connected
+    context['telegram_show_connect'] = eligible and not connected
     return context
