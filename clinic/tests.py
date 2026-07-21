@@ -1445,10 +1445,13 @@ class ClinicModelTests(TestCase):
             follow=True,
         )
 
-        self.assertRedirects(response, reverse('home'))
+        self.assertRedirects(response, reverse('pending_patient_dashboard'))
         self.assertContains(response, 'Увійдіть через Google для подальшої роботи із сайтом.')
         self.assertContains(response, 'claim-google-message')
         self.assertContains(response, 'next=%2Fpatient%2Fclaim%2Fcomplete%2F')
+        self.assertContains(response, 'Новий Пацієнт')
+        self.assertContains(response, phone)
+        self.assertNotContains(response, 'Запис створив лікар')
         self.assertEqual(self.client.session['patient_claim_phone'], phone)
 
     def test_guest_can_register_with_phone_without_doctor_records(self):
@@ -1460,9 +1463,32 @@ class ClinicModelTests(TestCase):
             follow=True,
         )
 
-        self.assertRedirects(response, reverse('home'))
+        self.assertRedirects(response, reverse('pending_patient_dashboard'))
         self.assertContains(response, 'Увійдіть через Google для подальшої роботи із сайтом.')
+        self.assertContains(response, 'Новий пацієнт')
         self.assertEqual(self.client.session['patient_claim_phone'], phone)
+
+    def test_pending_patient_home_hides_registration_buttons(self):
+        session = self.client.session
+        session['patient_claim_phone'] = '+380501234577'
+        session.save()
+
+        response = self.client.get(reverse('home'))
+
+        self.assertContains(response, 'Перейти до кабінету')
+        self.assertContains(response, 'Переглянути лікарів')
+        self.assertNotContains(response, 'Реєстрація за номером телефону')
+
+    def test_pending_patient_booking_returns_to_temporary_cabinet(self):
+        session = self.client.session
+        session['patient_claim_phone'] = '+380501234577'
+        session.save()
+
+        response = self.client.get(reverse('booking'), follow=True)
+
+        self.assertRedirects(response, reverse('pending_patient_dashboard'))
+        self.assertContains(response, 'Спочатку увійдіть в акаунт Google.')
+        self.assertContains(response, 'Профіль пацієнта')
 
     def test_google_login_creates_empty_patient_profile_for_new_phone(self):
         phone = '+380501234578'

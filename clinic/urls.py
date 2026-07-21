@@ -18,6 +18,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('forgot-password/', views.forgot_password, name='forgot_password'),
     path('patient/claim/', views.claim_patient, name='claim_patient'),
+    path('patient/pending/', views.pending_patient_dashboard, name='pending_patient_dashboard'),
     path('patient/claim/complete/', views.claim_patient_complete, name='claim_patient_complete'),
     path('doctors/', views.doctors_list, name='doctors'),
     path('doctors/<int:doctor_id>/', views.doctor_detail, name='doctor_detail'),

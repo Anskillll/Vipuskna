@@ -230,6 +230,8 @@ def patient_required(view_func):
             messages.error(request, 'Ця функція доступна лише пацієнтам.')
             return redirect_by_role(request.user)
         messages.error(request, 'Спочатку увійдіть в акаунт Google.')
+        if request.session.get('patient_claim_phone'):
+            return redirect('pending_patient_dashboard')
         return redirect('home')
 
     return wrapper
@@ -547,6 +549,23 @@ def unclaimed_records_for_phone(phone):
     return appointments, cards
 
 
+def pending_patient_identity(phone):
+    appointments, cards = unclaimed_records_for_phone(phone)
+    source = appointments[0] if appointments else (cards[0] if cards else None)
+    if source:
+        first_name = source.patient_first_name.strip()
+        last_name = source.patient_last_name.strip()
+    else:
+        first_name = 'Новий'
+        last_name = 'пацієнт'
+    return {
+        'first_name': first_name,
+        'last_name': last_name,
+        'full_name': f'{first_name} {last_name}'.strip(),
+        'initials': f'{first_name[:1]}{last_name[:1]}'.upper(),
+    }
+
+
 def sync_patient_cards_for_doctor(doctor):
     appointments = doctor.appointments.exclude(
         status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]
@@ -678,9 +697,30 @@ def claim_patient(request):
                 'Увійдіть через Google для подальшої роботи із сайтом.',
                 extra_tags='claim-google-message',
             )
-            return redirect('home')
+            return redirect('pending_patient_dashboard')
 
     return render(request, 'clinic/claim_patient.html', {'form': form})
+
+
+def pending_patient_dashboard(request):
+    if request.user.is_authenticated:
+        return redirect_by_role(request.user)
+
+    phone = request.session.get('patient_claim_phone')
+    if not phone:
+        return redirect('claim_patient')
+
+    google_url = reverse('google_login')
+    complete_url = reverse('claim_patient_complete')
+    return render(
+        request,
+        'clinic/pending_patient_dashboard.html',
+        {
+            'pending_phone': phone,
+            'pending_identity': pending_patient_identity(phone),
+            'pending_google_login_url': f'{google_url}?{urlencode({"next": complete_url})}',
+        },
+    )
 
 
 @login_required

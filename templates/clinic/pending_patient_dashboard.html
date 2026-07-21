@@ -1,0 +1,127 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Тимчасовий кабінет пацієнта - MedClinic{% endblock %}
+{% block body_class %}pending-patient-page{% endblock %}
+
+{% block content %}
+  <div class="patient-dashboard pending-patient-dashboard">
+    <nav class="page-tabs patient-dashboard-tabs" aria-label="Розділи кабінету">
+      <a class="page-tab active" href="#overview">Огляд</a>
+      <a class="page-tab" href="#pending">Мої заявки</a>
+      <a class="page-tab" href="#approved">Прийоми</a>
+      <a class="page-tab" href="#records">Лікування</a>
+      <a class="page-tab" href="#history">Історія</a>
+    </nav>
+
+    <aside class="pending-google-alert patient-dashboard-alert">
+      <div class="patient-alert-copy">
+        <span class="reschedule-eyebrow">Завершіть створення кабінету</span>
+        <strong>Увійдіть через Google для подальшої роботи із сайтом</strong>
+        <p>Профіль уже підготовлено. Google-вхід захистить ваші записи та прив’яже їх до кабінету.</p>
+      </div>
+      <a class="btn pending-google-button" href="{{ pending_google_login_url }}">
+        Увійти через Google <span aria-hidden="true">→</span>
+      </a>
+    </aside>
+
+    <section id="overview" class="card patient-dashboard-profile pending-patient-profile">
+      <div class="patient-profile-hero">
+        <div class="patient-dashboard-photo patient-dashboard-photo-placeholder" aria-hidden="true">
+          {{ pending_identity.initials }}
+        </div>
+
+        <div class="patient-profile-identity">
+          <span class="patient-profile-label">Профіль пацієнта</span>
+          <h1>{{ pending_identity.full_name }}</h1>
+          <div class="patient-profile-facts">
+            <span class="patient-fact-missing">Вік не вказано</span>
+            <span>{{ pending_phone }}</span>
+          </div>
+        </div>
+
+        <div class="patient-profile-actions">
+          <a class="btn patient-booking-button" href="{% url 'booking' %}">Створити запис</a>
+          <a class="btn secondary" href="{% url 'patient_edit_profile' %}">Редагувати профіль</a>
+          <a class="patient-password-link" href="{% url 'doctors' %}">Переглянути лікарів</a>
+        </div>
+      </div>
+
+      <div class="patient-dashboard-stats" aria-label="Розділи майбутнього кабінету">
+        <a href="#pending" class="patient-dashboard-stat">
+          <span>Мої заявки</span>
+          <strong>0</strong>
+          <small>Доступні після Google-входу</small>
+        </a>
+        <a href="#approved" class="patient-dashboard-stat">
+          <span>Майбутні прийоми</span>
+          <strong>0</strong>
+          <small>Доступні після Google-входу</small>
+        </a>
+        <a href="#records" class="patient-dashboard-stat">
+          <span>Матеріали від лікарів</span>
+          <strong>0</strong>
+          <small>Захищено до Google-входу</small>
+        </a>
+        <a href="#history" class="patient-dashboard-stat">
+          <span>Історія відвідувань</span>
+          <strong>0</strong>
+          <small>Захищено до Google-входу</small>
+        </a>
+      </div>
+    </section>
+
+    <div class="pending-patient-sections">
+      <section id="pending" class="patient-dashboard-section">
+        <div class="patient-dashboard-section-head">
+          <div>
+            <span class="patient-section-kicker">Заявки</span>
+            <h2>Мої заявки</h2>
+          </div>
+        </div>
+        <div class="patient-dashboard-empty">
+          <strong>Увійдіть через Google</strong>
+          <p>Після входу тут з’являться заявки, які очікують рішення лікаря.</p>
+        </div>
+      </section>
+
+      <section id="approved" class="patient-dashboard-section">
+        <div class="patient-dashboard-section-head">
+          <div>
+            <span class="patient-section-kicker">Прийоми</span>
+            <h2>Підтверджені прийоми</h2>
+          </div>
+        </div>
+        <div class="patient-dashboard-empty">
+          <strong>Дані поки захищено</strong>
+          <p>Google-вхід потрібен, щоб безпечно показати прив’язані прийоми.</p>
+        </div>
+      </section>
+
+      <section id="records" class="patient-dashboard-section">
+        <div class="patient-dashboard-section-head">
+          <div>
+            <span class="patient-section-kicker">Лікування</span>
+            <h2>Матеріали від лікарів</h2>
+          </div>
+        </div>
+        <div class="patient-dashboard-empty">
+          <strong>Дані поки захищено</strong>
+          <p>Медичні нотатки, рекомендації та файли відкриються після Google-входу.</p>
+        </div>
+      </section>
+
+      <section id="history" class="patient-dashboard-section">
+        <div class="patient-dashboard-section-head">
+          <div>
+            <span class="patient-section-kicker">Історія</span>
+            <h2>Минулі відвідування</h2>
+          </div>
+        </div>
+        <div class="patient-dashboard-empty">
+          <strong>Дані поки захищено</strong>
+          <p>Історія кабінету стане доступною після завершення входу.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}

@@ -13,7 +13,7 @@
   {% else %}
     <link rel="icon" href="data:,">
   {% endif %}
-  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260721-4">
+  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260721-5">
   <script src="{% static 'clinic/live_filter.js' %}?v=20260719-4" defer></script>
   <script src="{% static 'clinic/flash_messages.js' %}?v=20260719-1" defer></script>
 </head>
@@ -41,6 +41,11 @@
             <a class="nav-cta" href="{% url 'booking' %}">Записатися</a>
           {% endif %}
           <a href="{% url 'logout' %}">Вийти</a>
+        {% elif request.session.patient_claim_phone %}
+          <a href="{% url 'doctors' %}">Лікарі</a>
+          <a href="{% url 'pending_patient_dashboard' %}">Мій кабінет</a>
+          <a class="nav-cta" href="{% url 'booking' %}">Записатися</a>
+          <a href="{% url 'google_login' %}?next={% url 'claim_patient_complete' %}">Увійти через Google</a>
         {% else %}
           <a href="{% url 'administration_login' %}">Вхід для адміністрації</a>
         {% endif %}
