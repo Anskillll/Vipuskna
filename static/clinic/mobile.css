@@ -1,0 +1,856 @@
+/* Final responsive layer. Desktop rules remain in site.css. */
+@media (max-width: 720px) {
+  html {
+    scroll-padding-top: 104px;
+  }
+
+  body {
+    font-size: 14px;
+    line-height: 1.42;
+  }
+
+  body.has-site-background,
+  body:not(.public-home-page).has-site-background {
+    background-attachment: scroll;
+  }
+
+  body:not(.public-home-page) .topbar {
+    box-shadow: 0 4px 18px rgba(25, 53, 48, 0.08);
+  }
+
+  body:not(.public-home-page) .topbar-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+    width: calc(100% - 20px);
+    min-height: 0;
+    padding: 8px 0 7px;
+  }
+
+  body:not(.public-home-page) .brand {
+    gap: 8px;
+    width: fit-content;
+    font-size: 15px;
+  }
+
+  body:not(.public-home-page) .brand-logo,
+  body:not(.public-home-page) .brand-mark {
+    width: 30px;
+    height: 30px;
+  }
+
+  body:not(.public-home-page) .nav {
+    display: flex;
+    gap: 6px;
+    width: calc(100vw - 10px);
+    margin-right: -10px;
+    padding: 0 10px 2px 0;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+
+  body:not(.public-home-page) .nav::-webkit-scrollbar,
+  body:not(.public-home-page) .page-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  body:not(.public-home-page) .nav a {
+    flex: 0 0 auto;
+    min-height: 31px;
+    padding: 4px 8px;
+    border: 1px solid #d5e0dd;
+    border-radius: 5px;
+    background: rgba(247, 250, 249, 0.94);
+    font-size: 11.5px;
+    line-height: 1.15;
+    scroll-snap-align: start;
+    white-space: nowrap;
+  }
+
+  body:not(.public-home-page) .nav .nav-cta {
+    min-height: 31px;
+    padding: 4px 10px;
+  }
+
+  body:not(.public-home-page) .container {
+    width: calc(100% - 20px);
+  }
+
+  body:not(.public-home-page) .container,
+  body:not(.public-home-page) .container > *,
+  .admin-dashboard,
+  .admin-dashboard > *,
+  .content-admin,
+  .content-admin > *,
+  .table-wrap {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  body:not(.public-home-page) .main {
+    padding: 18px 0 40px;
+  }
+
+  body:not(.public-home-page) .page-head {
+    gap: 10px;
+    margin-bottom: 17px;
+  }
+
+  body:not(.public-home-page) .page-head > div:first-child {
+    padding-left: 10px;
+  }
+
+  body:not(.public-home-page) .page-title {
+    font-size: 30px;
+    line-height: 1.08;
+  }
+
+  body:not(.public-home-page) .page-subtitle {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: 7px;
+    font-size: 12px;
+  }
+
+  body:not(.public-home-page) .page-tabs,
+  .patient-dashboard-tabs {
+    gap: 18px;
+    margin-bottom: 17px;
+    padding-bottom: 0;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+
+  body:not(.public-home-page) .page-tab {
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding-bottom: 7px;
+    font-size: 12.5px;
+    white-space: nowrap;
+  }
+
+  body:not(.public-home-page) .card,
+  body:not(.public-home-page) .doctor-panel,
+  body:not(.public-home-page) .action-group,
+  body:not(.public-home-page) .content-admin-section {
+    padding: 16px;
+  }
+
+  body:not(.public-home-page) .section-card {
+    margin-bottom: 12px;
+  }
+
+  body:not(.public-home-page) .section-head,
+  body:not(.public-home-page) .section-mini-head {
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  body:not(.public-home-page) .section-title,
+  body:not(.public-home-page) .section-mini-head h2,
+  body:not(.public-home-page) .section-mini-head h3,
+  body:not(.public-home-page) .doctor-profile-section-head h2,
+  body:not(.public-home-page) .doctor-detail-news > h2,
+  body:not(.public-home-page) .record-entry-editor h2 {
+    font-size: 22px;
+  }
+
+  body:not(.public-home-page) .grid,
+  body:not(.public-home-page) .doctor-grid,
+  body:not(.public-home-page) .action-board,
+  body:not(.public-home-page) .appointments-by-day,
+  body:not(.public-home-page) .patient-dashboard,
+  body:not(.public-home-page) .patient-history-layout,
+  body:not(.public-home-page) .pending-patient-sections {
+    gap: 12px;
+  }
+
+  body:not(.public-home-page) .grid-2,
+  body:not(.public-home-page) .grid-3,
+  body:not(.public-home-page) .booking-layout,
+  body:not(.public-home-page) .doctor-grid,
+  body:not(.public-home-page) .action-board,
+  body:not(.public-home-page) .doctor-profile-sections,
+  body:not(.public-home-page) .patient-history-layout,
+  body:not(.public-home-page) .pending-patient-sections {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body:not(.public-home-page) .btn,
+  body:not(.public-home-page) button {
+    min-height: 42px;
+    padding: 0 13px;
+    font-size: 12.5px;
+  }
+
+  body:not(.public-home-page) .btn.compact,
+  body:not(.public-home-page) button.compact {
+    min-height: 36px;
+    padding: 0 10px;
+    font-size: 11.5px;
+  }
+
+  body:not(.public-home-page) .actions {
+    gap: 7px;
+  }
+
+  body:not(.public-home-page) input,
+  body:not(.public-home-page) select,
+  body:not(.public-home-page) textarea {
+    min-height: 44px;
+    padding: 9px 11px;
+    font-size: 16px;
+  }
+
+  body:not(.public-home-page) textarea {
+    min-height: 96px;
+  }
+
+  label,
+  body:not(.public-home-page) .live-filter-field label {
+    font-size: 12.5px;
+  }
+
+  .form-group,
+  .content-admin-form .form-group {
+    gap: 5px;
+    margin-bottom: 13px;
+  }
+
+  .field-help,
+  .muted,
+  .section-note {
+    font-size: 12px;
+  }
+
+  .clearable-file-input {
+    gap: 9px;
+    padding: 10px;
+  }
+
+  .current-file-row,
+  .new-file-row {
+    gap: 7px;
+  }
+
+  .live-filter-bar {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .live-filter-count {
+    justify-self: start;
+    font-size: 12px;
+  }
+
+  body:not(.public-home-page) .live-filter-input-row input {
+    padding-right: 42px;
+  }
+
+  body:not(.public-home-page) .live-filter-clear {
+    width: 32px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .live-pagination {
+    gap: 5px;
+  }
+
+  body:not(.public-home-page) .live-pagination button {
+    min-width: 34px;
+    min-height: 34px;
+    padding: 0 8px;
+  }
+
+  body:not(.public-home-page) .table-wrap {
+    width: 100%;
+    margin-right: -4px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+  }
+
+  body:not(.public-home-page) table {
+    min-width: 620px;
+    font-size: 12px;
+  }
+
+  body:not(.public-home-page) th,
+  body:not(.public-home-page) td {
+    padding: 10px 8px;
+  }
+
+  body:not(.public-home-page) .table-actions {
+    min-width: 132px;
+  }
+
+  /* Doctors and profiles */
+  body:not(.public-home-page) .doctor-panel {
+    min-height: 0;
+  }
+
+  .doctor-panel-top {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 13px;
+  }
+
+  .doctor-photo-lg {
+    width: 72px;
+    height: 72px;
+  }
+
+  body:not(.public-home-page) .doctor-name {
+    font-size: 21px;
+    line-height: 1.12;
+  }
+
+  .doctor-compact-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 14px;
+  }
+
+  .doctor-compact-actions .btn {
+    width: 100%;
+  }
+
+  body:not(.public-home-page) .doctor-dashboard-profile,
+  body:not(.public-home-page) .doctor-detail-profile,
+  body:not(.public-home-page) .patient-dashboard-profile {
+    padding: 17px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-hero,
+  .patient-profile-hero {
+    grid-template-columns: 78px minmax(0, 1fr);
+    gap: 13px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-photo,
+  .patient-dashboard-photo {
+    width: 78px;
+    height: 78px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-identity h1,
+  .patient-profile-identity h1 {
+    margin-top: 2px;
+    font-size: 26px;
+    line-height: 1.08;
+  }
+
+  body:not(.public-home-page) .doctor-profile-actions,
+  .patient-profile-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-about {
+    padding: 13px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-section + .doctor-profile-section {
+    padding-top: 18px;
+  }
+
+  /* Booking and appointment screens */
+  body:not(.public-home-page) .booking-layout {
+    gap: 12px;
+  }
+
+  body:not(.public-home-page) .booking-layout .doctor-summary {
+    order: -1;
+  }
+
+  body:not(.public-home-page) .slot-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  body:not(.public-home-page) .time-pill,
+  body:not(.public-home-page) .slot-busy {
+    min-height: 43px;
+    padding: 0 6px;
+    font-size: 13px;
+  }
+
+  body:not(.public-home-page) .booking-final > button,
+  body:not(.public-home-page) .booking-final .btn,
+  body:not(.public-home-page) .standalone-form-card form > button,
+  body:not(.public-home-page) .claim-patient-card form > button {
+    width: 100%;
+  }
+
+  body:not(.public-home-page) .appointment-day-head {
+    gap: 8px;
+    padding: 14px;
+  }
+
+  body:not(.public-home-page) .appointment-day-head h2 {
+    font-size: 20px;
+  }
+
+  .appointment-day-head span {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  body:not(.public-home-page) .appointment-summary-row {
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 7px 10px;
+    min-height: 0;
+    padding: 11px 10px;
+  }
+
+  body:not(.public-home-page) .appointment-summary-row time {
+    font-size: 16px;
+  }
+
+  .appointment-summary-person {
+    gap: 4px;
+  }
+
+  .appointment-person-name {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  body:not(.public-home-page) .appointment-summary-row > span {
+    grid-column: 2;
+    white-space: normal;
+  }
+
+  .appointment-row-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .appointment-row-actions .btn,
+  .appointment-row-actions form,
+  .appointment-row-actions button {
+    width: 100%;
+  }
+
+  .appointment-detail-layout,
+  .patient-appointment-layout,
+  .reschedule-comparison {
+    gap: 12px;
+  }
+
+  .detail-list {
+    grid-template-columns: 1fr;
+  }
+
+  .day-appointment-item {
+    padding: 10px;
+  }
+
+  /* Patient dashboard */
+  .patient-dashboard-alert,
+  .telegram-connect-banner,
+  .current-visit-banner,
+  .patient-reschedule-alert {
+    gap: 11px;
+    padding: 13px;
+  }
+
+  .patient-dashboard-alert,
+  .telegram-connect-banner,
+  .current-visit-banner {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .patient-dashboard-alert .btn,
+  .telegram-connect-button,
+  .current-visit-banner-actions,
+  .current-visit-banner-actions form,
+  .current-visit-banner-actions .btn {
+    width: 100%;
+  }
+
+  .current-visit-banner-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .telegram-connect-copy strong,
+  .current-visit-banner h2 {
+    font-size: 17px;
+  }
+
+  .patient-dashboard-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 18px;
+  }
+
+  .patient-dashboard-stat,
+  .patient-dashboard-stat:nth-child(odd),
+  .patient-dashboard-stat:nth-child(even) {
+    min-height: 90px;
+    padding: 13px;
+    border: 1px solid #dce5e2;
+  }
+
+  .patient-dashboard-stat strong {
+    font-size: 25px;
+  }
+
+  .patient-dashboard-section {
+    padding: 16px;
+  }
+
+  .patient-dashboard-section-head h2 {
+    font-size: 21px;
+  }
+
+  .patient-appointment-card-head,
+  .patient-appointment-card-body,
+  .patient-appointment-card-actions {
+    padding: 12px;
+  }
+
+  .patient-appointment-card-body,
+  .patient-appointment-list-compact .patient-appointment-card-body {
+    gap: 10px;
+  }
+
+  .patient-record-doctor-avatar {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+  }
+
+  /* Admin screens */
+  .admin-command-bar {
+    width: 100%;
+    gap: 13px;
+    padding: 16px;
+  }
+
+  .admin-command-bar h2 {
+    font-size: 21px;
+  }
+
+  .admin-summary-grid,
+  .content-admin-summary {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-stat {
+    min-height: 94px;
+    padding: 13px;
+  }
+
+  .admin-stat strong {
+    font-size: 27px;
+  }
+
+  .admin-doctor-row,
+  .admin-appointment-row {
+    gap: 8px;
+    padding: 10px 0;
+  }
+
+  .content-admin {
+    gap: 13px;
+  }
+
+  .content-admin-head h1 {
+    font-size: 29px;
+  }
+
+  .content-admin-jump {
+    top: 91px;
+    gap: 7px;
+    margin-right: -10px;
+    margin-left: -10px;
+    padding: 9px 10px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+
+  .content-admin-jump a {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .content-admin-section-head h2 {
+    font-size: 21px;
+  }
+
+  .content-admin-section-head p {
+    font-size: 12px;
+  }
+
+  .content-editor-panel,
+  .content-admin-note {
+    padding: 14px;
+  }
+
+  .hero-admin-actions,
+  .content-admin-row > .actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .hero-admin-actions > *,
+  .hero-admin-actions .btn,
+  .hero-admin-actions button,
+  .content-admin-row > .actions > *,
+  .content-admin-row > .actions .btn,
+  .content-admin-row > .actions button {
+    width: 100%;
+  }
+
+  /* Dialogs, media and toast messages */
+  .current-records-dialog {
+    width: calc(100% - 12px);
+    max-height: calc(100svh - 12px);
+  }
+
+  .current-records-dialog-head,
+  .current-records-list,
+  .current-records-dialog-actions {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .current-records-list {
+    max-height: calc(100svh - 218px);
+  }
+
+  .appointment-photo-grid,
+  .record-videos,
+  .patient-record-videos,
+  .current-record-videos,
+  .service-video-gallery,
+  .service-photo-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body:not(.public-home-page) .messages,
+  .messages.claim-google-messages,
+  .public-home-page .messages.claim-google-messages {
+    right: 10px;
+    bottom: 10px;
+    left: auto;
+    top: auto;
+    width: calc(100% - 20px);
+    transform: none;
+  }
+
+  .message {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+
+  body:not(.public-home-page) .standalone-form-card,
+  body:not(.public-home-page) .claim-patient-card {
+    padding: 20px 16px;
+  }
+
+  body:not(.public-home-page) .standalone-form-card .page-title {
+    font-size: 29px;
+  }
+}
+
+@media (max-width: 420px) {
+  body:not(.public-home-page) .doctor-profile-actions,
+  .patient-profile-actions,
+  .doctor-compact-actions,
+  .appointment-row-actions,
+  .hero-admin-actions,
+  .content-admin-row > .actions {
+    grid-template-columns: 1fr;
+  }
+
+  body:not(.public-home-page) .page-title {
+    font-size: 27px;
+  }
+
+  body:not(.public-home-page) .slot-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  body:not(.public-home-page) .doctor-profile-hero,
+  .patient-profile-hero {
+    grid-template-columns: 68px minmax(0, 1fr);
+  }
+
+  body:not(.public-home-page) .doctor-profile-photo,
+  .patient-dashboard-photo {
+    width: 68px;
+    height: 68px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-identity h1,
+  .patient-profile-identity h1 {
+    font-size: 23px;
+  }
+}
+
+/* Public home keeps its cinematic layout but becomes denser on phones. */
+@media (max-width: 620px) {
+  .public-home-page .home-reveal-topbar .topbar-inner {
+    width: calc(100% - 20px);
+    padding: 8px 0;
+  }
+
+  .public-home-page .home-reveal-topbar .brand-logo {
+    width: 30px;
+    height: 30px;
+  }
+
+  .public-home-page .home-reveal-topbar .nav {
+    gap: 5px;
+  }
+
+  .public-home-page .home-reveal-topbar .nav a {
+    min-height: 32px;
+    padding: 4px 7px;
+    font-size: 11px;
+  }
+
+  .home-cinematic-hero,
+  .home-cinematic-hero.has-doctor-visit {
+    height: 100svh;
+    min-height: 580px;
+  }
+
+  .home-hero-nav {
+    align-items: center;
+    gap: 10px;
+    width: calc(100% - 24px);
+    padding-top: 12px;
+  }
+
+  .home-hero-brand {
+    gap: 7px;
+    font-size: 14px;
+  }
+
+  .home-hero-brand img {
+    width: 30px;
+    height: 30px;
+  }
+
+  .home-hero-nav-links {
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .home-hero-nav-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .home-hero-nav-links a {
+    flex: 0 0 auto;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .home-hero-copy {
+    left: 16px;
+    right: 16px;
+    top: 49%;
+    width: calc(100% - 32px);
+  }
+
+  .home-hero-copy h1 {
+    font-size: 38px;
+  }
+
+  .home-hero-copy > p {
+    margin-top: 12px;
+    font-size: 14px;
+  }
+
+  .home-hero-actions {
+    gap: 9px;
+    margin-top: 18px;
+  }
+
+  .home-hero-actions a {
+    min-height: 30px;
+    font-size: 13px;
+  }
+
+  .home-scroll-cue {
+    bottom: 16px;
+    left: 16px;
+    font-size: 11px;
+  }
+
+  .home-slider-controls {
+    right: 16px;
+    bottom: 13px;
+  }
+
+  .home-section {
+    padding: 46px 0;
+  }
+
+  .home-section-inner {
+    width: calc(100% - 24px);
+  }
+
+  .home-section-head {
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .home-section-head h2 {
+    font-size: 29px;
+  }
+
+  .home-section-head p {
+    font-size: 13px;
+  }
+
+  .home-news-grid,
+  .home-doctor-news-list,
+  .home-doctors-grid {
+    gap: 14px;
+  }
+
+  .home-news-body,
+  .home-doctor-news-item,
+  .home-doctor-card-copy {
+    padding: 15px;
+  }
+
+  .home-news-body h3,
+  .home-doctor-news-item h3,
+  .home-doctor-card-copy strong {
+    font-size: 20px;
+  }
+
+  .home-photo-track figure {
+    flex-basis: min(76vw, 260px);
+  }
+
+  .home-telegram-connect-banner,
+  .home-doctor-visit-banner {
+    width: calc(100% - 20px);
+  }
+}
