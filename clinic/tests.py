@@ -405,6 +405,30 @@ class ClinicModelTests(TestCase):
         TELEGRAM_BOT_TOKEN='test-token',
         TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
     )
+    def test_telegram_start_reports_existing_connection(self):
+        TelegramConnection.objects.create(
+            user=self.patient,
+            chat_id=10002,
+            username='patient_tg',
+        )
+        client = Mock()
+        update = {
+            'message': {
+                'text': '/start',
+                'chat': {'id': 10002, 'type': 'private'},
+                'from': {'id': 10002, 'username': 'patient_tg'},
+            },
+        }
+
+        self.assertTrue(process_update(update, client=client))
+        message = client.send_message.call_args.args[1]
+        self.assertIn('Ви вже зареєстровані', message)
+        self.assertIn('сповіщення', message)
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+    )
     def test_patient_sees_telegram_connect_banner_and_gets_deep_link(self):
         self.client.login(username=self.patient.username, password='pass12345')
 

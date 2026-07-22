@@ -129,6 +129,20 @@ def process_update(update, client=None):
         client.send_message(chat_id, reply)
         return bool(updated)
 
+    if text == '/start':
+        connection = (
+            TelegramConnection.objects.filter(chat_id=chat_id, is_active=True)
+            .select_related('user')
+            .first()
+        )
+        if connection is not None:
+            client.send_message(
+                chat_id,
+                '<b>Ви вже зареєстровані в MedClinic.</b>\n'
+                'Telegram-сповіщення про записи та нагадування увімкнені.',
+            )
+            return True
+
     if text in {'/help', '/start'}:
         client.send_message(
             chat_id,
