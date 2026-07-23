@@ -3,6 +3,7 @@
 {% block title %}Додати лікаря - MedClinic{% endblock %}
 
 {% block content %}
+  <a class="back-link" href="{% url 'admin_panel' %}">← Повернутися до панелі адміністратора</a>
   <div class="card standalone-form-card">
     <h1 class="page-title">Додати лікаря</h1>
     <p class="muted">Адміністратор створює логін, пароль, спеціальність і може одразу завантажити фото.</p>
@@ -11,7 +12,6 @@
       {% include 'clinic/_form_fields.html' %}
       <div class="actions">
         <button type="submit">Створити акаунт лікаря</button>
-        <a class="btn secondary" href="{% url 'admin_panel' %}">Назад</a>
       </div>
     </form>
   </div>

@@ -1,12 +1,11 @@
 {% extends 'clinic/base.html' %}
 
 {% block title %}Запис до {{ appointment.doctor.full_name }} - MedClinic{% endblock %}
-{% block global_back %}{% endblock %}
 
 {% block content %}
   <section class="page-head appointment-detail-head">
     <div>
-      <a class="back-link" href="{% url 'patient_dashboard' %}">← До мого кабінету</a>
+      <a class="back-link" href="{% url 'patient_dashboard' %}">← Повернутися до мого кабінету</a>
       <h1 class="page-title">Запис до {{ appointment.doctor.full_name }}</h1>
       <p class="page-subtitle">Перевірте інформацію про прийом</p>
     </div>

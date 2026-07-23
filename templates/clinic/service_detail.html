@@ -1,12 +1,11 @@
 {% extends 'clinic/base.html' %}
 
 {% block title %}{{ service.name }} - MedClinic{% endblock %}
-{% block global_back %}{% endblock %}
 
 {% block content %}
   <section class="page-head">
     <div>
-      <a class="back-link" href="{% url 'doctor_detail' doctor.id %}">← До профілю лікаря</a>
+      <a class="back-link" href="{% url 'doctor_detail' doctor.id %}">← Повернутися до профілю лікаря</a>
       <h1 class="page-title">{{ service.name }}</h1>
       <p class="page-subtitle">Детальна інформація про послугу</p>
     </div>

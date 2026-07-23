@@ -8350,55 +8350,6 @@ textarea:focus-visible {
   }
 }
 
-.global-back-row {
-  display: flex;
-  justify-content: flex-start;
-  margin-bottom: 14px;
-}
-
-body:not(.public-home-page) button.global-back-button,
-body:not(.public-home-page) button.global-back-button:hover,
-body:not(.public-home-page) button.global-back-button:active {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  width: auto;
-  min-width: 0;
-  height: auto;
-  min-height: 0;
-  padding: 2px 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  color: #147a6e;
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.4;
-  transform: none;
-}
-
-body:not(.public-home-page) button.global-back-button:hover {
-  background: transparent;
-  box-shadow: none;
-  color: #0b5e55;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  transform: none;
-}
-
-body:not(.public-home-page) button.global-back-button:active {
-  background: transparent;
-  box-shadow: none;
-  color: #084d46;
-  transform: translateY(0);
-}
-
-body:not(.public-home-page) button.global-back-button:focus-visible {
-  outline: 2px solid rgba(24, 127, 115, 0.28);
-  outline-offset: 3px;
-}
-
 .booking-daily-limit {
   display: grid;
   gap: 5px;

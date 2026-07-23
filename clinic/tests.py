@@ -291,31 +291,50 @@ class ClinicModelTests(TestCase):
         self.assertNotIn('confirm(', rendered_source)
         self.assertNotIn('onsubmit=', rendered_source)
 
-    def test_internal_pages_have_compact_history_back_link(self):
-        response = self.client.get(reverse('doctors'))
-        home_response = self.client.get(reverse('home'))
+    def test_back_links_are_only_on_secondary_pages(self):
+        for page_name in ('home', 'doctors'):
+            with self.subTest(page_name=page_name):
+                response = self.client.get(reverse(page_name))
+                self.assertEqual(response.status_code, 200)
+                self.assertNotContains(response, 'class="back-link"')
+                self.assertNotContains(response, 'data-history-back')
+
+        self.client.login(username='patient@test.local', password='pass12345')
+        for page_name in ('patient_dashboard', 'booking'):
+            with self.subTest(page_name=page_name):
+                response = self.client.get(reverse(page_name))
+                self.assertEqual(response.status_code, 200)
+                self.assertNotContains(response, 'class="back-link"')
+                self.assertNotContains(response, 'data-history-back')
+
+        edit_response = self.client.get(reverse('patient_edit_profile'))
+        self.assertEqual(edit_response.status_code, 200)
+        self.assertContains(
+            edit_response,
+            (
+                f'class="back-link" href="{reverse("patient_dashboard")}">'
+                '← Повернутися до мого кабінету'
+            ),
+        )
+
         detail_response = self.client.get(
             reverse('doctor_detail', args=[self.doctor.id])
         )
-        script_path = (
-            Path(settings.BASE_DIR)
-            / 'static'
-            / 'clinic'
-            / 'navigation_history.js'
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertContains(
+            detail_response,
+            (
+                f'class="back-link" href="{reverse("doctors")}">'
+                '← Повернутися до списку лікарів'
+            ),
         )
-        script = script_path.read_text(encoding='utf-8')
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'data-history-back')
-        self.assertContains(response, 'data-history-back-label')
-        self.assertContains(response, 'Повернутися на головну')
-        self.assertContains(response, 'clinic/navigation_history.js')
-        self.assertNotContains(home_response, 'data-history-back')
         self.assertNotContains(detail_response, 'data-history-back')
-        self.assertContains(detail_response, '← До списку лікарів')
-        self.assertIn('window.history.back()', script)
-        self.assertIn('window.location.assign', script)
-        self.assertIn('Повернутися ${returnLabel', script)
+
+        base_template = (
+            Path(settings.BASE_DIR) / 'templates' / 'clinic' / 'base.html'
+        ).read_text(encoding='utf-8')
+        self.assertNotIn('navigation_history.js', base_template)
+        self.assertNotIn('data-history-back', base_template)
 
     def test_site_and_admin_use_ukrainian_language(self):
         self.assertEqual(settings.LANGUAGE_CODE, 'uk')
