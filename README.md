@@ -303,26 +303,29 @@ Production-копія працює через Gunicorn, systemd та Nginx. Го
 Папка `private_media` навмисно не віддається через Nginx: доступ до медичних
 фото і відео перевіряє Django.
 
-Поточна адреса сервера: `http://64.226.76.174/`. Це тимчасова адреса за IP.
-Для повноцінного Google-входу та безпечної роботи з медичними даними потрібно
-підключити власний домен, SSL-сертифікат і додати нову HTTPS-адресу повернення
-до налаштувань Google OAuth.
+Поточна production-адреса: `https://lclinic-ua.duckdns.org/`. Звичайний HTTP
+та прямі переходи за IP перенаправляються на захищену адресу. SSL-сертифікат
+Let's Encrypt оновлюється на сервері автоматично.
 
-Поточне розгортання за IP використовує HTTP, тому для нього в `.env` вимкнені
-HTTPS-перенаправлення, secure cookies та HSTS. Після підключення домену і
-SSL-сертифіката потрібно встановити:
+Production-змінні безпеки:
 
 ```dotenv
-DJANGO_CSRF_TRUSTED_ORIGINS=https://clinic.example.com
+DJANGO_ALLOWED_HOSTS=lclinic-ua.duckdns.org,64.226.76.174
+DJANGO_CSRF_TRUSTED_ORIGINS=https://lclinic-ua.duckdns.org
 DJANGO_SECURE_SSL_REDIRECT=1
 DJANGO_SESSION_COOKIE_SECURE=1
 DJANGO_CSRF_COOKIE_SECURE=1
 DJANGO_SECURE_HSTS_SECONDS=31536000
-DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS=1
-DJANGO_SECURE_HSTS_PRELOAD=1
+DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS=0
+DJANGO_SECURE_HSTS_PRELOAD=0
 DJANGO_BEHIND_HTTPS_PROXY=1
-SITE_BASE_URL=https://clinic.example.com
+SITE_BASE_URL=https://lclinic-ua.duckdns.org
 ```
+
+Google OAuth використовує адресу повернення
+`https://lclinic-ua.duckdns.org/accounts/google/login/callback/`. Вона має
+бути без змін додана до `Authorized redirect URIs` клієнта MedClinic у
+Google Cloud Console.
 
 Після кожного оновлення потрібно встановити пакети, застосувати міграції,
 зібрати статику та перезапустити служби:
