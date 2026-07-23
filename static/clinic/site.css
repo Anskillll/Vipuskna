@@ -8545,3 +8545,19 @@ body:not(.public-home-page) button.global-back-button:focus-visible {
 .booking-daily-limit span {
   line-height: 1.45;
 }
+
+body:not(.public-home-page) .nav a.nav-active {
+  padding-right: 13px;
+  padding-left: 13px;
+  border: 1px solid var(--clinic-teal);
+  border-radius: 5px;
+  background: #e5f6f2;
+  color: var(--clinic-teal-dark);
+  box-shadow: 0 0 0 2px rgba(12, 143, 128, 0.1);
+}
+
+body:not(.public-home-page) .nav a.nav-active:hover {
+  border-color: var(--clinic-teal-dark);
+  background: #d9f1ec;
+  color: var(--clinic-teal-dark);
+}

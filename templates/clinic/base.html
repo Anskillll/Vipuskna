@@ -13,7 +13,7 @@
   {% else %}
     <link rel="icon" href="data:,">
   {% endif %}
-  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260723-10">
+  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260723-11">
   <link rel="stylesheet" href="{% static 'clinic/mobile.css' %}?v=20260723-3">
   <script src="{% static 'clinic/live_filter.js' %}?v=20260723-1" defer></script>
   <script src="{% static 'clinic/flash_messages.js' %}?v=20260719-1" defer></script>
@@ -34,22 +34,22 @@
       <nav class="nav">
         {% if user.is_authenticated %}
           {% if user.is_staff %}
-            <a href="{% url 'admin_panel' %}">Панель адміністратора</a>
+            <a{% if '/panel/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'admin_panel' %}">Панель адміністратора</a>
           {% elif user.profile.role == 'doctor' %}
-            <a href="{% url 'doctor_dashboard' %}">Кабінет лікаря</a>
+            <a{% if '/doctor/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'doctor_dashboard' %}">Кабінет лікаря</a>
           {% else %}
-            <a href="{% url 'doctors' %}">Лікарі</a>
-            <a href="{% url 'patient_dashboard' %}">Мій кабінет</a>
-            <a class="nav-cta" href="{% url 'booking' %}">Записатися</a>
+            <a{% if '/doctors/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'doctors' %}">Лікарі</a>
+            <a{% if '/patient/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'patient_dashboard' %}">Мій кабінет</a>
+            <a{% if '/booking/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'booking' %}">Записатися</a>
           {% endif %}
           <a href="{% url 'logout' %}">Вийти</a>
         {% elif request.session.patient_claim_phone %}
-          <a href="{% url 'doctors' %}">Лікарі</a>
-          <a href="{% url 'pending_patient_dashboard' %}">Мій кабінет</a>
-          <a class="nav-cta" href="{% url 'booking' %}">Записатися</a>
+          <a{% if '/doctors/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'doctors' %}">Лікарі</a>
+          <a{% if '/patient/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'pending_patient_dashboard' %}">Мій кабінет</a>
+          <a{% if '/booking/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'booking' %}">Записатися</a>
           <a href="{% url 'google_login' %}?next={% url 'claim_patient_complete' %}">Увійти через Google</a>
         {% else %}
-          <a href="{% url 'administration_login' %}">Вхід для адміністрації</a>
+          <a{% if request.resolver_match.url_name == 'administration_login' %} class="nav-active" aria-current="page"{% endif %} href="{% url 'administration_login' %}">Вхід для адміністрації</a>
         {% endif %}
       </nav>
     </div>

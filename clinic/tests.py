@@ -146,6 +146,69 @@ class ClinicModelTests(TestCase):
         self.assertIn('.status.pending', css)
         self.assertIn('.status.approved', css)
 
+    def test_top_navigation_highlights_only_current_section(self):
+        self.client.login(username='patient@test.local', password='pass12345')
+        patient_sections = (
+            ('doctors', 'doctors'),
+            ('patient_dashboard', 'patient_dashboard'),
+            ('booking', 'booking'),
+        )
+        for page_name, active_link_name in patient_sections:
+            with self.subTest(page_name=page_name):
+                response = self.client.get(reverse(page_name))
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(
+                    response.content.count(b'class="nav-active" aria-current="page"'),
+                    1,
+                )
+                self.assertContains(
+                    response,
+                    (
+                        'class="nav-active" aria-current="page" '
+                        f'href="{reverse(active_link_name)}"'
+                    ),
+                )
+
+        self.client.logout()
+        self.client.login(username='doctor@test.local', password='pass12345')
+        doctor_response = self.client.get(reverse('doctor_appointments'))
+        self.assertEqual(doctor_response.status_code, 200)
+        self.assertEqual(
+            doctor_response.content.count(b'class="nav-active" aria-current="page"'),
+            1,
+        )
+        self.assertContains(
+            doctor_response,
+            (
+                'class="nav-active" aria-current="page" '
+                f'href="{reverse("doctor_dashboard")}"'
+            ),
+        )
+
+        self.client.logout()
+        User.objects.create_superuser(
+            username='navigation-admin@test.local',
+            password='pass12345',
+            email='navigation-admin@test.local',
+        )
+        self.client.login(
+            username='navigation-admin@test.local',
+            password='pass12345',
+        )
+        admin_response = self.client.get(reverse('admin_content'))
+        self.assertEqual(admin_response.status_code, 200)
+        self.assertEqual(
+            admin_response.content.count(b'class="nav-active" aria-current="page"'),
+            1,
+        )
+        self.assertContains(
+            admin_response,
+            (
+                'class="nav-active" aria-current="page" '
+                f'href="{reverse("admin_panel")}"'
+            ),
+        )
+
     def create_other_doctor(self, slot_minutes=20):
         doctor_user = User.objects.create_user(
             username='other-doctor@test.local',
