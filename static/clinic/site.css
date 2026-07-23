@@ -6329,6 +6329,50 @@ body:not(.public-home-page) .slot-busy {
   color: #9aa4a1;
 }
 
+body:not(.public-home-page) .slot-split-option {
+  display: grid;
+  align-content: center;
+  min-height: 48px;
+  padding: 6px 10px;
+  border: 1px solid #d48a2e;
+  border-left: 4px solid #bd6811;
+  border-radius: 4px;
+  background: #fff4df;
+  color: #6f3a06;
+  text-align: center;
+}
+
+body:not(.public-home-page) .slot-split-option:hover {
+  border-color: #a75408;
+  background: #ffe8bf;
+  color: #542800;
+}
+
+body:not(.public-home-page) .slot-split-option strong {
+  font-size: 15px;
+}
+
+body:not(.public-home-page) .slot-split-option span {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+body:not(.public-home-page) .split-slot-notice {
+  display: grid;
+  gap: 4px;
+  margin: 14px 0 18px;
+  padding: 14px 16px;
+  border: 1px solid #e0a04b;
+  border-left: 4px solid #bd6811;
+  border-radius: 6px;
+  background: #fff5e3;
+  color: #663607;
+}
+
+body:not(.public-home-page) .split-slot-notice span {
+  font-size: 14px;
+}
+
 body:not(.public-home-page) .empty {
   border-color: #c9d5d1;
   border-radius: 6px;

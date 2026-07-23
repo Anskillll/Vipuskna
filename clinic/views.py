@@ -466,16 +466,68 @@ def patient_appointment_conflicts(
     return False
 
 
-def slots_for_doctor(doctor, selected_date, patient=None, patient_phone=''):
+def split_slot_option(doctor, selected_date, slot_time, schedule=None, appointment_id=None):
+    schedule = schedule or schedule_for_date(doctor, selected_date)
+    if (
+        not schedule
+        or not schedule.is_working
+        or schedule.slot_minutes < 2
+        or schedule.slot_minutes % 2
+        or is_past_appointment(selected_date, slot_time)
+    ):
+        return None
+
+    source_query = Appointment.objects.filter(
+        doctor=doctor,
+        date=selected_date,
+        time=slot_time,
+        status=Appointment.STATUS_APPROVED,
+    )
+    if appointment_id:
+        source_query = source_query.filter(pk=appointment_id)
+    source = source_query.first()
+    if not source or source.duration_minutes != schedule.slot_minutes:
+        return None
+
+    source_start = datetime.combine(selected_date, slot_time)
+    next_start = source_start + timedelta(minutes=schedule.slot_minutes)
+    if next_start.date() != selected_date:
+        return None
+
+    has_following_appointment = Appointment.objects.filter(
+        doctor=doctor,
+        date=selected_date,
+        time=next_start.time(),
+        status__in=BLOCKING_APPOINTMENT_STATUSES,
+    ).exists()
+    if not has_following_appointment:
+        return None
+
+    half_minutes = schedule.slot_minutes // 2
+    split_start = source_start + timedelta(minutes=half_minutes)
+    return {
+        'appointment': source,
+        'time': split_start.time(),
+        'duration_minutes': half_minutes,
+        'original_duration_minutes': schedule.slot_minutes,
+    }
+
+
+def slots_for_doctor(
+    doctor,
+    selected_date,
+    patient=None,
+    patient_phone='',
+    include_split_options=False,
+):
     schedule = schedule_for_date(doctor, selected_date)
     if not schedule:
         return None, []
 
     now = timezone.localtime()
-    slots = [
-        {
-            'time': slot,
-            'busy': appointment_conflicts(doctor, selected_date, slot, duration_slots=1) or (
+    slots = []
+    for slot in schedule.get_slots():
+        busy = appointment_conflicts(doctor, selected_date, slot, duration_slots=1) or (
                 selected_date == now.date() and slot <= now.time().replace(second=0, microsecond=0)
             ) or patient_appointment_conflicts(
                 patient,
@@ -483,10 +535,19 @@ def slots_for_doctor(doctor, selected_date, patient=None, patient_phone=''):
                 slot,
                 schedule.slot_minutes,
                 patient_phone=patient_phone,
-            ),
+            )
+        slot_data = {
+            'time': slot,
+            'busy': busy,
         }
-        for slot in schedule.get_slots()
-    ]
+        if busy and include_split_options:
+            slot_data['split_option'] = split_slot_option(
+                doctor,
+                selected_date,
+                slot,
+                schedule=schedule,
+            )
+        slots.append(slot_data)
     return schedule, slots
 
 
@@ -1584,21 +1645,85 @@ def doctor_book_patient(request):
         messages.error(request, 'Не можна вибрати минулу дату.')
         selected_date = timezone.localdate()
     selected_time = parse_time(request.GET.get('time'))
-    schedule, slots = slots_for_doctor(doctor, selected_date)
+    schedule, slots = slots_for_doctor(doctor, selected_date, include_split_options=True)
+    split_option = None
+    split_appointment_id = request.GET.get('split')
+    if split_appointment_id and schedule:
+        split_source = Appointment.objects.filter(
+            pk=split_appointment_id,
+            doctor=doctor,
+            date=selected_date,
+        ).first()
+        if split_source:
+            split_option = split_slot_option(
+                doctor,
+                selected_date,
+                split_source.time,
+                schedule=schedule,
+                appointment_id=split_source.pk,
+            )
+        if split_option:
+            selected_time = split_option['time']
+        else:
+            selected_time = None
+            messages.error(request, 'Цей слот уже не можна поділити.')
     slot_minutes = schedule.slot_minutes if schedule else 60
-    form = DoctorPatientBookingForm(request.POST or None, doctor=doctor, slot_minutes=slot_minutes)
+    form = DoctorPatientBookingForm(
+        request.POST or None,
+        doctor=doctor,
+        slot_minutes=slot_minutes,
+        fixed_duration_minutes=(
+            split_option['duration_minutes']
+            if split_option
+            else None
+        ),
+    )
 
     if request.method == 'POST':
         selected_date = parse_date(request.POST.get('date'))
         selected_time = parse_time(request.POST.get('time'))
-        schedule, slots = slots_for_doctor(doctor, selected_date)
+        schedule, slots = slots_for_doctor(doctor, selected_date, include_split_options=True)
         slot_minutes = schedule.slot_minutes if schedule else 60
-        form = DoctorPatientBookingForm(request.POST, doctor=doctor, slot_minutes=slot_minutes)
+        split_appointment_id = request.POST.get('split_appointment')
+        split_option = None
+        if split_appointment_id and schedule:
+            split_source = Appointment.objects.filter(
+                pk=split_appointment_id,
+                doctor=doctor,
+                date=selected_date,
+            ).first()
+            if split_source:
+                split_option = split_slot_option(
+                    doctor,
+                    selected_date,
+                    split_source.time,
+                    schedule=schedule,
+                    appointment_id=split_source.pk,
+                )
+        form = DoctorPatientBookingForm(
+            request.POST,
+            doctor=doctor,
+            slot_minutes=slot_minutes,
+            fixed_duration_minutes=(
+                split_option['duration_minutes']
+                if split_option
+                else None
+            ),
+        )
         available_times = [slot['time'] for slot in slots if not slot['busy']]
+        split_time_is_valid = bool(
+            split_option
+            and selected_time == split_option['time']
+        )
 
         if is_past_appointment(selected_date, selected_time):
             messages.error(request, 'Не можна записати пацієнта на минулу дату або час.')
-        elif not selected_time or selected_time not in available_times:
+        elif split_appointment_id and not split_time_is_valid:
+            messages.error(request, 'Цей слот уже не можна поділити.')
+        elif not selected_time or (
+            selected_time not in available_times
+            and not split_time_is_valid
+        ):
             messages.error(request, 'Цей час уже недоступний.')
         elif form.is_valid() and schedule:
             duration_minutes = form.cleaned_data['duration_minutes']
@@ -1619,12 +1744,18 @@ def doctor_book_patient(request):
                 patient_first_name = existing_card.patient_first_name
                 patient_last_name = existing_card.patient_last_name
                 match_message = ' Номер уже був у картці пацієнта, використано наявну картку.'
+            split_source_id = (
+                split_option['appointment'].pk
+                if split_option
+                else None
+            )
             if appointment_conflicts(
                 doctor,
                 selected_date,
                 selected_time,
                 duration_slots=duration_slots,
                 duration_minutes=duration_minutes,
+                exclude_id=split_source_id,
             ):
                 messages.error(request, 'Для такої тривалості недостатньо вільного часу.')
             elif patient_appointment_conflicts(
@@ -1633,6 +1764,7 @@ def doctor_book_patient(request):
                 selected_time,
                 duration_minutes,
                 patient_phone=patient_phone,
+                exclude_id=split_source_id,
             ):
                 messages.error(
                     request,
@@ -1640,24 +1772,68 @@ def doctor_book_patient(request):
                 )
             else:
                 try:
-                    appointment = Appointment.objects.create(
-                        doctor=doctor,
-                        service=form.cleaned_data['service'],
-                        patient=patient,
-                        patient_first_name=patient_first_name,
-                        patient_last_name=patient_last_name,
-                        patient_phone=patient_phone,
-                        patient_email=patient.email if patient else '',
-                        date=selected_date,
-                        time=selected_time,
-                        city=schedule.city,
-                        address=schedule.address,
-                        reason=form.cleaned_data['reason'],
-                        duration_slots=duration_slots,
-                        duration_minutes_exact=duration_minutes,
-                        status=Appointment.STATUS_APPROVED,
-                        approved_at=timezone.now(),
-                    )
+                    with transaction.atomic():
+                        if split_source_id:
+                            locked_source = Appointment.objects.select_for_update().get(
+                                pk=split_source_id,
+                                doctor=doctor,
+                                date=selected_date,
+                            )
+                            locked_split_option = split_slot_option(
+                                doctor,
+                                selected_date,
+                                locked_source.time,
+                                schedule=schedule,
+                                appointment_id=locked_source.pk,
+                            )
+                            if (
+                                not locked_split_option
+                                or selected_time != locked_split_option['time']
+                                or duration_minutes != locked_split_option['duration_minutes']
+                            ):
+                                raise IntegrityError
+                            if appointment_conflicts(
+                                doctor,
+                                selected_date,
+                                selected_time,
+                                duration_minutes=duration_minutes,
+                                exclude_id=locked_source.pk,
+                            ):
+                                raise IntegrityError
+                            locked_source.duration_minutes_exact = duration_minutes
+                            locked_source.duration_slots = 1
+                            locked_source.save(
+                                update_fields=['duration_minutes_exact', 'duration_slots']
+                            )
+                            write_audit_log(
+                                request,
+                                'Лікар поділив слот прийому',
+                                locked_source,
+                                (
+                                    f'Тривалість змінено з '
+                                    f'{locked_split_option["original_duration_minutes"]} '
+                                    f'до {duration_minutes} хв.'
+                                ),
+                            )
+
+                        appointment = Appointment.objects.create(
+                            doctor=doctor,
+                            service=form.cleaned_data['service'],
+                            patient=patient,
+                            patient_first_name=patient_first_name,
+                            patient_last_name=patient_last_name,
+                            patient_phone=patient_phone,
+                            patient_email=patient.email if patient else '',
+                            date=selected_date,
+                            time=selected_time,
+                            city=schedule.city,
+                            address=schedule.address,
+                            reason=form.cleaned_data['reason'],
+                            duration_slots=duration_slots,
+                            duration_minutes_exact=duration_minutes,
+                            status=Appointment.STATUS_APPROVED,
+                            approved_at=timezone.now(),
+                        )
                     ensure_patient_card_from_appointment(appointment)
                     write_audit_log(request, 'Лікар записав пацієнта', appointment)
                     notify_patient_status(
@@ -1665,9 +1841,10 @@ def doctor_book_patient(request):
                         'doctor_created',
                         'Лікар створив для вас запис',
                     )
-                    messages.success(request, f'Пацієнта записано.{match_message}')
+                    split_message = ' Стандартний слот поділено на два прийоми.' if split_source_id else ''
+                    messages.success(request, f'Пацієнта записано.{split_message}{match_message}')
                     return redirect(doctor_appointments_week_url(selected_date))
-                except IntegrityError:
+                except (IntegrityError, Appointment.DoesNotExist):
                     messages.error(request, 'Цей час уже недоступний.')
 
     return render(
@@ -1679,6 +1856,7 @@ def doctor_book_patient(request):
             'selected_time': selected_time,
             'selected_schedule': schedule,
             'slots': slots,
+            'split_option': split_option,
             'form': form,
         },
     )

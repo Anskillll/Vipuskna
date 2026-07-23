@@ -273,13 +273,27 @@ class DoctorPatientBookingForm(FormStyleMixin, forms.Form):
     phone = forms.CharField(label='Телефон', validators=[phone_validator], required=False)
     reason = forms.CharField(label='Причина звернення', widget=forms.Textarea(attrs={'rows': 4}))
 
-    def __init__(self, *args, doctor=None, slot_minutes=60, **kwargs):
+    def __init__(
+        self,
+        *args,
+        doctor=None,
+        slot_minutes=60,
+        fixed_duration_minutes=None,
+        **kwargs,
+    ):
         self.slot_minutes = slot_minutes
+        self.fixed_duration_minutes = fixed_duration_minutes
         super().__init__(*args, **kwargs)
-        self.fields['duration_minutes'].initial = slot_minutes
-        self.fields['duration_minutes'].min_value = slot_minutes
-        self.fields['duration_minutes'].widget.attrs.update({'min': slot_minutes, 'step': slot_minutes})
-        self.fields['duration_minutes'].help_text = f'Один слот цього дня — {slot_minutes} хв. Можна вказати {slot_minutes}, {slot_minutes * 2}, {slot_minutes * 3} тощо.'
+        if fixed_duration_minutes:
+            self.fields['duration_minutes'].initial = fixed_duration_minutes
+            self.fields['duration_minutes'].min_value = fixed_duration_minutes
+            self.fields['duration_minutes'].max_value = fixed_duration_minutes
+            self.fields['duration_minutes'].widget = forms.HiddenInput()
+        else:
+            self.fields['duration_minutes'].initial = slot_minutes
+            self.fields['duration_minutes'].min_value = slot_minutes
+            self.fields['duration_minutes'].widget.attrs.update({'min': slot_minutes, 'step': slot_minutes})
+            self.fields['duration_minutes'].help_text = f'Один слот цього дня — {slot_minutes} хв. Можна вказати {slot_minutes}, {slot_minutes * 2}, {slot_minutes * 3} тощо.'
         self.fields['patient'].queryset = User.objects.filter(
             profile__role=Profile.ROLE_PATIENT,
         ).select_related('profile').order_by('last_name', 'first_name', 'username')
@@ -293,6 +307,12 @@ class DoctorPatientBookingForm(FormStyleMixin, forms.Form):
 
     def clean_duration_minutes(self):
         value = self.cleaned_data['duration_minutes']
+        if self.fixed_duration_minutes:
+            if value != self.fixed_duration_minutes:
+                raise forms.ValidationError(
+                    f'Для поділеного слота тривалість прийому становить {self.fixed_duration_minutes} хв.'
+                )
+            return value
         if value % self.slot_minutes:
             raise forms.ValidationError(f'Тривалість має бути кратною тривалості слота: {self.slot_minutes} хв.')
         return value

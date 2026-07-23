@@ -40,7 +40,15 @@
     {% if selected_schedule and selected_schedule.is_working %}
       <div class="slot-grid">
         {% for slot in slots %}
-          {% if slot.busy %}
+          {% if slot.split_option %}
+            <a
+              class="slot-split-option"
+              href="{% url 'doctor_book_patient' %}?date={{ selected_date|date:'Y-m-d' }}&split={{ slot.split_option.appointment.id }}"
+            >
+              <strong>{{ slot.split_option.time|time:'H:i' }}</strong>
+              <span>Між прийомами · {{ slot.split_option.duration_minutes }} хв</span>
+            </a>
+          {% elif slot.busy %}
             <span class="slot-busy">{{ slot.time|time:'H:i' }} зайнято</span>
           {% else %}
             <a class="btn secondary" href="{% url 'doctor_book_patient' %}?date={{ selected_date|date:'Y-m-d' }}&time={{ slot.time|time:'H:i' }}">
@@ -58,10 +66,28 @@
     <section class="card" style="margin-top: 18px;">
       <h2 class="section-title">Дані пацієнта</h2>
       <p class="muted">{{ selected_date|date:'d.m.Y' }} о {{ selected_time|time:'H:i' }}</p>
+      {% if split_option %}
+        <div class="split-slot-notice">
+          <strong>Запис між двома прийомами</strong>
+          <span>
+            Попередній прийом о {{ split_option.appointment.time|time:'H:i' }}
+            буде скорочено з {{ split_option.original_duration_minutes }}
+            до {{ split_option.duration_minutes }} хв. Новий прийом також триватиме
+            {{ split_option.duration_minutes }} хв.
+          </span>
+        </div>
+      {% endif %}
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
         <input type="hidden" name="time" value="{{ selected_time|time:'H:i' }}">
+        {% if split_option %}
+          <input type="hidden" name="split_appointment" value="{{ split_option.appointment.id }}">
+          {{ form.duration_minutes }}
+          {% for error in form.duration_minutes.errors %}
+            <div class="form-error">{{ error }}</div>
+          {% endfor %}
+        {% endif %}
         {% if form.non_field_errors %}
           <div class="form-error">{{ form.non_field_errors }}</div>
         {% endif %}
@@ -91,7 +117,9 @@
 
         {% for field in form %}
           {% if field.name != 'patient' %}
-            {% include 'clinic/_form_field.html' with field=field %}
+            {% if field.name != 'duration_minutes' or not split_option %}
+              {% include 'clinic/_form_field.html' with field=field %}
+            {% endif %}
           {% endif %}
         {% endfor %}
         <button type="submit">Записати пацієнта</button>

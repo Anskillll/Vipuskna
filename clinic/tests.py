@@ -2250,6 +2250,119 @@ class ClinicModelTests(TestCase):
         self.assertEqual(appointment.patient_first_name, self.patient.first_name)
         self.assertEqual(appointment.patient_last_name, self.patient.last_name)
 
+    def test_doctor_can_split_slot_and_book_patient_between_appointments(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+        visit_date = timezone.localdate() + timedelta(days=7)
+        self.schedule.slot_minutes = 20
+        self.schedule.save(update_fields=['slot_minutes'])
+        first_appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient_first_name='Перший',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501000001',
+            date=visit_date,
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Перший прийом',
+            duration_minutes_exact=20,
+            status=Appointment.STATUS_APPROVED,
+        )
+        Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient_first_name='Другий',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501000002',
+            date=visit_date,
+            time=time(9, 20),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Другий прийом',
+            duration_minutes_exact=20,
+            status=Appointment.STATUS_APPROVED,
+        )
+
+        selection_response = self.client.get(
+            reverse('doctor_book_patient'),
+            {
+                'date': visit_date.isoformat(),
+                'split': first_appointment.id,
+            },
+        )
+
+        self.assertContains(selection_response, 'Запис між двома прийомами')
+        self.assertContains(selection_response, '09:10')
+        self.assertContains(selection_response, 'Між прийомами · 10 хв')
+
+        response = self.client.post(
+            reverse('doctor_book_patient'),
+            data={
+                'date': visit_date.isoformat(),
+                'time': '09:10',
+                'split_appointment': first_appointment.id,
+                'patient': self.patient.id,
+                'service': self.service.id,
+                'duration_minutes': 10,
+                'reason': 'Терміновий запис між прийомами',
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('doctor_appointments')}?week={visit_date.isoformat()}",
+        )
+        first_appointment.refresh_from_db()
+        inserted_appointment = Appointment.objects.get(
+            reason='Терміновий запис між прийомами'
+        )
+        self.assertEqual(first_appointment.duration_minutes, 10)
+        self.assertEqual(inserted_appointment.time, time(9, 10))
+        self.assertEqual(inserted_appointment.duration_minutes, 10)
+        self.assertEqual(inserted_appointment.status, Appointment.STATUS_APPROVED)
+
+    def test_doctor_cannot_split_slot_without_following_appointment(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+        visit_date = timezone.localdate() + timedelta(days=7)
+        self.schedule.slot_minutes = 20
+        self.schedule.save(update_fields=['slot_minutes'])
+        first_appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient_first_name='Єдиний',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501000003',
+            date=visit_date,
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Єдиний прийом',
+            duration_minutes_exact=20,
+            status=Appointment.STATUS_APPROVED,
+        )
+
+        response = self.client.post(
+            reverse('doctor_book_patient'),
+            data={
+                'date': visit_date.isoformat(),
+                'time': '09:10',
+                'split_appointment': first_appointment.id,
+                'patient': self.patient.id,
+                'service': self.service.id,
+                'duration_minutes': 10,
+                'reason': 'Недозволений поділ',
+            },
+        )
+
+        first_appointment.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Цей слот уже не можна поділити.')
+        self.assertEqual(first_appointment.duration_minutes, 20)
+        self.assertFalse(
+            Appointment.objects.filter(reason='Недозволений поділ').exists()
+        )
+
     def test_doctor_booking_reuses_unregistered_patient_card_by_phone(self):
         self.client.login(username='doctor@test.local', password='pass12345')
         visit_date = timezone.localdate() + timedelta(days=7)
