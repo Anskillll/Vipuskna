@@ -209,6 +209,24 @@ class ClinicModelTests(TestCase):
             ),
         )
 
+    def test_patient_dashboards_do_not_show_summary_statistics(self):
+        self.client.login(username='patient@test.local', password='pass12345')
+        patient_response = self.client.get(reverse('patient_dashboard'))
+
+        self.assertEqual(patient_response.status_code, 200)
+        self.assertNotContains(patient_response, 'patient-dashboard-stats')
+        self.assertNotContains(patient_response, 'patient-dashboard-stat')
+
+        self.client.logout()
+        session = self.client.session
+        session['patient_claim_phone'] = '+380501234577'
+        session.save()
+        pending_response = self.client.get(reverse('pending_patient_dashboard'))
+
+        self.assertEqual(pending_response.status_code, 200)
+        self.assertNotContains(pending_response, 'patient-dashboard-stats')
+        self.assertNotContains(pending_response, 'patient-dashboard-stat')
+
     def create_other_doctor(self, slot_minutes=20):
         doctor_user = User.objects.create_user(
             username='other-doctor@test.local',

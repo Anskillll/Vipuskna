@@ -583,23 +583,6 @@
     font-size: 15px;
   }
 
-  .patient-dashboard-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin-top: 14px;
-  }
-
-  .patient-dashboard-stat,
-  .patient-dashboard-stat:nth-child(odd),
-  .patient-dashboard-stat:nth-child(even) {
-    min-height: 76px;
-    padding: 10px;
-    border: 1px solid #dce5e2;
-  }
-
-  .patient-dashboard-stat strong {
-    font-size: 22px;
-  }
-
   .patient-dashboard-section {
     padding: 13px;
   }

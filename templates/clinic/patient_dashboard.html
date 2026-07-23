@@ -119,28 +119,6 @@
         </div>
       </div>
 
-      <div class="patient-dashboard-stats" aria-label="Коротка інформація про записи">
-        <a href="#pending" class="patient-dashboard-stat">
-          <span>Мої заявки</span>
-          <strong>{{ open_requests_count }}</strong>
-          <small>Очікують рішення</small>
-        </a>
-        <a href="#approved" class="patient-dashboard-stat">
-          <span>Майбутні прийоми</span>
-          <strong>{{ approved|length }}</strong>
-          <small>Підтверджено лікарем</small>
-        </a>
-        <a href="#records" class="patient-dashboard-stat">
-          <span>Матеріали від лікарів</span>
-          <strong>{{ patient_records|length }}</strong>
-          <small>Лікування і рекомендації</small>
-        </a>
-        <a href="#history" class="patient-dashboard-stat">
-          <span>Завершені прийоми</span>
-          <strong>{{ completed|length }}</strong>
-          <small>Історія відвідувань</small>
-        </a>
-      </div>
     </section>
 
     <section id="pending" class="patient-dashboard-section" data-live-pagination data-page-size="5">

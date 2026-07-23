@@ -7116,50 +7116,6 @@ body:not(.public-home-page) .message.is-dismissing {
   text-decoration-color: #126d63;
 }
 
-.patient-dashboard-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0;
-  margin-top: 30px;
-  border-top: 1px solid #dce5e2;
-}
-
-.patient-dashboard-stat {
-  display: grid;
-  gap: 5px;
-  min-width: 0;
-  padding: 22px 22px 0;
-  border-left: 1px solid #dce5e2;
-  color: #183c36;
-}
-
-.patient-dashboard-stat:first-child {
-  padding-left: 0;
-  border-left: 0;
-}
-
-.patient-dashboard-stat:hover strong {
-  color: #126d63;
-}
-
-.patient-dashboard-stat span {
-  color: #61716e;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.patient-dashboard-stat strong {
-  font-size: 30px;
-  line-height: 1;
-  transition: color 160ms ease;
-}
-
-.patient-dashboard-stat small {
-  color: #84908e;
-  font-size: 12px;
-  line-height: 1.35;
-}
-
 .patient-dashboard-section {
   scroll-margin-top: 100px;
 }
@@ -7538,29 +7494,6 @@ body:not(.public-home-page) .message.is-dismissing {
     grid-column: 1 / -1;
   }
 
-  .patient-dashboard-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .patient-dashboard-stat {
-    padding: 20px 0;
-    border-top: 1px solid #dce5e2;
-    border-left: 0;
-  }
-
-  .patient-dashboard-stat:nth-child(odd) {
-    padding-right: 20px;
-  }
-
-  .patient-dashboard-stat:nth-child(even) {
-    padding-left: 20px;
-    border-left: 1px solid #dce5e2;
-  }
-
-  .patient-dashboard-stat:nth-child(-n + 2) {
-    border-top: 0;
-  }
-
   .patient-appointment-card-body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -7645,23 +7578,6 @@ body:not(.public-home-page) .message.is-dismissing {
 
   .patient-password-link {
     grid-column: auto;
-  }
-
-  .patient-dashboard-stats {
-    grid-template-columns: 1fr;
-    margin-top: 24px;
-  }
-
-  .patient-dashboard-stat,
-  .patient-dashboard-stat:nth-child(odd),
-  .patient-dashboard-stat:nth-child(even) {
-    padding: 16px 0;
-    border-top: 1px solid #dce5e2;
-    border-left: 0;
-  }
-
-  .patient-dashboard-stat:first-child {
-    border-top: 0;
   }
 
   .patient-dashboard-section-head {
@@ -8129,22 +8045,6 @@ body:not(.public-home-page) .admin-stat-appointments {
 body:not(.public-home-page) .admin-stat-pending {
   border-left-color: var(--clinic-amber);
   background: #fff9e9;
-}
-
-body:not(.public-home-page) .patient-dashboard-stat:nth-child(1) strong {
-  color: var(--clinic-amber);
-}
-
-body:not(.public-home-page) .patient-dashboard-stat:nth-child(2) strong {
-  color: var(--clinic-green);
-}
-
-body:not(.public-home-page) .patient-dashboard-stat:nth-child(3) strong {
-  color: var(--clinic-blue);
-}
-
-body:not(.public-home-page) .patient-dashboard-stat:nth-child(4) strong {
-  color: var(--clinic-violet);
 }
 
 body:not(.public-home-page) #pending .patient-section-kicker {

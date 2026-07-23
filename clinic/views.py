@@ -985,12 +985,6 @@ def patient_dashboard(request):
         {
             'pending': appointments.filter(status=Appointment.STATUS_PENDING),
             'reschedule_requests': appointments.filter(status=Appointment.STATUS_RESCHEDULE_PROPOSED),
-            'open_requests_count': appointments.filter(
-                status__in=[
-                    Appointment.STATUS_PENDING,
-                    Appointment.STATUS_RESCHEDULE_PROPOSED,
-                ]
-            ).count(),
             'approved': appointments.filter(status=Appointment.STATUS_APPROVED),
             'completed': appointments.filter(status=Appointment.STATUS_COMPLETED),
             'canceled': appointments.filter(status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]),
