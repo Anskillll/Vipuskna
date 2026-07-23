@@ -1,0 +1,24 @@
+[Unit]
+Description=MedClinic Gunicorn application
+After=network.target
+
+[Service]
+User=medclinic
+Group=www-data
+WorkingDirectory=/opt/medclinic
+EnvironmentFile=/opt/medclinic/.env
+Environment=PYTHONUNBUFFERED=1
+RuntimeDirectory=medclinic
+RuntimeDirectoryMode=0755
+ExecStart=/opt/medclinic/.venv/bin/gunicorn \
+    --workers 2 \
+    --timeout 120 \
+    --bind unix:/run/medclinic/gunicorn.sock \
+    medclinic.wsgi:application
+Restart=on-failure
+RestartSec=3
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

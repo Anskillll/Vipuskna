@@ -288,6 +288,53 @@ python manage.py check --deploy
 
 У production-режимі автоматично вмикаються HTTPS-перенаправлення, захищені cookies, HSTS та інші базові параметри Django. Справжній секретний ключ не можна додавати в Git.
 
+## Розгортання на сервері
+
+Production-копія працює через Gunicorn, systemd та Nginx. Готові приклади
+конфігурації знаходяться у папці `deploy`:
+
+- `medclinic.service` запускає Django через Gunicorn;
+- `medclinic-bot.service` постійно запускає Telegram-бота та нагадування;
+- `nginx-medclinic.conf` віддає статику і публічні зображення та передає
+  інші запити до Django.
+
+На сервері проєкт розміщується у `/opt/medclinic`, а секретні значення
+зберігаються лише у `/opt/medclinic/.env` з правами доступу `600`.
+Папка `private_media` навмисно не віддається через Nginx: доступ до медичних
+фото і відео перевіряє Django.
+
+Поточна адреса сервера: `http://64.226.76.174/`. Це тимчасова адреса за IP.
+Для повноцінного Google-входу та безпечної роботи з медичними даними потрібно
+підключити власний домен, SSL-сертифікат і додати нову HTTPS-адресу повернення
+до налаштувань Google OAuth.
+
+Поточне розгортання за IP використовує HTTP, тому для нього в `.env` вимкнені
+HTTPS-перенаправлення, secure cookies та HSTS. Після підключення домену і
+SSL-сертифіката потрібно встановити:
+
+```dotenv
+DJANGO_CSRF_TRUSTED_ORIGINS=https://clinic.example.com
+DJANGO_SECURE_SSL_REDIRECT=1
+DJANGO_SESSION_COOKIE_SECURE=1
+DJANGO_CSRF_COOKIE_SECURE=1
+DJANGO_SECURE_HSTS_SECONDS=31536000
+DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS=1
+DJANGO_SECURE_HSTS_PRELOAD=1
+DJANGO_BEHIND_HTTPS_PROXY=1
+SITE_BASE_URL=https://clinic.example.com
+```
+
+Після кожного оновлення потрібно встановити пакети, застосувати міграції,
+зібрати статику та перезапустити служби:
+
+```bash
+cd /opt/medclinic
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python manage.py migrate
+.venv/bin/python manage.py collectstatic --noinput
+sudo systemctl restart medclinic medclinic-bot
+```
+
 ## Керування головною сторінкою
 
 Адміністратор відкриває `Панель адміністратора` → `Контент сайту`. Там можна:
