@@ -9,6 +9,7 @@ Group=www-data
 WorkingDirectory=/opt/medclinic
 EnvironmentFile=/opt/medclinic/.env
 Environment=PYTHONUNBUFFERED=1
+UMask=0027
 ExecStart=/opt/medclinic/.venv/bin/python manage.py run_telegram_bot
 Restart=always
 RestartSec=5

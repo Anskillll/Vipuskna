@@ -335,6 +335,20 @@ cd /opt/medclinic
 sudo systemctl restart medclinic medclinic-bot
 ```
 
+Якщо файли завантажувалися архівом із Windows, після розпакування потрібно
+відновити безпечні права доступу:
+
+```bash
+sudo chown medclinic:medclinic /opt/medclinic/db.sqlite3
+sudo chmod 600 /opt/medclinic/db.sqlite3
+sudo chown -R medclinic:medclinic /opt/medclinic/private_media
+sudo find /opt/medclinic/private_media -type d -exec chmod 700 {} +
+sudo find /opt/medclinic/private_media -type f -exec chmod 600 {} +
+sudo chown -R medclinic:www-data /opt/medclinic/media /opt/medclinic/staticfiles
+sudo find /opt/medclinic/media /opt/medclinic/staticfiles -type d -exec chmod 755 {} +
+sudo find /opt/medclinic/media /opt/medclinic/staticfiles -type f -exec chmod 644 {} +
+```
+
 ## Керування головною сторінкою
 
 Адміністратор відкриває `Панель адміністратора` → `Контент сайту`. Там можна:
