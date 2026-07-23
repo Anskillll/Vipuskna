@@ -1225,8 +1225,8 @@ class ClinicModelTests(TestCase):
         self.assertEqual(len(target_week['days'][2]['appointments']), 6)
         self.assertContains(
             response,
-            f"Тиждень з {week_start.strftime('%d.%m.%Y')} по "
-            f"{(week_start + timedelta(days=6)).strftime('%d.%m.%Y')}",
+            f"Тиждень з {week_start.strftime('%d.%m')} по "
+            f"{(week_start + timedelta(days=6)).strftime('%d.%m')}",
         )
         self.assertContains(response, 'У цей день ви відпочиваєте')
         self.assertContains(response, 'Розгорнути всі (6)')

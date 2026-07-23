@@ -49,7 +49,7 @@
           <header class="appointment-week-head">
             <div>
               <span class="appointment-week-kicker">Тижневий розклад</span>
-              <h2>Тиждень з {{ week.start|date:'d.m.Y' }} по {{ week.end|date:'d.m.Y' }}</h2>
+              <h2>Тиждень з {{ week.start|date:'d.m' }} по {{ week.end|date:'d.m' }}</h2>
             </div>
             <span data-live-filter-group-count data-count-template="{count} запис(ів)">{{ week.appointments_count }} запис(ів)</span>
           </header>
