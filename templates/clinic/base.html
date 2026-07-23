@@ -13,10 +13,11 @@
   {% else %}
     <link rel="icon" href="data:,">
   {% endif %}
-  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260723-8">
-  <link rel="stylesheet" href="{% static 'clinic/mobile.css' %}?v=20260723-2">
+  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260723-9">
+  <link rel="stylesheet" href="{% static 'clinic/mobile.css' %}?v=20260723-3">
   <script src="{% static 'clinic/live_filter.js' %}?v=20260723-1" defer></script>
   <script src="{% static 'clinic/flash_messages.js' %}?v=20260719-1" defer></script>
+  <script src="{% static 'clinic/navigation_history.js' %}?v=20260723-1" defer></script>
 </head>
 <body class="{% if clinic_branding.home_background %}has-site-background {% endif %}{% block body_class %}{% endblock %}"{% if clinic_branding.home_background %} style="--site-bg: url('{{ clinic_branding.home_background.url }}');"{% endif %}>
   <header class="topbar {% block topbar_class %}{% endblock %}"{% block topbar_attributes %}{% endblock %}>
@@ -56,6 +57,16 @@
 
   <main class="main">
     <div class="container">
+      <div class="global-back-row">
+        <button
+          class="global-back-button"
+          type="button"
+          title="Повернутися на попередню сторінку"
+          aria-label="Повернутися на попередню сторінку"
+          data-history-back
+          data-fallback-url="{% url 'home' %}"
+        ><span aria-hidden="true">←</span></button>
+      </div>
       {% block telegram_banner %}
         {% if telegram_show_connect %}
           {% include 'clinic/_telegram_connect_banner.html' %}

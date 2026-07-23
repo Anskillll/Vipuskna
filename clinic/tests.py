@@ -210,6 +210,25 @@ class ClinicModelTests(TestCase):
         self.assertNotIn('confirm(', rendered_source)
         self.assertNotIn('onsubmit=', rendered_source)
 
+    def test_pages_have_global_history_back_button(self):
+        response = self.client.get(reverse('doctors'))
+        home_response = self.client.get(reverse('home'))
+        script_path = (
+            Path(settings.BASE_DIR)
+            / 'static'
+            / 'clinic'
+            / 'navigation_history.js'
+        )
+        script = script_path.read_text(encoding='utf-8')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-history-back')
+        self.assertContains(response, 'Повернутися на попередню сторінку')
+        self.assertContains(response, 'clinic/navigation_history.js')
+        self.assertContains(home_response, 'data-history-back')
+        self.assertIn('window.history.back()', script)
+        self.assertIn('window.location.assign', script)
+
     def test_site_and_admin_use_ukrainian_language(self):
         self.assertEqual(settings.LANGUAGE_CODE, 'uk')
         self.assertEqual(settings.LANGUAGES, [('uk', 'Українська')])

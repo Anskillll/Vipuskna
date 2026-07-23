@@ -938,4 +938,33 @@
   .home-doctor-visit-banner {
     width: calc(100% - 20px);
   }
+
+  body:not(.public-home-page) .global-back-row {
+    margin-bottom: 10px;
+  }
+
+  body:not(.public-home-page) button.global-back-button,
+  body:not(.public-home-page) button.global-back-button:hover,
+  body:not(.public-home-page) button.global-back-button:active {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    min-height: 34px;
+    font-size: 18px;
+  }
+
+  .public-home-page .global-back-row {
+    top: 62px;
+    left: 12px;
+  }
+
+  .public-home-page button.global-back-button,
+  .public-home-page button.global-back-button:hover,
+  .public-home-page button.global-back-button:active {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    min-height: 34px;
+    font-size: 18px;
+  }
 }

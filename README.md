@@ -19,6 +19,7 @@
 - показ віку пацієнта у списку пацієнтів, прийомах і детальній інформації для лікаря;
 - спільний `Вхід для адміністрації` за логіном і паролем: система автоматично відкриває кабінет лікаря або панель адміністратора відповідно до акаунта;
 - успішні повідомлення автоматично зникають приблизно через дві секунди, а повідомлення про помилки залишаються на екрані;
+- на всіх сторінках є спільна компактна кнопка повернення до попередньої відкритої сторінки з переходом на головну, якщо історія браузера порожня;
 - дії виконуються без стандартних браузерних вікон підтвердження, а результат показується зрозумілим тост-повідомленням;
 - створення лікарів, послуг і графіків адміністратором;
 - згортання та розгортання довгого списку послуг у картці лікаря;
@@ -333,9 +334,12 @@ Google Cloud Console.
 
 ```bash
 cd /opt/medclinic
-.venv/bin/pip install -r requirements.txt
-.venv/bin/python manage.py migrate
-.venv/bin/python manage.py collectstatic --noinput
+sudo -u medclinic .venv/bin/pip install -r requirements.txt
+sudo -u medclinic .venv/bin/python manage.py migrate
+sudo -u medclinic -g www-data .venv/bin/python manage.py collectstatic --noinput
+sudo chown -R medclinic:www-data staticfiles
+sudo find staticfiles -type d -exec chmod 755 {} +
+sudo find staticfiles -type f -exec chmod 644 {} +
 sudo systemctl restart medclinic medclinic-bot
 ```
 
