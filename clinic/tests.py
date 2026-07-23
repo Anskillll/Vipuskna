@@ -1256,6 +1256,56 @@ class ClinicModelTests(TestCase):
         )
         self.assertContains(current_response, 'Поточний тиждень')
 
+    def test_doctor_week_has_day_booking_and_between_appointments_actions(self):
+        visit_date = timezone.localdate() + timedelta(days=7)
+        self.schedule.slot_minutes = 20
+        self.schedule.save(update_fields=['slot_minutes'])
+        first_appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient_first_name='Перший',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501010101',
+            date=visit_date,
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Перший сусідній прийом',
+            duration_minutes_exact=20,
+            status=Appointment.STATUS_APPROVED,
+        )
+        Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient_first_name='Другий',
+            patient_last_name='Пацієнт',
+            patient_phone='+380502020202',
+            date=visit_date,
+            time=time(9, 20),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Другий сусідній прийом',
+            duration_minutes_exact=20,
+            status=Appointment.STATUS_APPROVED,
+        )
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.get(
+            reverse('doctor_appointments'),
+            {'week': visit_date.isoformat()},
+        )
+
+        self.assertContains(response, 'Записати на цей день')
+        self.assertContains(response, 'Записати між ними')
+        self.assertContains(response, '>09:10</span>', html=False)
+        self.assertContains(
+            response,
+            (
+                f"{reverse('doctor_book_patient')}?date={visit_date.isoformat()}"
+                f"&split={first_appointment.id}"
+            ),
+        )
+
     def test_doctor_views_show_registered_patient_age(self):
         appointment = Appointment.objects.create(
             doctor=self.doctor,

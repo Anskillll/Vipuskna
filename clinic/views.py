@@ -1373,14 +1373,35 @@ def doctor_appointments(request):
         appointment.weekday_name = UKRAINIAN_WEEKDAYS[appointment.date.weekday()]
         appointments_by_date.setdefault(appointment.date, []).append(appointment)
 
+    schedules_by_weekday = {
+        schedule.weekday: schedule
+        for schedule in doctor.schedules.select_related('workplace')
+    }
     week_days = []
     for day_offset, weekday_name in enumerate(UKRAINIAN_WEEKDAYS):
         day_date = week_start + timedelta(days=day_offset)
+        day_schedule = schedules_by_weekday.get(day_date.weekday())
+        day_appointments = appointments_by_date.get(day_date, [])
+        for appointment in day_appointments:
+            appointment.split_option = split_slot_option(
+                doctor,
+                day_date,
+                appointment.time,
+                schedule=day_schedule,
+                appointment_id=appointment.pk,
+            )
         week_days.append(
             {
                 'date': day_date,
                 'weekday_name': weekday_name,
-                'appointments': appointments_by_date.get(day_date, []),
+                'appointments': day_appointments,
+                'schedule': day_schedule,
+                'is_working': bool(day_schedule and day_schedule.is_working),
+                'can_book': bool(
+                    day_schedule
+                    and day_schedule.is_working
+                    and day_date >= today
+                ),
             }
         )
     appointment_week = {

@@ -6066,6 +6066,32 @@ body:not(.public-home-page) .appointment-day-head {
   border-bottom: 1px solid #dce3df;
 }
 
+body:not(.public-home-page) .appointment-day-head-actions {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+body:not(.public-home-page) .appointment-day-book-button {
+  align-items: center;
+  background: #315d55;
+  border: 1px solid #315d55;
+  border-radius: 5px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 700;
+  min-height: 38px;
+  padding: 7px 13px;
+  white-space: nowrap;
+}
+
+body:not(.public-home-page) .appointment-day-book-button:hover {
+  background: #234a43;
+  border-color: #234a43;
+  color: #fff;
+}
+
 body:not(.public-home-page) .appointment-day-head h2 {
   font-family: "Inter", Arial, Helvetica, sans-serif;
   font-size: 27px;
@@ -6172,6 +6198,54 @@ body:not(.public-home-page) .appointment-day-rest {
 body:not(.public-home-page) .appointment-day-rest span {
   color: var(--muted);
   font-size: 14px;
+}
+
+body:not(.public-home-page) .appointment-day-empty-working {
+  border-left: 3px solid #179684;
+  background: #eff9f6;
+}
+
+body:not(.public-home-page) .appointment-between-slot {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  min-height: 0;
+  padding: 5px 18px;
+  position: relative;
+}
+
+body:not(.public-home-page) .appointment-between-slot::before,
+body:not(.public-home-page) .appointment-between-slot::after {
+  background: #e6b45f;
+  content: "";
+  flex: 1;
+  height: 1px;
+}
+
+body:not(.public-home-page) .appointment-between-slot a {
+  align-items: center;
+  background: #b76512;
+  border: 1px solid #a7560b;
+  border-radius: 5px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 7px;
+  min-height: 34px;
+  padding: 5px 11px;
+  white-space: nowrap;
+}
+
+body:not(.public-home-page) .appointment-between-slot a:hover {
+  background: #934607;
+  border-color: #843c04;
+  color: #fff;
+}
+
+body:not(.public-home-page) .appointment-between-slot a span {
+  color: #ffe4b8;
 }
 
 body:not(.public-home-page) .appointment-day-group:not(.is-expanded) [data-day-extra] {

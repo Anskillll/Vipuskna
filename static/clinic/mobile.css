@@ -400,8 +400,21 @@
   }
 
   body:not(.public-home-page) .appointment-day-head {
+    align-items: flex-start;
+    flex-direction: column;
     gap: 8px;
     padding: 11px;
+  }
+
+  body:not(.public-home-page) .appointment-day-head-actions {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  body:not(.public-home-page) .appointment-day-book-button {
+    font-size: 11px;
+    min-height: 32px;
+    padding: 5px 9px;
   }
 
   body:not(.public-home-page) .appointment-weeks {
@@ -466,6 +479,16 @@
 
   body:not(.public-home-page) .appointment-day-rest span {
     font-size: 12px;
+  }
+
+  body:not(.public-home-page) .appointment-between-slot {
+    padding: 4px 9px;
+  }
+
+  body:not(.public-home-page) .appointment-between-slot a {
+    font-size: 11px;
+    min-height: 31px;
+    padding: 4px 8px;
   }
 
   body:not(.public-home-page) .appointment-day-toggle {

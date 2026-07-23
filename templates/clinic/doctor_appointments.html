@@ -77,11 +77,21 @@
             >
                 <div class="appointment-day-head">
                   <h2>{{ day.weekday_name }}, {{ day.date|date:'d.m.Y' }}</h2>
-                  {% if day.appointments %}
-                    <span data-live-filter-group-count data-count-template="{count} запис(ів)">{{ day.appointments|length }} запис(ів)</span>
-                  {% else %}
-                    <span class="appointment-day-rest-label">Вихідний</span>
-                  {% endif %}
+                  <div class="appointment-day-head-actions">
+                    {% if day.appointments %}
+                      <span data-live-filter-group-count data-count-template="{count} запис(ів)">{{ day.appointments|length }} запис(ів)</span>
+                    {% elif day.is_working %}
+                      <span>0 записів</span>
+                    {% else %}
+                      <span class="appointment-day-rest-label">Вихідний</span>
+                    {% endif %}
+                    {% if day.can_book %}
+                      <a
+                        class="appointment-day-book-button"
+                        href="{% url 'doctor_book_patient' %}?date={{ day.date|date:'Y-m-d' }}"
+                      >Записати на цей день</a>
+                    {% endif %}
+                  </div>
                 </div>
 
                 {% if day.appointments %}
@@ -128,6 +138,19 @@
                           {% endif %}
                         </div>
                       </article>
+                      {% if appointment.split_option %}
+                        <div
+                          class="appointment-between-slot"
+                          {% if forloop.counter > 5 %}data-day-extra{% endif %}
+                        >
+                          <a
+                            href="{% url 'doctor_book_patient' %}?date={{ day.date|date:'Y-m-d' }}&split={{ appointment.id }}"
+                          >
+                            <span>{{ appointment.split_option.time|time:'H:i' }}</span>
+                            Записати між ними
+                          </a>
+                        </div>
+                      {% endif %}
                     {% endfor %}
                   </div>
                   {% if day.appointments|length > 5 %}
@@ -141,10 +164,17 @@
                     >Розгорнути всі ({{ day.appointments|length }})</button>
                   {% endif %}
                 {% else %}
-                  <div class="appointment-day-rest">
-                    <strong>У цей день ви відпочиваєте</strong>
-                    <span>Записів і заявок немає.</span>
-                  </div>
+                  {% if day.is_working %}
+                    <div class="appointment-day-rest appointment-day-empty-working">
+                      <strong>На цей день записів ще немає</strong>
+                      <span>Можна додати пацієнта через кнопку вище.</span>
+                    </div>
+                  {% else %}
+                    <div class="appointment-day-rest">
+                      <strong>У цей день ви відпочиваєте</strong>
+                      <span>Записів і заявок немає.</span>
+                    </div>
+                  {% endif %}
                 {% endif %}
             </section>
           {% endfor %}
