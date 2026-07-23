@@ -6085,12 +6085,20 @@ body:not(.public-home-page) .appointment-week {
 }
 
 body:not(.public-home-page) .appointment-week-head {
-  align-items: end;
+  align-items: center;
   border-bottom: 2px solid #8ccfc2;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  padding: 0 4px 14px;
+}
+
+body:not(.public-home-page) .appointment-week-heading {
+  align-items: end;
   display: flex;
   gap: 24px;
   justify-content: space-between;
-  padding: 0 4px 14px;
+  min-width: 0;
 }
 
 body:not(.public-home-page) .appointment-week-head h2 {
@@ -6098,10 +6106,31 @@ body:not(.public-home-page) .appointment-week-head h2 {
   margin: 4px 0 0;
 }
 
-body:not(.public-home-page) .appointment-week-head > span {
+body:not(.public-home-page) .appointment-week-heading > span {
   color: var(--muted);
   font-size: 14px;
   white-space: nowrap;
+}
+
+body:not(.public-home-page) .appointment-week-arrow,
+body:not(.public-home-page) .appointment-week-arrow:hover {
+  align-items: center;
+  background: #315d55;
+  border: 1px solid #315d55;
+  border-radius: 6px;
+  color: #fff;
+  display: flex;
+  font-size: 22px;
+  font-weight: 700;
+  height: 42px;
+  justify-content: center;
+  text-decoration: none;
+  width: 42px;
+}
+
+body:not(.public-home-page) .appointment-week-arrow:hover {
+  background: #234a43;
+  border-color: #234a43;
 }
 
 body:not(.public-home-page) .appointment-week-kicker {

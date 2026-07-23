@@ -1291,8 +1291,16 @@ def doctor_appointments(request):
     refresh_completed_appointments()
     doctor = request.user.doctor_profile
     sync_patient_cards_for_doctor(doctor)
+    today = timezone.localdate()
+    current_week_start = today - timedelta(days=today.weekday())
+    requested_week = parse_date(request.GET.get('week'))
+    selected_date = requested_week or today
+    week_start = selected_date - timedelta(days=selected_date.weekday())
+    week_end = week_start + timedelta(days=6)
     appointments = list(
-        doctor.appointments.select_related('service', 'patient__profile').order_by('date', 'time')
+        doctor.appointments.filter(
+            date__range=(week_start, week_end),
+        ).select_related('service', 'patient__profile').order_by('date', 'time')
     )
     cards_by_phone = {
         card.patient_phone: card
@@ -1304,36 +1312,22 @@ def doctor_appointments(request):
         appointment.weekday_name = UKRAINIAN_WEEKDAYS[appointment.date.weekday()]
         appointments_by_date.setdefault(appointment.date, []).append(appointment)
 
-    today = timezone.localdate()
-    current_week_start = today - timedelta(days=today.weekday())
-    week_starts = {current_week_start}
-    week_starts.update(
-        appointment.date - timedelta(days=appointment.date.weekday())
-        for appointment in appointments
-    )
-    appointment_weeks = []
-    for week_start in sorted(week_starts):
-        week_days = []
-        appointments_count = 0
-        for day_offset, weekday_name in enumerate(UKRAINIAN_WEEKDAYS):
-            day_date = week_start + timedelta(days=day_offset)
-            day_appointments = appointments_by_date.get(day_date, [])
-            appointments_count += len(day_appointments)
-            week_days.append(
-                {
-                    'date': day_date,
-                    'weekday_name': weekday_name,
-                    'appointments': day_appointments,
-                }
-            )
-        appointment_weeks.append(
+    week_days = []
+    for day_offset, weekday_name in enumerate(UKRAINIAN_WEEKDAYS):
+        day_date = week_start + timedelta(days=day_offset)
+        week_days.append(
             {
-                'start': week_start,
-                'end': week_start + timedelta(days=6),
-                'days': week_days,
-                'appointments_count': appointments_count,
+                'date': day_date,
+                'weekday_name': weekday_name,
+                'appointments': appointments_by_date.get(day_date, []),
             }
         )
+    appointment_week = {
+        'start': week_start,
+        'end': week_end,
+        'days': week_days,
+        'appointments_count': len(appointments),
+    }
 
     return render(
         request,
@@ -1341,9 +1335,16 @@ def doctor_appointments(request):
         {
             'doctor': doctor,
             'appointments': appointments,
-            'appointment_weeks': appointment_weeks,
+            'appointment_week': appointment_week,
+            'previous_week_start': week_start - timedelta(days=7),
+            'next_week_start': week_start + timedelta(days=7),
+            'is_current_week': week_start == current_week_start,
         },
     )
+
+
+def doctor_appointments_week_url(appointment_date):
+    return f'{reverse("doctor_appointments")}?week={appointment_date.isoformat()}'
 
 
 @doctor_required
@@ -1499,7 +1500,7 @@ def doctor_review_appointment(request, appointment_id):
                 'Лікар відхилив заявку на прийом',
             )
             messages.success(request, 'Заявку відхилено.')
-            return redirect('doctor_appointments')
+            return redirect(doctor_appointments_week_url(appointment.date))
 
         schedule = schedule_for_date(doctor, appointment.date)
         slot_minutes = schedule.slot_minutes if schedule else 60
@@ -1544,11 +1545,11 @@ def doctor_review_appointment(request, appointment_id):
                     'Лікар підтвердив вашу заявку',
                 )
                 messages.success(request, 'Заявку підтверджено.')
-                return redirect('doctor_appointments')
+                return redirect(doctor_appointments_week_url(appointment.date))
         else:
             error = form.errors.get('duration_minutes')
             messages.error(request, error[0] if error else 'Перевірте тривалість прийому.')
-    return redirect('doctor_appointments')
+    return redirect(doctor_appointments_week_url(appointment.date))
 
 
 @doctor_required
@@ -1665,7 +1666,7 @@ def doctor_book_patient(request):
                         'Лікар створив для вас запис',
                     )
                     messages.success(request, f'Пацієнта записано.{match_message}')
-                    return redirect('doctor_appointments')
+                    return redirect(doctor_appointments_week_url(selected_date))
                 except IntegrityError:
                     messages.error(request, 'Цей час уже недоступний.')
 

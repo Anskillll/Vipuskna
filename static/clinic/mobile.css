@@ -414,19 +414,33 @@
   }
 
   body:not(.public-home-page) .appointment-week-head {
-    align-items: flex-start;
-    gap: 8px;
+    align-items: center;
+    gap: 7px;
+    grid-template-columns: 36px minmax(0, 1fr) 36px;
     padding: 0 2px 10px;
   }
 
+  body:not(.public-home-page) .appointment-week-heading {
+    align-items: center;
+    flex-direction: column;
+    gap: 2px;
+    text-align: center;
+  }
+
   body:not(.public-home-page) .appointment-week-head h2 {
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1.25;
   }
 
-  body:not(.public-home-page) .appointment-week-head > span {
+  body:not(.public-home-page) .appointment-week-heading > span {
     font-size: 11px;
-    padding-top: 19px;
+  }
+
+  body:not(.public-home-page) .appointment-week-arrow,
+  body:not(.public-home-page) .appointment-week-arrow:hover {
+    font-size: 18px;
+    height: 36px;
+    width: 36px;
   }
 
   body:not(.public-home-page) .appointment-week-kicker {

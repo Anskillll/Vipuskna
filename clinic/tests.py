@@ -1132,7 +1132,8 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Фото та відео до заявки')
 
     def test_doctor_appointments_are_grouped_and_show_only_summary(self):
-        first_date = timezone.localdate() + timedelta(days=7)
+        today = timezone.localdate()
+        first_date = today - timedelta(days=today.weekday()) + timedelta(days=9)
         second_date = first_date + timedelta(days=1)
         later = Appointment.objects.create(
             doctor=self.doctor,
@@ -1173,7 +1174,10 @@ class ClinicModelTests(TestCase):
         )
         self.client.login(username='doctor@test.local', password='pass12345')
 
-        response = self.client.get(reverse('doctor_appointments'))
+        response = self.client.get(
+            reverse('doctor_appointments'),
+            {'week': first_date.isoformat()},
+        )
         rendered_appointments = list(response.context['appointments'])
         appointment_ids = [item.id for item in rendered_appointments]
         weekday_names = ('Понеділок', 'Вівторок', 'Середа', 'Четвер', "П'ятниця", 'Субота', 'Неділя')
@@ -1212,12 +1216,11 @@ class ClinicModelTests(TestCase):
             )
         self.client.login(username='doctor@test.local', password='pass12345')
 
-        response = self.client.get(reverse('doctor_appointments'))
-        target_week = next(
-            week
-            for week in response.context['appointment_weeks']
-            if week['start'] == week_start
+        response = self.client.get(
+            reverse('doctor_appointments'),
+            {'week': busy_date.isoformat()},
         )
+        target_week = response.context['appointment_week']
 
         self.assertEqual(len(target_week['days']), 7)
         self.assertEqual(target_week['days'][0]['weekday_name'], 'Понеділок')
@@ -1231,6 +1234,22 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'У цей день ви відпочиваєте')
         self.assertContains(response, 'Розгорнути всі (6)')
         self.assertContains(response, 'data-day-extra', count=1)
+        self.assertContains(
+            response,
+            f'?week={(week_start - timedelta(days=7)).isoformat()}',
+        )
+        self.assertContains(
+            response,
+            f'?week={(week_start + timedelta(days=7)).isoformat()}',
+        )
+
+        current_response = self.client.get(reverse('doctor_appointments'))
+        current_week_start = today - timedelta(days=today.weekday())
+        self.assertEqual(
+            current_response.context['appointment_week']['start'],
+            current_week_start,
+        )
+        self.assertTrue(current_response.context['is_current_week'])
 
     def test_doctor_views_show_registered_patient_age(self):
         appointment = Appointment.objects.create(
@@ -1249,7 +1268,10 @@ class ClinicModelTests(TestCase):
         )
         self.client.login(username='doctor@test.local', password='pass12345')
 
-        appointments_response = self.client.get(reverse('doctor_appointments'))
+        appointments_response = self.client.get(
+            reverse('doctor_appointments'),
+            {'week': appointment.date.isoformat()},
+        )
         patients_response = self.client.get(reverse('doctor_patient_cards'))
         detail_response = self.client.get(reverse('doctor_appointment_detail', args=[appointment.id]))
 
@@ -2139,7 +2161,10 @@ class ClinicModelTests(TestCase):
         self.client.login(username='doctor@test.local', password='pass12345')
 
         patient_response = self.client.get(reverse('doctor_patient_cards'))
-        appointment_response = self.client.get(reverse('doctor_appointments'))
+        appointment_response = self.client.get(
+            reverse('doctor_appointments'),
+            {'week': appointment.date.isoformat()},
+        )
 
         self.assertContains(patient_response, 'Фільтр пацієнтів')
         self.assertContains(patient_response, 'data-live-filter-input')
@@ -2211,7 +2236,10 @@ class ClinicModelTests(TestCase):
             },
         )
 
-        self.assertRedirects(response, reverse('doctor_appointments'))
+        self.assertRedirects(
+            response,
+            f"{reverse('doctor_appointments')}?week={visit_date.isoformat()}",
+        )
         appointment = Appointment.objects.get(reason='Пацієнта обрано через пошук')
         self.assertEqual(appointment.patient, self.patient)
         self.assertEqual(appointment.patient_first_name, self.patient.first_name)

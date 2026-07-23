@@ -44,24 +44,37 @@
     </div>
 
     <div class="appointment-weeks">
-      {% for week in appointment_weeks %}
-        <section class="appointment-week" data-live-filter-group data-live-filter-keep-empty>
-          <header class="appointment-week-head">
+      <section class="appointment-week" data-live-filter-group data-live-filter-keep-empty>
+        <header class="appointment-week-head">
+          <a
+            class="appointment-week-arrow"
+            href="{% url 'doctor_appointments' %}?week={{ previous_week_start|date:'Y-m-d' }}"
+            title="Попередній тиждень"
+            aria-label="Показати попередній тиждень"
+          ><span aria-hidden="true">←</span></a>
+          <div class="appointment-week-heading">
             <div>
-              <span class="appointment-week-kicker">Тижневий розклад</span>
-              <h2>Тиждень з {{ week.start|date:'d.m' }} по {{ week.end|date:'d.m' }}</h2>
+              <span class="appointment-week-kicker">{% if is_current_week %}Поточний тиждень{% else %}Тижневий розклад{% endif %}</span>
+              <h2>Тиждень з {{ appointment_week.start|date:'d.m' }} по {{ appointment_week.end|date:'d.m' }}</h2>
             </div>
-            <span data-live-filter-group-count data-count-template="{count} запис(ів)">{{ week.appointments_count }} запис(ів)</span>
-          </header>
+            <span data-live-filter-group-count data-count-template="{count} запис(ів)">{{ appointment_week.appointments_count }} запис(ів)</span>
+          </div>
+          <a
+            class="appointment-week-arrow"
+            href="{% url 'doctor_appointments' %}?week={{ next_week_start|date:'Y-m-d' }}"
+            title="Наступний тиждень"
+            aria-label="Показати наступний тиждень"
+          ><span aria-hidden="true">→</span></a>
+        </header>
 
-          <div class="appointments-by-day">
-            {% for day in week.days %}
-              <section
-                class="card section-card appointment-day-group{% if day.appointments|length > 5 %} is-collapsible{% endif %}"
-                data-live-filter-group
-                data-live-filter-keep-empty
-                data-appointment-day
-              >
+        <div class="appointments-by-day">
+          {% for day in appointment_week.days %}
+            <section
+              class="card section-card appointment-day-group{% if day.appointments|length > 5 %} is-collapsible{% endif %}"
+              data-live-filter-group
+              data-live-filter-keep-empty
+              data-appointment-day
+            >
                 <div class="appointment-day-head">
                   <h2>{{ day.weekday_name }}, {{ day.date|date:'d.m.Y' }}</h2>
                   {% if day.appointments %}
@@ -133,11 +146,10 @@
                     <span>Записів і заявок немає.</span>
                   </div>
                 {% endif %}
-              </section>
-            {% endfor %}
-          </div>
-        </section>
-      {% endfor %}
+            </section>
+          {% endfor %}
+        </div>
+      </section>
     </div>
     {% if appointments %}
       <div class="card section-card empty live-filter-empty" data-live-filter-empty hidden>Записів із такими даними не знайдено.</div>
