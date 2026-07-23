@@ -1,4 +1,5 @@
 {% extends 'clinic/base.html' %}
+{% load static %}
 
 {% block title %}Заявки та прийоми - MedClinic{% endblock %}
 
@@ -17,7 +18,7 @@
     <a class="page-tab" href="{% url 'doctor_schedule' %}">Графік</a>
   </nav>
 
-  <div data-live-filter>
+  <div data-live-filter data-live-filter-no-pagination>
     <div class="card section-card live-filter-bar">
       <div class="live-filter-field">
         <label for="appointment-search">Фільтр заявок і прийомів</label>
@@ -42,65 +43,108 @@
       <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
     </div>
 
-    {% regroup appointments by date as appointment_days %}
-    <div class="appointments-by-day">
-      {% for day in appointment_days %}
-      <section class="card section-card appointment-day-group" data-live-filter-group>
-        <div class="appointment-day-head">
-          <h2>{{ day.list.0.weekday_name }}, {{ day.grouper|date:'d.m.Y' }}</h2>
-          <span data-live-filter-group-count data-count-template="{count} запис(ів)">{{ day.list|length }} запис(ів)</span>
-        </div>
-        <div class="appointment-summary-list">
-          {% for appointment in day.list %}
-            <article
-              class="appointment-summary-row appointment-kind-{{ appointment.status }}"
-              data-live-filter-item
-              data-filter-extra="{{ appointment.patient_name|escape }} {{ appointment.patient_phone|escape }} {% if appointment.patient_age %}{{ appointment.patient_age }}{% endif %} {{ appointment.service.name|default:''|escape }} {{ appointment.date|date:'d.m.Y' }} {{ appointment.date|date:'Y-m-d' }} {{ appointment.time|time:'H:i' }} {{ appointment.city|escape }} {{ appointment.address|escape }} {{ appointment.get_status_display|escape }}"
-            >
-              <time datetime="{{ appointment.date|date:'Y-m-d' }}T{{ appointment.time|time:'H:i' }}">{{ appointment.time|time:'H:i' }}</time>
-              <div class="appointment-summary-person">
-                <div class="appointment-person-name">
-                  <button
-                    class="appointment-filter-name"
-                    type="button"
-                    title="Показати всі записи цього пацієнта"
-                    data-live-filter-value="{{ appointment.patient_name|escape }}"
-                  >{{ appointment.patient_name }}</button>
-                  <span>{% if appointment.patient_age %}{{ appointment.patient_age }} років{% else %}Вік не вказано{% endif %}</span>
+    <div class="appointment-weeks">
+      {% for week in appointment_weeks %}
+        <section class="appointment-week" data-live-filter-group data-live-filter-keep-empty>
+          <header class="appointment-week-head">
+            <div>
+              <span class="appointment-week-kicker">Тижневий розклад</span>
+              <h2>Тиждень з {{ week.start|date:'d.m.Y' }} по {{ week.end|date:'d.m.Y' }}</h2>
+            </div>
+            <span data-live-filter-group-count data-count-template="{count} запис(ів)">{{ week.appointments_count }} запис(ів)</span>
+          </header>
+
+          <div class="appointments-by-day">
+            {% for day in week.days %}
+              <section
+                class="card section-card appointment-day-group{% if day.appointments|length > 5 %} is-collapsible{% endif %}"
+                data-live-filter-group
+                data-live-filter-keep-empty
+                data-appointment-day
+              >
+                <div class="appointment-day-head">
+                  <h2>{{ day.weekday_name }}, {{ day.date|date:'d.m.Y' }}</h2>
+                  {% if day.appointments %}
+                    <span data-live-filter-group-count data-count-template="{count} запис(ів)">{{ day.appointments|length }} запис(ів)</span>
+                  {% else %}
+                    <span class="appointment-day-rest-label">Вихідний</span>
+                  {% endif %}
                 </div>
-                {% if appointment.status == 'pending' %}
-                  <span class="appointment-kind-label">Заявка очікує</span>
-                {% elif appointment.status == 'approved' %}
-                  <span class="appointment-kind-label">Підтверджений прийом</span>
-                {% elif appointment.status == 'completed' %}
-                  <span class="appointment-kind-label">Завершений прийом</span>
-                {% elif appointment.status == 'reschedule_proposed' %}
-                  <span class="appointment-kind-label">Новий час на погодженні</span>
-                {% elif appointment.status == 'canceled' %}
-                  <span class="appointment-kind-label">Прийом скасовано</span>
+
+                {% if day.appointments %}
+                  <div class="appointment-summary-list">
+                    {% for appointment in day.appointments %}
+                      <article
+                        class="appointment-summary-row appointment-kind-{{ appointment.status }}"
+                        data-live-filter-item
+                        {% if forloop.counter > 5 %}data-day-extra{% endif %}
+                        data-filter-extra="{{ appointment.patient_name|escape }} {{ appointment.patient_phone|escape }} {% if appointment.patient_age %}{{ appointment.patient_age }}{% endif %} {{ appointment.service.name|default:''|escape }} {{ appointment.date|date:'d.m.Y' }} {{ appointment.date|date:'Y-m-d' }} {{ appointment.time|time:'H:i' }} {{ appointment.city|escape }} {{ appointment.address|escape }} {{ appointment.get_status_display|escape }}"
+                      >
+                        <time datetime="{{ appointment.date|date:'Y-m-d' }}T{{ appointment.time|time:'H:i' }}">{{ appointment.time|time:'H:i' }}</time>
+                        <div class="appointment-summary-person">
+                          <div class="appointment-person-name">
+                            <button
+                              class="appointment-filter-name"
+                              type="button"
+                              title="Показати всі записи цього пацієнта"
+                              data-live-filter-value="{{ appointment.patient_name|escape }}"
+                            >{{ appointment.patient_name }}</button>
+                            <span>{% if appointment.patient_age %}{{ appointment.patient_age }} років{% else %}Вік не вказано{% endif %}</span>
+                          </div>
+                          {% if appointment.status == 'pending' %}
+                            <span class="appointment-kind-label">Заявка очікує</span>
+                          {% elif appointment.status == 'approved' %}
+                            <span class="appointment-kind-label">Підтверджений прийом</span>
+                          {% elif appointment.status == 'completed' %}
+                            <span class="appointment-kind-label">Завершений прийом</span>
+                          {% elif appointment.status == 'reschedule_proposed' %}
+                            <span class="appointment-kind-label">Новий час на погодженні</span>
+                          {% elif appointment.status == 'canceled' %}
+                            <span class="appointment-kind-label">Прийом скасовано</span>
+                          {% else %}
+                            <span class="appointment-kind-label">Заявку відхилено</span>
+                          {% endif %}
+                        </div>
+                        <span>{{ appointment.service.name|default:'Послугу не обрано' }}</span>
+                        <div class="appointment-row-actions">
+                          <a class="btn secondary" href="{% url 'doctor_appointment_detail' appointment.id %}">Детальніше</a>
+                          {% if appointment.patient_card %}
+                            <a class="btn" href="{% url 'doctor_patient_card_detail' appointment.patient_card.id %}">Відкрити картку</a>
+                          {% else %}
+                            <a class="btn" href="{% url 'doctor_patient_cards' %}">Відкрити картку</a>
+                          {% endif %}
+                        </div>
+                      </article>
+                    {% endfor %}
+                  </div>
+                  {% if day.appointments|length > 5 %}
+                    <button
+                      class="appointment-day-toggle"
+                      type="button"
+                      aria-expanded="false"
+                      data-appointment-day-toggle
+                      data-expand-label="Розгорнути всі ({{ day.appointments|length }})"
+                      data-collapse-label="Згорнути"
+                    >Розгорнути всі ({{ day.appointments|length }})</button>
+                  {% endif %}
                 {% else %}
-                  <span class="appointment-kind-label">Заявку відхилено</span>
+                  <div class="appointment-day-rest">
+                    <strong>У цей день ви відпочиваєте</strong>
+                    <span>Записів і заявок немає.</span>
+                  </div>
                 {% endif %}
-              </div>
-              <span>{{ appointment.service.name|default:'Послугу не обрано' }}</span>
-              <div class="appointment-row-actions">
-                <a class="btn secondary" href="{% url 'doctor_appointment_detail' appointment.id %}">Детальніше</a>
-                {% if appointment.patient_card %}
-                  <a class="btn" href="{% url 'doctor_patient_card_detail' appointment.patient_card.id %}">Відкрити картку</a>
-                {% else %}
-                  <a class="btn" href="{% url 'doctor_patient_cards' %}">Відкрити картку</a>
-                {% endif %}
-              </div>
-            </article>
-          {% endfor %}
-        </div>
-      </section>
-      {% empty %}
-        <div class="card section-card empty">Поки що немає заявок або прийомів.</div>
+              </section>
+            {% endfor %}
+          </div>
+        </section>
       {% endfor %}
     </div>
     {% if appointments %}
       <div class="card section-card empty live-filter-empty" data-live-filter-empty hidden>Записів із такими даними не знайдено.</div>
     {% endif %}
   </div>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="{% static 'clinic/doctor_appointments.js' %}?v=20260723-1" defer></script>
 {% endblock %}

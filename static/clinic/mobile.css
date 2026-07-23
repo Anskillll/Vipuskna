@@ -404,6 +404,35 @@
     padding: 11px;
   }
 
+  body:not(.public-home-page) .appointment-weeks {
+    gap: 28px;
+    margin-top: 18px;
+  }
+
+  body:not(.public-home-page) .appointment-week {
+    gap: 10px;
+  }
+
+  body:not(.public-home-page) .appointment-week-head {
+    align-items: flex-start;
+    gap: 8px;
+    padding: 0 2px 10px;
+  }
+
+  body:not(.public-home-page) .appointment-week-head h2 {
+    font-size: 18px;
+    line-height: 1.25;
+  }
+
+  body:not(.public-home-page) .appointment-week-head > span {
+    font-size: 11px;
+    padding-top: 19px;
+  }
+
+  body:not(.public-home-page) .appointment-week-kicker {
+    font-size: 10px;
+  }
+
   body:not(.public-home-page) .appointment-day-head h2 {
     font-size: 18px;
   }
@@ -411,6 +440,23 @@
   .appointment-day-head span {
     font-size: 11px;
     white-space: nowrap;
+  }
+
+  body:not(.public-home-page) .appointment-day-rest {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 0;
+    padding: 11px;
+  }
+
+  body:not(.public-home-page) .appointment-day-rest span {
+    font-size: 12px;
+  }
+
+  body:not(.public-home-page) .appointment-day-toggle {
+    margin: 11px;
+    width: calc(100% - 22px);
   }
 
   body:not(.public-home-page) .appointment-summary-row {

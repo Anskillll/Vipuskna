@@ -23,6 +23,7 @@
     const valueButtons = root.querySelectorAll('[data-live-filter-value]');
     const requestedPageSize = Number.parseInt(root.dataset.pageSize || '10', 10);
     const pageSize = requestedPageSize > 0 ? requestedPageSize : 10;
+    const paginationEnabled = !root.hasAttribute('data-live-filter-no-pagination');
     if (!items.length) {
       if (count) {
         count.textContent = 'Усього: 0';
@@ -114,11 +115,16 @@
     };
 
     const renderPage = (scrollToTop = false) => {
-      const totalPages = Math.max(1, Math.ceil(matchingItems.length / pageSize));
+      const totalPages = paginationEnabled
+        ? Math.max(1, Math.ceil(matchingItems.length / pageSize))
+        : 1;
       currentPage = Math.min(Math.max(currentPage, 1), totalPages);
       const pageStart = (currentPage - 1) * pageSize;
       const visibleItems = new Set(
-        matchingItems.slice(pageStart, pageStart + pageSize).map(({ item }) => item),
+        (paginationEnabled
+          ? matchingItems.slice(pageStart, pageStart + pageSize)
+          : matchingItems
+        ).map(({ item }) => item),
       );
 
       indexedItems.forEach(({ item }) => {
@@ -128,7 +134,9 @@
       groups.forEach((group) => {
         const groupItems = Array.from(group.querySelectorAll('[data-live-filter-item]'));
         const groupVisibleCount = groupItems.filter((item) => !item.hidden).length;
-        group.hidden = groupVisibleCount === 0;
+        const keepEmpty = group.hasAttribute('data-live-filter-keep-empty');
+        const hasActiveFilter = Boolean(input && input.value.trim());
+        group.hidden = groupVisibleCount === 0 && !(keepEmpty && !hasActiveFilter);
         const groupCount = group.querySelector('[data-live-filter-group-count]');
         if (groupCount) {
           const template = groupCount.dataset.countTemplate || '{count}';
@@ -148,7 +156,7 @@
         clearButton.disabled = !input.value;
       }
 
-      renderPagination(Math.ceil(matchingItems.length / pageSize));
+      renderPagination(paginationEnabled ? Math.ceil(matchingItems.length / pageSize) : 1);
       if (scrollToTop) {
         const target = root.querySelector('.live-filter-bar') || root;
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -157,6 +165,7 @@
 
     const applyFilter = (resetPage = true) => {
       const query = searchableParts(input ? input.value : '');
+      root.classList.toggle('is-filtering', Boolean(query.normalized));
       const terms = query.normalized ? query.normalized.split(/\s+/) : [];
       matchingItems = indexedItems.filter(({ search }) => (
         terms.every((term) => (

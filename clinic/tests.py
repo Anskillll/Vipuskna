@@ -1193,6 +1193,45 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'data-live-filter-item')
         self.assertContains(response, '+380509999991')
 
+    def test_doctor_appointments_show_full_week_and_collapse_after_five_items(self):
+        today = timezone.localdate()
+        week_start = today - timedelta(days=today.weekday()) + timedelta(days=7)
+        busy_date = week_start + timedelta(days=2)
+        for index in range(6):
+            Appointment.objects.create(
+                doctor=self.doctor,
+                service=self.service,
+                patient_first_name=f'Пацієнт {index + 1}',
+                patient_last_name='Тестовий',
+                patient_phone=f'+3805099998{index:02d}',
+                date=busy_date,
+                time=time(9 + index, 0),
+                city='Дніпро',
+                address='вул. Тестова, 1',
+                reason='Перевірка тижневого розкладу',
+            )
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.get(reverse('doctor_appointments'))
+        target_week = next(
+            week
+            for week in response.context['appointment_weeks']
+            if week['start'] == week_start
+        )
+
+        self.assertEqual(len(target_week['days']), 7)
+        self.assertEqual(target_week['days'][0]['weekday_name'], 'Понеділок')
+        self.assertEqual(target_week['days'][-1]['weekday_name'], 'Неділя')
+        self.assertEqual(len(target_week['days'][2]['appointments']), 6)
+        self.assertContains(
+            response,
+            f"Тиждень з {week_start.strftime('%d.%m.%Y')} по "
+            f"{(week_start + timedelta(days=6)).strftime('%d.%m.%Y')}",
+        )
+        self.assertContains(response, 'У цей день ви відпочиваєте')
+        self.assertContains(response, 'Розгорнути всі (6)')
+        self.assertContains(response, 'data-day-extra', count=1)
+
     def test_doctor_views_show_registered_patient_age(self):
         appointment = Appointment.objects.create(
             doctor=self.doctor,

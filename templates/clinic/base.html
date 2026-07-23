@@ -13,9 +13,9 @@
   {% else %}
     <link rel="icon" href="data:,">
   {% endif %}
-  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260722-1">
-  <link rel="stylesheet" href="{% static 'clinic/mobile.css' %}?v=20260722-2">
-  <script src="{% static 'clinic/live_filter.js' %}?v=20260719-4" defer></script>
+  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260723-1">
+  <link rel="stylesheet" href="{% static 'clinic/mobile.css' %}?v=20260723-1">
+  <script src="{% static 'clinic/live_filter.js' %}?v=20260723-1" defer></script>
   <script src="{% static 'clinic/flash_messages.js' %}?v=20260719-1" defer></script>
 </head>
 <body class="{% if clinic_branding.home_background %}has-site-background {% endif %}{% block body_class %}{% endblock %}"{% if clinic_branding.home_background %} style="--site-bg: url('{{ clinic_branding.home_background.url }}');"{% endif %}>

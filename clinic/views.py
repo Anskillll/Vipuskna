@@ -1311,20 +1311,57 @@ def doctor_appointments(request):
     refresh_completed_appointments()
     doctor = request.user.doctor_profile
     sync_patient_cards_for_doctor(doctor)
-    appointments = doctor.appointments.select_related('service', 'patient__profile').order_by('date', 'time')
+    appointments = list(
+        doctor.appointments.select_related('service', 'patient__profile').order_by('date', 'time')
+    )
     cards_by_phone = {
         card.patient_phone: card
         for card in doctor.patient_cards.select_related('patient__profile')
     }
+    appointments_by_date = {}
     for appointment in appointments:
         appointment.patient_card = cards_by_phone.get(appointment.patient_phone)
         appointment.weekday_name = UKRAINIAN_WEEKDAYS[appointment.date.weekday()]
+        appointments_by_date.setdefault(appointment.date, []).append(appointment)
+
+    today = timezone.localdate()
+    current_week_start = today - timedelta(days=today.weekday())
+    week_starts = {current_week_start}
+    week_starts.update(
+        appointment.date - timedelta(days=appointment.date.weekday())
+        for appointment in appointments
+    )
+    appointment_weeks = []
+    for week_start in sorted(week_starts):
+        week_days = []
+        appointments_count = 0
+        for day_offset, weekday_name in enumerate(UKRAINIAN_WEEKDAYS):
+            day_date = week_start + timedelta(days=day_offset)
+            day_appointments = appointments_by_date.get(day_date, [])
+            appointments_count += len(day_appointments)
+            week_days.append(
+                {
+                    'date': day_date,
+                    'weekday_name': weekday_name,
+                    'appointments': day_appointments,
+                }
+            )
+        appointment_weeks.append(
+            {
+                'start': week_start,
+                'end': week_start + timedelta(days=6),
+                'days': week_days,
+                'appointments_count': appointments_count,
+            }
+        )
+
     return render(
         request,
         'clinic/doctor_appointments.html',
         {
             'doctor': doctor,
             'appointments': appointments,
+            'appointment_weeks': appointment_weeks,
         },
     )
 
