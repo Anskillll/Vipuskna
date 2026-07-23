@@ -338,6 +338,39 @@ cd /opt/medclinic
 sudo systemctl restart medclinic medclinic-bot
 ```
 
+### Production-база PostgreSQL
+
+На production-сервері використовується PostgreSQL. SQLite залишається лише
+локальним варіантом за замовчуванням, щоб проєкт було легко запускати для
+навчання. Параметри production-підключення зберігаються у захищеному `.env`:
+
+```dotenv
+DJANGO_DB_ENGINE=postgresql
+DJANGO_DB_NAME=medclinic
+DJANGO_DB_USER=medclinic
+DJANGO_DB_PASSWORD=секретний-пароль
+DJANGO_DB_HOST=127.0.0.1
+DJANGO_DB_PORT=5432
+DJANGO_DB_CONN_MAX_AGE=60
+```
+
+PostgreSQL слухає лише локальний інтерфейс сервера, а порт `5432` не
+відкривається у firewall. Перед оновленнями бази створюється резервна копія:
+
+```bash
+sudo -u postgres pg_dump --format=custom --file=/opt/backups/medclinic.dump medclinic
+```
+
+Одноразове перенесення наявної SQLite-бази виконує
+`deploy/migrate-sqlite-to-postgresql.sh`. Скрипт перевіряє SQLite, зупиняє
+вебсайт і бота, переносить дані, порівнює кількість записів у кожній моделі та
+повертає старе підключення, якщо будь-який етап завершився помилкою.
+
+Відновити таку копію можна командою `pg_restore`. Старий файл SQLite після
+перенесення не видаляється та зберігається окремо як додаткова резервна копія.
+Таймер `medclinic-db-backup.timer` щодня створює архів PostgreSQL у
+`/opt/backups/postgresql` і автоматично видаляє копії, старші за 14 днів.
+
 Якщо файли завантажувалися архівом із Windows, після розпакування потрібно
 відновити безпечні права доступу:
 
