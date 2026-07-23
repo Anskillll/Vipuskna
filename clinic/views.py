@@ -87,6 +87,7 @@ BLOCKING_APPOINTMENT_STATUSES = [
     Appointment.STATUS_COMPLETED,
     Appointment.STATUS_RESCHEDULE_PROPOSED,
 ]
+PATIENT_DAILY_BOOKING_LIMIT = 2
 
 UKRAINIAN_WEEKDAYS = (
     'Понеділок',
@@ -464,6 +465,40 @@ def patient_appointment_conflicts(
         if target_start < item_end and target_end > item_start:
             return True
     return False
+
+
+def patient_daily_appointment_count(
+    patient,
+    selected_date,
+    patient_phone='',
+):
+    if not selected_date:
+        return 0
+
+    identity_filter = Q(patient=patient) if patient else None
+    normalized_phone = normalize_phone_number(
+        patient_phone
+        or (
+            patient.profile.phone
+            if patient and hasattr(patient, 'profile')
+            else ''
+        )
+    )
+    if normalized_phone:
+        phone_filter = Q(patient_phone=normalized_phone)
+        identity_filter = (
+            identity_filter | phone_filter
+            if identity_filter is not None
+            else phone_filter
+        )
+    if identity_filter is None:
+        return 0
+
+    return Appointment.objects.filter(
+        identity_filter,
+        date=selected_date,
+        status__in=BLOCKING_APPOINTMENT_STATUSES,
+    ).count()
 
 
 def split_slot_option(doctor, selected_date, slot_time, schedule=None, appointment_id=None):
@@ -1241,6 +1276,11 @@ def booking(request):
             selected_date = earliest_booking_date
             selected_time = None
         else:
+            daily_booking_count = patient_daily_appointment_count(
+                request.user,
+                selected_date,
+                request.user.profile.phone,
+            )
             schedule, slots = slots_for_doctor(
                 selected_doctor,
                 selected_date,
@@ -1249,7 +1289,12 @@ def booking(request):
             )
             available_times = [slot['time'] for slot in slots if not slot['busy']]
 
-            if is_past_appointment(selected_date, selected_time):
+            if daily_booking_count >= PATIENT_DAILY_BOOKING_LIMIT:
+                messages.error(
+                    request,
+                    'Самостійно можна створити не більше 2 заявок або прийомів на один день. Оберіть іншу дату.',
+                )
+            elif is_past_appointment(selected_date, selected_time):
                 messages.error(request, 'Цей час уже недоступний.')
             elif selected_time and schedule and patient_appointment_conflicts(
                 request.user,
@@ -1270,31 +1315,48 @@ def booking(request):
                     messages.error(request, 'Цей час уже недоступний.')
                 else:
                     try:
-                        appointment = Appointment.objects.create(
-                            doctor=selected_doctor,
-                            service=reason_form.cleaned_data['service'],
-                            patient=request.user,
-                            patient_first_name=request.user.first_name,
-                            patient_last_name=request.user.last_name,
-                            patient_phone=request.user.profile.phone,
-                            patient_email=request.user.email,
-                            date=selected_date,
-                            time=selected_time,
-                            city=schedule.city,
-                            address=schedule.address,
-                            reason=reason_form.cleaned_data['reason'],
-                            duration_slots=duration_slots,
-                            status=Appointment.STATUS_PENDING,
-                        )
-                        for photo in reason_form.cleaned_data['photos']:
-                            AppointmentImage.objects.create(appointment=appointment, image=photo)
-                        for video in reason_form.cleaned_data['videos']:
-                            AppointmentVideo.objects.create(appointment=appointment, video=video)
-                        ensure_patient_card_from_appointment(appointment)
-                        write_audit_log(request, 'Створено заявку', appointment)
-                        notify_doctor_new_request(appointment)
-                        messages.success(request, 'Заявку відправлено лікарю на підтвердження.')
-                        return redirect('patient_dashboard')
+                        appointment = None
+                        daily_limit_reached_during_save = False
+                        with transaction.atomic():
+                            User.objects.select_for_update().get(pk=request.user.pk)
+                            if patient_daily_appointment_count(
+                                request.user,
+                                selected_date,
+                                request.user.profile.phone,
+                            ) >= PATIENT_DAILY_BOOKING_LIMIT:
+                                daily_limit_reached_during_save = True
+                            else:
+                                appointment = Appointment.objects.create(
+                                    doctor=selected_doctor,
+                                    service=reason_form.cleaned_data['service'],
+                                    patient=request.user,
+                                    patient_first_name=request.user.first_name,
+                                    patient_last_name=request.user.last_name,
+                                    patient_phone=request.user.profile.phone,
+                                    patient_email=request.user.email,
+                                    date=selected_date,
+                                    time=selected_time,
+                                    city=schedule.city,
+                                    address=schedule.address,
+                                    reason=reason_form.cleaned_data['reason'],
+                                    duration_slots=duration_slots,
+                                    status=Appointment.STATUS_PENDING,
+                                )
+                                for photo in reason_form.cleaned_data['photos']:
+                                    AppointmentImage.objects.create(appointment=appointment, image=photo)
+                                for video in reason_form.cleaned_data['videos']:
+                                    AppointmentVideo.objects.create(appointment=appointment, video=video)
+                        if daily_limit_reached_during_save:
+                            messages.error(
+                                request,
+                                'Самостійно можна створити не більше 2 заявок або прийомів на один день. Оберіть іншу дату.',
+                            )
+                        else:
+                            ensure_patient_card_from_appointment(appointment)
+                            write_audit_log(request, 'Створено заявку', appointment)
+                            notify_doctor_new_request(appointment)
+                            messages.success(request, 'Заявку відправлено лікарю на підтвердження.')
+                            return redirect('patient_dashboard')
                     except IntegrityError:
                         messages.error(request, 'Цей час уже недоступний.')
     else:
@@ -1314,6 +1376,14 @@ def booking(request):
         selected_doctor
         and selected_doctor.services.filter(is_patient_selectable=True).exists()
     )
+    daily_booking_count = patient_daily_appointment_count(
+        request.user,
+        selected_date,
+        request.user.profile.phone,
+    )
+    daily_booking_limit_reached = (
+        daily_booking_count >= PATIENT_DAILY_BOOKING_LIMIT
+    )
 
     return render(
         request,
@@ -1328,6 +1398,9 @@ def booking(request):
             'slots': slots,
             'reason_form': reason_form,
             'has_bookable_services': has_bookable_services,
+            'daily_booking_count': daily_booking_count,
+            'daily_booking_limit': PATIENT_DAILY_BOOKING_LIMIT,
+            'daily_booking_limit_reached': daily_booking_limit_reached,
         },
     )
 

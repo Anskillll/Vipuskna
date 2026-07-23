@@ -72,7 +72,16 @@
         </span>
         {% endif %}
     </div>
-    {% if selected_schedule and selected_schedule.is_working %}
+    {% if daily_booking_limit_reached %}
+      <div class="booking-daily-limit" role="status">
+        <strong>Ліміт на цей день вичерпано</strong>
+        <span>
+          У вас уже є {{ daily_booking_count }} активні заявки або прийоми.
+          Самостійно можна створити не більше {{ daily_booking_limit }} на один день.
+        </span>
+        <span>Оберіть іншу дату або зверніться до лікаря.</span>
+      </div>
+    {% elif selected_schedule and selected_schedule.is_working %}
       <div class="slot-grid slot-grid-clean">
         {% for slot in slots %}
           {% if slot.busy %}
@@ -91,7 +100,7 @@
     {% endif %}
   </section>
 
-  {% if selected_time and selected_schedule %}
+  {% if selected_time and selected_schedule and not daily_booking_limit_reached %}
     <section class="card section-card booking-final">
       <div class="section-mini-head">
         <h2>3. Підтвердження заявки</h2>

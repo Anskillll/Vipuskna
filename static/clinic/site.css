@@ -8525,3 +8525,23 @@ body:not(.public-home-page) button.global-back-button:focus-visible {
   color: #fff;
   transform: translateY(-1px);
 }
+
+.booking-daily-limit {
+  display: grid;
+  gap: 5px;
+  padding: 18px 20px;
+  border: 1px solid #e4b45c;
+  border-left: 5px solid #c98213;
+  border-radius: 6px;
+  background: #fff5df;
+  color: #70480d;
+}
+
+.booking-daily-limit strong {
+  color: #75470a;
+  font-size: 17px;
+}
+
+.booking-daily-limit span {
+  line-height: 1.45;
+}

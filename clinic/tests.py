@@ -954,6 +954,142 @@ class ClinicModelTests(TestCase):
             'У цей час у вас уже є інша заявка або прийом. Оберіть вільний час.',
         )
 
+    def test_patient_cannot_create_third_active_booking_for_same_day(self):
+        other_doctor, other_service = self.create_other_doctor()
+        visit_date = timezone.localdate() + timedelta(days=7)
+        for index, appointment_time in enumerate((time(9, 0), time(9, 20))):
+            Appointment.objects.create(
+                doctor=self.doctor,
+                service=self.service,
+                patient=self.patient,
+                patient_first_name='Тест',
+                patient_last_name='Пацієнт',
+                patient_phone='+380501111111',
+                date=visit_date,
+                time=appointment_time,
+                city='Дніпро',
+                address='вул. Тестова, 1',
+                reason=f'Активний запис {index + 1}',
+                duration_minutes_exact=20,
+                status=(
+                    Appointment.STATUS_PENDING
+                    if index == 0
+                    else Appointment.STATUS_APPROVED
+                ),
+            )
+        self.client.login(username='patient@test.local', password='pass12345')
+
+        response = self.client.post(
+            reverse('booking'),
+            data={
+                'doctor': other_doctor.id,
+                'date': visit_date.isoformat(),
+                'time': '10:00',
+                'service': other_service.id,
+                'reason': 'Третя заявка цього дня',
+            },
+            follow=True,
+        )
+
+        self.assertFalse(
+            Appointment.objects.filter(reason='Третя заявка цього дня').exists()
+        )
+        self.assertContains(
+            response,
+            'Самостійно можна створити не більше 2 заявок або прийомів на один день.',
+        )
+        self.assertContains(response, 'Ліміт на цей день вичерпано')
+        self.assertNotContains(response, 'Надіслати заявку')
+
+    def test_canceled_and_rejected_bookings_do_not_use_daily_limit(self):
+        other_doctor, other_service = self.create_other_doctor()
+        visit_date = timezone.localdate() + timedelta(days=7)
+        for index, status in enumerate(
+            (Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED)
+        ):
+            Appointment.objects.create(
+                doctor=self.doctor,
+                service=self.service,
+                patient=self.patient,
+                patient_first_name='Тест',
+                patient_last_name='Пацієнт',
+                patient_phone='+380501111111',
+                date=visit_date,
+                time=time(9, index * 20),
+                city='Дніпро',
+                address='вул. Тестова, 1',
+                reason=f'Неактивний запис {index + 1}',
+                duration_minutes_exact=20,
+                status=status,
+            )
+        self.client.login(username='patient@test.local', password='pass12345')
+
+        response = self.client.post(
+            reverse('booking'),
+            data={
+                'doctor': other_doctor.id,
+                'date': visit_date.isoformat(),
+                'time': '10:00',
+                'service': other_service.id,
+                'reason': 'Дозволена нова заявка',
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            Appointment.objects.filter(
+                patient=self.patient,
+                reason='Дозволена нова заявка',
+                status=Appointment.STATUS_PENDING,
+            ).exists()
+        )
+
+    def test_doctor_can_add_third_non_overlapping_booking_for_patient(self):
+        other_doctor, other_service = self.create_other_doctor()
+        visit_date = timezone.localdate() + timedelta(days=7)
+        for index, appointment_time in enumerate((time(9, 0), time(9, 20))):
+            Appointment.objects.create(
+                doctor=self.doctor,
+                service=self.service,
+                patient=self.patient,
+                patient_first_name='Тест',
+                patient_last_name='Пацієнт',
+                patient_phone='+380501111111',
+                date=visit_date,
+                time=appointment_time,
+                city='Дніпро',
+                address='вул. Тестова, 1',
+                reason=f'Попередній запис {index + 1}',
+                duration_minutes_exact=20,
+                status=Appointment.STATUS_APPROVED,
+            )
+        self.client.login(
+            username='other-doctor@test.local',
+            password='pass12345',
+        )
+
+        response = self.client.post(
+            reverse('doctor_book_patient'),
+            data={
+                'date': visit_date.isoformat(),
+                'time': '10:00',
+                'patient': self.patient.id,
+                'service': other_service.id,
+                'duration_minutes': 20,
+                'reason': 'Третій запис від лікаря',
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            Appointment.objects.filter(
+                doctor=other_doctor,
+                patient=self.patient,
+                reason='Третій запис від лікаря',
+                status=Appointment.STATUS_APPROVED,
+            ).exists()
+        )
+
     def test_patient_conflict_uses_full_appointment_duration(self):
         visit_date = timezone.localdate() + timedelta(days=7)
         Appointment.objects.create(
