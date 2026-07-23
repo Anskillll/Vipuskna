@@ -14,9 +14,6 @@ from .models import (
 )
 
 
-DOCTOR_VISIT_PREVIEW_SESSION_KEY = 'doctor_visit_preview_card_id'
-
-
 def clinic_branding(request):
     branding, _ = ClinicSettings.objects.get_or_create(pk=1)
     return {'clinic_branding': branding}
@@ -25,7 +22,6 @@ def clinic_branding(request):
 def doctor_visit_status(request):
     context = {
         'doctor_visit_show': False,
-        'doctor_visit_is_preview': False,
         'doctor_visit_appointment': None,
         'doctor_visit_card': None,
         'doctor_visit_entries': PatientRecordEntry.objects.none(),
@@ -51,24 +47,15 @@ def doctor_visit_status(request):
             active_appointment = appointment
             break
 
-    preview_requested = DOCTOR_VISIT_PREVIEW_SESSION_KEY in request.session
-    is_preview = active_appointment is None and preview_requested
     card = None
 
     if active_appointment:
-        request.session.pop(DOCTOR_VISIT_PREVIEW_SESSION_KEY, None)
         if active_appointment.patient_id:
             card = doctor.patient_cards.filter(patient_id=active_appointment.patient_id).first()
         if card is None:
             card = doctor.patient_cards.filter(
                 patient_phone=active_appointment.patient_phone,
             ).first()
-    elif is_preview:
-        preview_card_id = request.session.get(DOCTOR_VISIT_PREVIEW_SESSION_KEY)
-        if preview_card_id:
-            card = doctor.patient_cards.filter(pk=preview_card_id).first()
-        if card is None and preview_card_id:
-            card = doctor.patient_cards.order_by('-updated_at').first()
 
     entries = PatientRecordEntry.objects.none()
     if card:
@@ -78,8 +65,7 @@ def doctor_visit_status(request):
 
     context.update(
         {
-            'doctor_visit_show': bool(active_appointment or is_preview),
-            'doctor_visit_is_preview': is_preview,
+            'doctor_visit_show': bool(active_appointment),
             'doctor_visit_appointment': active_appointment,
             'doctor_visit_card': card,
             'doctor_visit_entries': entries,

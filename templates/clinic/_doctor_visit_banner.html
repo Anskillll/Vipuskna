@@ -1,25 +1,12 @@
-<section class="current-visit-banner{% if doctor_visit_is_preview %} is-preview{% endif %}">
+<section class="current-visit-banner">
   <div>
-    <span class="current-visit-label">
-      {% if doctor_visit_is_preview %}Тестовий режим{% else %}Прийом триває зараз{% endif %}
-    </span>
-    {% if doctor_visit_is_preview %}
-      <h2>Перевірка активного прийому</h2>
-      <p>
-        {% if doctor_visit_card %}
-          Так виглядатиме робота із клієнтом {{ doctor_visit_card.full_name }}.
-        {% else %}
-          Так виглядатиме блок активного прийому після появи картки пацієнта.
-        {% endif %}
-      </p>
-    {% else %}
-      <h2>Зараз працюєте з клієнтом {{ doctor_visit_appointment.patient_name }}</h2>
-      <p>
-        {{ doctor_visit_appointment.service.name|default:'Послугу не вказано' }} ·
-        {{ doctor_visit_appointment.time|time:'H:i' }}–{{ doctor_visit_appointment.end_time|time:'H:i' }} ·
-        {{ doctor_visit_appointment.duration_minutes }} хв
-      </p>
-    {% endif %}
+    <span class="current-visit-label">Прийом триває зараз</span>
+    <h2>Зараз працюєте з клієнтом {{ doctor_visit_appointment.patient_name }}</h2>
+    <p>
+      {{ doctor_visit_appointment.service.name|default:'Послугу не вказано' }} ·
+      {{ doctor_visit_appointment.time|time:'H:i' }}–{{ doctor_visit_appointment.end_time|time:'H:i' }} ·
+      {{ doctor_visit_appointment.duration_minutes }} хв
+    </p>
   </div>
 
   <div class="current-visit-banner-actions">
@@ -32,22 +19,13 @@
     >
       Переглянути записи пацієнта
     </button>
-    {% if doctor_visit_is_preview %}
-      <form method="post" action="{% url 'doctor_visit_preview_stop' %}">
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{{ request.get_full_path }}">
-        <button type="submit" class="btn secondary current-visit-stop">Завершити перевірку</button>
-      </form>
-    {% endif %}
   </div>
 </section>
 
 <dialog id="current-patient-records" class="current-records-dialog" data-current-records-dialog>
   <div class="current-records-dialog-head">
     <div>
-      <span class="current-visit-label">
-        {% if doctor_visit_is_preview %}Тестовий перегляд{% else %}Поточний пацієнт{% endif %}
-      </span>
+      <span class="current-visit-label">Поточний пацієнт</span>
       <h2>
         {% if doctor_visit_card %}
           Записи про {{ doctor_visit_card.full_name }}
@@ -55,13 +33,7 @@
           Меню записів пацієнта
         {% endif %}
       </h2>
-      <p>
-        {% if doctor_visit_is_preview %}
-          Так виглядатиме меню записів під час активного прийому.
-        {% else %}
-          Інформація, яку ви додавали під час попередніх прийомів.
-        {% endif %}
-      </p>
+      <p>Інформація, яку ви додавали під час попередніх прийомів.</p>
     </div>
     <button
       type="button"

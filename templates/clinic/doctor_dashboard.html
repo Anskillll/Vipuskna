@@ -9,13 +9,6 @@
     <a class="page-tab" href="{% url 'doctor_patient_cards' %}">Пацієнти</a>
   </nav>
 
-  {% if not doctor_visit_show %}
-    <form class="current-records-preview-action" method="post" action="{% url 'doctor_visit_preview_start' %}">
-      {% csrf_token %}
-      <button type="submit" class="btn secondary">Перевірити активний прийом</button>
-    </form>
-  {% endif %}
-
   <section class="card doctor-dashboard-profile">
     <div class="doctor-profile-hero">
       {% if doctor.photo_src %}

@@ -49,7 +49,6 @@ from .forms import (
     normalize_phone_number,
     patient_phone_is_used,
 )
-from .context_processors import DOCTOR_VISIT_PREVIEW_SESSION_KEY
 from .models import (
     Appointment,
     AppointmentImage,
@@ -1285,25 +1284,6 @@ def doctor_dashboard(request):
             'schedules': doctor.schedules.select_related('workplace'),
         },
     )
-
-
-@doctor_required
-def doctor_visit_preview_start(request):
-    if request.method == 'POST':
-        doctor = request.user.doctor_profile
-        card = doctor.patient_cards.order_by('-updated_at').first()
-        request.session[DOCTOR_VISIT_PREVIEW_SESSION_KEY] = card.id if card else 0
-    return redirect('doctor_dashboard')
-
-
-@doctor_required
-def doctor_visit_preview_stop(request):
-    if request.method == 'POST':
-        request.session.pop(DOCTOR_VISIT_PREVIEW_SESSION_KEY, None)
-    next_url = request.POST.get('next', '') if request.method == 'POST' else ''
-    if not next_url.startswith('/') or next_url.startswith('//'):
-        next_url = reverse('doctor_dashboard')
-    return redirect(next_url)
 
 
 @doctor_required
