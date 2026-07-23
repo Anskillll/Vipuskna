@@ -6184,6 +6184,16 @@ body:not(.public-home-page) .appointment-day-rest-label {
   padding: 5px 10px;
 }
 
+body:not(.public-home-page) .appointment-day-outside-label {
+  background: #fff0cf;
+  border: 1px solid #e9bd68;
+  border-radius: 999px;
+  color: #7a4b08;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 5px 9px;
+}
+
 body:not(.public-home-page) .appointment-day-rest {
   align-items: center;
   background: #f7faf9;
@@ -6193,6 +6203,21 @@ body:not(.public-home-page) .appointment-day-rest {
   justify-content: space-between;
   min-height: 64px;
   padding: 14px 24px;
+}
+
+body:not(.public-home-page) .appointment-week-empty {
+  align-items: flex-start;
+  display: grid;
+  gap: 6px;
+  padding: 24px;
+}
+
+body:not(.public-home-page) .appointment-week-empty span {
+  color: var(--muted);
+}
+
+body:not(.public-home-page) .appointment-week-empty .btn {
+  margin-top: 8px;
 }
 
 body:not(.public-home-page) .appointment-day-rest span {

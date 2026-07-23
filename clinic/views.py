@@ -1382,6 +1382,9 @@ def doctor_appointments(request):
         day_date = week_start + timedelta(days=day_offset)
         day_schedule = schedules_by_weekday.get(day_date.weekday())
         day_appointments = appointments_by_date.get(day_date, [])
+        is_working = bool(day_schedule and day_schedule.is_working)
+        if not is_working and not day_appointments:
+            continue
         for appointment in day_appointments:
             appointment.split_option = split_slot_option(
                 doctor,
@@ -1396,10 +1399,10 @@ def doctor_appointments(request):
                 'weekday_name': weekday_name,
                 'appointments': day_appointments,
                 'schedule': day_schedule,
-                'is_working': bool(day_schedule and day_schedule.is_working),
+                'is_working': is_working,
+                'is_outside_schedule': bool(day_appointments and not is_working),
                 'can_book': bool(
-                    day_schedule
-                    and day_schedule.is_working
+                    is_working
                     and day_date >= today
                 ),
             }

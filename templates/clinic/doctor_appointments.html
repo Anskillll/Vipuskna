@@ -80,10 +80,11 @@
                   <div class="appointment-day-head-actions">
                     {% if day.appointments %}
                       <span data-live-filter-group-count data-count-template="{count} запис(ів)">{{ day.appointments|length }} запис(ів)</span>
-                    {% elif day.is_working %}
-                      <span>0 записів</span>
+                      {% if day.is_outside_schedule %}
+                        <span class="appointment-day-outside-label">Поза графіком</span>
+                      {% endif %}
                     {% else %}
-                      <span class="appointment-day-rest-label">Вихідний</span>
+                      <span>0 записів</span>
                     {% endif %}
                     {% if day.can_book %}
                       <a
@@ -164,19 +165,18 @@
                     >Розгорнути всі ({{ day.appointments|length }})</button>
                   {% endif %}
                 {% else %}
-                  {% if day.is_working %}
-                    <div class="appointment-day-rest appointment-day-empty-working">
-                      <strong>На цей день записів ще немає</strong>
-                      <span>Можна додати пацієнта через кнопку вище.</span>
-                    </div>
-                  {% else %}
-                    <div class="appointment-day-rest">
-                      <strong>У цей день ви відпочиваєте</strong>
-                      <span>Записів і заявок немає.</span>
-                    </div>
-                  {% endif %}
+                  <div class="appointment-day-rest appointment-day-empty-working">
+                    <strong>На цей день записів ще немає</strong>
+                    <span>Можна додати пацієнта через кнопку вище.</span>
+                  </div>
                 {% endif %}
             </section>
+          {% empty %}
+            <div class="card section-card appointment-week-empty">
+              <strong>На цей тиждень робочих днів немає</strong>
+              <span>Перейдіть до графіка, щоб додати робочий день.</span>
+              <a class="btn secondary" href="{% url 'doctor_schedule' %}">Відкрити графік</a>
+            </div>
           {% endfor %}
         </div>
       </section>

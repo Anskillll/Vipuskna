@@ -1197,10 +1197,10 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'data-live-filter-item')
         self.assertContains(response, '+380509999991')
 
-    def test_doctor_appointments_show_full_week_and_collapse_after_five_items(self):
+    def test_doctor_appointments_show_working_days_and_collapse_after_five_items(self):
         today = timezone.localdate()
         week_start = today - timedelta(days=today.weekday()) + timedelta(days=7)
-        busy_date = week_start + timedelta(days=2)
+        busy_date = week_start + timedelta(days=self.schedule.weekday)
         for index in range(6):
             Appointment.objects.create(
                 doctor=self.doctor,
@@ -1222,16 +1222,26 @@ class ClinicModelTests(TestCase):
         )
         target_week = response.context['appointment_week']
 
-        self.assertEqual(len(target_week['days']), 7)
-        self.assertEqual(target_week['days'][0]['weekday_name'], 'Понеділок')
-        self.assertEqual(target_week['days'][-1]['weekday_name'], 'Неділя')
-        self.assertEqual(len(target_week['days'][2]['appointments']), 6)
+        self.assertEqual(len(target_week['days']), 1)
+        self.assertEqual(
+            target_week['days'][0]['weekday_name'],
+            (
+                'Понеділок',
+                'Вівторок',
+                'Середа',
+                'Четвер',
+                "П'ятниця",
+                'Субота',
+                'Неділя',
+            )[self.schedule.weekday],
+        )
+        self.assertEqual(len(target_week['days'][0]['appointments']), 6)
         self.assertContains(
             response,
             f"Тиждень з {week_start.strftime('%d.%m')} по "
             f"{(week_start + timedelta(days=6)).strftime('%d.%m')}",
         )
-        self.assertContains(response, 'У цей день ви відпочиваєте')
+        self.assertNotContains(response, 'У цей день ви відпочиваєте')
         self.assertContains(response, 'Розгорнути всі (6)')
         self.assertContains(response, 'data-day-extra', count=1)
         self.assertContains(
