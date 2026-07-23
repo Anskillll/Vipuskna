@@ -54,7 +54,7 @@
           ><span aria-hidden="true">←</span></a>
           <div class="appointment-week-heading">
             <div>
-              <span class="appointment-week-kicker">{% if is_current_week %}Поточний тиждень{% else %}Тижневий розклад{% endif %}</span>
+              <span class="appointment-week-kicker{% if is_current_week %} is-current{% endif %}">{% if is_current_week %}Поточний тиждень{% else %}Тижневий розклад{% endif %}</span>
               <h2>Тиждень з {{ appointment_week.start|date:'d.m' }} по {{ appointment_week.end|date:'d.m' }}</h2>
             </div>
             <span data-live-filter-group-count data-count-template="{count} запис(ів)">{{ appointment_week.appointments_count }} запис(ів)</span>

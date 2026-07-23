@@ -6140,6 +6140,15 @@ body:not(.public-home-page) .appointment-week-kicker {
   text-transform: uppercase;
 }
 
+body:not(.public-home-page) .appointment-week-kicker.is-current {
+  background: #c8f2df;
+  border: 1px solid #72c9a2;
+  border-radius: 999px;
+  color: #075f42;
+  display: inline-flex;
+  padding: 5px 9px;
+}
+
 body:not(.public-home-page) .appointment-day-rest-label {
   background: #edf3f1;
   border-radius: 999px;

@@ -1250,6 +1250,11 @@ class ClinicModelTests(TestCase):
             current_week_start,
         )
         self.assertTrue(current_response.context['is_current_week'])
+        self.assertContains(
+            current_response,
+            'appointment-week-kicker is-current',
+        )
+        self.assertContains(current_response, 'Поточний тиждень')
 
     def test_doctor_views_show_registered_patient_age(self):
         appointment = Appointment.objects.create(
