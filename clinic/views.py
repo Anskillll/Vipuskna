@@ -1348,6 +1348,36 @@ def doctor_dashboard(request):
 
 
 @doctor_required
+def doctor_requests(request):
+    doctor = request.user.doctor_profile
+    sync_patient_cards_for_doctor(doctor)
+    appointments = list(
+        doctor.appointments.filter(
+            status=Appointment.STATUS_PENDING,
+        ).select_related(
+            'service',
+            'patient__profile',
+        ).order_by('date', 'time', 'created_at')
+    )
+    cards_by_phone = {
+        card.patient_phone: card
+        for card in doctor.patient_cards.select_related('patient__profile')
+    }
+    for appointment in appointments:
+        appointment.patient_card = cards_by_phone.get(appointment.patient_phone)
+        appointment.weekday_name = UKRAINIAN_WEEKDAYS[appointment.date.weekday()]
+
+    return render(
+        request,
+        'clinic/doctor_requests.html',
+        {
+            'doctor': doctor,
+            'appointments': appointments,
+        },
+    )
+
+
+@doctor_required
 def doctor_appointments(request):
     refresh_completed_appointments()
     doctor = request.user.doctor_profile

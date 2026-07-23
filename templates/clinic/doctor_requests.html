@@ -1,0 +1,102 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Мої заявки - MedClinic{% endblock %}
+
+{% block content %}
+  <section class="page-head">
+    <div>
+      <h1 class="page-title">Мої заявки</h1>
+      <p class="page-subtitle">Нові звернення пацієнтів, які очікують вашого рішення.</p>
+    </div>
+  </section>
+
+  <nav class="page-tabs">
+    <a class="page-tab" href="{% url 'doctor_dashboard' %}">Огляд</a>
+    <a class="page-tab active" href="{% url 'doctor_requests' %}">Мої заявки</a>
+    <a class="page-tab" href="{% url 'doctor_appointments' %}">Прийоми</a>
+    <a class="page-tab" href="{% url 'doctor_patient_cards' %}">Пацієнти</a>
+    <a class="page-tab" href="{% url 'doctor_schedule' %}">Графік</a>
+  </nav>
+
+  <div data-live-filter data-page-size="10">
+    {% if appointments %}
+      <div class="card section-card live-filter-bar">
+        <div class="live-filter-field">
+          <label for="request-search">Фільтр заявок</label>
+          <div class="live-filter-input-row">
+            <input
+              id="request-search"
+              type="search"
+              placeholder="Пацієнт, телефон, вік, послуга, дата, місце або причина"
+              autocomplete="off"
+              data-live-filter-input
+            >
+            <button
+              class="live-filter-clear"
+              type="button"
+              title="Очистити фільтр"
+              aria-label="Очистити фільтр"
+              data-live-filter-clear
+              disabled
+            ><span aria-hidden="true">×</span></button>
+          </div>
+        </div>
+        <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
+      </div>
+
+      {% regroup appointments by date as request_days %}
+      <div class="appointments-by-day">
+        {% for day in request_days %}
+          <section class="card section-card appointment-day-group" data-live-filter-group>
+            <div class="appointment-day-head">
+              <h2>{{ day.list.0.weekday_name }}, {{ day.grouper|date:'d.m.Y' }}</h2>
+              <span data-live-filter-group-count data-count-template="{count} заявок">{{ day.list|length }} заявок</span>
+            </div>
+
+            <div class="appointment-summary-list">
+              {% for appointment in day.list %}
+                <article
+                  class="appointment-summary-row appointment-kind-pending"
+                  data-live-filter-item
+                  data-filter-extra="{{ appointment.patient_name|escape }} {{ appointment.patient_phone|escape }} {% if appointment.patient_age %}{{ appointment.patient_age }}{% endif %} {{ appointment.service.name|default:''|escape }} {{ appointment.reason|escape }} {{ appointment.date|date:'d.m.Y' }} {{ appointment.date|date:'Y-m-d' }} {{ appointment.time|time:'H:i' }} {{ appointment.city|escape }} {{ appointment.address|escape }}"
+                >
+                  <time datetime="{{ appointment.date|date:'Y-m-d' }}T{{ appointment.time|time:'H:i' }}">{{ appointment.time|time:'H:i' }}</time>
+                  <div class="appointment-summary-person">
+                    <div class="appointment-person-name">
+                      <button
+                        class="appointment-filter-name"
+                        type="button"
+                        title="Показати заявки цього пацієнта"
+                        data-live-filter-value="{{ appointment.patient_name|escape }}"
+                      >{{ appointment.patient_name }}</button>
+                      <span>{% if appointment.patient_age %}{{ appointment.patient_age }} років{% else %}Вік не вказано{% endif %}</span>
+                    </div>
+                    <span class="appointment-kind-label">Нова заявка</span>
+                  </div>
+                  <span>{{ appointment.service.name|default:'Послугу не обрано' }}</span>
+                  <div class="appointment-row-actions">
+                    <a class="btn secondary" href="{% url 'doctor_appointment_detail' appointment.id %}">Детальніше</a>
+                    {% if appointment.patient_card %}
+                      <a class="btn" href="{% url 'doctor_patient_card_detail' appointment.patient_card.id %}">Відкрити картку</a>
+                    {% else %}
+                      <a class="btn" href="{% url 'doctor_patient_cards' %}">Відкрити картку</a>
+                    {% endif %}
+                  </div>
+                </article>
+              {% endfor %}
+            </div>
+          </section>
+        {% endfor %}
+      </div>
+
+      <div class="card section-card empty live-filter-empty" data-live-filter-empty hidden>
+        Заявок із такими даними не знайдено.
+      </div>
+    {% else %}
+      <section class="card section-card empty">
+        <h2>Нових заявок немає</h2>
+        <p>Коли пацієнт надішле заявку, вона з’явиться на цій сторінці.</p>
+      </section>
+    {% endif %}
+  </div>
+{% endblock %}

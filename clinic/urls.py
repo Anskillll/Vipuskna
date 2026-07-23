@@ -43,6 +43,7 @@ urlpatterns = [
         name='patient_reschedule_response',
     ),
     path('doctor/', views.doctor_dashboard, name='doctor_dashboard'),
+    path('doctor/requests/', views.doctor_requests, name='doctor_requests'),
     path('doctor/appointments/', views.doctor_appointments, name='doctor_appointments'),
     path('doctor/appointments/<int:appointment_id>/', views.doctor_appointment_detail, name='doctor_appointment_detail'),
     path(

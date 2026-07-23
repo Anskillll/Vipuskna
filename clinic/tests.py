@@ -1131,6 +1131,65 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Детальний опис заявки')
         self.assertContains(response, 'Фото та відео до заявки')
 
+    def test_doctor_requests_page_shows_only_own_pending_requests(self):
+        request_date = timezone.localdate() + timedelta(days=7)
+        own_request = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            date=request_date,
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Власна нова заявка',
+            status=Appointment.STATUS_PENDING,
+        )
+        Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient_first_name='Підтверджений',
+            patient_last_name='Пацієнт',
+            patient_phone='+380509999991',
+            date=request_date,
+            time=time(10, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Вже підтверджений прийом',
+            status=Appointment.STATUS_APPROVED,
+        )
+        other_doctor, other_service = self.create_other_doctor()
+        Appointment.objects.create(
+            doctor=other_doctor,
+            service=other_service,
+            patient_first_name='Чужий',
+            patient_last_name='Пацієнт',
+            patient_phone='+380509999992',
+            date=request_date,
+            time=time(9, 0),
+            city='Київ',
+            address='вул. Інша, 2',
+            reason='Чужа нова заявка',
+            status=Appointment.STATUS_PENDING,
+        )
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.get(reverse('doctor_requests'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [appointment.id for appointment in response.context['appointments']],
+            [own_request.id],
+        )
+        self.assertContains(response, 'Мої заявки')
+        self.assertContains(response, 'Власна нова заявка')
+        self.assertContains(response, 'Нова заявка')
+        self.assertContains(response, reverse('doctor_appointment_detail', args=[own_request.id]))
+        self.assertNotContains(response, 'Вже підтверджений прийом')
+        self.assertNotContains(response, 'Чужа нова заявка')
+
     def test_doctor_appointments_are_grouped_and_show_only_summary(self):
         today = timezone.localdate()
         first_date = today - timedelta(days=today.weekday()) + timedelta(days=9)
