@@ -291,9 +291,12 @@ class ClinicModelTests(TestCase):
         self.assertNotIn('confirm(', rendered_source)
         self.assertNotIn('onsubmit=', rendered_source)
 
-    def test_pages_have_global_history_back_button(self):
+    def test_internal_pages_have_compact_history_back_link(self):
         response = self.client.get(reverse('doctors'))
         home_response = self.client.get(reverse('home'))
+        detail_response = self.client.get(
+            reverse('doctor_detail', args=[self.doctor.id])
+        )
         script_path = (
             Path(settings.BASE_DIR)
             / 'static'
@@ -304,11 +307,15 @@ class ClinicModelTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'data-history-back')
-        self.assertContains(response, 'Повернутися на попередню сторінку')
+        self.assertContains(response, 'data-history-back-label')
+        self.assertContains(response, 'Повернутися на головну')
         self.assertContains(response, 'clinic/navigation_history.js')
-        self.assertContains(home_response, 'data-history-back')
+        self.assertNotContains(home_response, 'data-history-back')
+        self.assertNotContains(detail_response, 'data-history-back')
+        self.assertContains(detail_response, '← До списку лікарів')
         self.assertIn('window.history.back()', script)
         self.assertIn('window.location.assign', script)
+        self.assertIn('Повернутися ${returnLabel', script)
 
     def test_site_and_admin_use_ukrainian_language(self):
         self.assertEqual(settings.LANGUAGE_CODE, 'uk')

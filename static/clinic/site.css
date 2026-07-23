@@ -3835,15 +3835,18 @@ button.compact {
 }
 
 .back-link {
-  color: #52627a;
   display: inline-block;
+  color: #147a6e;
+  font-size: 13px;
   font-weight: 700;
   margin-bottom: 12px;
   text-decoration: none;
 }
 
 .back-link:hover {
-  color: #3157e8;
+  color: #0b5e55;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .appointment-detail-layout {
@@ -8350,80 +8353,50 @@ textarea:focus-visible {
 .global-back-row {
   display: flex;
   justify-content: flex-start;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 
 body:not(.public-home-page) button.global-back-button,
 body:not(.public-home-page) button.global-back-button:hover,
 body:not(.public-home-page) button.global-back-button:active {
-  display: inline-grid;
-  place-items: center;
-  width: 42px;
-  min-width: 42px;
-  height: 42px;
-  min-height: 42px;
-  padding: 0;
-  border: 1px solid #244f48;
-  border-radius: 50%;
-  background: #2f5d55;
-  box-shadow: 0 7px 16px rgba(29, 65, 58, 0.18);
-  color: #fff;
-  font-size: 22px;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: auto;
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  padding: 2px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #147a6e;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
   transform: none;
 }
 
 body:not(.public-home-page) button.global-back-button:hover {
-  border-color: #173f38;
-  background: #214c44;
-  box-shadow: 0 9px 20px rgba(29, 65, 58, 0.24);
-  transform: translateY(-1px);
+  background: transparent;
+  box-shadow: none;
+  color: #0b5e55;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transform: none;
 }
 
 body:not(.public-home-page) button.global-back-button:active {
-  background: #173f38;
-  box-shadow: 0 3px 8px rgba(29, 65, 58, 0.18);
+  background: transparent;
+  box-shadow: none;
+  color: #084d46;
   transform: translateY(0);
 }
 
 body:not(.public-home-page) button.global-back-button:focus-visible {
-  outline: 3px solid rgba(24, 127, 115, 0.28);
+  outline: 2px solid rgba(24, 127, 115, 0.28);
   outline-offset: 3px;
-}
-
-.public-home-page .global-back-row {
-  position: absolute;
-  z-index: 60;
-  top: 24px;
-  left: 24px;
-  margin: 0;
-}
-
-.public-home-page button.global-back-button,
-.public-home-page button.global-back-button:hover,
-.public-home-page button.global-back-button:active {
-  display: inline-grid;
-  place-items: center;
-  width: 42px;
-  min-width: 42px;
-  height: 42px;
-  min-height: 42px;
-  padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.62);
-  border-radius: 50%;
-  background: rgba(18, 48, 43, 0.72);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
-  backdrop-filter: blur(10px);
-  color: #fff;
-  font-size: 22px;
-  line-height: 1;
-  transform: none;
-}
-
-.public-home-page button.global-back-button:hover {
-  background: rgba(18, 48, 43, 0.9);
-  color: #fff;
-  transform: translateY(-1px);
 }
 
 .booking-daily-limit {
