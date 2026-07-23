@@ -27,7 +27,10 @@
       ['id_first_name', 'id_last_name', 'id_phone'].forEach((id) => {
         const input = document.getElementById(id);
         const field = input ? input.closest('.field') : null;
-        if (field) field.hidden = hideContacts;
+        if (field) {
+          field.hidden = hideContacts;
+          field.classList.toggle('patient-contact-field-hidden', hideContacts);
+        }
       });
       newPatientButton.classList.toggle('active', !hideContacts);
     };
