@@ -313,7 +313,7 @@ Let's Encrypt оновлюється на сервері автоматично.
 Production-змінні безпеки:
 
 ```dotenv
-DJANGO_ALLOWED_HOSTS=lclinic-ua.duckdns.org,64.226.76.174
+DJANGO_ALLOWED_HOSTS=lclinic-ua.duckdns.org,167.71.48.181
 DJANGO_CSRF_TRUSTED_ORIGINS=https://lclinic-ua.duckdns.org
 DJANGO_SECURE_SSL_REDIRECT=1
 DJANGO_SESSION_COOKIE_SECURE=1
