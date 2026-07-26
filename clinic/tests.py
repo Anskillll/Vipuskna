@@ -152,6 +152,8 @@ class ClinicModelTests(TestCase):
     def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
         response = self.client.get(reverse('home'))
 
+        self.assertContains(response, 'clinic/site.css?v=20260726-1')
+        self.assertContains(response, 'clinic/mobile.css?v=20260726-1')
         self.assertContains(response, 'Нікополь, вул. Шевченка, 200')
         self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
         self.assertContains(response, 'href="tel:+380509168426"')

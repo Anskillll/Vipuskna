@@ -876,10 +876,15 @@
 
   .home-hero-contacts {
     align-items: end;
-    bottom: 60px;
-    gap: 14px;
+    bottom: 58px;
+    gap: 8px;
     left: 16px;
     right: 16px;
+  }
+
+  .home-hero-locations,
+  .home-hero-phone {
+    padding: 8px 9px;
   }
 
   .home-hero-locations > span,
@@ -889,13 +894,19 @@
   }
 
   .home-hero-locations address {
+    align-items: start;
+    display: grid;
     font-size: 10px;
     gap: 2px;
   }
 
+  .home-hero-locations address span + span {
+    border-left: 0;
+    padding-left: 0;
+  }
+
   .home-hero-phone strong {
     font-size: 12px;
-    padding-bottom: 3px;
     white-space: nowrap;
   }
 

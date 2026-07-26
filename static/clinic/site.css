@@ -4733,19 +4733,25 @@ button.compact {
 
 .home-hero-contacts {
   align-items: end;
-  bottom: 104px;
+  bottom: 96px;
   display: flex;
   justify-content: space-between;
-  left: 48px;
+  left: max(32px, calc((100% - 1340px) / 2));
   pointer-events: none;
   position: absolute;
-  right: 48px;
+  right: max(32px, calc((100% - 1340px) / 2));
   z-index: 6;
 }
 
 .home-hero-locations,
 .home-hero-phone {
+  backdrop-filter: blur(12px);
+  background: rgba(10, 26, 25, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 6px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
   color: #fff;
+  padding: 12px 15px;
   text-shadow: 0 2px 16px rgba(0, 0, 0, 0.52);
 }
 
@@ -4760,11 +4766,17 @@ button.compact {
 }
 
 .home-hero-locations address {
-  display: grid;
+  align-items: center;
+  display: flex;
   font-size: 13px;
   font-style: normal;
   font-weight: 650;
-  gap: 4px;
+  gap: 18px;
+}
+
+.home-hero-locations address span + span {
+  border-left: 1px solid rgba(255, 255, 255, 0.28);
+  padding-left: 18px;
 }
 
 .home-hero-phone {
@@ -4773,13 +4785,13 @@ button.compact {
 }
 
 .home-hero-phone strong {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.62);
   display: inline-block;
   font-size: 17px;
-  padding-bottom: 4px;
 }
 
 .home-hero-phone:hover {
+  background: rgba(16, 47, 44, 0.88);
+  border-color: rgba(255, 255, 255, 0.48);
   color: #fff;
 }
 
