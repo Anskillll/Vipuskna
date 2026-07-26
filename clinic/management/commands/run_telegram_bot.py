@@ -2,6 +2,7 @@ import time
 
 import requests
 from django.core.management.base import BaseCommand, CommandError
+from django.db import DatabaseError, close_old_connections
 
 from clinic.telegram import (
     TelegramBotClient,
@@ -38,6 +39,7 @@ class Command(BaseCommand):
         try:
             while True:
                 try:
+                    close_old_connections()
                     updates = client.get_updates(
                         offset=offset,
                         timeout=1 if options['once'] else 25,
@@ -52,8 +54,17 @@ class Command(BaseCommand):
                         if sent:
                             self.stdout.write(f'Надіслано нагадувань: {sent}')
                         last_reminder_check = now
-                except (requests.RequestException, ValueError, TelegramError) as error:
-                    self.stderr.write(f'Помилка Telegram: {error}. Повтор через 5 секунд.')
+                except (
+                    requests.RequestException,
+                    ValueError,
+                    TelegramError,
+                    DatabaseError,
+                ) as error:
+                    close_old_connections()
+                    self.stderr.write(
+                        f'Тимчасова помилка Telegram або бази даних: {error}. '
+                        'Повтор через 5 секунд.'
+                    )
                     if options['once']:
                         raise CommandError(str(error)) from error
                     time.sleep(5)

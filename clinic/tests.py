@@ -12,7 +12,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
-from django.db import IntegrityError
+from django.db import DatabaseError, IntegrityError
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -634,6 +634,28 @@ class ClinicModelTests(TestCase):
         notification = TelegramNotification.objects.get(appointment=appointment)
         self.assertEqual(notification.recipient, self.patient)
         self.assertEqual(notification.kind, 'day_before_reminder')
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+    )
+    @patch('clinic.management.commands.run_telegram_bot.time.sleep')
+    @patch('clinic.management.commands.run_telegram_bot.TelegramBotClient')
+    def test_telegram_bot_recovers_from_temporary_database_error(
+        self,
+        client_class,
+        sleep,
+    ):
+        client = client_class.return_value
+        client.get_me.return_value = {'username': 'myclinic_ua_bot'}
+        client.get_updates.side_effect = [
+            DatabaseError('database restarted'),
+            KeyboardInterrupt(),
+        ]
+
+        call_command('run_telegram_bot')
+
+        sleep.assert_called_once_with(5)
 
     def test_doctor_manages_workplaces_and_uses_preset_in_schedule(self):
         self.client.login(username='doctor@test.local', password='pass12345')
