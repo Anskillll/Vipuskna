@@ -157,6 +157,34 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'href="tel:+380509168426"')
         self.assertContains(response, '+38 (050) 916-84-26')
 
+    def test_home_gallery_uses_only_admin_uploaded_images(self):
+        empty_response = self.client.get(reverse('home'))
+        empty_content = empty_response.content.decode()
+        empty_gallery = empty_content.split(
+            '<section class="home-section home-gallery-section"',
+            1,
+        )[1].split('</section>', 1)[0]
+
+        self.assertIn('Фотографій у галереї поки немає.', empty_gallery)
+        self.assertNotIn('hero-treatment-room.webp', empty_gallery)
+        self.assertNotIn('hero-reception.webp', empty_gallery)
+        self.assertNotIn('hero-consultation.webp', empty_gallery)
+
+        GalleryImage.objects.create(
+            title='Власне фото',
+            image='clinic/gallery/admin-uploaded.jpg',
+            is_published=True,
+        )
+        response = self.client.get(reverse('home'))
+        content = response.content.decode()
+        gallery = content.split(
+            '<section class="home-section home-gallery-section"',
+            1,
+        )[1].split('</section>', 1)[0]
+
+        self.assertEqual(gallery.count('clinic/gallery/admin-uploaded.jpg'), 2)
+        self.assertNotIn('hero-treatment-room.webp', gallery)
+
     def test_top_navigation_highlights_only_current_section(self):
         self.client.login(username='patient@test.local', password='pass12345')
         patient_sections = (

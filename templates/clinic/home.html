@@ -216,47 +216,29 @@
         </header>
       </div>
 
-      <div class="home-photo-reel">
-        <div class="home-photo-track">
-          <figure>
-            <img src="{% static 'clinic/home/hero-treatment-room.webp' %}" alt="Стоматологічний кабінет" loading="lazy">
-            <figcaption>Кабінет</figcaption>
-          </figure>
-          <figure>
-            <img src="{% static 'clinic/home/hero-reception.webp' %}" alt="Зона очікування" loading="lazy">
-            <figcaption>Зона очікування</figcaption>
-          </figure>
-          <figure>
-            <img src="{% static 'clinic/home/hero-consultation.webp' %}" alt="Консультація" loading="lazy">
-            <figcaption>Консультація</figcaption>
-          </figure>
-          {% for item in gallery_images %}
-            <figure>
-              <img src="{{ item.image.url }}" alt="{{ item.title|default:'Фото клініки' }}" loading="lazy">
-              {% if item.title %}<figcaption>{{ item.title }}</figcaption>{% endif %}
-            </figure>
-          {% endfor %}
+      {% if gallery_images %}
+        <div class="home-photo-reel">
+          <div class="home-photo-track">
+            {% for item in gallery_images %}
+              <figure>
+                <img src="{{ item.image.url }}" alt="{{ item.title|default:'Фото клініки' }}" loading="lazy">
+                {% if item.title %}<figcaption>{{ item.title }}</figcaption>{% endif %}
+              </figure>
+            {% endfor %}
 
-          <figure aria-hidden="true">
-            <img src="{% static 'clinic/home/hero-treatment-room.webp' %}" alt="" loading="lazy">
-            <figcaption>Кабінет</figcaption>
-          </figure>
-          <figure aria-hidden="true">
-            <img src="{% static 'clinic/home/hero-reception.webp' %}" alt="" loading="lazy">
-            <figcaption>Зона очікування</figcaption>
-          </figure>
-          <figure aria-hidden="true">
-            <img src="{% static 'clinic/home/hero-consultation.webp' %}" alt="" loading="lazy">
-            <figcaption>Консультація</figcaption>
-          </figure>
-          {% for item in gallery_images %}
-            <figure aria-hidden="true">
-              <img src="{{ item.image.url }}" alt="" loading="lazy">
-              {% if item.title %}<figcaption>{{ item.title }}</figcaption>{% endif %}
-            </figure>
-          {% endfor %}
+            {% for item in gallery_images %}
+              <figure aria-hidden="true">
+                <img src="{{ item.image.url }}" alt="" loading="lazy">
+                {% if item.title %}<figcaption>{{ item.title }}</figcaption>{% endif %}
+              </figure>
+            {% endfor %}
+          </div>
         </div>
-      </div>
+      {% else %}
+        <div class="home-section-inner">
+          <div class="home-empty-state">Фотографій у галереї поки немає.</div>
+        </div>
+      {% endif %}
     </section>
 
     <section id="featured-doctors" class="home-section home-doctors-section">
