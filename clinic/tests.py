@@ -159,6 +159,12 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'href="tel:+380509168426"')
         self.assertContains(response, '+38 (050) 916-84-26')
 
+    def test_static_files_are_readable_by_web_server(self):
+        from django.contrib.staticfiles.storage import staticfiles_storage
+
+        self.assertEqual(staticfiles_storage.file_permissions_mode, 0o644)
+        self.assertEqual(staticfiles_storage.directory_permissions_mode, 0o755)
+
     def test_home_gallery_uses_only_admin_uploaded_images(self):
         empty_response = self.client.get(reverse('home'))
         empty_content = empty_response.content.decode()
