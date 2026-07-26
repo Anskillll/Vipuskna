@@ -840,7 +840,7 @@
   .home-hero-copy {
     left: 16px;
     right: 16px;
-    top: 49%;
+    top: 44%;
     width: calc(100% - 32px);
   }
 
@@ -872,6 +872,31 @@
   .home-slider-controls {
     right: 16px;
     bottom: 13px;
+  }
+
+  .home-hero-contacts {
+    align-items: end;
+    bottom: 60px;
+    gap: 14px;
+    left: 16px;
+    right: 16px;
+  }
+
+  .home-hero-locations > span,
+  .home-hero-phone > span {
+    font-size: 8px;
+    margin-bottom: 4px;
+  }
+
+  .home-hero-locations address {
+    font-size: 10px;
+    gap: 2px;
+  }
+
+  .home-hero-phone strong {
+    font-size: 12px;
+    padding-bottom: 3px;
+    white-space: nowrap;
   }
 
   .home-section {

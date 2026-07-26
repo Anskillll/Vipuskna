@@ -149,6 +149,14 @@ class ClinicModelTests(TestCase):
         self.assertIn('.status.pending', css)
         self.assertIn('.status.approved', css)
 
+    def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
+        response = self.client.get(reverse('home'))
+
+        self.assertContains(response, 'Нікополь, вул. Шевченка, 200')
+        self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
+        self.assertContains(response, 'href="tel:+380509168426"')
+        self.assertContains(response, '+38 (050) 916-84-26')
+
     def test_top_navigation_highlights_only_current_section(self):
         self.client.login(username='patient@test.local', password='pass12345')
         patient_sections = (

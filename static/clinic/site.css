@@ -4731,6 +4731,58 @@ button.compact {
   font-weight: 600;
 }
 
+.home-hero-contacts {
+  align-items: end;
+  bottom: 104px;
+  display: flex;
+  justify-content: space-between;
+  left: 48px;
+  pointer-events: none;
+  position: absolute;
+  right: 48px;
+  z-index: 6;
+}
+
+.home-hero-locations,
+.home-hero-phone {
+  color: #fff;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.52);
+}
+
+.home-hero-locations > span,
+.home-hero-phone > span {
+  color: rgba(255, 255, 255, 0.72);
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  margin-bottom: 7px;
+  text-transform: uppercase;
+}
+
+.home-hero-locations address {
+  display: grid;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 650;
+  gap: 4px;
+}
+
+.home-hero-phone {
+  pointer-events: auto;
+  text-align: right;
+}
+
+.home-hero-phone strong {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.62);
+  display: inline-block;
+  font-size: 17px;
+  padding-bottom: 4px;
+}
+
+.home-hero-phone:hover {
+  color: #fff;
+}
+
 .home-slider-controls {
   align-items: center;
   bottom: 34px;
