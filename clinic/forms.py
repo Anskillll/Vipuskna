@@ -827,6 +827,11 @@ class ClinicSettingsForm(FormStyleMixin, forms.ModelForm):
     class Meta:
         model = ClinicSettings
         fields = ['clinic_name', 'logo', 'home_background', 'home_effect', 'particle_image']
+        widgets = {
+            'logo': forms.ClearableFileInput(
+                attrs={'accept': 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg'}
+            ),
+        }
         labels = {
             'clinic_name': 'Назва клініки',
             'logo': 'Логотип клініки',

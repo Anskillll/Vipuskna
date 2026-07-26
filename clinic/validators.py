@@ -1,10 +1,13 @@
 from pathlib import Path
+import re
+from xml.etree import ElementTree
 
 from django.core.exceptions import ValidationError
 from PIL import Image, UnidentifiedImageError
 
 
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
+MAX_LOGO_BYTES = 2 * 1024 * 1024
 MAX_IMAGE_COUNT = 6
 MAX_IMAGE_PIXELS = 40_000_000
 MAX_VIDEO_BYTES = 50 * 1024 * 1024
@@ -14,6 +17,17 @@ ALLOWED_VIDEO_CONTENT_TYPES = {
     'video/mp4',
     'video/quicktime',
     'video/webm',
+}
+ALLOWED_LOGO_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'}
+BLOCKED_SVG_ELEMENTS = {
+    'audio',
+    'embed',
+    'foreignobject',
+    'iframe',
+    'object',
+    'script',
+    'style',
+    'video',
 }
 
 
@@ -43,6 +57,68 @@ def validate_image_upload(value):
 
     if width * height > MAX_IMAGE_PIXELS:
         raise ValidationError('Роздільна здатність фотографії завелика. Максимум — 40 мегапікселів.')
+
+
+def validate_logo_upload(value):
+    extension = Path(value.name).suffix.casefold()
+    if extension not in ALLOWED_LOGO_EXTENSIONS:
+        raise ValidationError('Дозволені формати логотипа: PNG, JPG, WEBP, GIF або SVG.')
+
+    if value.size > MAX_LOGO_BYTES:
+        raise ValidationError(
+            f'Логотип завеликий. Максимальний розмір — {format_megabytes(MAX_LOGO_BYTES)} МБ.'
+        )
+
+    if extension != '.svg':
+        validate_image_upload(value)
+        return
+
+    content_type = getattr(value, 'content_type', '')
+    if content_type and content_type.casefold() not in {
+        'image/svg+xml',
+        'text/xml',
+        'application/xml',
+    }:
+        raise ValidationError('Файл не розпізнано як SVG-логотип.')
+
+    file_object = getattr(value, 'file', value)
+    original_position = None
+    try:
+        if hasattr(file_object, 'tell'):
+            original_position = file_object.tell()
+        content = file_object.read(MAX_LOGO_BYTES + 1)
+    finally:
+        if hasattr(file_object, 'seek'):
+            file_object.seek(original_position or 0)
+
+    lowered_content = content.lower()
+    if b'<!doctype' in lowered_content or b'<!entity' in lowered_content:
+        raise ValidationError('SVG-логотип містить заборонені XML-конструкції.')
+
+    try:
+        root = ElementTree.fromstring(content)
+    except (ElementTree.ParseError, ValueError):
+        raise ValidationError('Не вдалося прочитати SVG-логотип.')
+
+    if root.tag.rsplit('}', 1)[-1].casefold() != 'svg':
+        raise ValidationError('Файл не містить коректний SVG-логотип.')
+
+    for element in root.iter():
+        element_name = element.tag.rsplit('}', 1)[-1].casefold()
+        if element_name in BLOCKED_SVG_ELEMENTS:
+            raise ValidationError('SVG-логотип містить небезпечні або непідтримувані елементи.')
+
+        for attribute_name, attribute_value in element.attrib.items():
+            local_name = attribute_name.rsplit('}', 1)[-1].casefold()
+            normalized_value = attribute_value.strip().casefold()
+            if local_name.startswith('on'):
+                raise ValidationError('SVG-логотип містить заборонені обробники подій.')
+            if local_name in {'href', 'src'} and normalized_value and not normalized_value.startswith('#'):
+                raise ValidationError('SVG-логотип не може містити зовнішні посилання.')
+            if local_name == 'style':
+                safe_style = re.sub(r'url\(\s*#[^)]+\)', '', normalized_value)
+                if any(token in safe_style for token in ('url(', '@import', 'expression(')):
+                    raise ValidationError('SVG-логотип містить небезпечні стилі.')
 
 
 def validate_video_upload(value):

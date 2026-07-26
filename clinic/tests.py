@@ -42,6 +42,7 @@ from .models import (
 )
 from .forms import (
     BookingReasonForm,
+    ClinicSettingsForm,
     DoctorPatientBookingForm,
     DoctorProfileForm,
     DoctorWorkplaceForm,
@@ -55,8 +56,10 @@ from .forms import (
 )
 from .validators import (
     MAX_IMAGE_BYTES,
+    MAX_LOGO_BYTES,
     MAX_VIDEO_BYTES,
     validate_image_upload,
+    validate_logo_upload,
     validate_video_upload,
 )
 from .views import (
@@ -3394,6 +3397,52 @@ class ClinicModelTests(TestCase):
         ]
         with self.assertRaisesMessage(ValidationError, 'не більше 6 фотографій'):
             MultipleImageField().clean(too_many_images)
+
+    def test_clinic_logo_accepts_safe_svg(self):
+        logo = SimpleUploadedFile(
+            'clinic-logo.svg',
+            (
+                b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+                b'<defs><linearGradient id="g"><stop stop-color="#009b87"/></linearGradient></defs>'
+                b'<circle cx="50" cy="50" r="45" fill="url(#g)"/>'
+                b'</svg>'
+            ),
+            content_type='image/svg+xml',
+        )
+
+        validate_logo_upload(logo)
+        form = ClinicSettingsForm(
+            data={
+                'clinic_name': 'LClinic',
+                'home_effect': ClinicSettings.EFFECT_NONE,
+            },
+            files={'logo': logo},
+            instance=ClinicSettings(),
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_clinic_logo_rejects_unsafe_svg(self):
+        unsafe_logo = SimpleUploadedFile(
+            'unsafe-logo.svg',
+            (
+                b'<svg xmlns="http://www.w3.org/2000/svg" '
+                b'onload="alert(1)"><script>alert(1)</script></svg>'
+            ),
+            content_type='image/svg+xml',
+        )
+
+        with self.assertRaises(ValidationError):
+            validate_logo_upload(unsafe_logo)
+
+        oversized_logo = SimpleUploadedFile(
+            'large-logo.svg',
+            b'<svg xmlns="http://www.w3.org/2000/svg"/>',
+            content_type='image/svg+xml',
+        )
+        oversized_logo.size = MAX_LOGO_BYTES + 1
+        with self.assertRaisesMessage(ValidationError, 'Логотип завеликий'):
+            validate_logo_upload(oversized_logo)
 
     def test_patient_profile_rejects_phone_used_by_another_patient(self):
         other_patient = User.objects.create_user(username='phone-owner@test.local')

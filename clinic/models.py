@@ -6,7 +6,7 @@ from django.db import models
 from django.utils import timezone
 
 from .storage import private_media_storage
-from .validators import validate_image_upload, validate_video_upload
+from .validators import validate_image_upload, validate_logo_upload, validate_video_upload
 
 
 phone_validator = RegexValidator(
@@ -802,10 +802,10 @@ class ClinicSettings(models.Model):
     ]
 
     clinic_name = models.CharField('Назва клініки', max_length=120, default='MedClinic')
-    logo = models.ImageField(
+    logo = models.FileField(
         'Логотип клініки',
         upload_to='clinic/branding/',
-        validators=[validate_image_upload],
+        validators=[validate_logo_upload],
         blank=True,
     )
     home_background = models.ImageField(
