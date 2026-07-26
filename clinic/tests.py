@@ -2095,6 +2095,109 @@ class ClinicModelTests(TestCase):
         self.assertEqual(appointment.status, Appointment.STATUS_PENDING)
         self.assertContains(response, 'Заявку відновлено і знову відправлено лікарю.')
 
+    def test_canceled_appointment_frees_slot_for_another_patient(self):
+        future_date = timezone.localdate() + timedelta(days=7)
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            date=future_date,
+            time='09:00',
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Скасований прийом',
+            status=Appointment.STATUS_APPROVED,
+        )
+
+        self.assertTrue(
+            appointment_conflicts(
+                self.doctor,
+                future_date,
+                time(9, 0),
+                duration_minutes=appointment.duration_minutes,
+            )
+        )
+
+        self.client.login(username='patient@test.local', password='pass12345')
+        self.client.post(reverse('cancel_appointment', args=[appointment.id]))
+        appointment.refresh_from_db()
+
+        self.assertEqual(appointment.status, Appointment.STATUS_CANCELED)
+        self.assertFalse(
+            appointment_conflicts(
+                self.doctor,
+                future_date,
+                time(9, 0),
+                duration_minutes=appointment.duration_minutes,
+            )
+        )
+
+    def test_canceled_appointment_cannot_be_restored_after_slot_is_taken(self):
+        self.client.login(username='patient@test.local', password='pass12345')
+        future_date = timezone.localdate() + timedelta(days=7)
+        canceled = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            date=future_date,
+            time='09:00',
+            duration_slots=2,
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Скасований прийом',
+            status=Appointment.STATUS_CANCELED,
+        )
+        other_patient = User.objects.create_user(
+            username='other-patient@test.local',
+            password='pass12345',
+            first_name='Інший',
+            last_name='Пацієнт',
+        )
+        Profile.objects.create(
+            user=other_patient,
+            role=Profile.ROLE_PATIENT,
+            phone='+380503333333',
+        )
+        Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=other_patient,
+            patient_first_name='Інший',
+            patient_last_name='Пацієнт',
+            patient_phone='+380503333333',
+            date=future_date,
+            time='10:00',
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Новий прийом на звільнений час',
+            status=Appointment.STATUS_APPROVED,
+        )
+
+        dashboard_response = self.client.get(reverse('patient_dashboard'))
+        self.assertContains(dashboard_response, 'Цей час уже зайнятий іншим записом')
+        self.assertNotContains(
+            dashboard_response,
+            reverse('restore_appointment', args=[canceled.id]),
+        )
+
+        response = self.client.post(
+            reverse('restore_appointment', args=[canceled.id]),
+            follow=True,
+        )
+        canceled.refresh_from_db()
+
+        self.assertEqual(canceled.status, Appointment.STATUS_CANCELED)
+        self.assertContains(
+            response,
+            'Цей запис уже не можна відновити: час зайнятий іншим прийомом.',
+        )
+
     def test_approved_appointment_becomes_completed_after_end_time(self):
         self.client.login(username='patient@test.local', password='pass12345')
         appointment_start = timezone.localtime() - timedelta(hours=2)

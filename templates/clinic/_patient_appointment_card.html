@@ -47,6 +47,10 @@
   <footer class="patient-appointment-card-actions">
     {% if appointment.can_restore %}
       <span class="patient-restore-note">Цей запис ще можна відновити</span>
+    {% elif appointment.status == 'canceled' and appointment.restore_unavailable_reason %}
+      <span class="patient-restore-note patient-restore-note-unavailable">
+        {{ appointment.restore_unavailable_reason }}. Відновити запис неможливо.
+      </span>
     {% endif %}
     <div>
       <a class="btn secondary patient-appointment-details" href="{% url 'patient_appointment_detail' appointment.id %}">

@@ -402,13 +402,28 @@ class Appointment(models.Model):
         return visit > timezone.localtime()
 
     @property
-    def can_restore(self):
-        if self.status not in [self.STATUS_CANCELED, self.STATUS_REJECTED] or not self.is_future:
-            return False
+    def restore_unavailable_reason(self):
+        if self.status != self.STATUS_CANCELED:
+            return ''
+        if not self.is_future:
+            return 'Минулий запис уже не можна відновити'
+
         schedule = self.doctor.schedules.filter(weekday=self.date.weekday()).first()
-        slot_minutes = schedule.slot_minutes if schedule else 60
+        if not schedule:
+            return 'На цей день у лікаря більше немає робочого графіка'
+
         target_start = datetime.combine(self.date, self.time)
         target_end = target_start + timedelta(minutes=self.duration_minutes)
+        day_start = datetime.combine(self.date, schedule.start_time)
+        day_end = datetime.combine(self.date, schedule.end_time)
+        if target_start < day_start or target_end > day_end:
+            return 'Цей час більше не входить до робочого графіка лікаря'
+
+        if schedule.break_start_time and schedule.break_duration_minutes:
+            break_start = datetime.combine(self.date, schedule.break_start_time)
+            break_end = break_start + timedelta(minutes=schedule.break_duration_minutes)
+            if target_start < break_end and target_end > break_start:
+                return 'На цей час у графіку лікаря запланована перерва'
 
         appointments = (
             Appointment.objects.filter(
@@ -423,7 +438,7 @@ class Appointment(models.Model):
             item_start = datetime.combine(appointment.date, appointment.time)
             item_end = item_start + timedelta(minutes=appointment.duration_minutes)
             if target_start < item_end and target_end > item_start:
-                return False
+                return 'Цей час уже зайнятий іншим записом'
 
         if self.patient:
             patient_appointments = (
@@ -439,8 +454,15 @@ class Appointment(models.Model):
                 item_start = datetime.combine(appointment.date, appointment.time)
                 item_end = item_start + timedelta(minutes=appointment.duration_minutes)
                 if target_start < item_end and target_end > item_start:
-                    return False
-        return True
+                    return 'На цей час у вас уже є інший запис'
+        return ''
+
+    @property
+    def can_restore(self):
+        return (
+            self.status == self.STATUS_CANCELED
+            and not self.restore_unavailable_reason
+        )
 
     @property
     def can_cancel(self):

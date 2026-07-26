@@ -7378,6 +7378,10 @@ body:not(.public-home-page) .message.is-dismissing {
   font-weight: 700;
 }
 
+.patient-restore-note-unavailable {
+  color: #a63d43;
+}
+
 .patient-dashboard-empty {
   display: grid;
   justify-items: start;
