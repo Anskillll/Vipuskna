@@ -312,15 +312,15 @@ Telegram-бот автоматично відновлює з'єднання пі
 Папка `private_media` навмисно не віддається через Nginx: доступ до медичних
 фото і відео перевіряє Django.
 
-Поточна production-адреса: `https://lclinic-ua.duckdns.org/`. Звичайний HTTP
+Поточна production-адреса: `https://orthosmile.duckdns.org/`. Звичайний HTTP
 та прямі переходи за IP перенаправляються на захищену адресу. SSL-сертифікат
 Let's Encrypt оновлюється на сервері автоматично.
 
 Production-змінні безпеки:
 
 ```dotenv
-DJANGO_ALLOWED_HOSTS=lclinic-ua.duckdns.org,167.71.48.181
-DJANGO_CSRF_TRUSTED_ORIGINS=https://lclinic-ua.duckdns.org
+DJANGO_ALLOWED_HOSTS=orthosmile.duckdns.org,167.71.48.181
+DJANGO_CSRF_TRUSTED_ORIGINS=https://orthosmile.duckdns.org
 DJANGO_SECURE_SSL_REDIRECT=1
 DJANGO_SESSION_COOKIE_SECURE=1
 DJANGO_CSRF_COOKIE_SECURE=1
@@ -328,11 +328,11 @@ DJANGO_SECURE_HSTS_SECONDS=31536000
 DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS=0
 DJANGO_SECURE_HSTS_PRELOAD=0
 DJANGO_BEHIND_HTTPS_PROXY=1
-SITE_BASE_URL=https://lclinic-ua.duckdns.org
+SITE_BASE_URL=https://orthosmile.duckdns.org
 ```
 
 Google OAuth використовує адресу повернення
-`https://lclinic-ua.duckdns.org/accounts/google/login/callback/`. Вона має
+`https://orthosmile.duckdns.org/accounts/google/login/callback/`. Вона має
 бути без змін додана до `Authorized redirect URIs` клієнта MedClinic у
 Google Cloud Console.
 

@@ -193,7 +193,7 @@ systemctl is-active --quiet medclinic-bot
 
 sudo -u medclinic "$APP/.venv/bin/python" "$APP/manage.py" check \
     > "$MIGRATION_DIR/django-check.log"
-curl -fsS --max-time 15 https://lclinic-ua.duckdns.org/ > /dev/null
+curl -fsS --max-time 15 https://orthosmile.duckdns.org/ > /dev/null
 
 systemctl start medclinic-db-backup.service
 latest_backup=$(
