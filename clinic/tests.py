@@ -3,7 +3,7 @@ from io import StringIO
 from pathlib import Path
 import tempfile
 from unittest.mock import Mock, patch
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse
 
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
@@ -982,6 +982,47 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Детальніше про послугу')
         self.assertContains(response, f'data-service-url="{expected_base}"')
         self.assertContains(response, 'data-service-details')
+        self.assertContains(
+            response,
+            f'data-booking-date="{future_date:%Y-%m-%d}"',
+        )
+        self.assertContains(response, 'data-booking-time="09:00"')
+        self.assertNotContains(response, 'target="_blank"')
+
+    def test_service_details_returns_to_the_same_booking(self):
+        self.client.login(username='patient@test.local', password='pass12345')
+        future_date = timezone.localdate() + timedelta(days=7)
+        detail_response = self.client.get(
+            reverse(
+                'service_detail',
+                args=[self.doctor.id, self.service.id],
+            ),
+            {
+                'from': 'booking',
+                'date': future_date.strftime('%Y-%m-%d'),
+                'time': '09:00',
+            },
+        )
+        expected_return_url = f"{reverse('booking')}?{urlencode({
+            'doctor': self.doctor.id,
+            'service': self.service.id,
+            'date': future_date.strftime('%Y-%m-%d'),
+            'time': '09:00',
+        })}"
+
+        self.assertEqual(
+            detail_response.context['booking_return_url'],
+            expected_return_url,
+        )
+        self.assertContains(detail_response, 'Повернутися до заявки', count=2)
+
+        booking_response = self.client.get(expected_return_url)
+
+        self.assertEqual(booking_response.status_code, 200)
+        self.assertEqual(
+            str(booking_response.context['reason_form']['service'].value()),
+            str(self.service.id),
+        )
 
     def test_active_appointment_slot_is_unique(self):
         visit_date = timezone.localdate()

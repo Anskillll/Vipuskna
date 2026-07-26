@@ -1226,12 +1226,39 @@ def service_detail(request, doctor_id, service_id):
         .prefetch_related('images', 'videos', 'doctor__schedules'),
         pk=service_id,
     )
+    booking_return_url = None
+    if (
+        request.GET.get('from') == 'booking'
+        and request.user.is_authenticated
+        and user_role(request.user) == Profile.ROLE_PATIENT
+    ):
+        booking_params = {
+            'doctor': service.doctor_id,
+            'service': service.id,
+        }
+        selected_date = request.GET.get('date', '')
+        selected_time = request.GET.get('time', '')
+        try:
+            datetime.strptime(selected_date, '%Y-%m-%d')
+        except ValueError:
+            pass
+        else:
+            booking_params['date'] = selected_date
+        try:
+            datetime.strptime(selected_time, '%H:%M')
+        except ValueError:
+            pass
+        else:
+            booking_params['time'] = selected_time
+        booking_return_url = f"{reverse('booking')}?{urlencode(booking_params)}"
+
     return render(
         request,
         'clinic/service_detail.html',
         {
             'doctor': service.doctor,
             'service': service,
+            'booking_return_url': booking_return_url,
         },
     )
 
@@ -1354,7 +1381,16 @@ def booking(request):
                     except IntegrityError:
                         messages.error(request, 'Цей час уже недоступний.')
     else:
-        reason_form = BookingReasonForm(doctor=selected_doctor)
+        selected_service = None
+        if selected_doctor and request.GET.get('service'):
+            selected_service = selected_doctor.services.filter(
+                pk=request.GET.get('service'),
+                is_patient_selectable=True,
+            ).first()
+        reason_form = BookingReasonForm(
+            doctor=selected_doctor,
+            initial={'service': selected_service} if selected_service else None,
+        )
 
     schedule, slots = (
         slots_for_doctor(

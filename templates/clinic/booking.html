@@ -128,10 +128,10 @@
             <a
               class="btn secondary booking-service-details"
               href="#"
-              target="_blank"
-              rel="noopener"
               data-service-details
               data-service-url="{% url 'doctor_detail' selected_doctor.id %}services/"
+              data-booking-date="{{ selected_date|date:'Y-m-d' }}"
+              data-booking-time="{{ selected_time|time:'H:i' }}"
               hidden
             >Детальніше про послугу</a>
           </div>
@@ -162,9 +162,16 @@
       const updateDetailsLink = () => {
         const serviceId = serviceSelect.value;
         detailsLink.hidden = !serviceId;
-        detailsLink.href = serviceId
-          ? `${detailsLink.dataset.serviceUrl}${serviceId}/`
-          : '#';
+        if (!serviceId) {
+          detailsLink.href = '#';
+          return;
+        }
+        const params = new URLSearchParams({
+          from: 'booking',
+          date: detailsLink.dataset.bookingDate,
+          time: detailsLink.dataset.bookingTime,
+        });
+        detailsLink.href = `${detailsLink.dataset.serviceUrl}${serviceId}/?${params.toString()}`;
       };
 
       serviceSelect.addEventListener('change', updateDetailsLink);

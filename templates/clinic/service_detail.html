@@ -5,7 +5,11 @@
 {% block content %}
   <section class="page-head">
     <div>
-      <a class="back-link" href="{% url 'doctor_detail' doctor.id %}">← Повернутися до профілю лікаря</a>
+      {% if booking_return_url %}
+        <a class="back-link" href="{{ booking_return_url }}">← Повернутися до заявки</a>
+      {% else %}
+        <a class="back-link" href="{% url 'doctor_detail' doctor.id %}">← Повернутися до профілю лікаря</a>
+      {% endif %}
       <h1 class="page-title">{{ service.name }}</h1>
       <p class="page-subtitle">Детальна інформація про послугу</p>
     </div>
@@ -65,7 +69,9 @@
 
     {% if service.is_patient_selectable %}
       <div class="service-detail-cta">
-        {% if user.is_authenticated and user.profile.role == 'patient' %}
+        {% if booking_return_url %}
+          <a class="btn" href="{{ booking_return_url }}">Повернутися до заявки</a>
+        {% elif user.is_authenticated and user.profile.role == 'patient' %}
           <a class="btn" href="{% url 'booking' %}?doctor={{ doctor.id }}">Записатися до лікаря</a>
         {% elif not user.is_authenticated %}
           <a class="btn" href="{% url 'google_login' %}">Увійти для запису</a>
