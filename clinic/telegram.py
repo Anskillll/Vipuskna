@@ -257,9 +257,15 @@ def _deliver(recipient, appointment, kind, event_key, text, url=None):
 
 def notify_doctor_new_request(appointment, event='created'):
     patient_name = html.escape(appointment.patient_name)
+    owner_line = (
+        f'Заявку створив: <b>{html.escape(appointment.booking_owner_name)}</b>\n'
+        if appointment.booked_for_other
+        else ''
+    )
     text = (
         '<b>Нова заявка на прийом</b>\n'
         f'Пацієнт: <b>{patient_name}</b>\n'
+        f'{owner_line}'
         f'{_appointment_lines(appointment)}'
     )
     return _deliver(
@@ -275,7 +281,17 @@ def notify_doctor_new_request(appointment, event='created'):
 def notify_patient_status(appointment, event, heading):
     if appointment.patient_id is None:
         return False
-    text = f'<b>{html.escape(heading)}</b>\nЛікар: <b>{html.escape(appointment.doctor.full_name)}</b>\n{_appointment_lines(appointment)}'
+    visitor_line = (
+        f'Записано для: <b>{html.escape(appointment.patient_name)}</b>\n'
+        if appointment.booked_for_other
+        else ''
+    )
+    text = (
+        f'<b>{html.escape(heading)}</b>\n'
+        f'Лікар: <b>{html.escape(appointment.doctor.full_name)}</b>\n'
+        f'{visitor_line}'
+        f'{_appointment_lines(appointment)}'
+    )
     return _deliver(
         appointment.patient,
         appointment,
@@ -287,9 +303,15 @@ def notify_patient_status(appointment, event, heading):
 
 
 def notify_doctor_patient_action(appointment, event, heading):
+    owner_line = (
+        f'Заявку створив: <b>{html.escape(appointment.booking_owner_name)}</b>\n'
+        if appointment.booked_for_other
+        else ''
+    )
     text = (
         f'<b>{html.escape(heading)}</b>\n'
         f'Пацієнт: <b>{html.escape(appointment.patient_name)}</b>\n'
+        f'{owner_line}'
         f'{_appointment_lines(appointment)}'
     )
     return _deliver(
@@ -319,9 +341,15 @@ def send_tomorrow_reminders(now=None, force=False):
     )
     sent = 0
     for appointment in appointments:
+        visitor_line = (
+            f'Записано для: <b>{html.escape(appointment.patient_name)}</b>\n'
+            if appointment.booked_for_other
+            else ''
+        )
         text = (
             '<b>Нагадування про прийом завтра</b>\n'
             f'Лікар: <b>{html.escape(appointment.doctor.full_name)}</b>\n'
+            f'{visitor_line}'
             f'{_appointment_lines(appointment)}'
         )
         if _deliver(

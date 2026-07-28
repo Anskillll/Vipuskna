@@ -29,6 +29,9 @@
     <div class="patient-appointment-service">
       <small>Послуга</small>
       <strong>{{ appointment.service.name|default:'Послугу не обрано' }}</strong>
+      {% if appointment.booked_for_other %}
+        <span class="patient-booked-for">Для {{ appointment.patient_name }}</span>
+      {% endif %}
     </div>
     <div class="patient-appointment-fact">
       <small>Дата і час</small>

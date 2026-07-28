@@ -58,7 +58,7 @@
                 <article
                   class="appointment-summary-row appointment-kind-pending"
                   data-live-filter-item
-                  data-filter-extra="{{ appointment.patient_name|escape }} {{ appointment.patient_phone|escape }} {% if appointment.patient_age %}{{ appointment.patient_age }}{% endif %} {{ appointment.service.name|default:''|escape }} {{ appointment.reason|escape }} {{ appointment.date|date:'d.m.Y' }} {{ appointment.date|date:'Y-m-d' }} {{ appointment.time|time:'H:i' }} {{ appointment.city|escape }} {{ appointment.address|escape }}"
+                  data-filter-extra="{{ appointment.patient_name|escape }} {{ appointment.booking_owner_name|escape }} {{ appointment.patient_phone|escape }} {% if appointment.patient_age %}{{ appointment.patient_age }}{% endif %} {{ appointment.service.name|default:''|escape }} {{ appointment.reason|escape }} {{ appointment.date|date:'d.m.Y' }} {{ appointment.date|date:'Y-m-d' }} {{ appointment.time|time:'H:i' }} {{ appointment.city|escape }} {{ appointment.address|escape }}"
                 >
                   <time datetime="{{ appointment.date|date:'Y-m-d' }}T{{ appointment.time|time:'H:i' }}">{{ appointment.time|time:'H:i' }}</time>
                   <div class="appointment-summary-person">
@@ -71,6 +71,9 @@
                       >{{ appointment.patient_name }}</button>
                       <span>{% if appointment.patient_age %}{{ appointment.patient_age }} років{% else %}Вік не вказано{% endif %}</span>
                     </div>
+                    {% if appointment.booked_for_other %}
+                      <span class="appointment-booking-owner">Від {{ appointment.booking_owner_name }}</span>
+                    {% endif %}
                     <span class="appointment-kind-label">Нова заявка</span>
                   </div>
                   <span>{{ appointment.service.name|default:'Послугу не обрано' }}</span>

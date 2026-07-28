@@ -103,7 +103,7 @@
                         class="appointment-summary-row appointment-kind-{{ appointment.status }}"
                         data-live-filter-item
                         {% if forloop.counter > 5 %}data-day-extra{% endif %}
-                        data-filter-extra="{{ appointment.patient_name|escape }} {{ appointment.patient_phone|escape }} {% if appointment.patient_age %}{{ appointment.patient_age }}{% endif %} {{ appointment.service.name|default:''|escape }} {{ appointment.date|date:'d.m.Y' }} {{ appointment.date|date:'Y-m-d' }} {{ appointment.time|time:'H:i' }} {{ appointment.city|escape }} {{ appointment.address|escape }} {{ appointment.get_status_display|escape }}"
+                        data-filter-extra="{{ appointment.patient_name|escape }} {{ appointment.booking_owner_name|escape }} {{ appointment.patient_phone|escape }} {% if appointment.patient_age %}{{ appointment.patient_age }}{% endif %} {{ appointment.service.name|default:''|escape }} {{ appointment.date|date:'d.m.Y' }} {{ appointment.date|date:'Y-m-d' }} {{ appointment.time|time:'H:i' }} {{ appointment.city|escape }} {{ appointment.address|escape }} {{ appointment.get_status_display|escape }}"
                       >
                         <time datetime="{{ appointment.date|date:'Y-m-d' }}T{{ appointment.time|time:'H:i' }}">{{ appointment.time|time:'H:i' }}</time>
                         <div class="appointment-summary-person">
@@ -116,6 +116,9 @@
                             >{{ appointment.patient_name }}</button>
                             <span>{% if appointment.patient_age %}{{ appointment.patient_age }} років{% else %}Вік не вказано{% endif %}</span>
                           </div>
+                          {% if appointment.booked_for_other %}
+                            <span class="appointment-booking-owner">Від {{ appointment.booking_owner_name }}</span>
+                          {% endif %}
                           {% if appointment.status == 'pending' %}
                             <span class="appointment-kind-label">Заявка очікує</span>
                           {% elif appointment.status == 'approved' %}

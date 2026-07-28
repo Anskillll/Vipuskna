@@ -20,8 +20,21 @@
     <div class="appointment-detail-main-column">
       <section class="card section-card appointment-detail-main">
         <div class="section-head"><h2 class="section-title">Інформація про прийом</h2></div>
+        {% if appointment.booked_for_other %}
+          <div class="appointment-booking-context">
+            <strong>Заявку створено для іншої людини</strong>
+            <span>
+              {{ appointment.booking_owner_name }} записує
+              {{ appointment.patient_name }} зі свого кабінету.
+              Контактний телефон належить автору заявки.
+            </span>
+          </div>
+        {% endif %}
         <dl class="detail-list">
-          <div><dt>Пацієнт</dt><dd>{{ appointment.patient_name }}</dd></div>
+          <div><dt>{% if appointment.booked_for_other %}На прийом прийде{% else %}Пацієнт{% endif %}</dt><dd>{{ appointment.patient_name }}</dd></div>
+          {% if appointment.booked_for_other %}
+            <div><dt>Заявку створив</dt><dd>{{ appointment.booking_owner_name }}</dd></div>
+          {% endif %}
           <div><dt>Вік</dt><dd>{% if appointment.patient_age %}{{ appointment.patient_age }} років{% else %}Не вказано{% endif %}</dd></div>
           <div><dt>Телефон</dt><dd>{{ appointment.patient_phone }}</dd></div>
           <div><dt>Послуга</dt><dd>{{ appointment.service.name|default:'Не обрано' }}</dd></div>
@@ -146,6 +159,9 @@
               <span class="day-appointment-person">
                 <strong>{{ day_appointment.patient_name }}</strong>
                 <small>{% if day_appointment.patient_age %}{{ day_appointment.patient_age }} років{% else %}Вік не вказано{% endif %}</small>
+                {% if day_appointment.booked_for_other %}
+                  <small class="appointment-booking-owner">Від {{ day_appointment.booking_owner_name }}</small>
+                {% endif %}
                 <small>{{ day_appointment.service.name|default:'Послугу не обрано' }}</small>
               </span>
               <span class="day-appointment-duration">{{ day_appointment.duration_minutes }} хв</span>

@@ -654,13 +654,63 @@ def find_doctor_card_by_phone(doctor, phone):
     )
 
 
+def patient_card_for_appointment(appointment):
+    cards = appointment.doctor.patient_cards.select_related(
+        'patient',
+        'patient__profile',
+    )
+    if appointment.booked_for_other or not appointment.patient_id:
+        normalized_phone = normalize_phone_number(appointment.patient_phone)
+        first_name = appointment.patient_first_name.strip().casefold()
+        last_name = appointment.patient_last_name.strip().casefold()
+        return next(
+            (
+                card
+                for card in cards.filter(patient__isnull=True)
+                if (
+                    normalize_phone_number(card.patient_phone)
+                    == normalized_phone
+                    and card.patient_first_name.strip().casefold() == first_name
+                    and card.patient_last_name.strip().casefold() == last_name
+                )
+            ),
+            None,
+        )
+    if appointment.patient_id:
+        return cards.filter(patient_id=appointment.patient_id).first()
+    return None
+
+
+def appointments_for_patient_card(doctor, card):
+    if card.patient_id:
+        return doctor.appointments.filter(
+            patient_id=card.patient_id,
+            booked_for_other=False,
+        )
+    return doctor.appointments.filter(
+        patient_phone=card.patient_phone,
+        patient_first_name__iexact=card.patient_first_name,
+        patient_last_name__iexact=card.patient_last_name,
+    )
+
+
 def ensure_patient_card_from_appointment(appointment):
     normalized_phone = normalize_phone_number(appointment.patient_phone)
     if appointment.patient_phone != normalized_phone:
         appointment.patient_phone = normalized_phone
         appointment.save(update_fields=['patient_phone'])
-    patient = appointment.patient or find_patient_by_contacts(appointment.patient_email, appointment.patient_phone)
-    card = find_doctor_card_by_phone(appointment.doctor, normalized_phone)
+    patient = (
+        None
+        if appointment.booked_for_other
+        else (
+            appointment.patient
+            or find_patient_by_contacts(
+                appointment.patient_email,
+                appointment.patient_phone,
+            )
+        )
+    )
+    card = patient_card_for_appointment(appointment)
     created = card is None
     if created:
         card = DoctorPatientCard.objects.create(
@@ -1351,8 +1401,17 @@ def booking(request):
                                     doctor=selected_doctor,
                                     service=reason_form.cleaned_data['service'],
                                     patient=request.user,
-                                    patient_first_name=request.user.first_name,
-                                    patient_last_name=request.user.last_name,
+                                    patient_first_name=(
+                                        reason_form.cleaned_data['other_first_name']
+                                        if reason_form.cleaned_data['booked_for_other']
+                                        else request.user.first_name
+                                    ),
+                                    patient_last_name=(
+                                        reason_form.cleaned_data['other_last_name']
+                                        if reason_form.cleaned_data['booked_for_other']
+                                        else request.user.last_name
+                                    ),
+                                    booked_for_other=reason_form.cleaned_data['booked_for_other'],
                                     patient_phone=request.user.profile.phone,
                                     patient_email=request.user.email,
                                     date=selected_date,
@@ -1462,12 +1521,8 @@ def doctor_requests(request):
             'patient__profile',
         ).order_by('date', 'time', 'created_at')
     )
-    cards_by_phone = {
-        card.patient_phone: card
-        for card in doctor.patient_cards.select_related('patient__profile')
-    }
     for appointment in appointments:
-        appointment.patient_card = cards_by_phone.get(appointment.patient_phone)
+        appointment.patient_card = patient_card_for_appointment(appointment)
         appointment.weekday_name = UKRAINIAN_WEEKDAYS[appointment.date.weekday()]
 
     return render(
@@ -1496,13 +1551,9 @@ def doctor_appointments(request):
             date__range=(week_start, week_end),
         ).select_related('service', 'patient__profile').order_by('date', 'time')
     )
-    cards_by_phone = {
-        card.patient_phone: card
-        for card in doctor.patient_cards.select_related('patient__profile')
-    }
     appointments_by_date = {}
     for appointment in appointments:
-        appointment.patient_card = cards_by_phone.get(appointment.patient_phone)
+        appointment.patient_card = patient_card_for_appointment(appointment)
         appointment.weekday_name = UKRAINIAN_WEEKDAYS[appointment.date.weekday()]
         appointments_by_date.setdefault(appointment.date, []).append(appointment)
 
@@ -2041,7 +2092,7 @@ def doctor_patient_cards(request):
             cards = cards.filter(term_filter)
     card_rows = []
     for card in cards:
-        appointments = doctor.appointments.filter(patient_phone=card.patient_phone).exclude(
+        appointments = appointments_for_patient_card(doctor, card).exclude(
             status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]
         )
         last_visit = appointments.filter(status=Appointment.STATUS_COMPLETED).order_by('-date', '-time').first()
@@ -2092,9 +2143,8 @@ def doctor_patient_card_detail(request, card_id):
         appointment = None
         if request.POST.get('appointment_id'):
             appointment = get_object_or_404(
-                doctor.appointments,
+                appointments_for_patient_card(doctor, card),
                 pk=request.POST.get('appointment_id'),
-                patient_phone=card.patient_phone,
             )
         entry = entry_form.save(commit=False)
         entry.card = card
@@ -2140,7 +2190,9 @@ def doctor_patient_card_detail(request, card_id):
         messages.success(request, 'Відео видалено.')
         return redirect('doctor_patient_card_detail', card_id=card.id)
 
-    appointments = doctor.appointments.filter(patient_phone=card.patient_phone).select_related('service').order_by('-date', '-time')
+    appointments = appointments_for_patient_card(doctor, card).select_related(
+        'service',
+    ).order_by('-date', '-time')
     completed_visits = appointments.filter(status=Appointment.STATUS_COMPLETED).count()
     last_visit = appointments.filter(status=Appointment.STATUS_COMPLETED).first()
     first_visit = appointments.last()

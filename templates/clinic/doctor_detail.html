@@ -73,11 +73,33 @@
         </ul>
       </section>
 
-      <section class="doctor-profile-section">
+      <section class="doctor-profile-section" data-live-filter data-live-filter-no-pagination>
         <h2>Послуги та ціни</h2>
+        <div class="live-filter-bar doctor-service-filter">
+          <div class="live-filter-field">
+            <label for="patient-service-search">Фільтр послуг</label>
+            <div class="live-filter-input-row">
+              <input
+                id="patient-service-search"
+                type="search"
+                placeholder="Введіть назву послуги"
+                autocomplete="off"
+                data-live-filter-input
+              >
+              <button
+                class="live-filter-clear"
+                type="button"
+                aria-label="Очистити фільтр послуг"
+                title="Очистити фільтр"
+                data-live-filter-clear
+              >×</button>
+            </div>
+          </div>
+          <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
+        </div>
         <ul class="simple-list doctor-service-list">
           {% for service in doctor.services.all %}
-            <li>
+            <li data-live-filter-item data-filter-extra="{{ service.name|escape }} {{ service.description|escape }}">
               <span>{{ service.name }}</span>
               <span class="doctor-service-actions">
                 {% if service.approximate_price is not None %}
@@ -90,6 +112,9 @@
             <li><span>Послуги ще не додані</span><strong></strong></li>
           {% endfor %}
         </ul>
+        <div class="empty live-filter-empty" data-live-filter-empty hidden>
+          Послуг із такою назвою не знайдено.
+        </div>
       </section>
     </div>
 

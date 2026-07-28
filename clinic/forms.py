@@ -217,10 +217,26 @@ class BookingReasonForm(FormStyleMixin, forms.Form):
         label='Послуга',
         queryset=MedicalService.objects.none(),
         empty_label=None,
+        widget=forms.RadioSelect,
     )
     reason = forms.CharField(
         label='Причина звернення',
         widget=forms.Textarea(attrs={'rows': 4}),
+    )
+    booked_for_other = forms.BooleanField(
+        label='Записую не себе',
+        required=False,
+        help_text='Позначте, якщо на прийом прийде інша людина.',
+    )
+    other_first_name = forms.CharField(
+        label="Ім'я людини, яка прийде на прийом",
+        max_length=80,
+        required=False,
+    )
+    other_last_name = forms.CharField(
+        label='Прізвище людини, яка прийде на прийом',
+        max_length=80,
+        required=False,
     )
     photos = MultipleImageField(
         label='Фотографії до заявки',
@@ -242,6 +258,22 @@ class BookingReasonForm(FormStyleMixin, forms.Form):
                 consultation = queryset.filter(name__icontains='консульта').first()
                 if consultation:
                     self.fields['service'].initial = consultation.pk
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('booked_for_other'):
+            for field_name in ('other_first_name', 'other_last_name'):
+                value = (cleaned_data.get(field_name) or '').strip()
+                cleaned_data[field_name] = value
+                if not value:
+                    self.add_error(
+                        field_name,
+                        'Вкажіть ім’я та прізвище людини, яка прийде на прийом.',
+                    )
+        else:
+            cleaned_data['other_first_name'] = ''
+            cleaned_data['other_last_name'] = ''
+        return cleaned_data
 
 
 class PatientChoiceField(forms.ModelChoiceField):

@@ -348,6 +348,10 @@ class Appointment(models.Model):
     )
     patient_first_name = models.CharField("Ім'я пацієнта", max_length=80)
     patient_last_name = models.CharField('Прізвище пацієнта', max_length=80)
+    booked_for_other = models.BooleanField(
+        'Запис створено для іншої людини',
+        default=False,
+    )
     patient_phone = models.CharField('Телефон пацієнта', max_length=25, validators=[phone_validator])
     patient_email = models.EmailField('Електронна пошта пацієнта', blank=True)
     date = models.DateField('Дата прийому')
@@ -386,15 +390,23 @@ class Appointment(models.Model):
 
     @property
     def patient_name(self):
-        if self.patient:
-            return self.patient.get_full_name() or self.patient.username
         return f'{self.patient_first_name} {self.patient_last_name}'.strip()
 
     @property
     def patient_age(self):
-        if self.patient and hasattr(self.patient, 'profile'):
+        if (
+            not self.booked_for_other
+            and self.patient
+            and hasattr(self.patient, 'profile')
+        ):
             return self.patient.profile.age
         return None
+
+    @property
+    def booking_owner_name(self):
+        if not self.patient:
+            return ''
+        return self.patient.get_full_name() or self.patient.username
 
     @property
     def is_future(self):
@@ -563,8 +575,19 @@ class DoctorPatientCard(models.Model):
         ordering = ['patient_last_name', 'patient_first_name']
         constraints = [
             models.UniqueConstraint(
-                fields=['doctor', 'patient_phone'],
-                name='unique_doctor_patient_phone_card',
+                fields=['doctor', 'patient'],
+                condition=models.Q(patient__isnull=False),
+                name='unique_doctor_registered_patient_card',
+            ),
+            models.UniqueConstraint(
+                fields=[
+                    'doctor',
+                    'patient_phone',
+                    'patient_first_name',
+                    'patient_last_name',
+                ],
+                condition=models.Q(patient__isnull=True),
+                name='unique_doctor_unregistered_patient_card',
             ),
         ]
 

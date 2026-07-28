@@ -123,8 +123,48 @@
           {% if reason_form.non_field_errors %}
             <div class="form-error">{{ reason_form.non_field_errors }}</div>
           {% endif %}
-          <div class="booking-service-choice">
-            {% include 'clinic/_form_field.html' with field=reason_form.service %}
+          <div class="booking-service-choice" data-live-filter data-live-filter-no-pagination>
+            <div class="live-filter-bar booking-service-filter">
+              <div class="live-filter-field">
+                <label for="booking-service-search">Фільтр послуг</label>
+                <div class="live-filter-input-row">
+                  <input
+                    id="booking-service-search"
+                    type="search"
+                    placeholder="Введіть назву послуги"
+                    autocomplete="off"
+                    data-live-filter-input
+                  >
+                  <button
+                    class="live-filter-clear"
+                    type="button"
+                    aria-label="Очистити фільтр послуг"
+                    title="Очистити фільтр"
+                    data-live-filter-clear
+                  >×</button>
+                </div>
+              </div>
+              <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
+            </div>
+            <div class="booking-service-options">
+              {% for choice in reason_form.service %}
+                <label
+                  class="booking-service-option"
+                  for="{{ choice.id_for_label }}"
+                  data-live-filter-item
+                  data-filter-extra="{{ choice.choice_label|escape }}"
+                >
+                  {{ choice.tag }}
+                  <span>{{ choice.choice_label }}</span>
+                </label>
+              {% endfor %}
+            </div>
+            {% for error in reason_form.service.errors %}
+              <div class="form-error">{{ error }}</div>
+            {% endfor %}
+            <div class="empty live-filter-empty" data-live-filter-empty hidden>
+              Послуг із такою назвою не знайдено.
+            </div>
             <a
               class="btn secondary booking-service-details"
               href="#"
@@ -134,6 +174,18 @@
               data-booking-time="{{ selected_time|time:'H:i' }}"
               hidden
             >Детальніше про послугу</a>
+          </div>
+          <div class="booking-for-other" data-booking-for-other>
+            {% include 'clinic/_form_field.html' with field=reason_form.booked_for_other %}
+            <div
+              class="booking-for-other-fields"
+              data-booking-for-other-fields
+              {% if not reason_form.booked_for_other.value %}hidden{% endif %}
+            >
+              <p>Вкажіть, хто саме прийде на прийом. Повідомлення про заявку залишаться у вашому кабінеті.</p>
+              {% include 'clinic/_form_field.html' with field=reason_form.other_first_name %}
+              {% include 'clinic/_form_field.html' with field=reason_form.other_last_name %}
+            </div>
           </div>
           {% include 'clinic/_form_field.html' with field=reason_form.reason %}
           {% include 'clinic/_form_field.html' with field=reason_form.photos %}
@@ -155,27 +207,45 @@
         });
       }
 
-      const serviceSelect = document.getElementById('id_service');
+      const serviceChoices = document.querySelectorAll('input[name="service"]');
       const detailsLink = document.querySelector('[data-service-details]');
-      if (!serviceSelect || !detailsLink) return;
+      if (serviceChoices.length && detailsLink) {
+        const updateDetailsLink = () => {
+          const selectedService = document.querySelector('input[name="service"]:checked');
+          const serviceId = selectedService ? selectedService.value : '';
+          detailsLink.hidden = !serviceId;
+          if (!serviceId) {
+            detailsLink.href = '#';
+            return;
+          }
+          const params = new URLSearchParams({
+            from: 'booking',
+            date: detailsLink.dataset.bookingDate,
+            time: detailsLink.dataset.bookingTime,
+          });
+          detailsLink.href = `${detailsLink.dataset.serviceUrl}${serviceId}/?${params.toString()}`;
+        };
 
-      const updateDetailsLink = () => {
-        const serviceId = serviceSelect.value;
-        detailsLink.hidden = !serviceId;
-        if (!serviceId) {
-          detailsLink.href = '#';
-          return;
-        }
-        const params = new URLSearchParams({
-          from: 'booking',
-          date: detailsLink.dataset.bookingDate,
-          time: detailsLink.dataset.bookingTime,
+        serviceChoices.forEach((choice) => {
+          choice.addEventListener('change', updateDetailsLink);
         });
-        detailsLink.href = `${detailsLink.dataset.serviceUrl}${serviceId}/?${params.toString()}`;
-      };
+        updateDetailsLink();
+      }
 
-      serviceSelect.addEventListener('change', updateDetailsLink);
-      updateDetailsLink();
+      const otherBooking = document.querySelector('[data-booking-for-other]');
+      if (otherBooking) {
+        const toggle = otherBooking.querySelector('input[type="checkbox"]');
+        const fields = otherBooking.querySelector('[data-booking-for-other-fields]');
+        const nameInputs = fields.querySelectorAll('input');
+        const updateOtherFields = () => {
+          fields.hidden = !toggle.checked;
+          nameInputs.forEach((input) => {
+            input.required = toggle.checked;
+          });
+        };
+        toggle.addEventListener('change', updateOtherFields);
+        updateOtherFields();
+      }
     })();
   </script>
 {% endblock %}

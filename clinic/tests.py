@@ -152,8 +152,8 @@ class ClinicModelTests(TestCase):
     def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
         response = self.client.get(reverse('home'))
 
-        self.assertContains(response, 'clinic/site.css?v=20260726-3')
-        self.assertContains(response, 'clinic/mobile.css?v=20260726-3')
+        self.assertContains(response, 'clinic/site.css?v=20260729-1')
+        self.assertContains(response, 'clinic/mobile.css?v=20260729-1')
         self.assertContains(response, 'Нікополь, вул. Шевченка, 200')
         self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
         self.assertContains(response, 'href="tel:+380509168426"')
@@ -1035,6 +1035,121 @@ class ClinicModelTests(TestCase):
         )
         self.assertContains(response, 'data-booking-time="09:00"')
         self.assertNotContains(response, 'target="_blank"')
+
+    def test_service_lists_have_live_filters(self):
+        self.client.login(username='patient@test.local', password='pass12345')
+        future_date = timezone.localdate() + timedelta(days=7)
+
+        booking_response = self.client.get(
+            reverse('booking'),
+            {
+                'doctor': self.doctor.id,
+                'date': future_date.isoformat(),
+                'time': '09:00',
+            },
+        )
+        doctor_detail_response = self.client.get(
+            reverse('doctor_detail', args=[self.doctor.id]),
+        )
+
+        self.assertContains(booking_response, 'id="booking-service-search"')
+        self.assertContains(booking_response, 'data-live-filter-item')
+        self.assertContains(booking_response, 'data-live-filter-clear')
+        self.assertContains(doctor_detail_response, 'id="patient-service-search"')
+        self.assertContains(doctor_detail_response, 'data-live-filter-item')
+
+    def test_patient_can_book_another_person_without_mixing_cards(self):
+        self.client.login(username='patient@test.local', password='pass12345')
+        own_visit_date = timezone.localdate() + timedelta(days=7)
+        other_visit_date = timezone.localdate() + timedelta(days=14)
+
+        own_response = self.client.post(
+            reverse('booking'),
+            data={
+                'doctor': self.doctor.id,
+                'date': own_visit_date.isoformat(),
+                'time': '09:00',
+                'service': self.service.id,
+                'reason': 'Мій прийом',
+            },
+        )
+        other_response = self.client.post(
+            reverse('booking'),
+            data={
+                'doctor': self.doctor.id,
+                'date': other_visit_date.isoformat(),
+                'time': '09:00',
+                'service': self.service.id,
+                'reason': 'Прийом для іншої людини',
+                'booked_for_other': 'on',
+                'other_first_name': 'Марія',
+                'other_last_name': 'Пацієнт',
+            },
+        )
+
+        self.assertEqual(own_response.status_code, 302)
+        self.assertEqual(other_response.status_code, 302)
+        other_appointment = Appointment.objects.get(
+            reason='Прийом для іншої людини',
+        )
+        self.assertEqual(other_appointment.patient, self.patient)
+        self.assertTrue(other_appointment.booked_for_other)
+        self.assertEqual(other_appointment.patient_name, 'Марія Пацієнт')
+        self.assertEqual(
+            other_appointment.booking_owner_name,
+            self.patient.get_full_name(),
+        )
+
+        owner_card = DoctorPatientCard.objects.get(patient=self.patient)
+        visitor_card = DoctorPatientCard.objects.get(
+            patient__isnull=True,
+            patient_first_name='Марія',
+            patient_last_name='Пацієнт',
+        )
+        self.assertNotEqual(owner_card.id, visitor_card.id)
+        self.assertEqual(owner_card.patient_phone, visitor_card.patient_phone)
+
+        self.client.login(username='doctor@test.local', password='pass12345')
+        requests_response = self.client.get(reverse('doctor_requests'))
+        detail_response = self.client.get(
+            reverse(
+                'doctor_appointment_detail',
+                args=[other_appointment.id],
+            ),
+        )
+        self.assertContains(
+            requests_response,
+            f'Від {self.patient.get_full_name()}',
+        )
+        self.assertContains(detail_response, 'На прийом прийде')
+        self.assertContains(detail_response, 'Заявку створив')
+        self.assertContains(detail_response, 'Марія Пацієнт')
+
+    def test_booking_for_other_requires_first_and_last_name(self):
+        self.client.login(username='patient@test.local', password='pass12345')
+        visit_date = timezone.localdate() + timedelta(days=7)
+
+        response = self.client.post(
+            reverse('booking'),
+            data={
+                'doctor': self.doctor.id,
+                'date': visit_date.isoformat(),
+                'time': '09:00',
+                'service': self.service.id,
+                'reason': 'Неповні дані',
+                'booked_for_other': 'on',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(
+            Appointment.objects.filter(reason='Неповні дані').exists(),
+        )
+        self.assertContains(
+            response,
+            'Вкажіть ім’я та прізвище людини, яка прийде на прийом.',
+            count=2,
+        )
 
     def test_service_details_returns_to_the_same_booking(self):
         self.client.login(username='patient@test.local', password='pass12345')

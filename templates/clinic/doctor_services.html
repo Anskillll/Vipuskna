@@ -16,7 +16,16 @@
       <div class="live-filter-bar">
         <div class="live-filter-field">
           <label for="service-search">Фільтр послуг</label>
-          <input id="service-search" type="search" placeholder="Назва, опис або доступність для запису" autocomplete="off" data-live-filter-input>
+          <div class="live-filter-input-row">
+            <input id="service-search" type="search" placeholder="Назва, опис або доступність для запису" autocomplete="off" data-live-filter-input>
+            <button
+              class="live-filter-clear"
+              type="button"
+              aria-label="Очистити фільтр послуг"
+              title="Очистити фільтр"
+              data-live-filter-clear
+            >×</button>
+          </div>
         </div>
         <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
       </div>
