@@ -91,6 +91,80 @@
   startSlider();
   updateTopbar();
 
+  const gallery = home.querySelector('[data-home-gallery-slider]');
+  if (gallery) {
+    const gallerySlides = Array.from(gallery.querySelectorAll('[data-home-gallery-slide]'));
+    const galleryDotsRoot = gallery.querySelector('[data-home-gallery-dots]');
+    const galleryPreviousButton = gallery.querySelector('[data-home-gallery-prev]');
+    const galleryNextButton = gallery.querySelector('[data-home-gallery-next]');
+    let activeGallerySlide = 0;
+    let galleryTimer = null;
+
+    const showGallerySlide = (index) => {
+      activeGallerySlide = (index + gallerySlides.length) % gallerySlides.length;
+      gallerySlides.forEach((slide, slideIndex) => {
+        const isActive = slideIndex === activeGallerySlide;
+        slide.classList.toggle('is-active', isActive);
+        slide.setAttribute('aria-hidden', String(!isActive));
+      });
+      if (galleryDotsRoot) {
+        Array.from(galleryDotsRoot.children).forEach((dot, dotIndex) => {
+          const isActive = dotIndex === activeGallerySlide;
+          dot.classList.toggle('is-active', isActive);
+          dot.setAttribute('aria-current', isActive ? 'true' : 'false');
+        });
+      }
+    };
+
+    const stopGallerySlider = () => {
+      if (galleryTimer) {
+        window.clearInterval(galleryTimer);
+        galleryTimer = null;
+      }
+    };
+
+    const startGallerySlider = () => {
+      stopGallerySlider();
+      if (reducedMotion || gallerySlides.length < 2 || document.hidden) {
+        return;
+      }
+      galleryTimer = window.setInterval(
+        () => showGallerySlide(activeGallerySlide + 1),
+        5000,
+      );
+    };
+
+    if (galleryDotsRoot) {
+      gallerySlides.forEach((slide, index) => {
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        dot.setAttribute('aria-label', `Показати фотографію ${index + 1}`);
+        dot.addEventListener('click', () => {
+          showGallerySlide(index);
+          startGallerySlider();
+        });
+        galleryDotsRoot.appendChild(dot);
+      });
+    }
+
+    galleryPreviousButton?.addEventListener('click', () => {
+      showGallerySlide(activeGallerySlide - 1);
+      startGallerySlider();
+    });
+    galleryNextButton?.addEventListener('click', () => {
+      showGallerySlide(activeGallerySlide + 1);
+      startGallerySlider();
+    });
+    gallery.addEventListener('mouseenter', stopGallerySlider);
+    gallery.addEventListener('mouseleave', startGallerySlider);
+    gallery.addEventListener('focusin', stopGallerySlider);
+    gallery.addEventListener('focusout', startGallerySlider);
+    document.addEventListener('visibilitychange', startGallerySlider);
+
+    showGallerySlide(0);
+    startGallerySlider();
+  }
+
   const layer = home.querySelector('[data-particle-effect]');
   if (!layer || reducedMotion) {
     return;

@@ -152,8 +152,8 @@ class ClinicModelTests(TestCase):
     def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
         response = self.client.get(reverse('home'))
 
-        self.assertContains(response, 'clinic/site.css?v=20260729-1')
-        self.assertContains(response, 'clinic/mobile.css?v=20260729-1')
+        self.assertContains(response, 'clinic/site.css?v=20260729-2')
+        self.assertContains(response, 'clinic/mobile.css?v=20260729-2')
         self.assertContains(response, 'Нікополь, вул. Шевченка, 200')
         self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
         self.assertContains(response, 'href="tel:+380509168426"')
@@ -190,8 +190,28 @@ class ClinicModelTests(TestCase):
             1,
         )[1].split('</section>', 1)[0]
 
-        self.assertEqual(gallery.count('clinic/gallery/admin-uploaded.jpg'), 2)
+        self.assertEqual(gallery.count('clinic/gallery/admin-uploaded.jpg'), 1)
+        self.assertIn('data-home-gallery-slider', gallery)
+        self.assertIn('data-home-gallery-slide', gallery)
         self.assertNotIn('hero-treatment-room.webp', gallery)
+
+        GalleryImage.objects.create(
+            title='Друге власне фото',
+            image='clinic/gallery/admin-uploaded-second.jpg',
+            is_published=True,
+        )
+        response = self.client.get(reverse('home'))
+        gallery = response.content.decode().split(
+            '<section class="home-section home-gallery-section"',
+            1,
+        )[1].split('</section>', 1)[0]
+
+        self.assertIn('data-home-gallery-prev', gallery)
+        self.assertIn('data-home-gallery-next', gallery)
+        self.assertIn('data-home-gallery-dots', gallery)
+
+        home_script = (Path(settings.BASE_DIR) / 'static' / 'clinic' / 'home.js').read_text(encoding='utf-8')
+        self.assertIn('5000', home_script)
 
     def test_top_navigation_highlights_only_current_section(self):
         self.client.login(username='patient@test.local', password='pass12345')

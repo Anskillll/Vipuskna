@@ -217,22 +217,38 @@
       </div>
 
       {% if gallery_images %}
-        <div class="home-photo-reel">
-          <div class="home-photo-track">
+        <div class="home-gallery-slider" data-home-gallery-slider>
+          <div class="home-gallery-stage">
             {% for item in gallery_images %}
-              <figure>
+              <figure
+                class="home-gallery-slide{% if forloop.first %} is-active{% endif %}"
+                data-home-gallery-slide
+                aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}"
+              >
                 <img src="{{ item.image.url }}" alt="{{ item.title|default:'Фото клініки' }}" loading="lazy">
                 {% if item.title %}<figcaption>{{ item.title }}</figcaption>{% endif %}
               </figure>
             {% endfor %}
 
-            {% for item in gallery_images %}
-              <figure aria-hidden="true">
-                <img src="{{ item.image.url }}" alt="" loading="lazy">
-                {% if item.title %}<figcaption>{{ item.title }}</figcaption>{% endif %}
-              </figure>
-            {% endfor %}
+            {% if gallery_images|length > 1 %}
+              <button
+                class="home-gallery-arrow home-gallery-arrow-prev"
+                type="button"
+                data-home-gallery-prev
+                aria-label="Попереднє фото"
+              >←</button>
+              <button
+                class="home-gallery-arrow home-gallery-arrow-next"
+                type="button"
+                data-home-gallery-next
+                aria-label="Наступне фото"
+              >→</button>
+            {% endif %}
           </div>
+
+          {% if gallery_images|length > 1 %}
+            <div class="home-gallery-dots" data-home-gallery-dots aria-label="Вибір фотографії"></div>
+          {% endif %}
         </div>
       {% else %}
         <div class="home-section-inner">

@@ -950,10 +950,6 @@
     font-size: 18px;
   }
 
-  .home-photo-track figure {
-    flex-basis: min(76vw, 260px);
-  }
-
   .home-telegram-connect-banner,
   .home-doctor-visit-banner {
     width: calc(100% - 20px);
