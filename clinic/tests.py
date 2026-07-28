@@ -2416,7 +2416,7 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Галерея')
         self.assertContains(response, 'data-home-slide')
         self.assertContains(response, 'data-home-reveal-header')
-        self.assertContains(response, 'clinic/home.js')
+        self.assertContains(response, 'clinic/home.js?v=20260729-1')
 
         content = response.content.decode()
         self.assertLess(content.index('Новини клініки'), content.index('Новини лікарів'))
