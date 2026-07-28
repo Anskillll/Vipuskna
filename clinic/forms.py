@@ -294,6 +294,7 @@ class DoctorPatientBookingForm(FormStyleMixin, forms.Form):
         label='Послуга',
         queryset=MedicalService.objects.none(),
         empty_label=None,
+        widget=forms.RadioSelect,
     )
     duration_minutes = forms.IntegerField(
         label='Тривалість прийому, хвилин',

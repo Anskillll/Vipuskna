@@ -2979,6 +2979,29 @@ class ClinicModelTests(TestCase):
         self.assertEqual(appointment.patient_first_name, self.patient.first_name)
         self.assertEqual(appointment.patient_last_name, self.patient.last_name)
 
+    def test_doctor_booking_has_live_service_filter(self):
+        MedicalService.objects.create(
+            doctor=self.doctor,
+            name='Професійна гігієна',
+        )
+        self.client.login(username='doctor@test.local', password='pass12345')
+        visit_date = timezone.localdate() + timedelta(days=7)
+
+        response = self.client.get(
+            reverse('doctor_book_patient'),
+            {
+                'date': visit_date.isoformat(),
+                'time': '09:00',
+            },
+        )
+
+        self.assertContains(response, 'id="doctor-booking-service-search"')
+        self.assertContains(response, 'data-live-filter-input')
+        self.assertContains(response, 'data-live-filter-clear')
+        self.assertContains(response, 'data-live-filter-item', count=2)
+        self.assertContains(response, 'type="radio"')
+        self.assertContains(response, 'Професійна гігієна')
+
     def test_doctor_can_split_slot_and_book_patient_between_appointments(self):
         self.client.login(username='doctor@test.local', password='pass12345')
         visit_date = timezone.localdate() + timedelta(days=7)
