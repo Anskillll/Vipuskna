@@ -1671,6 +1671,35 @@ button:disabled {
   padding: 0 28px;
 }
 
+.manager-create-disclosure {
+  margin: 18px 0;
+}
+
+.manager-create-disclosure > summary {
+  list-style: none;
+}
+
+.manager-create-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.manager-create-trigger {
+  cursor: pointer;
+  user-select: none;
+}
+
+.manager-create-disclosure[open] > .manager-create-trigger {
+  margin-bottom: 14px;
+}
+
+.schedule-editor-disclosure {
+  margin-bottom: 18px;
+}
+
+.schedule-editor-card {
+  max-width: 780px;
+}
+
 .service-manager-list {
   display: grid;
 }
@@ -1752,6 +1781,28 @@ button:disabled {
 
 .service-manager-actions form {
   display: block;
+}
+
+.service-visibility-toggle.is-visible {
+  background: #9a6018;
+  border-color: #9a6018;
+  color: #fff;
+}
+
+.service-visibility-toggle.is-visible:hover {
+  background: #79480f;
+  border-color: #79480f;
+}
+
+.service-visibility-toggle.is-hidden {
+  background: #13796d;
+  border-color: #13796d;
+  color: #fff;
+}
+
+.service-visibility-toggle.is-hidden:hover {
+  background: #0c5f56;
+  border-color: #0c5f56;
 }
 
 .service-order-controls {

@@ -2322,6 +2322,20 @@ def doctor_services(request):
             messages.success(request, 'Порядок послуг оновлено.')
         return redirect('doctor_services')
 
+    if request.method == 'POST' and request.POST.get('action') == 'toggle_patient_visibility':
+        service = get_object_or_404(doctor.services, pk=request.POST.get('service_id'))
+        service.is_patient_selectable = not service.is_patient_selectable
+        service.save(update_fields=['is_patient_selectable'])
+        if service.is_patient_selectable:
+            message = f'Послугу «{service.name}» показано пацієнтам під час запису.'
+            audit_action = 'Послугу відкрито для онлайн-запису'
+        else:
+            message = f'Послугу «{service.name}» приховано від пацієнтів під час запису.'
+            audit_action = 'Послугу приховано від онлайн-запису'
+        write_audit_log(request, audit_action, service)
+        messages.success(request, message)
+        return redirect('doctor_services')
+
     if request.method == 'POST' and request.POST.get('action') == 'delete':
         service = get_object_or_404(doctor.services, pk=request.POST.get('service_id'))
         write_audit_log(request, 'Видалено послугу', service)

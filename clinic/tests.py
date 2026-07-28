@@ -152,8 +152,8 @@ class ClinicModelTests(TestCase):
     def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
         response = self.client.get(reverse('home'))
 
-        self.assertContains(response, 'clinic/site.css?v=20260729-3')
-        self.assertContains(response, 'clinic/mobile.css?v=20260729-3')
+        self.assertContains(response, 'clinic/site.css?v=20260729-4')
+        self.assertContains(response, 'clinic/mobile.css?v=20260729-4')
         self.assertContains(response, 'Нікополь, вул. Шевченка, 200')
         self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
         self.assertContains(response, 'href="tel:+380509168426"')
@@ -782,6 +782,8 @@ class ClinicModelTests(TestCase):
         self.assertContains(schedule_response, 'name="workplace"')
         self.assertNotContains(schedule_response, 'name="city"')
         self.assertNotContains(schedule_response, 'name="address"')
+        self.assertContains(schedule_response, 'manager-create-disclosure schedule-editor-disclosure')
+        self.assertContains(schedule_response, 'Додати або змінити день')
 
         delete_response = self.client.post(
             reverse('doctor_workplaces'),
@@ -849,6 +851,42 @@ class ClinicModelTests(TestCase):
         dashboard_response = self.client.get(reverse('doctor_dashboard'))
         content = dashboard_response.content.decode()
         self.assertLess(content.index('Друга послуга'), content.index(self.service.name))
+
+    def test_doctor_can_toggle_service_visibility_without_editing(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        page_response = self.client.get(reverse('doctor_services'))
+        self.assertContains(page_response, 'Додати нову послугу')
+        self.assertContains(page_response, 'manager-create-disclosure')
+        self.assertContains(page_response, 'Приховати від пацієнтів')
+        self.assertContains(page_response, 'value="toggle_patient_visibility"')
+
+        hide_response = self.client.post(
+            reverse('doctor_services'),
+            data={
+                'action': 'toggle_patient_visibility',
+                'service_id': self.service.id,
+            },
+        )
+        self.service.refresh_from_db()
+
+        self.assertRedirects(hide_response, reverse('doctor_services'))
+        self.assertFalse(self.service.is_patient_selectable)
+
+        hidden_page_response = self.client.get(reverse('doctor_services'))
+        self.assertContains(hidden_page_response, 'Показувати пацієнтам')
+
+        show_response = self.client.post(
+            reverse('doctor_services'),
+            data={
+                'action': 'toggle_patient_visibility',
+                'service_id': self.service.id,
+            },
+        )
+        self.service.refresh_from_db()
+
+        self.assertRedirects(show_response, reverse('doctor_services'))
+        self.assertTrue(self.service.is_patient_selectable)
 
     def test_new_service_is_added_to_end(self):
         self.client.login(username='doctor@test.local', password='pass12345')
