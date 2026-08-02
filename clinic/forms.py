@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 
 from django import forms
 from django.contrib.auth import authenticate, get_user_model
-from django.core.validators import RegexValidator
 from django.utils import timezone
 
 from .models import (
@@ -19,20 +18,20 @@ from .models import (
     WorkSchedule,
 )
 from .validators import (
+    MAX_APPOINTMENT_DURATION_MINUTES,
+    MAX_DOCTOR_DESCRIPTION_LENGTH,
     MAX_IMAGE_COUNT,
+    MAX_REASON_LENGTH,
+    MAX_SERVICE_PRICE_UAH,
+    MAX_SLOT_MINUTES,
     MAX_VIDEO_COUNT,
     validate_image_upload,
+    validate_ukrainian_phone,
     validate_video_upload,
 )
 
 
 User = get_user_model()
-
-phone_validator = RegexValidator(
-    regex=r'^\+?\d[\d\s().-]{7,18}$',
-    message='Введіть телефон у форматі +380XXXXXXXXX.',
-)
-
 
 def normalize_phone_number(value):
     digits = ''.join(character for character in (value or '') if character.isdigit())
@@ -54,8 +53,19 @@ def patient_phone_is_used(phone, exclude_user=None):
 class FormStyleMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for field in self.fields.values():
+        for field_name, field in self.fields.items():
             field.widget.attrs.setdefault('class', 'form-input')
+            if field_name in {'phone', 'patient_phone'}:
+                field.widget.attrs.update(
+                    {
+                        'inputmode': 'tel',
+                        'autocomplete': 'tel',
+                        'maxlength': '19',
+                        'placeholder': '+380501234567',
+                    }
+                )
+                if not field.help_text:
+                    field.help_text = 'Введіть 0501234567 або +380501234567.'
             if isinstance(field.widget, forms.ClearableFileInput):
                 field.widget.template_name = 'clinic/widgets/clearable_file_input.html'
 
@@ -64,7 +74,7 @@ class RegisterForm(FormStyleMixin, forms.Form):
     first_name = forms.CharField(label="Ім'я", max_length=80)
     last_name = forms.CharField(label='Прізвище', max_length=80)
     email = forms.EmailField(label='Електронна пошта')
-    phone = forms.CharField(label='Телефон', validators=[phone_validator])
+    phone = forms.CharField(label='Телефон', validators=[validate_ukrainian_phone])
     password = forms.CharField(label='Пароль', widget=forms.PasswordInput)
 
     def clean_email(self):
@@ -117,7 +127,7 @@ class EmailForm(FormStyleMixin, forms.Form):
 class ClaimPatientForm(FormStyleMixin, forms.Form):
     phone = forms.CharField(
         label='Номер телефону',
-        validators=[phone_validator],
+        validators=[validate_ukrainian_phone],
         help_text='Введіть свій номер або той самий номер, який ви повідомили лікарю.',
     )
 
@@ -129,7 +139,7 @@ class PatientProfileForm(FormStyleMixin, forms.Form):
     first_name = forms.CharField(label="Ім'я", max_length=80)
     last_name = forms.CharField(label='Прізвище', max_length=80)
     age = forms.IntegerField(label='Вік', min_value=1, max_value=120)
-    phone = forms.CharField(label='Телефон', validators=[phone_validator])
+    phone = forms.CharField(label='Телефон', validators=[validate_ukrainian_phone])
     photo = forms.ImageField(
         label='Нове фото профілю',
         required=False,
@@ -221,7 +231,10 @@ class BookingReasonForm(FormStyleMixin, forms.Form):
     )
     reason = forms.CharField(
         label='Причина звернення',
-        widget=forms.Textarea(attrs={'rows': 4}),
+        max_length=MAX_REASON_LENGTH,
+        widget=forms.Textarea(
+            attrs={'rows': 4, 'maxlength': MAX_REASON_LENGTH}
+        ),
     )
     booked_for_other = forms.BooleanField(
         label='Записую не себе',
@@ -299,12 +312,17 @@ class DoctorPatientBookingForm(FormStyleMixin, forms.Form):
     duration_minutes = forms.IntegerField(
         label='Тривалість прийому, хвилин',
         min_value=1,
+        max_value=MAX_APPOINTMENT_DURATION_MINUTES,
         initial=60,
     )
     first_name = forms.CharField(label="Ім'я", max_length=80, required=False)
     last_name = forms.CharField(label='Прізвище', max_length=80, required=False)
-    phone = forms.CharField(label='Телефон', validators=[phone_validator], required=False)
-    reason = forms.CharField(label='Причина звернення', widget=forms.Textarea(attrs={'rows': 4}))
+    phone = forms.CharField(label='Телефон', validators=[validate_ukrainian_phone], required=False)
+    reason = forms.CharField(
+        label='Причина звернення',
+        max_length=MAX_REASON_LENGTH,
+        widget=forms.Textarea(attrs={'rows': 4, 'maxlength': MAX_REASON_LENGTH}),
+    )
 
     def __init__(
         self,
@@ -380,6 +398,7 @@ class AppointmentDecisionForm(FormStyleMixin, forms.Form):
     duration_minutes = forms.IntegerField(
         label='Тривалість прийому, хвилин',
         min_value=1,
+        max_value=MAX_APPOINTMENT_DURATION_MINUTES,
         initial=60,
     )
 
@@ -410,6 +429,7 @@ class AppointmentRescheduleForm(FormStyleMixin, forms.Form):
     duration_minutes = forms.IntegerField(
         label='Тривалість прийому, хвилин',
         min_value=1,
+        max_value=MAX_APPOINTMENT_DURATION_MINUTES,
     )
 
     def __init__(self, *args, appointment=None, **kwargs):
@@ -524,7 +544,7 @@ class PatientRecordEntryForm(FormStyleMixin, forms.ModelForm):
 class DoctorProfileForm(FormStyleMixin, forms.Form):
     first_name = forms.CharField(label="Ім'я", max_length=80)
     last_name = forms.CharField(label='Прізвище', max_length=80)
-    phone = forms.CharField(label='Телефон', validators=[phone_validator])
+    phone = forms.CharField(label='Телефон', validators=[validate_ukrainian_phone])
     specialization = forms.CharField(label='Спеціальність', max_length=120)
     photo = forms.ImageField(
         label='Фото з пристрою',
@@ -535,7 +555,7 @@ class DoctorProfileForm(FormStyleMixin, forms.Form):
     description = forms.CharField(
         label='Коротко про себе',
         required=False,
-        max_length=300,
+        max_length=MAX_DOCTOR_DESCRIPTION_LENGTH,
         help_text='Короткий текст, який пацієнти побачать у вкладці «Лікарі». До 300 символів.',
         widget=forms.Textarea(
             attrs={
@@ -660,6 +680,9 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
             else DoctorWorkplace.objects.none()
         )
         self.fields['break_slots'].widget.attrs['class'] = 'break-slot-options'
+        self.fields['slot_minutes'].widget.attrs.update(
+            {'min': 1, 'max': MAX_SLOT_MINUTES}
+        )
 
         if blank_existing and not self.is_bound:
             for field_name in ('workplace', 'start_time', 'end_time', 'slot_minutes', 'break_slots'):
@@ -743,6 +766,19 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
             self.add_error('workplace', 'Оберіть місце прийому або спочатку додайте нове.')
         if start_time and end_time and start_time >= end_time:
             self.add_error('end_time', 'Кінець прийому має бути пізніше за початок.')
+        if start_time and end_time and slot_minutes:
+            working_minutes = int(
+                (
+                    datetime.combine(timezone.localdate(), end_time)
+                    - datetime.combine(timezone.localdate(), start_time)
+                ).total_seconds()
+                // 60
+            )
+            if slot_minutes > working_minutes:
+                self.add_error(
+                    'slot_minutes',
+                    'Тривалість слота не може бути більшою за весь робочий день.',
+                )
 
         parsed_break_slots = []
         for value in break_slots:
@@ -829,7 +865,7 @@ class ServiceForm(FormStyleMixin, forms.ModelForm):
             'is_patient_selectable': 'Дозволити пацієнтам обирати цю послугу під час запису',
         }
         help_texts = {
-            'approximate_price': 'Необов’язково. Вкажіть приблизну суму, якщо її можна оцінити заздалегідь.',
+            'approximate_price': 'Необов’язково. Від 0 до 1 000 000 грн.',
             'description': 'Опишіть процедуру, її особливості, підготовку та іншу важливу інформацію.',
             'is_patient_selectable': 'Увімкніть для основних процедур, які пацієнт може самостійно вибрати онлайн.',
         }
@@ -846,6 +882,13 @@ class ServiceForm(FormStyleMixin, forms.ModelForm):
             )
         return photos
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        price_field = self.fields['approximate_price']
+        price_field.widget.attrs.update(
+            {'min': 0, 'max': MAX_SERVICE_PRICE_UAH, 'step': 1}
+        )
+
     def clean_videos(self):
         videos = self.cleaned_data.get('videos', [])
         existing_count = self.instance.videos.count() if self.instance.pk else 0
@@ -861,7 +904,7 @@ class AdminDoctorCreateForm(FormStyleMixin, forms.Form):
     first_name = forms.CharField(label="Ім'я", max_length=80)
     last_name = forms.CharField(label='Прізвище', max_length=80)
     email = forms.EmailField(label='Електронна пошта', required=False)
-    phone = forms.CharField(label='Телефон', validators=[phone_validator])
+    phone = forms.CharField(label='Телефон', validators=[validate_ukrainian_phone])
     password = forms.CharField(label='Пароль', widget=forms.PasswordInput)
     specialization = forms.CharField(label='Спеціальність', max_length=120)
     photo = forms.ImageField(
@@ -872,6 +915,7 @@ class AdminDoctorCreateForm(FormStyleMixin, forms.Form):
     description = forms.CharField(
         label='Опис',
         required=False,
+        max_length=MAX_DOCTOR_DESCRIPTION_LENGTH,
         widget=forms.Textarea(attrs={'rows': 4}),
     )
     photo_url = forms.URLField(label='Посилання на фото', required=False)
@@ -887,6 +931,9 @@ class AdminDoctorCreateForm(FormStyleMixin, forms.Form):
         if email and User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError('Ця електронна пошта вже використовується.')
         return email
+
+    def clean_phone(self):
+        return normalize_phone_number(self.cleaned_data['phone'])
 
     def save(self):
         user = User.objects.create_user(
@@ -917,7 +964,7 @@ class AdminUserEditForm(FormStyleMixin, forms.Form):
     first_name = forms.CharField(label="Ім'я", max_length=80)
     last_name = forms.CharField(label='Прізвище', max_length=80)
     email = forms.EmailField(label='Електронна пошта', required=False)
-    phone = forms.CharField(label='Телефон', validators=[phone_validator], required=False)
+    phone = forms.CharField(label='Телефон', validators=[validate_ukrainian_phone], required=False)
     is_active = forms.BooleanField(label='Активний акаунт', required=False)
 
     def __init__(self, *args, user=None, **kwargs):

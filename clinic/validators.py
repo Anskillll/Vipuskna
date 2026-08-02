@@ -19,6 +19,16 @@ ALLOWED_VIDEO_CONTENT_TYPES = {
     'video/webm',
 }
 ALLOWED_LOGO_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'}
+UKRAINIAN_PHONE_DIGIT_COUNT = 12
+MAX_SERVICE_PRICE_UAH = 1_000_000
+MAX_APPOINTMENT_DURATION_MINUTES = 24 * 60
+MAX_SLOT_MINUTES = 8 * 60
+MAX_REASON_LENGTH = 2_000
+MAX_DOCTOR_DESCRIPTION_LENGTH = 300
+MAX_SERVICE_DESCRIPTION_LENGTH = 5_000
+MAX_PATIENT_NOTES_LENGTH = 5_000
+MAX_MEDICAL_TEXT_LENGTH = 5_000
+MAX_NEWS_TEXT_LENGTH = 10_000
 BLOCKED_SVG_ELEMENTS = {
     'audio',
     'embed',
@@ -29,6 +39,27 @@ BLOCKED_SVG_ELEMENTS = {
     'style',
     'video',
 }
+
+
+def phone_digits(value):
+    text = str(value or '').strip()
+    if not text or not re.fullmatch(r'\+?[\d\s().-]+', text):
+        return ''
+    digits = ''.join(character for character in text if character.isdigit())
+    if len(digits) == 10 and digits.startswith('0'):
+        digits = f'38{digits}'
+    return digits
+
+
+def validate_ukrainian_phone(value):
+    digits = phone_digits(value)
+    if (
+        len(digits) != UKRAINIAN_PHONE_DIGIT_COUNT
+        or not digits.startswith('380')
+    ):
+        raise ValidationError(
+            'Введіть український номер із 10 цифр, наприклад 0501234567 або +380501234567.'
+        )
 
 
 def format_megabytes(size):

@@ -55,11 +55,15 @@ from .forms import (
     WorkScheduleForm,
 )
 from .validators import (
+    MAX_APPOINTMENT_DURATION_MINUTES,
     MAX_IMAGE_BYTES,
     MAX_LOGO_BYTES,
+    MAX_REASON_LENGTH,
+    MAX_SERVICE_PRICE_UAH,
     MAX_VIDEO_BYTES,
     validate_image_upload,
     validate_logo_upload,
+    validate_ukrainian_phone,
     validate_video_upload,
 )
 from .views import (
@@ -1051,6 +1055,38 @@ class ClinicModelTests(TestCase):
             form.fields['is_patient_selectable'].label,
             'Дозволити пацієнтам обирати цю послугу під час запису',
         )
+        self.assertEqual(
+            form.fields['approximate_price'].widget.attrs['max'],
+            MAX_SERVICE_PRICE_UAH,
+        )
+
+    def test_service_price_cannot_exceed_one_million(self):
+        valid_form = ServiceForm(
+            data={
+                'name': 'Послуга на верхній межі',
+                'approximate_price': MAX_SERVICE_PRICE_UAH,
+                'description': 'Коректний опис.',
+                'is_patient_selectable': 'on',
+            },
+            instance=self.service,
+        )
+        self.assertTrue(valid_form.is_valid(), valid_form.errors)
+
+        invalid_form = ServiceForm(
+            data={
+                'name': 'Занадто дорога послуга',
+                'approximate_price': MAX_SERVICE_PRICE_UAH + 1,
+                'description': 'Коректний опис.',
+                'is_patient_selectable': 'on',
+            },
+            instance=self.service,
+        )
+        self.assertFalse(invalid_form.is_valid())
+        self.assertIn('approximate_price', invalid_form.errors)
+
+        self.service.approximate_price = MAX_SERVICE_PRICE_UAH + 1
+        with self.assertRaises(ValidationError):
+            self.service.full_clean()
 
     def test_doctor_can_add_service_description_and_photo(self):
         self.client.login(username='doctor@test.local', password='pass12345')
@@ -3890,6 +3926,72 @@ class ClinicModelTests(TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertIn('phone', form.errors)
+
+    def test_phone_validator_accepts_only_full_ukrainian_numbers(self):
+        for phone in (
+            '0501234567',
+            '+380501234567',
+            '+38 (050) 123-45-67',
+        ):
+            validate_ukrainian_phone(phone)
+
+        for phone in (
+            '050123456',
+            '+3805012345678',
+            '+480501234567',
+            '+38050phone67',
+        ):
+            with self.subTest(phone=phone):
+                with self.assertRaises(ValidationError):
+                    validate_ukrainian_phone(phone)
+
+        form = PatientProfileForm(
+            data={
+                'first_name': self.patient.first_name,
+                'last_name': self.patient.last_name,
+                'age': 25,
+                'phone': '050 111 11 11',
+            },
+            user=self.patient,
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data['phone'], '+380501111111')
+
+    def test_common_text_and_number_limits_are_enforced(self):
+        self.patient.profile.age = 121
+        with self.assertRaises(ValidationError):
+            self.patient.profile.full_clean()
+
+        self.schedule.slot_minutes = 481
+        with self.assertRaises(ValidationError):
+            self.schedule.full_clean()
+
+        appointment = Appointment(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            date=timezone.localdate() + timedelta(days=1),
+            time=time(10, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Перевірка тривалості',
+            duration_minutes_exact=MAX_APPOINTMENT_DURATION_MINUTES + 1,
+        )
+        with self.assertRaises(ValidationError):
+            appointment.full_clean()
+
+        reason_form = BookingReasonForm(
+            data={
+                'service': self.service.pk,
+                'reason': 'x' * (MAX_REASON_LENGTH + 1),
+            },
+            doctor=self.doctor,
+        )
+        self.assertFalse(reason_form.is_valid())
+        self.assertIn('reason', reason_form.errors)
 
     def test_admin_archives_user_without_deleting_medical_history(self):
         admin_user = User.objects.create_superuser(

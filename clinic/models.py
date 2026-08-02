@@ -1,17 +1,25 @@
 from datetime import datetime, time, timedelta
 
 from django.conf import settings
-from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
 from .storage import private_media_storage
-from .validators import validate_image_upload, validate_logo_upload, validate_video_upload
-
-
-phone_validator = RegexValidator(
-    regex=r'^\+?\d[\d\s().-]{7,18}$',
-    message='Введіть телефон у форматі +380XXXXXXXXX.',
+from .validators import (
+    MAX_APPOINTMENT_DURATION_MINUTES,
+    MAX_DOCTOR_DESCRIPTION_LENGTH,
+    MAX_MEDICAL_TEXT_LENGTH,
+    MAX_NEWS_TEXT_LENGTH,
+    MAX_PATIENT_NOTES_LENGTH,
+    MAX_REASON_LENGTH,
+    MAX_SERVICE_DESCRIPTION_LENGTH,
+    MAX_SERVICE_PRICE_UAH,
+    MAX_SLOT_MINUTES,
+    validate_image_upload,
+    validate_logo_upload,
+    validate_ukrainian_phone,
+    validate_video_upload,
 )
 
 
@@ -31,7 +39,7 @@ class Profile(models.Model):
         verbose_name='Користувач',
     )
     role = models.CharField('Роль', max_length=20, choices=ROLE_CHOICES)
-    phone = models.CharField('Телефон', max_length=25, validators=[phone_validator], blank=True, default='')
+    phone = models.CharField('Телефон', max_length=25, validators=[validate_ukrainian_phone], blank=True, default='')
     photo = models.ImageField(
         'Фото профілю',
         upload_to='patient_photos/',
@@ -68,7 +76,7 @@ class Doctor(models.Model):
         verbose_name='Користувач',
     )
     specialization = models.CharField('Спеціальність', max_length=120)
-    phone = models.CharField('Телефон', max_length=25, validators=[phone_validator])
+    phone = models.CharField('Телефон', max_length=25, validators=[validate_ukrainian_phone])
     photo = models.ImageField(
         'Фото лікаря',
         upload_to='doctor_photos/',
@@ -76,7 +84,11 @@ class Doctor(models.Model):
         blank=True,
     )
     photo_url = models.URLField('Посилання на фото', blank=True)
-    description = models.TextField('Інформація про лікаря', blank=True)
+    description = models.TextField(
+        'Інформація про лікаря',
+        max_length=MAX_DOCTOR_DESCRIPTION_LENGTH,
+        blank=True,
+    )
 
     class Meta:
         verbose_name = 'Лікар'
@@ -167,9 +179,19 @@ class MedicalService(models.Model):
         'Орієнтовна вартість',
         null=True,
         blank=True,
-        validators=[MinValueValidator(0)],
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(
+                MAX_SERVICE_PRICE_UAH,
+                message='Орієнтовна вартість не може перевищувати 1 000 000 грн.',
+            ),
+        ],
     )
-    description = models.TextField('Опис послуги', blank=True)
+    description = models.TextField(
+        'Опис послуги',
+        max_length=MAX_SERVICE_DESCRIPTION_LENGTH,
+        blank=True,
+    )
     sort_order = models.PositiveIntegerField('Порядок відображення', default=0)
     is_patient_selectable = models.BooleanField('Доступна для онлайн-запису', default=True)
 
@@ -177,6 +199,15 @@ class MedicalService(models.Model):
         verbose_name = 'Медична послуга'
         verbose_name_plural = 'Медичні послуги'
         ordering = ['sort_order', 'id']
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(approximate_price__isnull=True)
+                    | models.Q(approximate_price__lte=MAX_SERVICE_PRICE_UAH)
+                ),
+                name='service_price_at_most_one_million',
+            ),
+        ]
 
     def __str__(self):
         if self.approximate_price is None:
@@ -268,9 +299,21 @@ class WorkSchedule(models.Model):
     address = models.CharField('Адреса', max_length=200, blank=True)
     start_time = models.TimeField('Початок прийому', default=time(9, 0))
     end_time = models.TimeField('Кінець прийому', default=time(17, 0))
-    slot_minutes = models.PositiveSmallIntegerField('Тривалість слота, хвилин', default=60)
+    slot_minutes = models.PositiveSmallIntegerField(
+        'Тривалість слота, хвилин',
+        default=60,
+        validators=[MinValueValidator(1), MaxValueValidator(MAX_SLOT_MINUTES)],
+    )
     break_start_time = models.TimeField('Початок обідньої перерви', null=True, blank=True)
-    break_duration_minutes = models.PositiveSmallIntegerField('Тривалість обіду, хвилин', null=True, blank=True)
+    break_duration_minutes = models.PositiveSmallIntegerField(
+        'Тривалість обіду, хвилин',
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(MAX_APPOINTMENT_DURATION_MINUTES),
+        ],
+    )
     is_working = models.BooleanField('Робочий день', default=True)
 
     class Meta:
@@ -352,15 +395,27 @@ class Appointment(models.Model):
         'Запис створено для іншої людини',
         default=False,
     )
-    patient_phone = models.CharField('Телефон пацієнта', max_length=25, validators=[phone_validator])
+    patient_phone = models.CharField('Телефон пацієнта', max_length=25, validators=[validate_ukrainian_phone])
     patient_email = models.EmailField('Електронна пошта пацієнта', blank=True)
     date = models.DateField('Дата прийому')
     time = models.TimeField('Час прийому')
     city = models.CharField('Місто', max_length=100)
     address = models.CharField('Адреса', max_length=200)
-    reason = models.TextField('Причина звернення')
-    duration_slots = models.PositiveSmallIntegerField('Кількість слотів', default=1)
-    duration_minutes_exact = models.PositiveSmallIntegerField('Тривалість прийому, хвилин', null=True, blank=True)
+    reason = models.TextField('Причина звернення', max_length=MAX_REASON_LENGTH)
+    duration_slots = models.PositiveSmallIntegerField(
+        'Кількість слотів',
+        default=1,
+        validators=[MinValueValidator(1), MaxValueValidator(144)],
+    )
+    duration_minutes_exact = models.PositiveSmallIntegerField(
+        'Тривалість прийому, хвилин',
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(MAX_APPOINTMENT_DURATION_MINUTES),
+        ],
+    )
     status = models.CharField(
         'Статус',
         max_length=20,
@@ -564,9 +619,13 @@ class DoctorPatientCard(models.Model):
     )
     patient_first_name = models.CharField("Ім'я пацієнта", max_length=80)
     patient_last_name = models.CharField('Прізвище пацієнта', max_length=80, blank=True)
-    patient_phone = models.CharField('Телефон пацієнта', max_length=25, validators=[phone_validator])
+    patient_phone = models.CharField('Телефон пацієнта', max_length=25, validators=[validate_ukrainian_phone])
     patient_email = models.EmailField('Електронна пошта пацієнта', blank=True)
-    notes = models.TextField('Нотатки лікаря', blank=True)
+    notes = models.TextField(
+        'Нотатки лікаря',
+        max_length=MAX_PATIENT_NOTES_LENGTH,
+        blank=True,
+    )
     updated_at = models.DateTimeField('Оновлено', auto_now=True)
 
     class Meta:
@@ -639,8 +698,15 @@ class PatientRecordEntry(models.Model):
     )
     kind = models.CharField('Тип запису', max_length=24, choices=KIND_CHOICES, default=KIND_NOTE)
     title = models.CharField('Заголовок', max_length=180)
-    details = models.TextField('Детальна інформація')
-    recommendations = models.TextField('Рекомендації пацієнту', blank=True)
+    details = models.TextField(
+        'Детальна інформація',
+        max_length=MAX_MEDICAL_TEXT_LENGTH,
+    )
+    recommendations = models.TextField(
+        'Рекомендації пацієнту',
+        max_length=MAX_MEDICAL_TEXT_LENGTH,
+        blank=True,
+    )
     created_at = models.DateTimeField('Створено', auto_now_add=True)
     updated_at = models.DateTimeField('Оновлено', auto_now=True)
 
@@ -883,7 +949,7 @@ class NewsPost(models.Model):
         verbose_name='Лікар',
     )
     title = models.CharField('Заголовок', max_length=180)
-    text = models.TextField('Текст новини')
+    text = models.TextField('Текст новини', max_length=MAX_NEWS_TEXT_LENGTH)
     image = models.ImageField(
         'Зображення',
         upload_to='clinic/news/',
