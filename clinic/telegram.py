@@ -1,16 +1,18 @@
 import html
 import secrets
 from datetime import time, timedelta
+from math import ceil
 from urllib.parse import quote
 
 import requests
 from django.conf import settings
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.urls import reverse
 from django.utils import timezone
 
 from .models import (
     Appointment,
+    AuditLog,
     TelegramConnection,
     TelegramLinkToken,
     TelegramNotification,
@@ -20,6 +22,7 @@ from .models import (
 LINK_TOKEN_LIFETIME = timedelta(minutes=10)
 REMINDER_SEND_FROM = time(18, 0)
 ADMIN_BROADCAST_MAX_LENGTH = 3500
+DOCTOR_REQUEST_CALLBACK_PREFIX = 'doctor_request'
 
 
 class TelegramError(Exception):
@@ -70,7 +73,7 @@ class TelegramBotClient:
     def get_updates(self, offset=None, timeout=25):
         payload = {
             'timeout': timeout,
-            'allowed_updates': ['message'],
+            'allowed_updates': ['message', 'callback_query'],
         }
         if offset is not None:
             payload['offset'] = offset
@@ -85,7 +88,27 @@ class TelegramBotClient:
             {
                 'url': url,
                 'secret_token': secret_token,
-                'allowed_updates': ['message'],
+                'allowed_updates': ['message', 'callback_query'],
+            },
+        )
+
+    def answer_callback_query(self, callback_query_id, text='', show_alert=False):
+        return self.request(
+            'answerCallbackQuery',
+            {
+                'callback_query_id': callback_query_id,
+                'text': text,
+                'show_alert': show_alert,
+            },
+        )
+
+    def edit_message_reply_markup(self, chat_id, message_id, reply_markup):
+        return self.request(
+            'editMessageReplyMarkup',
+            {
+                'chat_id': chat_id,
+                'message_id': message_id,
+                'reply_markup': reply_markup,
             },
         )
 
@@ -139,7 +162,191 @@ def create_link_url(user):
     )
 
 
+def _site_only_markup(appointment):
+    return {
+        'inline_keyboard': [[{
+            'text': 'Деталі на сайті',
+            'url': _site_url('doctor_appointment_detail', [appointment.pk]),
+        }]],
+    }
+
+
+def _audit_telegram_decision(actor, action, appointment):
+    AuditLog.objects.create(
+        actor=actor,
+        action=action,
+        target_type=str(appointment._meta.verbose_name),
+        target_id=str(appointment.pk),
+        target_label=str(appointment)[:240],
+        details='Дію виконано кнопкою Telegram-бота.',
+    )
+
+
+def _process_doctor_request_callback(callback_query, client):
+    callback_id = callback_query.get('id', '')
+    data = callback_query.get('data', '')
+    message = callback_query.get('message') or {}
+    chat = message.get('chat') or {}
+    sender = callback_query.get('from') or {}
+    chat_id = chat.get('id')
+    message_id = message.get('message_id')
+
+    parts = data.split(':')
+    if (
+        len(parts) != 3
+        or parts[0] != DOCTOR_REQUEST_CALLBACK_PREFIX
+        or parts[1] not in {'approve', 'reject'}
+        or not parts[2].isdigit()
+        or not callback_id
+        or not chat_id
+        or chat.get('type') != 'private'
+        or sender.get('id') != chat_id
+    ):
+        if callback_id:
+            client.answer_callback_query(
+                callback_id,
+                'Цю дію не вдалося розпізнати.',
+                show_alert=True,
+            )
+        return False
+
+    connection = (
+        TelegramConnection.objects.filter(chat_id=chat_id, is_active=True)
+        .select_related('user')
+        .first()
+    )
+    if connection is None:
+        client.answer_callback_query(
+            callback_id,
+            'Спочатку підключіть Telegram у своєму кабінеті.',
+            show_alert=True,
+        )
+        return False
+
+    action = parts[1]
+    appointment_id = int(parts[2])
+    notification = None
+    response_text = ''
+    appointment = None
+    remove_actions = False
+
+    try:
+        with transaction.atomic():
+            appointment = (
+                Appointment.objects.select_for_update()
+                .select_related('doctor__user', 'patient', 'service')
+                .filter(pk=appointment_id, doctor__user=connection.user)
+                .first()
+            )
+            if appointment is None:
+                response_text = 'Ця заявка не належить вашому профілю лікаря.'
+            elif appointment.status != Appointment.STATUS_PENDING:
+                response_text = 'Цю заявку вже опрацьовано.'
+                remove_actions = True
+            elif action == 'reject':
+                from .views import ensure_patient_card_from_appointment
+
+                appointment.status = Appointment.STATUS_REJECTED
+                appointment.save(update_fields=['status'])
+                ensure_patient_card_from_appointment(appointment)
+                _audit_telegram_decision(
+                    connection.user,
+                    'Відхилено заявку лікарем у Telegram',
+                    appointment,
+                )
+                notification = (
+                    'rejected',
+                    'Лікар відхилив заявку на прийом',
+                )
+                response_text = 'Заявку відхилено.'
+                remove_actions = True
+            else:
+                from .views import (
+                    appointment_conflicts,
+                    ensure_patient_card_from_appointment,
+                    is_past_appointment,
+                    patient_appointment_conflicts,
+                    schedule_for_date,
+                )
+
+                schedule = schedule_for_date(appointment.doctor, appointment.date)
+                if schedule is None:
+                    response_text = 'Для цього дня більше немає робочого графіка.'
+                else:
+                    duration_minutes = (
+                        appointment.duration_minutes_exact
+                        or appointment.duration_slots * schedule.slot_minutes
+                    )
+                    duration_slots = ceil(duration_minutes / schedule.slot_minutes)
+                    if is_past_appointment(appointment.date, appointment.time):
+                        response_text = 'Не можна підтвердити заявку на минулий час.'
+                    elif appointment_conflicts(
+                        appointment.doctor,
+                        appointment.date,
+                        appointment.time,
+                        duration_slots=duration_slots,
+                        duration_minutes=duration_minutes,
+                        exclude_id=appointment.id,
+                    ):
+                        response_text = 'Цей час уже зайнятий. Перевірте заявку на сайті.'
+                    elif patient_appointment_conflicts(
+                        appointment.patient,
+                        appointment.date,
+                        appointment.time,
+                        duration_minutes,
+                        patient_phone=appointment.patient_phone,
+                        exclude_id=appointment.id,
+                    ):
+                        response_text = 'Пацієнт уже має інший запис на цей час.'
+                    else:
+                        appointment.duration_slots = duration_slots
+                        appointment.duration_minutes_exact = duration_minutes
+                        appointment.status = Appointment.STATUS_APPROVED
+                        appointment.approved_at = timezone.now()
+                        appointment.save(update_fields=[
+                            'duration_slots',
+                            'duration_minutes_exact',
+                            'status',
+                            'approved_at',
+                        ])
+                        ensure_patient_card_from_appointment(appointment)
+                        _audit_telegram_decision(
+                            connection.user,
+                            'Підтверджено заявку лікарем у Telegram',
+                            appointment,
+                        )
+                        notification = (
+                            'approved',
+                            'Лікар підтвердив вашу заявку',
+                        )
+                        response_text = 'Заявку підтверджено.'
+                        remove_actions = True
+    except IntegrityError:
+        response_text = 'Цей час щойно зайняли. Перевірте заявку на сайті.'
+
+    succeeded = notification is not None
+    client.answer_callback_query(
+        callback_id,
+        response_text,
+        show_alert=not succeeded,
+    )
+    if appointment is not None and message_id and remove_actions:
+        client.edit_message_reply_markup(
+            chat_id,
+            message_id,
+            _site_only_markup(appointment),
+        )
+    if notification is not None:
+        notify_patient_status(appointment, *notification)
+    return succeeded
+
+
 def process_update(update, client=None):
+    client = client or TelegramBotClient()
+    callback_query = update.get('callback_query') or {}
+    if callback_query:
+        return _process_doctor_request_callback(callback_query, client)
+
     message = update.get('message') or {}
     chat = message.get('chat') or {}
     sender = message.get('from') or {}
@@ -148,7 +355,6 @@ def process_update(update, client=None):
     if not chat_id or chat.get('type') != 'private':
         return False
 
-    client = client or TelegramBotClient()
     if text == '/stop':
         updated = TelegramConnection.objects.filter(chat_id=chat_id).update(is_active=False)
         reply = (
@@ -245,7 +451,7 @@ def _appointment_lines(appointment):
     )
 
 
-def _deliver(recipient, appointment, kind, event_key, text, url=None):
+def _deliver(recipient, appointment, kind, event_key, text, url=None, actions=None):
     if not telegram_is_configured() or recipient is None:
         return False
 
@@ -264,11 +470,12 @@ def _deliver(recipient, appointment, kind, event_key, text, url=None):
     if notification.status == TelegramNotification.STATUS_SENT:
         return False
 
-    reply_markup = None
+    keyboard = []
+    if actions:
+        keyboard.append(actions)
     if url:
-        reply_markup = {
-            'inline_keyboard': [[{'text': 'Відкрити на сайті', 'url': url}]],
-        }
+        keyboard.append([{'text': 'Деталі на сайті', 'url': url}])
+    reply_markup = {'inline_keyboard': keyboard} if keyboard else None
 
     try:
         TelegramBotClient().send_message(connection.chat_id, text, reply_markup=reply_markup)
@@ -305,6 +512,20 @@ def notify_doctor_new_request(appointment, event='created'):
         f'new_request:{appointment.pk}:{event}',
         text,
         _site_url('doctor_appointment_detail', [appointment.pk]),
+        actions=[
+            {
+                'text': '✅ Прийняти',
+                'callback_data': (
+                    f'{DOCTOR_REQUEST_CALLBACK_PREFIX}:approve:{appointment.pk}'
+                ),
+            },
+            {
+                'text': '❌ Відхилити',
+                'callback_data': (
+                    f'{DOCTOR_REQUEST_CALLBACK_PREFIX}:reject:{appointment.pk}'
+                ),
+            },
+        ],
     )
 
 

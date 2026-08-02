@@ -744,9 +744,182 @@ class ClinicModelTests(TestCase):
 
         self.assertEqual(send_message.call_count, 1)
         self.assertEqual(send_message.call_args.args[0], 20002)
+        reply_markup = send_message.call_args.kwargs['reply_markup']
+        action_buttons = reply_markup['inline_keyboard'][0]
+        self.assertEqual(
+            [button['text'] for button in action_buttons],
+            ['✅ Прийняти', '❌ Відхилити'],
+        )
+        self.assertEqual(
+            action_buttons[0]['callback_data'],
+            f'doctor_request:approve:{appointment.pk}',
+        )
+        self.assertEqual(
+            action_buttons[1]['callback_data'],
+            f'doctor_request:reject:{appointment.pk}',
+        )
+        self.assertEqual(
+            reply_markup['inline_keyboard'][1][0]['text'],
+            'Деталі на сайті',
+        )
         notification = TelegramNotification.objects.get()
         self.assertEqual(notification.recipient, self.doctor.user)
         self.assertEqual(notification.status, TelegramNotification.STATUS_SENT)
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+        SITE_BASE_URL='http://testserver',
+    )
+    def test_doctor_can_approve_request_from_telegram_button(self):
+        TelegramConnection.objects.create(user=self.doctor.user, chat_id=21002)
+        TelegramConnection.objects.create(user=self.patient, chat_id=31003)
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name=self.patient.first_name,
+            patient_last_name=self.patient.last_name,
+            patient_phone=self.patient.profile.phone,
+            date=timezone.localdate() + timedelta(days=7),
+            time=time(9, 0),
+            city=self.schedule.city,
+            address=self.schedule.address,
+            reason='Консультація',
+            status=Appointment.STATUS_PENDING,
+        )
+        client = Mock()
+        update = {
+            'callback_query': {
+                'id': 'approve-callback',
+                'data': f'doctor_request:approve:{appointment.pk}',
+                'from': {'id': 21002},
+                'message': {
+                    'message_id': 91,
+                    'chat': {'id': 21002, 'type': 'private'},
+                },
+            },
+        }
+
+        with patch('clinic.telegram.TelegramBotClient.send_message') as send_message:
+            self.assertTrue(process_update(update, client=client))
+
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, Appointment.STATUS_APPROVED)
+        self.assertEqual(appointment.duration_minutes_exact, self.schedule.slot_minutes)
+        self.assertIsNotNone(appointment.approved_at)
+        self.assertTrue(
+            AuditLog.objects.filter(
+                actor=self.doctor.user,
+                action='Підтверджено заявку лікарем у Telegram',
+                target_id=str(appointment.pk),
+            ).exists()
+        )
+        client.answer_callback_query.assert_called_once_with(
+            'approve-callback',
+            'Заявку підтверджено.',
+            show_alert=False,
+        )
+        edit_markup = client.edit_message_reply_markup.call_args.args[2]
+        self.assertEqual(edit_markup['inline_keyboard'][0][0]['text'], 'Деталі на сайті')
+        self.assertNotIn('callback_data', edit_markup['inline_keyboard'][0][0])
+        self.assertEqual(send_message.call_args.args[0], 31003)
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+        SITE_BASE_URL='http://testserver',
+    )
+    def test_doctor_can_reject_request_from_telegram_button(self):
+        TelegramConnection.objects.create(user=self.doctor.user, chat_id=22002)
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name=self.patient.first_name,
+            patient_last_name=self.patient.last_name,
+            patient_phone=self.patient.profile.phone,
+            date=timezone.localdate() + timedelta(days=7),
+            time=time(9, 0),
+            city=self.schedule.city,
+            address=self.schedule.address,
+            reason='Консультація',
+            status=Appointment.STATUS_PENDING,
+        )
+        client = Mock()
+        update = {
+            'callback_query': {
+                'id': 'reject-callback',
+                'data': f'doctor_request:reject:{appointment.pk}',
+                'from': {'id': 22002},
+                'message': {
+                    'message_id': 92,
+                    'chat': {'id': 22002, 'type': 'private'},
+                },
+            },
+        }
+
+        self.assertTrue(process_update(update, client=client))
+
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, Appointment.STATUS_REJECTED)
+        self.assertTrue(
+            AuditLog.objects.filter(
+                actor=self.doctor.user,
+                action='Відхилено заявку лікарем у Telegram',
+                target_id=str(appointment.pk),
+            ).exists()
+        )
+        client.answer_callback_query.assert_called_once_with(
+            'reject-callback',
+            'Заявку відхилено.',
+            show_alert=False,
+        )
+        client.edit_message_reply_markup.assert_called_once()
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+    )
+    def test_telegram_button_cannot_change_another_doctors_request(self):
+        TelegramConnection.objects.create(user=self.patient, chat_id=33003)
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name=self.patient.first_name,
+            patient_last_name=self.patient.last_name,
+            patient_phone=self.patient.profile.phone,
+            date=timezone.localdate() + timedelta(days=7),
+            time=time(9, 0),
+            city=self.schedule.city,
+            address=self.schedule.address,
+            reason='Консультація',
+            status=Appointment.STATUS_PENDING,
+        )
+        client = Mock()
+        update = {
+            'callback_query': {
+                'id': 'foreign-callback',
+                'data': f'doctor_request:approve:{appointment.pk}',
+                'from': {'id': 33003},
+                'message': {
+                    'message_id': 93,
+                    'chat': {'id': 33003, 'type': 'private'},
+                },
+            },
+        }
+
+        self.assertFalse(process_update(update, client=client))
+
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, Appointment.STATUS_PENDING)
+        client.answer_callback_query.assert_called_once_with(
+            'foreign-callback',
+            'Ця заявка не належить вашому профілю лікаря.',
+            show_alert=True,
+        )
+        client.edit_message_reply_markup.assert_not_called()
 
     @override_settings(
         TELEGRAM_BOT_TOKEN='test-token',
