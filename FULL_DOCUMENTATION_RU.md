@@ -2581,7 +2581,7 @@
 | 175 | <code>        return f'{self.name} — {location}' if location else self.name</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `DoctorWorkplace.selection_label`. |
 | 177 | <code>    @property</code> | Декоратор добавляет функции или классу дополнительное поведение. Контекст: `DoctorWorkplace`. |
 | 178 | <code>    def google_maps_url(self):</code> | Объявляет функцию `google_maps_url` и перечисляет принимаемые параметры. Контекст: `DoctorWorkplace.google_maps_url`. |
-| 179 | <code>        return google_maps_search_url(self.display_name, self.city, self.address)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `DoctorWorkplace.google_maps_url`. |
+| 179 | <code>        return google_maps_search_url(self.city, self.address)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `DoctorWorkplace.google_maps_url`. |
 | 182 | <code>class MedicalService(models.Model):</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `MedicalService`. |
 | 183 | <code>    doctor = models.ForeignKey(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `MedicalService`. |
 | 184 | <code>        Doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `MedicalService`. |

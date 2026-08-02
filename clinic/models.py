@@ -176,7 +176,7 @@ class DoctorWorkplace(models.Model):
 
     @property
     def google_maps_url(self):
-        return google_maps_search_url(self.display_name, self.city, self.address)
+        return google_maps_search_url(self.city, self.address)
 
 
 class MedicalService(models.Model):

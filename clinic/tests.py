@@ -169,7 +169,7 @@ class ClinicModelTests(TestCase):
         workplace_query = parse_qs(urlparse(self.workplace.google_maps_url).query)
         self.assertEqual(
             workplace_query['query'],
-            ['Тестова клініка, Дніпро, вул. Тестова, 1'],
+            ['Дніпро, вул. Тестова, 1'],
         )
         self.assertEqual(self.schedule.google_maps_url, self.workplace.google_maps_url)
 
