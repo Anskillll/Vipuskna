@@ -58,13 +58,19 @@
       <div class="section-mini-head">
         <h2>2. Вільний час</h2>
         {% if selected_schedule and selected_schedule.is_working %}
-        <span class="section-note">
+        <a
+          class="section-note maps-location-link"
+          href="{{ selected_schedule.google_maps_url }}"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Відкрити місце прийому в Google Maps"
+        >
           {% if selected_schedule.workplace %}
             {{ selected_schedule.workplace.selection_label }}
           {% else %}
             {{ selected_schedule.city }}, {{ selected_schedule.address }}
           {% endif %}
-        </span>
+        </a>
         {% endif %}
     </div>
     {% if daily_booking_limit_reached %}
@@ -102,11 +108,13 @@
       </div>
       <p class="booking-summary">
         <strong>{{ selected_doctor.full_name }}</strong><br>
-        {% if selected_schedule.workplace %}
-          {{ selected_schedule.workplace.selection_label }}
-        {% else %}
-          {{ selected_schedule.city }}, {{ selected_schedule.address }}
-        {% endif %}<br>
+        <a class="maps-location-link" href="{{ selected_schedule.google_maps_url }}" target="_blank" rel="noopener noreferrer">
+          {% if selected_schedule.workplace %}
+            {{ selected_schedule.workplace.selection_label }}
+          {% else %}
+            {{ selected_schedule.city }}, {{ selected_schedule.address }}
+          {% endif %}
+        </a><br>
         {{ selected_date|date:'d.m.Y' }} о {{ selected_time|time:'H:i' }}
       </p>
       {% if has_bookable_services %}

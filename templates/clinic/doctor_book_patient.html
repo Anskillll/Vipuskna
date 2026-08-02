@@ -22,13 +22,15 @@
     <section class="card">
       <h2 class="section-title">Інформація про прийом</h2>
       {% if selected_schedule and selected_schedule.is_working %}
-        <p class="muted">
-          {% if selected_schedule.workplace %}
-            {{ selected_schedule.workplace.selection_label }}
-          {% else %}
-            {{ selected_schedule.city }}, {{ selected_schedule.address }}
-          {% endif %}
-        </p>
+          <p class="muted">
+            <a class="maps-location-link" href="{{ selected_schedule.google_maps_url }}" target="_blank" rel="noopener noreferrer">
+            {% if selected_schedule.workplace %}
+              {{ selected_schedule.workplace.selection_label }}
+            {% else %}
+              {{ selected_schedule.city }}, {{ selected_schedule.address }}
+            {% endif %}
+            </a>
+          </p>
         <p class="muted">Тривалість одного слота: {{ selected_schedule.slot_minutes }} хв</p>
       {% else %}
         <div class="empty">На обрану дату графік не заповнений.</div>

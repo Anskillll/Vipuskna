@@ -99,12 +99,20 @@
                     <small>Дата і час</small>
                     <strong>{{ appointment.date|date:'d.m.Y' }} о {{ appointment.time|time:'H:i' }}</strong>
                     <span>{{ appointment.duration_minutes }} хв</span>
-                  </div>
-                  <div class="patient-appointment-fact patient-appointment-place">
-                    <small>Місце прийому</small>
-                    <strong>{{ appointment.city }}</strong>
-                    <span>{{ appointment.address }}</span>
-                  </div>
+                    </div>
+                    <div class="patient-appointment-fact patient-appointment-place">
+                      <small>Місце прийому</small>
+                      <a
+                        class="maps-location-link"
+                        href="{{ appointment.google_maps_url }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Відкрити місце прийому в Google Maps"
+                      >
+                        <strong>{{ appointment.city }}</strong>
+                        <span>{{ appointment.address }}</span>
+                      </a>
+                    </div>
                 </div>
               </article>
             {% endfor %}

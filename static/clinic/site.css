@@ -4929,7 +4929,25 @@ button.compact {
   gap: 18px;
 }
 
-.home-hero-locations address span + span {
+.home-hero-locations {
+  pointer-events: auto;
+}
+
+.home-hero-locations .maps-location-link {
+  border-bottom-color: rgba(255, 255, 255, 0.42);
+  color: #fff;
+}
+
+.home-hero-locations .maps-location-link::after {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.home-hero-locations .maps-location-link:hover {
+  border-bottom-color: #fff;
+  color: #fff;
+}
+
+.home-hero-locations address a + a {
   border-left: 1px solid rgba(255, 255, 255, 0.28);
   padding-left: 18px;
 }
@@ -7659,6 +7677,53 @@ body:not(.public-home-page) .message.is-dismissing {
   color: #63736f;
   font-size: 13px;
   line-height: 1.35;
+}
+
+.maps-location-link {
+  width: fit-content;
+  max-width: 100%;
+  border-bottom: 1px solid rgba(12, 143, 128, 0.34);
+  color: #176b61;
+  text-decoration: none;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+
+.maps-location-link::after {
+  margin-left: 6px;
+  color: #0c8f80;
+  content: "\2197";
+  font-size: 0.86em;
+  font-weight: 800;
+}
+
+.maps-location-link:hover {
+  border-bottom-color: #0c8f80;
+  color: #075f57;
+}
+
+.maps-location-link:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid #0c8f80;
+  outline-offset: 3px;
+}
+
+.patient-appointment-place .maps-location-link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  border-bottom: 0;
+}
+
+.patient-appointment-place .maps-location-link strong,
+.patient-appointment-place .maps-location-link span {
+  grid-column: 1;
+}
+
+.patient-appointment-place .maps-location-link::after {
+  align-self: center;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin-left: 0;
 }
 
 .patient-appointment-card-actions {

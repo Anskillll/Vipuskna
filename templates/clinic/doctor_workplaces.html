@@ -26,9 +26,13 @@
       <div class="workplace-list">
         {% for workplace in workplaces %}
           <article class="workplace-row" data-live-filter-item data-filter-extra="{{ workplace.display_name|escape }} {{ workplace.city|escape }} {{ workplace.address|escape }}">
-            <div>
-              <h3>{{ workplace.display_name }}</h3>
-              <p>{{ workplace.city }}, {{ workplace.address }}</p>
+              <div>
+                <h3>{{ workplace.display_name }}</h3>
+                <p>
+                  <a class="maps-location-link" href="{{ workplace.google_maps_url }}" target="_blank" rel="noopener noreferrer">
+                    {{ workplace.city }}, {{ workplace.address }}
+                  </a>
+                </p>
               <span>
                 {% if workplace.schedule_count %}
                   Використовується у {{ workplace.schedule_count }} дн. графіка

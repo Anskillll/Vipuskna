@@ -1,4 +1,5 @@
 from datetime import datetime, time, timedelta
+from urllib.parse import quote_plus
 
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -21,6 +22,13 @@ from .validators import (
     validate_ukrainian_phone,
     validate_video_upload,
 )
+
+
+def google_maps_search_url(*parts):
+    query = ', '.join(str(part).strip() for part in parts if str(part or '').strip())
+    if not query:
+        return ''
+    return f'https://www.google.com/maps/search/?api=1&query={quote_plus(query)}'
 
 
 class Profile(models.Model):
@@ -165,6 +173,10 @@ class DoctorWorkplace(models.Model):
         if self.has_generic_name:
             return location
         return f'{self.name} — {location}' if location else self.name
+
+    @property
+    def google_maps_url(self):
+        return google_maps_search_url(self.display_name, self.city, self.address)
 
 
 class MedicalService(models.Model):
@@ -329,6 +341,12 @@ class WorkSchedule(models.Model):
 
     def __str__(self):
         return f'{self.doctor.full_name}: {self.get_weekday_display()}'
+
+    @property
+    def google_maps_url(self):
+        if self.workplace:
+            return self.workplace.google_maps_url
+        return google_maps_search_url(self.city, self.address)
 
     def get_slots(self):
         if not self.is_working:
@@ -554,6 +572,10 @@ class Appointment(models.Model):
     @property
     def duration_minutes(self):
         return self.duration_minutes_exact or self.duration_slots * self.slot_minutes
+
+    @property
+    def google_maps_url(self):
+        return google_maps_search_url(self.city, self.address)
 
 
 class AppointmentImage(models.Model):

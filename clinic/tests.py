@@ -157,12 +157,47 @@ class ClinicModelTests(TestCase):
     def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
         response = self.client.get(reverse('home'))
 
-        self.assertContains(response, 'clinic/site.css?v=20260802-3')
-        self.assertContains(response, 'clinic/mobile.css?v=20260802-1')
+        self.assertContains(response, 'clinic/site.css?v=20260802-4')
+        self.assertContains(response, 'clinic/mobile.css?v=20260802-2')
         self.assertContains(response, 'Нікополь, вул. Шевченка, 200')
         self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
+        self.assertContains(response, 'https://www.google.com/maps/search/?api=1&amp;query=')
         self.assertContains(response, 'href="tel:+380509168426"')
         self.assertContains(response, '+38 (050) 916-84-26')
+
+    def test_appointment_locations_open_in_google_maps(self):
+        workplace_query = parse_qs(urlparse(self.workplace.google_maps_url).query)
+        self.assertEqual(
+            workplace_query['query'],
+            ['Тестова клініка, Дніпро, вул. Тестова, 1'],
+        )
+        self.assertEqual(self.schedule.google_maps_url, self.workplace.google_maps_url)
+
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone=self.patient.profile.phone,
+            date=timezone.localdate() + timedelta(days=1),
+            time=time(9, 0),
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            reason='Перевірка карти',
+            status=Appointment.STATUS_APPROVED,
+        )
+        appointment_query = parse_qs(urlparse(appointment.google_maps_url).query)
+        self.assertEqual(appointment_query['query'], ['Дніпро, вул. Тестова, 1'])
+
+        self.client.login(username='patient@test.local', password='pass12345')
+        dashboard = self.client.get(reverse('patient_dashboard'))
+        detail = self.client.get(
+            reverse('patient_appointment_detail', args=[appointment.pk])
+        )
+        escaped_url = appointment.google_maps_url.replace('&', '&amp;')
+        self.assertIn(escaped_url, dashboard.content.decode())
+        self.assertIn(escaped_url, detail.content.decode())
 
     def test_static_files_are_readable_by_web_server(self):
         from django.contrib.staticfiles.storage import staticfiles_storage
@@ -1219,7 +1254,12 @@ class ClinicModelTests(TestCase):
             f'data-booking-date="{future_date:%Y-%m-%d}"',
         )
         self.assertContains(response, 'data-booking-time="09:00"')
-        self.assertNotContains(response, 'target="_blank"')
+        content = response.content.decode()
+        details_attribute = content.index('data-service-details')
+        details_tag = content[
+            content.rfind('<a', 0, details_attribute):content.index('>', details_attribute)
+        ]
+        self.assertNotIn('target="_blank"', details_tag)
 
     def test_service_lists_have_live_filters(self):
         self.client.login(username='patient@test.local', password='pass12345')

@@ -45,11 +45,13 @@
         <li class="schedule-list-row">
           <span>
             {{ schedule.get_weekday_display }} ·
-            {% if schedule.workplace %}
-              {{ schedule.workplace.selection_label }}
-            {% else %}
-              {{ schedule.city }}, {{ schedule.address }}
-            {% endif %}
+            <a class="maps-location-link" href="{{ schedule.google_maps_url }}" target="_blank" rel="noopener noreferrer">
+              {% if schedule.workplace %}
+                {{ schedule.workplace.selection_label }}
+              {% else %}
+                {{ schedule.city }}, {{ schedule.address }}
+              {% endif %}
+            </a>
           </span>
           <strong>
             {% if schedule.is_working %}

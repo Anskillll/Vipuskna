@@ -39,12 +39,20 @@
       {% if appointment.status == 'approved' or appointment.status == 'completed' %}
         <span>{{ appointment.duration_minutes }} хв</span>
       {% endif %}
-    </div>
-    <div class="patient-appointment-fact patient-appointment-place">
-      <small>Місце прийому</small>
-      <strong>{{ appointment.city }}</strong>
-      <span>{{ appointment.address }}</span>
-    </div>
+      </div>
+      <div class="patient-appointment-fact patient-appointment-place">
+        <small>Місце прийому</small>
+        <a
+          class="maps-location-link"
+          href="{{ appointment.google_maps_url }}"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Відкрити місце прийому в Google Maps"
+        >
+          <strong>{{ appointment.city }}</strong>
+          <span>{{ appointment.address }}</span>
+        </a>
+      </div>
   </div>
 
   <footer class="patient-appointment-card-actions">

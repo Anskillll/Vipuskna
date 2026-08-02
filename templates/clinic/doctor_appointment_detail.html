@@ -40,7 +40,14 @@
           <div><dt>Послуга</dt><dd>{{ appointment.service.name|default:'Не обрано' }}</dd></div>
           <div><dt>Дата і час</dt><dd>{{ appointment.date|date:'d.m.Y' }} о {{ appointment.time|time:'H:i' }}</dd></div>
           <div><dt>Тривалість</dt><dd>{{ appointment.duration_minutes }} хв</dd></div>
-          <div><dt>Місце</dt><dd>{{ appointment.city }}, {{ appointment.address }}</dd></div>
+            <div>
+              <dt>Місце</dt>
+              <dd>
+                <a class="maps-location-link" href="{{ appointment.google_maps_url }}" target="_blank" rel="noopener noreferrer">
+                  {{ appointment.city }}, {{ appointment.address }}
+                </a>
+              </dd>
+            </div>
         </dl>
         <div class="appointment-reason">
           <h2 class="section-title">Причина звернення</h2>
