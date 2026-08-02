@@ -2352,10 +2352,10 @@ def doctor_schedule(request):
             return redirect('doctor_schedule')
     else:
         form = WorkScheduleForm(
+            instance=editing_schedule,
             doctor=doctor,
             allowed_weekdays=missing_weekdays if editing_schedule is None else None,
             locked_weekday=editing_schedule.weekday if editing_schedule else None,
-            blank_existing=editing_schedule is not None,
         )
 
     return render(

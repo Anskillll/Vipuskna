@@ -24,7 +24,7 @@
         </div>
         <a class="btn secondary compact" href="{% url 'doctor_schedule' %}">Скасувати</a>
       </div>
-      <p class="muted">Заповніть графік цього дня заново. Старі значення навмисно не підставляються.</p>
+      <p class="muted">Змініть лише потрібні значення та збережіть оновлений графік.</p>
       {% include 'clinic/_schedule_editor_form.html' %}
     </section>
   {% elif not all_days_configured %}

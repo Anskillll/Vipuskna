@@ -654,7 +654,6 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
         doctor=None,
         allowed_weekdays=None,
         locked_weekday=None,
-        blank_existing=False,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -686,13 +685,6 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
             {'min': 1, 'max': MAX_SLOT_MINUTES}
         )
 
-        if blank_existing and not self.is_bound:
-            for field_name in ('workplace', 'start_time', 'end_time', 'slot_minutes', 'break_slots'):
-                self.fields[field_name].initial = None
-                self.initial[field_name] = None
-            self.fields['is_working'].initial = True
-            self.initial['is_working'] = True
-
         start_time = self._source_time('start_time')
         end_time = self._source_time('end_time')
         slot_minutes = self._source_positive_int('slot_minutes')
@@ -702,7 +694,7 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
             slot_minutes,
         )
 
-        if not self.is_bound and not blank_existing and self.instance and self.instance.pk:
+        if not self.is_bound and self.instance and self.instance.pk:
             self.initial['break_slots'] = self.break_slot_values_for_instance(self.instance)
 
     def _source_time(self, field_name):

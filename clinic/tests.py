@@ -1110,7 +1110,10 @@ class ClinicModelTests(TestCase):
         self.assertNotContains(response, 'Додати день до графіка')
         self.assertEqual(response.content.decode().count('class="schedule-edit-link"'), 7)
 
-    def test_schedule_pencil_opens_blank_form_for_selected_weekday(self):
+    def test_schedule_pencil_prefills_selected_weekday(self):
+        self.schedule.break_start_time = time(9, 0)
+        self.schedule.break_duration_minutes = 60
+        self.schedule.save(update_fields=['break_start_time', 'break_duration_minutes'])
         self.client.login(username='doctor@test.local', password='pass12345')
 
         response = self.client.get(
@@ -1120,11 +1123,14 @@ class ClinicModelTests(TestCase):
         form = response.context['form']
 
         self.assertEqual(response.context['editing_schedule'], self.schedule)
+        self.assertEqual(form.instance, self.schedule)
         self.assertEqual(form['weekday'].value(), self.schedule.weekday)
-        self.assertIsNone(form['start_time'].value())
-        self.assertIsNone(form['end_time'].value())
-        self.assertIsNone(form['slot_minutes'].value())
-        self.assertContains(response, 'Старі значення навмисно не підставляються')
+        self.assertEqual(form['workplace'].value(), self.workplace.pk)
+        self.assertEqual(form['start_time'].value(), self.schedule.start_time)
+        self.assertEqual(form['end_time'].value(), self.schedule.end_time)
+        self.assertEqual(form['slot_minutes'].value(), self.schedule.slot_minutes)
+        self.assertEqual(form['break_slots'].value(), ['09:00'])
+        self.assertContains(response, 'Змініть лише потрібні значення')
 
     def test_schedule_edit_replaces_day_and_builds_lunch_from_selected_slots(self):
         self.schedule.break_start_time = time(9, 0)
