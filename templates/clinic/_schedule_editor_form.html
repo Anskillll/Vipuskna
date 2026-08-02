@@ -1,0 +1,36 @@
+{% if workplaces %}
+  <form method="post" data-schedule-editor>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="form-error">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    {% for field in form %}
+      {% if field.is_hidden %}
+        {{ field }}
+      {% elif field.name == 'break_slots' %}
+        <div class="field break-slot-field" data-break-slot-field>
+          {{ field.label_tag }}
+          <p class="field-help">Спочатку вкажіть робочий час і тривалість слота, потім відмітьте послідовні проміжки для обіду.</p>
+          {{ field }}
+          <p class="break-slot-empty" data-break-slot-empty hidden>Заповніть початок, кінець роботи та тривалість слота.</p>
+          {% for error in field.errors %}
+            <div class="form-error">{{ error }}</div>
+          {% endfor %}
+        </div>
+      {% else %}
+        {% include 'clinic/_form_field.html' with field=field %}
+      {% endif %}
+    {% endfor %}
+
+    <div class="actions">
+      <button type="submit">Зберегти графік</button>
+      <a class="btn secondary" href="{% url 'doctor_workplaces' %}">Додати місце</a>
+    </div>
+  </form>
+{% else %}
+  <div class="empty schedule-workplace-empty">
+    <p>Спочатку додайте клініку або кабінет, де ви приймаєте пацієнтів.</p>
+    <a class="btn" href="{% url 'doctor_workplaces' %}">Додати місце прийому</a>
+  </div>
+{% endif %}

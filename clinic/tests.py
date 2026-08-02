@@ -152,7 +152,7 @@ class ClinicModelTests(TestCase):
     def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
         response = self.client.get(reverse('home'))
 
-        self.assertContains(response, 'clinic/site.css?v=20260729-4')
+        self.assertContains(response, 'clinic/site.css?v=20260802-1')
         self.assertContains(response, 'clinic/mobile.css?v=20260729-4')
         self.assertContains(response, 'Нікополь, вул. Шевченка, 200')
         self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
@@ -783,7 +783,9 @@ class ClinicModelTests(TestCase):
         self.assertNotContains(schedule_response, 'name="city"')
         self.assertNotContains(schedule_response, 'name="address"')
         self.assertContains(schedule_response, 'manager-create-disclosure schedule-editor-disclosure')
-        self.assertContains(schedule_response, 'Додати або змінити день')
+        self.assertContains(schedule_response, 'Додати день')
+        self.assertContains(schedule_response, 'schedule-edit-link')
+        self.assertContains(schedule_response, 'schedule_editor.js?v=20260802-1')
 
         delete_response = self.client.post(
             reverse('doctor_workplaces'),
@@ -816,6 +818,94 @@ class ClinicModelTests(TestCase):
 
         edit_form = DoctorWorkplaceForm(instance=generic_workplace)
         self.assertEqual(edit_form.initial['name'], 'Кабінет у м. Нікополь')
+
+    def test_schedule_add_button_disappears_after_all_weekdays_are_configured(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+        for weekday, _label in WorkSchedule.WEEKDAY_CHOICES:
+            WorkSchedule.objects.update_or_create(
+                doctor=self.doctor,
+                weekday=weekday,
+                defaults={
+                    'workplace': self.workplace,
+                    'city': self.workplace.city,
+                    'address': self.workplace.address,
+                    'start_time': time(9, 0),
+                    'end_time': time(17, 0),
+                    'slot_minutes': 20,
+                },
+            )
+
+        response = self.client.get(reverse('doctor_schedule'))
+
+        self.assertNotContains(response, 'manager-create-trigger')
+        self.assertNotContains(response, 'Додати день до графіка')
+        self.assertEqual(response.content.decode().count('class="schedule-edit-link"'), 7)
+
+    def test_schedule_pencil_opens_blank_form_for_selected_weekday(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.get(
+            reverse('doctor_schedule'),
+            {'edit': self.schedule.weekday},
+        )
+        form = response.context['form']
+
+        self.assertEqual(response.context['editing_schedule'], self.schedule)
+        self.assertEqual(form['weekday'].value(), self.schedule.weekday)
+        self.assertIsNone(form['start_time'].value())
+        self.assertIsNone(form['end_time'].value())
+        self.assertIsNone(form['slot_minutes'].value())
+        self.assertContains(response, 'Старі значення навмисно не підставляються')
+
+    def test_schedule_edit_replaces_day_and_builds_lunch_from_selected_slots(self):
+        self.schedule.break_start_time = time(9, 0)
+        self.schedule.break_duration_minutes = 60
+        self.schedule.save(update_fields=['break_start_time', 'break_duration_minutes'])
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.post(
+            f"{reverse('doctor_schedule')}?edit={self.schedule.weekday}",
+            data={
+                'weekday': self.schedule.weekday,
+                'workplace': self.workplace.id,
+                'start_time': '10:00',
+                'end_time': '16:00',
+                'slot_minutes': 20,
+                'break_slots': ['13:00', '13:20', '13:40'],
+                'is_working': 'on',
+            },
+        )
+        self.schedule.refresh_from_db()
+
+        self.assertRedirects(response, reverse('doctor_schedule'))
+        self.assertEqual(self.schedule.start_time, time(10, 0))
+        self.assertEqual(self.schedule.end_time, time(16, 0))
+        self.assertEqual(self.schedule.slot_minutes, 20)
+        self.assertEqual(self.schedule.break_start_time, time(13, 0))
+        self.assertEqual(self.schedule.break_duration_minutes, 60)
+
+    def test_schedule_rejects_lunch_slots_with_a_gap(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.post(
+            f"{reverse('doctor_schedule')}?edit={self.schedule.weekday}",
+            data={
+                'weekday': self.schedule.weekday,
+                'workplace': self.workplace.id,
+                'start_time': '09:00',
+                'end_time': '17:00',
+                'slot_minutes': 20,
+                'break_slots': ['13:00', '13:40'],
+                'is_working': 'on',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(
+            response.context['form'],
+            'break_slots',
+            'Слоти обіду мають іти послідовно, без проміжків.',
+        )
 
     def test_service_editor_expands_inside_selected_service(self):
         self.client.login(username='doctor@test.local', password='pass12345')

@@ -1,4 +1,5 @@
 {% extends 'clinic/base.html' %}
+{% load static %}
 
 {% block title %}Графік лікаря - MedClinic{% endblock %}
 
@@ -14,34 +15,34 @@
     </div>
   </section>
 
-  <details class="manager-create-disclosure schedule-editor-disclosure"{% if form.errors or request.GET.weekday %} open{% endif %}>
-    <summary class="btn manager-create-trigger">Додати або змінити день</summary>
-    <section class="card schedule-editor-card">
-      <h2 class="section-title">Змінити день</h2>
-      <p class="muted">Обід необов'язковий. Якщо він потрібен, укажіть час початку та тривалість у хвилинах.</p>
-      {% if workplaces %}
-        <form method="post">
-          {% csrf_token %}
-          {% include 'clinic/_form_fields.html' with form=form %}
-          <div class="actions">
-            <button type="submit">Зберегти</button>
-            <a class="btn secondary" href="{% url 'doctor_workplaces' %}">Додати місце</a>
-          </div>
-        </form>
-      {% else %}
-        <div class="empty schedule-workplace-empty">
-          <p>Спочатку додайте клініку або кабінет, де ви приймаєте пацієнтів.</p>
-          <a class="btn" href="{% url 'doctor_workplaces' %}">Додати місце прийому</a>
+  {% if editing_schedule %}
+    <section class="card schedule-editor-card schedule-editor-card-active" id="schedule-editor">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">Редагування дня</span>
+          <h2 class="section-title">{{ editing_schedule.get_weekday_display }}</h2>
         </div>
-      {% endif %}
+        <a class="btn secondary compact" href="{% url 'doctor_schedule' %}">Скасувати</a>
+      </div>
+      <p class="muted">Заповніть графік цього дня заново. Старі значення навмисно не підставляються.</p>
+      {% include 'clinic/_schedule_editor_form.html' %}
+    </section>
+  {% elif not all_days_configured %}
+  <details class="manager-create-disclosure schedule-editor-disclosure"{% if form.errors %} open{% endif %}>
+    <summary class="btn manager-create-trigger">Додати день</summary>
+    <section class="card schedule-editor-card">
+      <h2 class="section-title">Додати день до графіка</h2>
+      <p class="muted">Оберіть один із днів, для яких графік ще не створено.</p>
+      {% include 'clinic/_schedule_editor_form.html' %}
     </section>
   </details>
+  {% endif %}
 
   <section class="card">
     <h2 class="section-title">Збережений графік</h2>
-    <ul class="simple-list">
+    <ul class="simple-list schedule-list">
       {% for schedule in schedules %}
-        <li>
+        <li class="schedule-list-row">
           <span>
             {{ schedule.get_weekday_display }} ·
             {% if schedule.workplace %}
@@ -60,10 +61,25 @@
               Вихідний
             {% endif %}
           </strong>
+          <a
+            class="schedule-edit-link"
+            href="{% url 'doctor_schedule' %}?edit={{ schedule.weekday }}#schedule-editor"
+            aria-label="Редагувати {{ schedule.get_weekday_display|lower }}"
+            title="Редагувати день"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+          </a>
         </li>
       {% empty %}
         <li><span>Графік ще не додано</span><strong></strong></li>
       {% endfor %}
     </ul>
   </section>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="{% static 'clinic/schedule_editor.js' %}?v=20260802-1" defer></script>
 {% endblock %}

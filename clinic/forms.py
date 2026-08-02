@@ -595,6 +595,13 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
         queryset=DoctorWorkplace.objects.none(),
         empty_label=None,
     )
+    break_slots = forms.MultipleChoiceField(
+        label='Слоти для обідньої перерви',
+        choices=(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        help_text='Оберіть один або кілька послідовних слотів, які потрібно закрити на обід.',
+    )
 
     class Meta:
         model = WorkSchedule
@@ -604,14 +611,11 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
             'start_time',
             'end_time',
             'slot_minutes',
-            'break_start_time',
-            'break_duration_minutes',
             'is_working',
         ]
         widgets = {
             'start_time': forms.TimeInput(attrs={'type': 'time'}),
             'end_time': forms.TimeInput(attrs={'type': 'time'}),
-            'break_start_time': forms.TimeInput(attrs={'type': 'time'}),
         }
         labels = {
             'weekday': 'День тижня',
@@ -619,23 +623,112 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
             'start_time': 'Початок прийому',
             'end_time': 'Кінець прийому',
             'slot_minutes': 'Тривалість одного слота, хвилин',
-            'break_start_time': 'Початок обідньої перерви',
-            'break_duration_minutes': 'Тривалість обіду, хвилин',
             'is_working': 'Робочий день',
         }
 
-    def __init__(self, *args, doctor=None, **kwargs):
+    def __init__(
+        self,
+        *args,
+        doctor=None,
+        allowed_weekdays=None,
+        locked_weekday=None,
+        blank_existing=False,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
-        self.fields['weekday'].choices = [
+        weekday_choices = [
             (value, label)
             for value, label in self.fields['weekday'].choices
             if value != ''
         ]
+        if allowed_weekdays is not None:
+            allowed_values = {str(value) for value in allowed_weekdays}
+            weekday_choices = [
+                (value, label)
+                for value, label in weekday_choices
+                if str(value) in allowed_values
+            ]
+        self.fields['weekday'].choices = weekday_choices
+        if locked_weekday is not None:
+            self.fields['weekday'].widget = forms.HiddenInput()
+            self.fields['weekday'].initial = locked_weekday
+            self.initial['weekday'] = locked_weekday
+
         self.fields['workplace'].queryset = (
             doctor.workplaces.all()
             if doctor
             else DoctorWorkplace.objects.none()
         )
+        self.fields['break_slots'].widget.attrs['class'] = 'break-slot-options'
+
+        if blank_existing and not self.is_bound:
+            for field_name in ('workplace', 'start_time', 'end_time', 'slot_minutes', 'break_slots'):
+                self.fields[field_name].initial = None
+                self.initial[field_name] = None
+            self.fields['is_working'].initial = True
+            self.initial['is_working'] = True
+
+        start_time = self._source_time('start_time')
+        end_time = self._source_time('end_time')
+        slot_minutes = self._source_positive_int('slot_minutes')
+        self.fields['break_slots'].choices = self.build_break_slot_choices(
+            start_time,
+            end_time,
+            slot_minutes,
+        )
+
+        if not self.is_bound and not blank_existing and self.instance and self.instance.pk:
+            self.initial['break_slots'] = self.break_slot_values_for_instance(self.instance)
+
+    def _source_time(self, field_name):
+        value = self.data.get(field_name) if self.is_bound else self.initial.get(field_name)
+        if not value and self.instance:
+            value = getattr(self.instance, field_name, None)
+        if isinstance(value, datetime):
+            return value.time()
+        if hasattr(value, 'hour') and hasattr(value, 'minute'):
+            return value
+        try:
+            return datetime.strptime(str(value), '%H:%M').time()
+        except (TypeError, ValueError):
+            return None
+
+    def _source_positive_int(self, field_name):
+        value = self.data.get(field_name) if self.is_bound else self.initial.get(field_name)
+        if not value and self.instance:
+            value = getattr(self.instance, field_name, None)
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            return None
+        return parsed if parsed > 0 else None
+
+    @staticmethod
+    def build_break_slot_choices(start_time, end_time, slot_minutes):
+        if not start_time or not end_time or not slot_minutes or start_time >= end_time:
+            return []
+
+        cursor = datetime.combine(timezone.localdate(), start_time)
+        day_end = datetime.combine(timezone.localdate(), end_time)
+        step = timedelta(minutes=slot_minutes)
+        choices = []
+        while cursor < day_end:
+            slot_end = cursor + step
+            if slot_end > day_end:
+                break
+            value = cursor.strftime('%H:%M')
+            choices.append((value, f'{value}-{slot_end:%H:%M}'))
+            cursor = slot_end
+        return choices
+
+    @staticmethod
+    def break_slot_values_for_instance(schedule):
+        if not schedule.break_start_time or not schedule.break_duration_minutes or not schedule.slot_minutes:
+            return []
+        count = schedule.break_duration_minutes // schedule.slot_minutes
+        cursor = datetime.combine(timezone.localdate(), schedule.break_start_time)
+        step = timedelta(minutes=schedule.slot_minutes)
+        return [(cursor + step * index).strftime('%H:%M') for index in range(count)]
 
     def clean(self):
         cleaned = super().clean()
@@ -643,19 +736,40 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
         end_time = cleaned.get('end_time')
         is_working = cleaned.get('is_working')
         workplace = cleaned.get('workplace')
-        break_start = cleaned.get('break_start_time')
-        break_duration = cleaned.get('break_duration_minutes')
+        slot_minutes = cleaned.get('slot_minutes')
+        break_slots = cleaned.get('break_slots') or []
 
         if is_working and not workplace:
             self.add_error('workplace', 'Оберіть місце прийому або спочатку додайте нове.')
         if start_time and end_time and start_time >= end_time:
             self.add_error('end_time', 'Кінець прийому має бути пізніше за початок.')
-        if bool(break_start) != bool(break_duration):
-            self.add_error('break_start_time', 'Укажіть і початок, і тривалість обіду або залиште обидва поля порожніми.')
-        if break_start and break_duration and start_time and end_time:
-            break_end = (datetime.combine(timezone.localdate(), break_start) + timedelta(minutes=break_duration)).time()
-            if break_start < start_time or break_end > end_time:
-                self.add_error('break_start_time', 'Обідня перерва має повністю входити в робочий час.')
+
+        parsed_break_slots = []
+        for value in break_slots:
+            try:
+                parsed_break_slots.append(datetime.strptime(value, '%H:%M'))
+            except ValueError:
+                self.add_error('break_slots', 'Оберіть коректні слоти для обіду.')
+                return cleaned
+
+        parsed_break_slots.sort()
+        if parsed_break_slots and slot_minutes:
+            expected_step = timedelta(minutes=slot_minutes)
+            if any(
+                current - previous != expected_step
+                for previous, current in zip(parsed_break_slots, parsed_break_slots[1:])
+            ):
+                self.add_error('break_slots', 'Слоти обіду мають іти послідовно, без проміжків.')
+
+        if parsed_break_slots and not is_working:
+            self.add_error('break_slots', 'Для вихідного дня обідня перерва не потрібна.')
+
+        self.cleaned_break_start_time = parsed_break_slots[0].time() if parsed_break_slots else None
+        self.cleaned_break_duration_minutes = (
+            len(parsed_break_slots) * slot_minutes
+            if parsed_break_slots and slot_minutes
+            else None
+        )
         return cleaned
 
     def save(self, commit=True):
@@ -663,6 +777,8 @@ class WorkScheduleForm(FormStyleMixin, forms.ModelForm):
         if schedule.workplace:
             schedule.city = schedule.workplace.city
             schedule.address = schedule.workplace.address
+        schedule.break_start_time = getattr(self, 'cleaned_break_start_time', None)
+        schedule.break_duration_minutes = getattr(self, 'cleaned_break_duration_minutes', None)
         if commit:
             schedule.save()
         return schedule

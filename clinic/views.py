@@ -2226,11 +2226,32 @@ def doctor_patient_card_detail(request, card_id):
 @doctor_required
 def doctor_schedule(request):
     doctor = request.user.doctor_profile
-    instance = None
+    weekday_values = {value for value, _ in WorkSchedule.WEEKDAY_CHOICES}
+    schedules = list(doctor.schedules.select_related('workplace'))
+    configured_weekdays = {schedule.weekday for schedule in schedules}
+    missing_weekdays = weekday_values - configured_weekdays
+
+    edit_weekday_raw = request.GET.get('edit')
+    try:
+        edit_weekday = int(edit_weekday_raw) if edit_weekday_raw is not None else None
+    except (TypeError, ValueError):
+        edit_weekday = None
+    editing_schedule = next(
+        (schedule for schedule in schedules if schedule.weekday == edit_weekday),
+        None,
+    )
+    if edit_weekday_raw is not None and editing_schedule is None:
+        messages.error(request, 'День графіка не знайдено.')
+        return redirect('doctor_schedule')
+
     if request.method == 'POST':
-        weekday = request.POST.get('weekday')
-        instance = WorkSchedule.objects.filter(doctor=doctor, weekday=weekday).first()
-        form = WorkScheduleForm(request.POST, instance=instance, doctor=doctor)
+        form = WorkScheduleForm(
+            request.POST,
+            instance=editing_schedule,
+            doctor=doctor,
+            allowed_weekdays=missing_weekdays if editing_schedule is None else None,
+            locked_weekday=editing_schedule.weekday if editing_schedule else None,
+        )
         if form.is_valid():
             schedule = form.save(commit=False)
             schedule.doctor = doctor
@@ -2239,12 +2260,13 @@ def doctor_schedule(request):
             messages.success(request, 'Графік збережено.')
             return redirect('doctor_schedule')
     else:
-        edit_weekday = request.GET.get('weekday')
-        if edit_weekday is not None:
-            instance = WorkSchedule.objects.filter(doctor=doctor, weekday=edit_weekday).first()
-        form = WorkScheduleForm(instance=instance, doctor=doctor)
+        form = WorkScheduleForm(
+            doctor=doctor,
+            allowed_weekdays=missing_weekdays if editing_schedule is None else None,
+            locked_weekday=editing_schedule.weekday if editing_schedule else None,
+            blank_existing=editing_schedule is not None,
+        )
 
-    schedules = doctor.schedules.select_related('workplace')
     return render(
         request,
         'clinic/doctor_schedule.html',
@@ -2253,6 +2275,8 @@ def doctor_schedule(request):
             'schedules': schedules,
             'workplaces': doctor.workplaces.all(),
             'form': form,
+            'editing_schedule': editing_schedule,
+            'all_days_configured': not missing_weekdays,
         },
     )
 
