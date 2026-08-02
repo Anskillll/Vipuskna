@@ -826,6 +826,18 @@ class ClinicModelTests(TestCase):
 
         self.assertRedirects(response, reverse('doctor_workplaces'))
 
+        workplaces_response = self.client.get(reverse('doctor_workplaces'))
+        self.assertContains(workplaces_response, 'placeholder="Місто або адреса"')
+        self.assertContains(workplaces_response, 'data-filter-extra-only')
+        self.assertContains(
+            workplaces_response,
+            'data-filter-extra="Київ вул. Хрещатик, 10"',
+        )
+        self.assertNotContains(
+            workplaces_response,
+            'data-filter-extra="Сімейна стоматологія',
+        )
+
         response = self.client.post(
             reverse('doctor_schedule'),
             data={

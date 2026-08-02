@@ -18,14 +18,19 @@
         <div class="live-filter-bar">
           <div class="live-filter-field">
             <label for="workplace-search">Фільтр місць</label>
-            <input id="workplace-search" type="search" placeholder="Клініка, місто або адреса" autocomplete="off" data-live-filter-input>
+            <input id="workplace-search" type="search" placeholder="Місто або адреса" autocomplete="off" data-live-filter-input>
           </div>
           <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
         </div>
       {% endif %}
       <div class="workplace-list">
         {% for workplace in workplaces %}
-          <article class="workplace-row" data-live-filter-item data-filter-extra="{{ workplace.display_name|escape }} {{ workplace.city|escape }} {{ workplace.address|escape }}">
+          <article
+            class="workplace-row"
+            data-live-filter-item
+            data-filter-extra-only
+            data-filter-extra="{{ workplace.city|escape }} {{ workplace.address|escape }}"
+          >
               <div>
                 <h3>{{ workplace.display_name }}</h3>
                 <p>

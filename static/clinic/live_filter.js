@@ -33,9 +33,12 @@
     const groups = Array.from(root.querySelectorAll('[data-live-filter-group]'));
     const indexedItems = items.map((item) => {
       const extra = item.dataset.filterExtra || '';
+      const searchableText = item.hasAttribute('data-filter-extra-only')
+        ? extra
+        : `${item.textContent} ${extra}`;
       return {
         item,
-        search: searchableParts(`${item.textContent} ${extra}`),
+        search: searchableParts(searchableText),
       };
     });
     const pagination = document.createElement('nav');
