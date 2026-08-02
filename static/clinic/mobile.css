@@ -105,7 +105,7 @@
 
   body:not(.public-home-page) .page-title {
     font-size: 26px;
-    line-height: 1.08;
+    line-height: 1.18;
   }
 
   body:not(.public-home-page) .page-subtitle {
@@ -348,7 +348,7 @@
   .patient-profile-identity h1 {
     margin-top: 2px;
     font-size: 22px;
-    line-height: 1.08;
+    line-height: 1.18;
   }
 
   body:not(.public-home-page) .doctor-profile-actions,

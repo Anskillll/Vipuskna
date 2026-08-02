@@ -580,7 +580,7 @@ a:hover {
   max-width: 620px;
   margin: 18px auto 12px;
   font-size: 56px;
-  line-height: 0.98;
+  line-height: 1.08;
   font-weight: 800;
   letter-spacing: 0;
 }
@@ -4842,7 +4842,7 @@ button.compact {
   font-family: "Inter", Arial, Helvetica, sans-serif;
   font-size: 80px;
   font-weight: 600;
-  line-height: 0.95;
+  line-height: 1.06;
   letter-spacing: 0;
   margin: 0;
   max-width: 900px;
@@ -5047,7 +5047,7 @@ button.compact {
   font-family: "Inter", Arial, Helvetica, sans-serif;
   font-size: 46px;
   font-weight: 600;
-  line-height: 1.05;
+  line-height: 1.14;
   letter-spacing: 0;
   margin: 0;
 }
@@ -5699,7 +5699,7 @@ body:not(.public-home-page) .page-title {
   font-family: "Inter", Arial, Helvetica, sans-serif;
   font-size: 50px;
   font-weight: 600;
-  line-height: 1.04;
+  line-height: 1.12;
   letter-spacing: 0;
 }
 
@@ -7376,7 +7376,7 @@ body:not(.public-home-page) .message.is-dismissing {
   font-family: "Inter", Arial, Helvetica, sans-serif;
   font-size: 38px;
   font-weight: 700;
-  line-height: 1.08;
+  line-height: 1.16;
   letter-spacing: 0;
 }
 
@@ -8056,6 +8056,8 @@ body:not(.public-home-page) .section-head {
 body:not(.public-home-page) .section-mini-head h2,
 body:not(.public-home-page) .section-title {
   color: var(--clinic-ink);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 body:not(.public-home-page) .section-mini-head h2::after,
@@ -8063,21 +8065,32 @@ body:not(.public-home-page) .section-title::after {
   display: block;
   width: 42px;
   height: 3px;
-  margin-top: 9px;
+  margin: 9px 0 14px;
   border-radius: 2px;
   background: #55b9ad;
   content: "";
 }
 
+body:not(.public-home-page) .section-head .section-title::after,
+body:not(.public-home-page) .section-mini-head h2::after {
+  margin-bottom: 0;
+}
+
 body:not(.public-home-page) .live-filter-bar {
+  min-width: 0;
+  padding: 15px 16px;
   border-left: 4px solid var(--clinic-blue);
+  border-radius: 0 5px 5px 0;
   background: #f2f8fc;
 }
 
 body:not(.public-home-page) .live-filter-field label,
 body:not(.public-home-page) .field > label {
+  display: block;
   color: #244b46;
   font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 body:not(.public-home-page) input:not([type="checkbox"]):focus,
@@ -8549,6 +8562,19 @@ textarea:focus-visible {
   body:not(.public-home-page) .section-mini-head h2::after,
   body:not(.public-home-page) .section-title::after {
     width: 34px;
+  }
+
+  body:not(.public-home-page) .section-title::after {
+    margin-bottom: 11px;
+  }
+
+  body:not(.public-home-page) .section-head .section-title::after,
+  body:not(.public-home-page) .section-mini-head h2::after {
+    margin-bottom: 0;
+  }
+
+  body:not(.public-home-page) .live-filter-bar {
+    padding: 11px 12px;
   }
 }
 
