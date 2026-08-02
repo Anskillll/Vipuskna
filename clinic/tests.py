@@ -828,14 +828,13 @@ class ClinicModelTests(TestCase):
 
         workplaces_response = self.client.get(reverse('doctor_workplaces'))
         self.assertContains(workplaces_response, 'placeholder="Місто або адреса"')
-        self.assertContains(workplaces_response, 'data-filter-extra-only')
         self.assertContains(
             workplaces_response,
-            'data-filter-extra="Київ вул. Хрещатик, 10"',
+            'data-filter-search="Київ вул. Хрещатик, 10"',
         )
         self.assertNotContains(
             workplaces_response,
-            'data-filter-extra="Сімейна стоматологія',
+            'data-filter-search="Сімейна стоматологія',
         )
 
         response = self.client.post(
@@ -882,6 +881,7 @@ class ClinicModelTests(TestCase):
         self.assertContains(schedule_response, 'Додати день')
         self.assertContains(schedule_response, 'schedule-edit-link')
         self.assertContains(schedule_response, 'schedule_editor.js?v=20260802-1')
+        self.assertContains(schedule_response, 'live_filter.js?v=20260802-2')
 
         delete_response = self.client.post(
             reverse('doctor_workplaces'),

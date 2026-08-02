@@ -368,8 +368,8 @@
 1. Template помечает контейнер `data-live-filter`, input и каждую строку.
 2. `live_filter.js` находит все такие контейнеры после загрузки скрипта.
 3. Обычно текст строки и `data-filter-extra` нормализуются вместе. Атрибут
-   `data-filter-extra-only` ограничивает поиск только явно указанными данными,
-   например городом и адресом без названия клиники.
+   `data-filter-search` полностью заменяет источник поиска явно указанными
+   данными, например городом и адресом без названия клиники.
 4. На событии input запрос разбивается на слова.
 5. Строка остается, только если содержит каждое слово.
 6. Из совпадений строится текущая страница.
@@ -1012,7 +1012,7 @@
 
 ## Шаблон `templates/clinic/doctor_workplaces.html`
 
-- Физический размер: 86 строк.
+- Физический размер: 85 строк.
 - Родитель: `clinic/base.html`.
 - Переопределяемые блоки: `title`, `content`.
 - Подключаемые фрагменты: `clinic/_form_fields.html`.
@@ -10802,7 +10802,7 @@
 
 ## Файл `static/clinic/live_filter.js`
 
-- Всего физических строк в файле: 222.
+- Всего физических строк в файле: 223.
 - Тип файла: `.js`.
 - Роль файла объясняется в первой части документации; ниже приведены структурные досье и построчный атлас.
 
@@ -10843,177 +10843,178 @@
 | 33 | <code>    const groups = Array.from(root.querySelectorAll('[data-live-filter-group]'));</code> | Находит нужный HTML-элемент по CSS-селектору для дальнейшего поведения. |
 | 34 | <code>    const indexedItems = items.map((item) =&gt; {</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
 | 35 | <code>      const extra = item.dataset.filterExtra &#124;&#124; '';</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 36 | <code>      const searchableText = item.hasAttribute('data-filter-extra-only')</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 37 | <code>        ? extra</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 38 | <code>        : `${item.textContent} ${extra}`;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 39 | <code>      return {</code> | Завершает функцию JavaScript и при необходимости возвращает значение. |
-| 40 | <code>        item,</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 41 | <code>        search: searchableParts(searchableText),</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 42 | <code>      };</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 43 | <code>    });</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 44 | <code>    const pagination = document.createElement('nav');</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 45 | <code>    pagination.className = 'live-pagination';</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 46 | <code>    pagination.setAttribute('aria-label', 'Сторінки списку');</code> | Обновляет HTML-атрибут, включая состояние доступности для экранных дикторов. |
-| 47 | <code>    pagination.hidden = true;</code> | Показывает или скрывает элемент через стандартное свойство hidden. |
-| 48 | <code>    root.appendChild(pagination);</code> | Добавляет созданный элемент в документ. |
-| 50 | <code>    let currentPage = 1;</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 51 | <code>    let matchingItems = indexedItems;</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 53 | <code>    const pageNumbers = (totalPages) =&gt; {</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 54 | <code>      if (totalPages &lt;= 7) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
-| 55 | <code>        return Array.from({ length: totalPages }, (_, index) =&gt; index + 1);</code> | Завершает функцию JavaScript и при необходимости возвращает значение. |
-| 56 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 58 | <code>      const pages = [1];</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 59 | <code>      const start = Math.max(2, currentPage - 1);</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 60 | <code>      const end = Math.min(totalPages - 1, currentPage + 1);</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 61 | <code>      if (start &gt; 2) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
-| 62 | <code>        pages.push(null);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 63 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 64 | <code>      for (let page = start; page &lt;= end; page += 1) {</code> | Повторяет действие для набора элементов или значений. |
-| 65 | <code>        pages.push(page);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 66 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 67 | <code>      if (end &lt; totalPages - 1) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
-| 68 | <code>        pages.push(null);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 69 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 70 | <code>      pages.push(totalPages);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 71 | <code>      return pages;</code> | Завершает функцию JavaScript и при необходимости возвращает значение. |
-| 72 | <code>    };</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 74 | <code>    const pageButton = (label, page, options = {}) =&gt; {</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 75 | <code>      const button = document.createElement('button');</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 76 | <code>      button.type = 'button';</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 77 | <code>      button.textContent = label;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 78 | <code>      button.dataset.liveFilterPage = String(page);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 79 | <code>      button.setAttribute('aria-label', options.ariaLabel &#124;&#124; `Сторінка ${page}`);</code> | Обновляет HTML-атрибут, включая состояние доступности для экранных дикторов. |
-| 80 | <code>      button.disabled = Boolean(options.disabled);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 81 | <code>      if (options.current) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
-| 82 | <code>        button.classList.add('active');</code> | Добавляет, удаляет или переключает CSS-класс, меняя вид без перезагрузки. |
-| 83 | <code>        button.setAttribute('aria-current', 'page');</code> | Обновляет HTML-атрибут, включая состояние доступности для экранных дикторов. |
-| 84 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 85 | <code>      return button;</code> | Завершает функцию JavaScript и при необходимости возвращает значение. |
-| 86 | <code>    };</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 88 | <code>    const renderPagination = (totalPages) =&gt; {</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 89 | <code>      pagination.replaceChildren();</code> | Заменяет текущее содержимое контейнера новыми результатами. |
-| 90 | <code>      pagination.hidden = totalPages &lt;= 1;</code> | Показывает или скрывает элемент через стандартное свойство hidden. |
-| 91 | <code>      if (totalPages &lt;= 1) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
-| 92 | <code>        return;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 93 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 95 | <code>      pagination.appendChild(pageButton('‹', currentPage - 1, {</code> | Добавляет созданный элемент в документ. |
-| 96 | <code>        ariaLabel: 'Попередня сторінка',</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 97 | <code>        disabled: currentPage === 1,</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 98 | <code>      }));</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 100 | <code>      pageNumbers(totalPages).forEach((page) =&gt; {</code> | Повторяет действие для набора элементов или значений. |
-| 101 | <code>        if (page === null) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
-| 102 | <code>          const separator = document.createElement('span');</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 103 | <code>          separator.className = 'live-pagination-ellipsis';</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 104 | <code>          separator.textContent = '…';</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 105 | <code>          separator.setAttribute('aria-hidden', 'true');</code> | Обновляет HTML-атрибут, включая состояние доступности для экранных дикторов. |
-| 106 | <code>          pagination.appendChild(separator);</code> | Добавляет созданный элемент в документ. |
-| 107 | <code>          return;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 108 | <code>        }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 109 | <code>        pagination.appendChild(pageButton(String(page), page, {</code> | Добавляет созданный элемент в документ. |
-| 110 | <code>          current: page === currentPage,</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 111 | <code>        }));</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 112 | <code>      });</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 114 | <code>      pagination.appendChild(pageButton('›', currentPage + 1, {</code> | Добавляет созданный элемент в документ. |
-| 115 | <code>        ariaLabel: 'Наступна сторінка',</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 116 | <code>        disabled: currentPage === totalPages,</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 117 | <code>      }));</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 118 | <code>    };</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 120 | <code>    const renderPage = (scrollToTop = false) =&gt; {</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 121 | <code>      const totalPages = paginationEnabled</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 122 | <code>        ? Math.max(1, Math.ceil(matchingItems.length / pageSize))</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 123 | <code>        : 1;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 124 | <code>      currentPage = Math.min(Math.max(currentPage, 1), totalPages);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 125 | <code>      const pageStart = (currentPage - 1) * pageSize;</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 126 | <code>      const visibleItems = new Set(</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 127 | <code>        (paginationEnabled</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 128 | <code>          ? matchingItems.slice(pageStart, pageStart + pageSize)</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 129 | <code>          : matchingItems</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 130 | <code>        ).map(({ item }) =&gt; item),</code> | Объявляет функцию, которую можно вызвать сейчас или передать обработчику события. |
-| 131 | <code>      );</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 133 | <code>      indexedItems.forEach(({ item }) =&gt; {</code> | Повторяет действие для набора элементов или значений. |
-| 134 | <code>        item.hidden = !visibleItems.has(item);</code> | Показывает или скрывает элемент через стандартное свойство hidden. |
-| 135 | <code>      });</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 137 | <code>      groups.forEach((group) =&gt; {</code> | Повторяет действие для набора элементов или значений. |
-| 138 | <code>        const groupItems = Array.from(group.querySelectorAll('[data-live-filter-item]'));</code> | Находит нужный HTML-элемент по CSS-селектору для дальнейшего поведения. |
-| 139 | <code>        const groupVisibleCount = groupItems.filter((item) =&gt; !item.hidden).length;</code> | Показывает или скрывает элемент через стандартное свойство hidden. |
-| 140 | <code>        const keepEmpty = group.hasAttribute('data-live-filter-keep-empty');</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 141 | <code>        const hasActiveFilter = Boolean(input &amp;&amp; input.value.trim());</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 142 | <code>        group.hidden = groupVisibleCount === 0 &amp;&amp; !(keepEmpty &amp;&amp; !hasActiveFilter);</code> | Показывает или скрывает элемент через стандартное свойство hidden. |
-| 143 | <code>        const groupCount = group.querySelector('[data-live-filter-group-count]');</code> | Находит нужный HTML-элемент по CSS-селектору для дальнейшего поведения. |
-| 144 | <code>        if (groupCount) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
-| 145 | <code>          const template = groupCount.dataset.countTemplate &#124;&#124; '{count}';</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 146 | <code>          groupCount.textContent = template.replace('{count}', groupVisibleCount);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 147 | <code>        }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 148 | <code>      });</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 150 | <code>      if (count) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
-| 151 | <code>        count.textContent = input &amp;&amp; input.value.trim()</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 152 | <code>          ? `Знайдено: ${matchingItems.length} з ${items.length}`</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 153 | <code>          : `Усього: ${items.length}`;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 154 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 155 | <code>      if (empty) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
-| 156 | <code>        empty.hidden = matchingItems.length !== 0;</code> | Показывает или скрывает элемент через стандартное свойство hidden. |
-| 157 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 158 | <code>      if (clearButton) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
-| 159 | <code>        clearButton.disabled = !input.value;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 160 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 162 | <code>      renderPagination(paginationEnabled ? Math.ceil(matchingItems.length / pageSize) : 1);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 163 | <code>      if (scrollToTop) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
-| 164 | <code>        const target = root.querySelector('.live-filter-bar') &#124;&#124; root;</code> | Находит нужный HTML-элемент по CSS-селектору для дальнейшего поведения. |
-| 165 | <code>        target.scrollIntoView({ behavior: 'smooth', block: 'start' });</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 166 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 167 | <code>    };</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 169 | <code>    const applyFilter = (resetPage = true) =&gt; {</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 170 | <code>      const query = searchableParts(input ? input.value : '');</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 171 | <code>      root.classList.toggle('is-filtering', Boolean(query.normalized));</code> | Добавляет, удаляет или переключает CSS-класс, меняя вид без перезагрузки. |
-| 172 | <code>      const terms = query.normalized ? query.normalized.split(/\s+/) : [];</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 173 | <code>      matchingItems = indexedItems.filter(({ search }) =&gt; (</code> | Объявляет функцию, которую можно вызвать сейчас или передать обработчику события. |
-| 174 | <code>        terms.every((term) =&gt; (</code> | Объявляет функцию, которую можно вызвать сейчас или передать обработчику события. |
-| 175 | <code>          search.normalized.includes(term)</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 176 | <code>          &#124;&#124; search.compact.includes(term.replace(/\s+/g, ''))</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 177 | <code>        ))</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 178 | <code>      ));</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 179 | <code>      if (resetPage) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
-| 180 | <code>        currentPage = 1;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 181 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 182 | <code>      renderPage();</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 183 | <code>    };</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 185 | <code>    if (input) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
-| 186 | <code>      input.addEventListener('input', applyFilter);</code> | Подписывает функцию на действие браузера: клик, ввод, прокрутку или изменение видимости. |
-| 187 | <code>      input.addEventListener('search', applyFilter);</code> | Подписывает функцию на действие браузера: клик, ввод, прокрутку или изменение видимости. |
-| 188 | <code>      valueButtons.forEach((button) =&gt; {</code> | Повторяет действие для набора элементов или значений. |
-| 189 | <code>        button.addEventListener('click', () =&gt; {</code> | Подписывает функцию на действие браузера: клик, ввод, прокрутку или изменение видимости. |
-| 190 | <code>          input.value = button.dataset.liveFilterValue &#124;&#124; '';</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 191 | <code>          applyFilter();</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 192 | <code>          input.focus();</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 193 | <code>        });</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 194 | <code>      });</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 195 | <code>      if (clearButton) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
-| 196 | <code>        clearButton.addEventListener('click', () =&gt; {</code> | Подписывает функцию на действие браузера: клик, ввод, прокрутку или изменение видимости. |
-| 197 | <code>          input.value = '';</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 198 | <code>          applyFilter();</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 199 | <code>          input.focus();</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 200 | <code>        });</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 201 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 202 | <code>    }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 203 | <code>    pagination.addEventListener('click', (event) =&gt; {</code> | Подписывает функцию на действие браузера: клик, ввод, прокрутку или изменение видимости. |
-| 204 | <code>      const button = event.target.closest('[data-live-filter-page]');</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 205 | <code>      if (!button &#124;&#124; button.disabled) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
-| 206 | <code>        return;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 207 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 208 | <code>      currentPage = Number.parseInt(button.dataset.liveFilterPage, 10);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 209 | <code>      renderPage(true);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 210 | <code>    });</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 211 | <code>    applyFilter();</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 213 | <code>    const activeItem = root.querySelector('[data-live-filter-active]');</code> | Находит нужный HTML-элемент по CSS-селектору для дальнейшего поведения. |
-| 214 | <code>    if (activeItem) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
-| 215 | <code>      const activeIndex = matchingItems.findIndex(({ item }) =&gt; item === activeItem);</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
-| 216 | <code>      if (activeIndex &gt;= 0) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
-| 217 | <code>        currentPage = Math.floor(activeIndex / pageSize) + 1;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 218 | <code>        renderPage();</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
-| 219 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 220 | <code>    }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 221 | <code>  });</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
-| 222 | <code>})();</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 36 | <code>      const explicitSearch = item.getAttribute('data-filter-search');</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 37 | <code>      const searchableText = explicitSearch === null</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 38 | <code>        ? `${item.textContent} ${extra}`</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 39 | <code>        : explicitSearch;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 40 | <code>      return {</code> | Завершает функцию JavaScript и при необходимости возвращает значение. |
+| 41 | <code>        item,</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 42 | <code>        search: searchableParts(searchableText),</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 43 | <code>      };</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 44 | <code>    });</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 45 | <code>    const pagination = document.createElement('nav');</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 46 | <code>    pagination.className = 'live-pagination';</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 47 | <code>    pagination.setAttribute('aria-label', 'Сторінки списку');</code> | Обновляет HTML-атрибут, включая состояние доступности для экранных дикторов. |
+| 48 | <code>    pagination.hidden = true;</code> | Показывает или скрывает элемент через стандартное свойство hidden. |
+| 49 | <code>    root.appendChild(pagination);</code> | Добавляет созданный элемент в документ. |
+| 51 | <code>    let currentPage = 1;</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 52 | <code>    let matchingItems = indexedItems;</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 54 | <code>    const pageNumbers = (totalPages) =&gt; {</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 55 | <code>      if (totalPages &lt;= 7) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
+| 56 | <code>        return Array.from({ length: totalPages }, (_, index) =&gt; index + 1);</code> | Завершает функцию JavaScript и при необходимости возвращает значение. |
+| 57 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 59 | <code>      const pages = [1];</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 60 | <code>      const start = Math.max(2, currentPage - 1);</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 61 | <code>      const end = Math.min(totalPages - 1, currentPage + 1);</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 62 | <code>      if (start &gt; 2) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
+| 63 | <code>        pages.push(null);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 64 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 65 | <code>      for (let page = start; page &lt;= end; page += 1) {</code> | Повторяет действие для набора элементов или значений. |
+| 66 | <code>        pages.push(page);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 67 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 68 | <code>      if (end &lt; totalPages - 1) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
+| 69 | <code>        pages.push(null);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 70 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 71 | <code>      pages.push(totalPages);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 72 | <code>      return pages;</code> | Завершает функцию JavaScript и при необходимости возвращает значение. |
+| 73 | <code>    };</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 75 | <code>    const pageButton = (label, page, options = {}) =&gt; {</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 76 | <code>      const button = document.createElement('button');</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 77 | <code>      button.type = 'button';</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 78 | <code>      button.textContent = label;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 79 | <code>      button.dataset.liveFilterPage = String(page);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 80 | <code>      button.setAttribute('aria-label', options.ariaLabel &#124;&#124; `Сторінка ${page}`);</code> | Обновляет HTML-атрибут, включая состояние доступности для экранных дикторов. |
+| 81 | <code>      button.disabled = Boolean(options.disabled);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 82 | <code>      if (options.current) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
+| 83 | <code>        button.classList.add('active');</code> | Добавляет, удаляет или переключает CSS-класс, меняя вид без перезагрузки. |
+| 84 | <code>        button.setAttribute('aria-current', 'page');</code> | Обновляет HTML-атрибут, включая состояние доступности для экранных дикторов. |
+| 85 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 86 | <code>      return button;</code> | Завершает функцию JavaScript и при необходимости возвращает значение. |
+| 87 | <code>    };</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 89 | <code>    const renderPagination = (totalPages) =&gt; {</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 90 | <code>      pagination.replaceChildren();</code> | Заменяет текущее содержимое контейнера новыми результатами. |
+| 91 | <code>      pagination.hidden = totalPages &lt;= 1;</code> | Показывает или скрывает элемент через стандартное свойство hidden. |
+| 92 | <code>      if (totalPages &lt;= 1) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
+| 93 | <code>        return;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 94 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 96 | <code>      pagination.appendChild(pageButton('‹', currentPage - 1, {</code> | Добавляет созданный элемент в документ. |
+| 97 | <code>        ariaLabel: 'Попередня сторінка',</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 98 | <code>        disabled: currentPage === 1,</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 99 | <code>      }));</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 101 | <code>      pageNumbers(totalPages).forEach((page) =&gt; {</code> | Повторяет действие для набора элементов или значений. |
+| 102 | <code>        if (page === null) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
+| 103 | <code>          const separator = document.createElement('span');</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 104 | <code>          separator.className = 'live-pagination-ellipsis';</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 105 | <code>          separator.textContent = '…';</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 106 | <code>          separator.setAttribute('aria-hidden', 'true');</code> | Обновляет HTML-атрибут, включая состояние доступности для экранных дикторов. |
+| 107 | <code>          pagination.appendChild(separator);</code> | Добавляет созданный элемент в документ. |
+| 108 | <code>          return;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 109 | <code>        }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 110 | <code>        pagination.appendChild(pageButton(String(page), page, {</code> | Добавляет созданный элемент в документ. |
+| 111 | <code>          current: page === currentPage,</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 112 | <code>        }));</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 113 | <code>      });</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 115 | <code>      pagination.appendChild(pageButton('›', currentPage + 1, {</code> | Добавляет созданный элемент в документ. |
+| 116 | <code>        ariaLabel: 'Наступна сторінка',</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 117 | <code>        disabled: currentPage === totalPages,</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 118 | <code>      }));</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 119 | <code>    };</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 121 | <code>    const renderPage = (scrollToTop = false) =&gt; {</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 122 | <code>      const totalPages = paginationEnabled</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 123 | <code>        ? Math.max(1, Math.ceil(matchingItems.length / pageSize))</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 124 | <code>        : 1;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 125 | <code>      currentPage = Math.min(Math.max(currentPage, 1), totalPages);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 126 | <code>      const pageStart = (currentPage - 1) * pageSize;</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 127 | <code>      const visibleItems = new Set(</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 128 | <code>        (paginationEnabled</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 129 | <code>          ? matchingItems.slice(pageStart, pageStart + pageSize)</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 130 | <code>          : matchingItems</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 131 | <code>        ).map(({ item }) =&gt; item),</code> | Объявляет функцию, которую можно вызвать сейчас или передать обработчику события. |
+| 132 | <code>      );</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 134 | <code>      indexedItems.forEach(({ item }) =&gt; {</code> | Повторяет действие для набора элементов или значений. |
+| 135 | <code>        item.hidden = !visibleItems.has(item);</code> | Показывает или скрывает элемент через стандартное свойство hidden. |
+| 136 | <code>      });</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 138 | <code>      groups.forEach((group) =&gt; {</code> | Повторяет действие для набора элементов или значений. |
+| 139 | <code>        const groupItems = Array.from(group.querySelectorAll('[data-live-filter-item]'));</code> | Находит нужный HTML-элемент по CSS-селектору для дальнейшего поведения. |
+| 140 | <code>        const groupVisibleCount = groupItems.filter((item) =&gt; !item.hidden).length;</code> | Показывает или скрывает элемент через стандартное свойство hidden. |
+| 141 | <code>        const keepEmpty = group.hasAttribute('data-live-filter-keep-empty');</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 142 | <code>        const hasActiveFilter = Boolean(input &amp;&amp; input.value.trim());</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 143 | <code>        group.hidden = groupVisibleCount === 0 &amp;&amp; !(keepEmpty &amp;&amp; !hasActiveFilter);</code> | Показывает или скрывает элемент через стандартное свойство hidden. |
+| 144 | <code>        const groupCount = group.querySelector('[data-live-filter-group-count]');</code> | Находит нужный HTML-элемент по CSS-селектору для дальнейшего поведения. |
+| 145 | <code>        if (groupCount) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
+| 146 | <code>          const template = groupCount.dataset.countTemplate &#124;&#124; '{count}';</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 147 | <code>          groupCount.textContent = template.replace('{count}', groupVisibleCount);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 148 | <code>        }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 149 | <code>      });</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 151 | <code>      if (count) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
+| 152 | <code>        count.textContent = input &amp;&amp; input.value.trim()</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 153 | <code>          ? `Знайдено: ${matchingItems.length} з ${items.length}`</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 154 | <code>          : `Усього: ${items.length}`;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 155 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 156 | <code>      if (empty) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
+| 157 | <code>        empty.hidden = matchingItems.length !== 0;</code> | Показывает или скрывает элемент через стандартное свойство hidden. |
+| 158 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 159 | <code>      if (clearButton) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
+| 160 | <code>        clearButton.disabled = !input.value;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 161 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 163 | <code>      renderPagination(paginationEnabled ? Math.ceil(matchingItems.length / pageSize) : 1);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 164 | <code>      if (scrollToTop) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
+| 165 | <code>        const target = root.querySelector('.live-filter-bar') &#124;&#124; root;</code> | Находит нужный HTML-элемент по CSS-селектору для дальнейшего поведения. |
+| 166 | <code>        target.scrollIntoView({ behavior: 'smooth', block: 'start' });</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 167 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 168 | <code>    };</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 170 | <code>    const applyFilter = (resetPage = true) =&gt; {</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 171 | <code>      const query = searchableParts(input ? input.value : '');</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 172 | <code>      root.classList.toggle('is-filtering', Boolean(query.normalized));</code> | Добавляет, удаляет или переключает CSS-класс, меняя вид без перезагрузки. |
+| 173 | <code>      const terms = query.normalized ? query.normalized.split(/\s+/) : [];</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 174 | <code>      matchingItems = indexedItems.filter(({ search }) =&gt; (</code> | Объявляет функцию, которую можно вызвать сейчас или передать обработчику события. |
+| 175 | <code>        terms.every((term) =&gt; (</code> | Объявляет функцию, которую можно вызвать сейчас или передать обработчику события. |
+| 176 | <code>          search.normalized.includes(term)</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 177 | <code>          &#124;&#124; search.compact.includes(term.replace(/\s+/g, ''))</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 178 | <code>        ))</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 179 | <code>      ));</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 180 | <code>      if (resetPage) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
+| 181 | <code>        currentPage = 1;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 182 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 183 | <code>      renderPage();</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 184 | <code>    };</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 186 | <code>    if (input) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
+| 187 | <code>      input.addEventListener('input', applyFilter);</code> | Подписывает функцию на действие браузера: клик, ввод, прокрутку или изменение видимости. |
+| 188 | <code>      input.addEventListener('search', applyFilter);</code> | Подписывает функцию на действие браузера: клик, ввод, прокрутку или изменение видимости. |
+| 189 | <code>      valueButtons.forEach((button) =&gt; {</code> | Повторяет действие для набора элементов или значений. |
+| 190 | <code>        button.addEventListener('click', () =&gt; {</code> | Подписывает функцию на действие браузера: клик, ввод, прокрутку или изменение видимости. |
+| 191 | <code>          input.value = button.dataset.liveFilterValue &#124;&#124; '';</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 192 | <code>          applyFilter();</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 193 | <code>          input.focus();</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 194 | <code>        });</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 195 | <code>      });</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 196 | <code>      if (clearButton) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
+| 197 | <code>        clearButton.addEventListener('click', () =&gt; {</code> | Подписывает функцию на действие браузера: клик, ввод, прокрутку или изменение видимости. |
+| 198 | <code>          input.value = '';</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 199 | <code>          applyFilter();</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 200 | <code>          input.focus();</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 201 | <code>        });</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 202 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 203 | <code>    }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 204 | <code>    pagination.addEventListener('click', (event) =&gt; {</code> | Подписывает функцию на действие браузера: клик, ввод, прокрутку или изменение видимости. |
+| 205 | <code>      const button = event.target.closest('[data-live-filter-page]');</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 206 | <code>      if (!button &#124;&#124; button.disabled) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
+| 207 | <code>        return;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 208 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 209 | <code>      currentPage = Number.parseInt(button.dataset.liveFilterPage, 10);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 210 | <code>      renderPage(true);</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 211 | <code>    });</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 212 | <code>    applyFilter();</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 214 | <code>    const activeItem = root.querySelector('[data-live-filter-active]');</code> | Находит нужный HTML-элемент по CSS-селектору для дальнейшего поведения. |
+| 215 | <code>    if (activeItem) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
+| 216 | <code>      const activeIndex = matchingItems.findIndex(({ item }) =&gt; item === activeItem);</code> | Объявляет локальную переменную; `const` не переназначается, `let` может изменяться. |
+| 217 | <code>      if (activeIndex &gt;= 0) {</code> | Проверяет условие перед выполнением вложенного поведения браузера. |
+| 218 | <code>        currentPage = Math.floor(activeIndex / pageSize) + 1;</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 219 | <code>        renderPage();</code> | Продолжает вычисление, настройку объекта или вызов браузерного API. |
+| 220 | <code>      }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 221 | <code>    }</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 222 | <code>  });</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
+| 223 | <code>})();</code> | Закрывает функцию, условие, цикл или вызов JavaScript. |
 
 ## Файл `static/clinic/patient_picker.js`
 

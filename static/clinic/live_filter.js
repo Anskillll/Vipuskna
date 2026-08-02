@@ -33,9 +33,10 @@
     const groups = Array.from(root.querySelectorAll('[data-live-filter-group]'));
     const indexedItems = items.map((item) => {
       const extra = item.dataset.filterExtra || '';
-      const searchableText = item.hasAttribute('data-filter-extra-only')
-        ? extra
-        : `${item.textContent} ${extra}`;
+      const explicitSearch = item.getAttribute('data-filter-search');
+      const searchableText = explicitSearch === null
+        ? `${item.textContent} ${extra}`
+        : explicitSearch;
       return {
         item,
         search: searchableParts(searchableText),
