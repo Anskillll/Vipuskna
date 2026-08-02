@@ -3313,7 +3313,7 @@
 
 ## Файл `clinic/forms.py`
 
-- Всего физических строк в файле: 1148.
+- Всего физических строк в файле: 1139.
 - Тип файла: `.py`.
 - Роль файла объясняется в первой части документации; ниже приведены структурные досье и построчный атлас.
 
@@ -3546,7 +3546,7 @@
 
 #### Класс `AdminDoctorCreateForm`
 
-- Расположение: `clinic/forms.py:904`, заканчивается около строки 961.
+- Расположение: `clinic/forms.py:904`, заканчивается около строки 952.
 - Параметры или родители: `FormStyleMixin, forms.Form`.
 - Назначение: Создание учетной записи врача администратором.
 - Декораторы: нет.
@@ -3555,7 +3555,7 @@
 
 #### Класс `AdminUserEditForm`
 
-- Расположение: `clinic/forms.py:964`, заканчивается около строки 1021.
+- Расположение: `clinic/forms.py:955`, заканчивается около строки 1012.
 - Параметры или родители: `FormStyleMixin, forms.Form`.
 - Назначение: Безопасное редактирование существующего пользователя.
 - Декораторы: нет.
@@ -3564,7 +3564,7 @@
 
 #### Класс `TelegramConnectionChoiceField`
 
-- Расположение: `clinic/forms.py:1024`, заканчивается около строки 1034.
+- Расположение: `clinic/forms.py:1015`, заканчивается около строки 1025.
 - Параметры или родители: `forms.ModelChoiceField`.
 - Назначение: Группирует связанные данные и поведение.
 - Декораторы: нет.
@@ -3573,7 +3573,7 @@
 
 #### Класс `AdminTelegramBroadcastForm`
 
-- Расположение: `clinic/forms.py:1037`, заканчивается около строки 1086.
+- Расположение: `clinic/forms.py:1028`, заканчивается около строки 1077.
 - Параметры или родители: `FormStyleMixin, forms.Form`.
 - Назначение: Выбирает массового или одиночного адресата и проверяет длину текста Telegram-сообщения.
 - Декораторы: нет.
@@ -3582,7 +3582,7 @@
 
 #### Класс `ClinicSettingsForm`
 
-- Расположение: `clinic/forms.py:1089`, заканчивается около строки 1110.
+- Расположение: `clinic/forms.py:1080`, заканчивается около строки 1101.
 - Параметры или родители: `FormStyleMixin, forms.ModelForm`.
 - Назначение: Форма названия, логотипа, фона и эффекта.
 - Декораторы: нет.
@@ -3591,7 +3591,7 @@
 
 #### Класс `HomeHeroSlideForm`
 
-- Расположение: `clinic/forms.py:1113`, заканчивается около строки 1124.
+- Расположение: `clinic/forms.py:1104`, заканчивается около строки 1115.
 - Параметры или родители: `FormStyleMixin, forms.ModelForm`.
 - Назначение: Группирует связанные данные и поведение.
 - Декораторы: нет.
@@ -3600,7 +3600,7 @@
 
 #### Класс `NewsPostForm`
 
-- Расположение: `clinic/forms.py:1127`, заканчивается около строки 1137.
+- Расположение: `clinic/forms.py:1118`, заканчивается около строки 1128.
 - Параметры или родители: `FormStyleMixin, forms.ModelForm`.
 - Назначение: Группирует связанные данные и поведение.
 - Декораторы: нет.
@@ -3609,7 +3609,7 @@
 
 #### Класс `GalleryImageForm`
 
-- Расположение: `clinic/forms.py:1140`, заканчивается около строки 1148.
+- Расположение: `clinic/forms.py:1131`, заканчивается около строки 1139.
 - Параметры или родители: `FormStyleMixin, forms.ModelForm`.
 - Назначение: Группирует связанные данные и поведение.
 - Декораторы: нет.
@@ -4005,7 +4005,7 @@
 
 #### Функция `clean_username`
 
-- Расположение: `clinic/forms.py:925`, заканчивается около строки 929.
+- Расположение: `clinic/forms.py:918`, заканчивается около строки 922.
 - Параметры или родители: `self`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -4014,7 +4014,7 @@
 
 #### Функция `clean_email`
 
-- Расположение: `clinic/forms.py:931`, заканчивается около строки 935.
+- Расположение: `clinic/forms.py:924`, заканчивается около строки 928.
 - Параметры или родители: `self`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -4023,7 +4023,7 @@
 
 #### Функция `clean_phone`
 
-- Расположение: `clinic/forms.py:937`, заканчивается около строки 938.
+- Расположение: `clinic/forms.py:930`, заканчивается около строки 931.
 - Параметры или родители: `self`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -4032,7 +4032,7 @@
 
 #### Функция `save`
 
-- Расположение: `clinic/forms.py:940`, заканчивается около строки 961.
+- Расположение: `clinic/forms.py:933`, заканчивается около строки 952.
 - Параметры или родители: `self`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -4041,7 +4041,7 @@
 
 #### Функция `__init__`
 
-- Расположение: `clinic/forms.py:972`, заканчивается около строки 986.
+- Расположение: `clinic/forms.py:963`, заканчивается около строки 977.
 - Параметры или родители: `self`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -4050,7 +4050,7 @@
 
 #### Функция `clean_username`
 
-- Расположение: `clinic/forms.py:988`, заканчивается около строки 993.
+- Расположение: `clinic/forms.py:979`, заканчивается около строки 984.
 - Параметры или родители: `self`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -4059,7 +4059,7 @@
 
 #### Функция `clean_email`
 
-- Расположение: `clinic/forms.py:995`, заканчивается около строки 1000.
+- Расположение: `clinic/forms.py:986`, заканчивается около строки 991.
 - Параметры или родители: `self`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -4068,7 +4068,7 @@
 
 #### Функция `clean_phone`
 
-- Расположение: `clinic/forms.py:1002`, заканчивается около строки 1008.
+- Расположение: `clinic/forms.py:993`, заканчивается около строки 999.
 - Параметры или родители: `self`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -4077,7 +4077,7 @@
 
 #### Функция `save`
 
-- Расположение: `clinic/forms.py:1010`, заканчивается около строки 1021.
+- Расположение: `clinic/forms.py:1001`, заканчивается около строки 1012.
 - Параметры или родители: `self`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -4086,7 +4086,7 @@
 
 #### Функция `label_from_instance`
 
-- Расположение: `clinic/forms.py:1025`, заканчивается около строки 1034.
+- Расположение: `clinic/forms.py:1016`, заканчивается около строки 1025.
 - Параметры или родители: `self, connection`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -4095,7 +4095,7 @@
 
 #### Функция `__init__`
 
-- Расположение: `clinic/forms.py:1070`, заканчивается около строки 1076.
+- Расположение: `clinic/forms.py:1061`, заканчивается около строки 1067.
 - Параметры или родители: `self`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -4104,7 +4104,7 @@
 
 #### Функция `clean`
 
-- Расположение: `clinic/forms.py:1078`, заканчивается около строки 1086.
+- Расположение: `clinic/forms.py:1069`, заканчивается около строки 1077.
 - Параметры или родители: `self`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -4113,7 +4113,7 @@
 
 #### Класс `Meta`
 
-- Расположение: `clinic/forms.py:1090`, заканчивается около строки 1104.
+- Расположение: `clinic/forms.py:1081`, заканчивается около строки 1095.
 - Параметры или родители: `без явного родителя`.
 - Назначение: Группирует связанные данные и поведение.
 - Декораторы: нет.
@@ -4122,7 +4122,7 @@
 
 #### Функция `clean`
 
-- Расположение: `clinic/forms.py:1106`, заканчивается около строки 1110.
+- Расположение: `clinic/forms.py:1097`, заканчивается около строки 1101.
 - Параметры или родители: `self`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -4131,7 +4131,7 @@
 
 #### Класс `Meta`
 
-- Расположение: `clinic/forms.py:1114`, заканчивается около строки 1124.
+- Расположение: `clinic/forms.py:1105`, заканчивается около строки 1115.
 - Параметры или родители: `без явного родителя`.
 - Назначение: Группирует связанные данные и поведение.
 - Декораторы: нет.
@@ -4140,7 +4140,7 @@
 
 #### Класс `Meta`
 
-- Расположение: `clinic/forms.py:1128`, заканчивается около строки 1137.
+- Расположение: `clinic/forms.py:1119`, заканчивается около строки 1128.
 - Параметры или родители: `без явного родителя`.
 - Назначение: Группирует связанные данные и поведение.
 - Декораторы: нет.
@@ -4149,7 +4149,7 @@
 
 #### Класс `Meta`
 
-- Расположение: `clinic/forms.py:1141`, заканчивается около строки 1148.
+- Расположение: `clinic/forms.py:1132`, заканчивается около строки 1139.
 - Параметры или родители: `без явного родителя`.
 - Назначение: Группирует связанные данные и поведение.
 - Декораторы: нет.
@@ -4966,210 +4966,201 @@
 | 914 | <code>        required=False,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminDoctorCreateForm`. |
 | 915 | <code>        validators=[validate_image_upload],</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminDoctorCreateForm`. |
 | 916 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminDoctorCreateForm`. |
-| 917 | <code>    description = forms.CharField(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminDoctorCreateForm`. |
-| 918 | <code>        label='Опис',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminDoctorCreateForm`. |
-| 919 | <code>        required=False,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminDoctorCreateForm`. |
-| 920 | <code>        max_length=MAX_DOCTOR_DESCRIPTION_LENGTH,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminDoctorCreateForm`. |
-| 921 | <code>        widget=forms.Textarea(attrs={'rows': 4}),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminDoctorCreateForm`. |
-| 922 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminDoctorCreateForm`. |
-| 923 | <code>    photo_url = forms.URLField(label='Посилання на фото', required=False)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminDoctorCreateForm`. |
-| 925 | <code>    def clean_username(self):</code> | Объявляет функцию `clean_username` и перечисляет принимаемые параметры. Контекст: `AdminDoctorCreateForm.clean_username`. |
-| 926 | <code>        username = self.cleaned_data['username'].strip()</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.clean_username`. |
-| 927 | <code>        if User.objects.filter(username__iexact=username).exists():</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `AdminDoctorCreateForm.clean_username`. |
-| 928 | <code>            raise forms.ValidationError('Такий логін уже використовується.')</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `AdminDoctorCreateForm.clean_username`. |
-| 929 | <code>        return username</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `AdminDoctorCreateForm.clean_username`. |
-| 931 | <code>    def clean_email(self):</code> | Объявляет функцию `clean_email` и перечисляет принимаемые параметры. Контекст: `AdminDoctorCreateForm.clean_email`. |
-| 932 | <code>        email = self.cleaned_data.get('email', '').lower().strip()</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.clean_email`. |
-| 933 | <code>        if email and User.objects.filter(email__iexact=email).exists():</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `AdminDoctorCreateForm.clean_email`. |
-| 934 | <code>            raise forms.ValidationError('Ця електронна пошта вже використовується.')</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `AdminDoctorCreateForm.clean_email`. |
-| 935 | <code>        return email</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `AdminDoctorCreateForm.clean_email`. |
-| 937 | <code>    def clean_phone(self):</code> | Объявляет функцию `clean_phone` и перечисляет принимаемые параметры. Контекст: `AdminDoctorCreateForm.clean_phone`. |
-| 938 | <code>        return normalize_phone_number(self.cleaned_data['phone'])</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.clean_phone`. |
-| 940 | <code>    def save(self):</code> | Объявляет функцию `save` и перечисляет принимаемые параметры. Контекст: `AdminDoctorCreateForm.save`. |
-| 941 | <code>        user = User.objects.create_user(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminDoctorCreateForm.save`. |
-| 942 | <code>            username=self.cleaned_data['username'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
-| 943 | <code>            email=self.cleaned_data['email'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
-| 944 | <code>            password=self.cleaned_data['password'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
-| 945 | <code>            first_name=self.cleaned_data['first_name'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
-| 946 | <code>            last_name=self.cleaned_data['last_name'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
-| 947 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminDoctorCreateForm.save`. |
-| 948 | <code>        Profile.objects.create(</code> | Начинает создание новой строки базы через Django ORM. Контекст: `AdminDoctorCreateForm.save`. |
-| 949 | <code>            user=user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminDoctorCreateForm.save`. |
-| 950 | <code>            role=Profile.ROLE_DOCTOR,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminDoctorCreateForm.save`. |
-| 951 | <code>            phone=self.cleaned_data['phone'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
-| 952 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminDoctorCreateForm.save`. |
-| 953 | <code>        Doctor.objects.create(</code> | Начинает создание новой строки базы через Django ORM. Контекст: `AdminDoctorCreateForm.save`. |
-| 954 | <code>            user=user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminDoctorCreateForm.save`. |
-| 955 | <code>            specialization=self.cleaned_data['specialization'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
-| 956 | <code>            phone=self.cleaned_data['phone'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
-| 957 | <code>            photo=self.cleaned_data.get('photo'),</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
-| 958 | <code>            description=self.cleaned_data['description'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
-| 959 | <code>            photo_url=self.cleaned_data['photo_url'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
-| 960 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminDoctorCreateForm.save`. |
-| 961 | <code>        return user</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `AdminDoctorCreateForm.save`. |
-| 964 | <code>class AdminUserEditForm(FormStyleMixin, forms.Form):</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `AdminUserEditForm`. |
-| 965 | <code>    username = forms.CharField(label='Логін', max_length=150)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminUserEditForm`. |
-| 966 | <code>    first_name = forms.CharField(label="Ім'я", max_length=80)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminUserEditForm`. |
-| 967 | <code>    last_name = forms.CharField(label='Прізвище', max_length=80)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminUserEditForm`. |
-| 968 | <code>    email = forms.EmailField(label='Електронна пошта', required=False)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminUserEditForm`. |
-| 969 | <code>    phone = forms.CharField(label='Телефон', validators=[validate_ukrainian_phone], required=False)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminUserEditForm`. |
-| 970 | <code>    is_active = forms.BooleanField(label='Активний акаунт', required=False)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminUserEditForm`. |
-| 972 | <code>    def __init__(self, *args, user=None, **kwargs):</code> | Объявляет функцию `__init__` и перечисляет принимаемые параметры. Контекст: `AdminUserEditForm.__init__`. |
-| 973 | <code>        self.user = user</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `AdminUserEditForm.__init__`. |
-| 974 | <code>        initial = kwargs.pop('initial', {})</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminUserEditForm.__init__`. |
-| 975 | <code>        if user:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `AdminUserEditForm.__init__`. |
-| 976 | <code>            initial.update(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminUserEditForm.__init__`. |
-| 977 | <code>                {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminUserEditForm.__init__`. |
-| 978 | <code>                    'username': user.username,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminUserEditForm.__init__`. |
-| 979 | <code>                    'first_name': user.first_name,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminUserEditForm.__init__`. |
-| 980 | <code>                    'last_name': user.last_name,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminUserEditForm.__init__`. |
-| 981 | <code>                    'email': user.email,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminUserEditForm.__init__`. |
-| 982 | <code>                    'phone': getattr(getattr(user, 'profile', None), 'phone', ''),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminUserEditForm.__init__`. |
-| 983 | <code>                    'is_active': user.is_active,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminUserEditForm.__init__`. |
-| 984 | <code>                }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminUserEditForm.__init__`. |
-| 985 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminUserEditForm.__init__`. |
-| 986 | <code>        super().__init__(*args, initial=initial, **kwargs)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminUserEditForm.__init__`. |
-| 988 | <code>    def clean_username(self):</code> | Объявляет функцию `clean_username` и перечисляет принимаемые параметры. Контекст: `AdminUserEditForm.clean_username`. |
-| 989 | <code>        username = self.cleaned_data['username'].strip()</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminUserEditForm.clean_username`. |
-| 990 | <code>        qs = User.objects.filter(username__iexact=username).exclude(pk=self.user.pk)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `AdminUserEditForm.clean_username`. |
-| 991 | <code>        if qs.exists():</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `AdminUserEditForm.clean_username`. |
-| 992 | <code>            raise forms.ValidationError('Такий логін уже використовується.')</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `AdminUserEditForm.clean_username`. |
-| 993 | <code>        return username</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `AdminUserEditForm.clean_username`. |
-| 995 | <code>    def clean_email(self):</code> | Объявляет функцию `clean_email` и перечисляет принимаемые параметры. Контекст: `AdminUserEditForm.clean_email`. |
-| 996 | <code>        email = self.cleaned_data.get('email', '').lower().strip()</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminUserEditForm.clean_email`. |
-| 997 | <code>        qs = User.objects.filter(email__iexact=email).exclude(pk=self.user.pk)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `AdminUserEditForm.clean_email`. |
-| 998 | <code>        if email and qs.exists():</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `AdminUserEditForm.clean_email`. |
-| 999 | <code>            raise forms.ValidationError('Ця електронна пошта вже використовується.')</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `AdminUserEditForm.clean_email`. |
-| 1000 | <code>        return email</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `AdminUserEditForm.clean_email`. |
-| 1002 | <code>    def clean_phone(self):</code> | Объявляет функцию `clean_phone` и перечисляет принимаемые параметры. Контекст: `AdminUserEditForm.clean_phone`. |
-| 1003 | <code>        phone = normalize_phone_number(self.cleaned_data.get('phone', ''))</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminUserEditForm.clean_phone`. |
-| 1004 | <code>        profile = getattr(self.user, 'profile', None)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminUserEditForm.clean_phone`. |
-| 1005 | <code>        if profile and profile.role == Profile.ROLE_PATIENT:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `AdminUserEditForm.clean_phone`. |
-| 1006 | <code>            if patient_phone_is_used(phone, exclude_user=self.user):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `AdminUserEditForm.clean_phone`. |
-| 1007 | <code>                raise forms.ValidationError('Цей номер телефону вже прив’язаний до іншого пацієнта.')</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `AdminUserEditForm.clean_phone`. |
-| 1008 | <code>        return phone</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `AdminUserEditForm.clean_phone`. |
-| 1010 | <code>    def save(self):</code> | Объявляет функцию `save` и перечисляет принимаемые параметры. Контекст: `AdminUserEditForm.save`. |
-| 1011 | <code>        self.user.username = self.cleaned_data['username']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminUserEditForm.save`. |
-| 1012 | <code>        self.user.first_name = self.cleaned_data['first_name']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminUserEditForm.save`. |
-| 1013 | <code>        self.user.last_name = self.cleaned_data['last_name']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminUserEditForm.save`. |
-| 1014 | <code>        self.user.email = self.cleaned_data['email']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminUserEditForm.save`. |
-| 1015 | <code>        self.user.is_active = self.cleaned_data['is_active']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminUserEditForm.save`. |
-| 1016 | <code>        self.user.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `AdminUserEditForm.save`. |
-| 1018 | <code>        if hasattr(self.user, 'profile'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `AdminUserEditForm.save`. |
-| 1019 | <code>            self.user.profile.phone = self.cleaned_data['phone']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminUserEditForm.save`. |
-| 1020 | <code>            self.user.profile.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `AdminUserEditForm.save`. |
-| 1021 | <code>        return self.user</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `AdminUserEditForm.save`. |
-| 1024 | <code>class TelegramConnectionChoiceField(forms.ModelChoiceField):</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `TelegramConnectionChoiceField`. |
-| 1025 | <code>    def label_from_instance(self, connection):</code> | Объявляет функцию `label_from_instance` и перечисляет принимаемые параметры. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
-| 1026 | <code>        user = connection.user</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
-| 1027 | <code>        name = user.get_full_name().strip() or user.username</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
-| 1028 | <code>        role = 'Адміністратор' if user.is_staff else getattr(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
-| 1029 | <code>            getattr(user, 'profile', None),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
-| 1030 | <code>            'get_role_display',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
-| 1031 | <code>            lambda: 'Користувач',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
-| 1032 | <code>        )()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
-| 1033 | <code>        telegram_name = f'@{connection.username}' if connection.username else f'ID {connection.chat_id}'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
-| 1034 | <code>        return f'{name} · {role} · {telegram_name}'</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
-| 1037 | <code>class AdminTelegramBroadcastForm(FormStyleMixin, forms.Form):</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `AdminTelegramBroadcastForm`. |
-| 1038 | <code>    AUDIENCE_ALL = 'all'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1039 | <code>    AUDIENCE_SINGLE = 'single'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1040 | <code>    AUDIENCE_CHOICES = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1041 | <code>        (AUDIENCE_ALL, 'Усім підключеним користувачам'),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminTelegramBroadcastForm`. |
-| 1042 | <code>        (AUDIENCE_SINGLE, 'Одному користувачу'),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminTelegramBroadcastForm`. |
-| 1043 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminTelegramBroadcastForm`. |
-| 1045 | <code>    audience = forms.ChoiceField(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1046 | <code>        label='Кому надіслати',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1047 | <code>        choices=AUDIENCE_CHOICES,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1048 | <code>        initial=AUDIENCE_ALL,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1049 | <code>        widget=forms.RadioSelect,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1050 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminTelegramBroadcastForm`. |
-| 1051 | <code>    recipient = TelegramConnectionChoiceField(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1052 | <code>        label='Користувач',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1053 | <code>        queryset=TelegramConnection.objects.none(),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1054 | <code>        required=False,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1055 | <code>        empty_label='Оберіть користувача',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1056 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminTelegramBroadcastForm`. |
-| 1057 | <code>    message = forms.CharField(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1058 | <code>        label='Текст повідомлення',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1059 | <code>        max_length=ADMIN_BROADCAST_MAX_LENGTH,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1060 | <code>        widget=forms.Textarea(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1061 | <code>            attrs={</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1062 | <code>                'rows': 8,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminTelegramBroadcastForm`. |
-| 1063 | <code>                'maxlength': str(ADMIN_BROADCAST_MAX_LENGTH),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminTelegramBroadcastForm`. |
-| 1064 | <code>                'placeholder': 'Напишіть повідомлення, яке користувач отримає у Telegram…',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminTelegramBroadcastForm`. |
-| 1065 | <code>            }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminTelegramBroadcastForm`. |
-| 1066 | <code>        ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminTelegramBroadcastForm`. |
-| 1067 | <code>        help_text=f'До {ADMIN_BROADCAST_MAX_LENGTH} символів. Медичні дані у масових повідомленнях краще не вказувати.',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
-| 1068 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminTelegramBroadcastForm`. |
-| 1070 | <code>    def __init__(self, *args, connections=None, **kwargs):</code> | Объявляет функцию `__init__` и перечисляет принимаемые параметры. Контекст: `AdminTelegramBroadcastForm.__init__`. |
-| 1071 | <code>        super().__init__(*args, **kwargs)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminTelegramBroadcastForm.__init__`. |
-| 1072 | <code>        self.fields['recipient'].queryset = connections if connections is not None else (</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `AdminTelegramBroadcastForm.__init__`. |
-| 1073 | <code>            TelegramConnection.objects.filter(is_active=True, user__is_active=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `AdminTelegramBroadcastForm.__init__`. |
-| 1074 | <code>            .select_related('user__profile')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `AdminTelegramBroadcastForm.__init__`. |
-| 1075 | <code>            .order_by('user__last_name', 'user__first_name', 'user__username')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `AdminTelegramBroadcastForm.__init__`. |
-| 1076 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminTelegramBroadcastForm.__init__`. |
-| 1078 | <code>    def clean(self):</code> | Объявляет функцию `clean` и перечисляет принимаемые параметры. Контекст: `AdminTelegramBroadcastForm.clean`. |
-| 1079 | <code>        cleaned_data = super().clean()</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminTelegramBroadcastForm.clean`. |
-| 1080 | <code>        audience = cleaned_data.get('audience')</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminTelegramBroadcastForm.clean`. |
-| 1081 | <code>        recipient = cleaned_data.get('recipient')</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminTelegramBroadcastForm.clean`. |
-| 1082 | <code>        if audience == self.AUDIENCE_SINGLE and recipient is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `AdminTelegramBroadcastForm.clean`. |
-| 1083 | <code>            self.add_error('recipient', 'Оберіть користувача, якому потрібно надіслати повідомлення.')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminTelegramBroadcastForm.clean`. |
-| 1084 | <code>        if audience == self.AUDIENCE_ALL:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `AdminTelegramBroadcastForm.clean`. |
-| 1085 | <code>            cleaned_data['recipient'] = None</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminTelegramBroadcastForm.clean`. |
-| 1086 | <code>        return cleaned_data</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminTelegramBroadcastForm.clean`. |
-| 1089 | <code>class ClinicSettingsForm(FormStyleMixin, forms.ModelForm):</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `ClinicSettingsForm`. |
-| 1090 | <code>    class Meta:</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `ClinicSettingsForm.Meta`. |
-| 1091 | <code>        model = ClinicSettings</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ClinicSettingsForm.Meta`. |
-| 1092 | <code>        fields = ['clinic_name', 'logo', 'home_background', 'home_effect', 'particle_image']</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ClinicSettingsForm.Meta`. |
-| 1093 | <code>        widgets = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ClinicSettingsForm.Meta`. |
-| 1094 | <code>            'logo': forms.ClearableFileInput(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ClinicSettingsForm.Meta`. |
-| 1095 | <code>                attrs={'accept': 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg'}</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ClinicSettingsForm.Meta`. |
-| 1096 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `ClinicSettingsForm.Meta`. |
-| 1097 | <code>        }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `ClinicSettingsForm.Meta`. |
-| 1098 | <code>        labels = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ClinicSettingsForm.Meta`. |
-| 1099 | <code>            'clinic_name': 'Назва клініки',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ClinicSettingsForm.Meta`. |
-| 1100 | <code>            'logo': 'Логотип клініки',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ClinicSettingsForm.Meta`. |
-| 1101 | <code>            'home_background': 'Фон усього сайту',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ClinicSettingsForm.Meta`. |
-| 1102 | <code>            'home_effect': 'Анімований ефект поверх фону',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ClinicSettingsForm.Meta`. |
-| 1103 | <code>            'particle_image': 'Зображення для власного пресета',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ClinicSettingsForm.Meta`. |
-| 1104 | <code>        }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `ClinicSettingsForm.Meta`. |
-| 1106 | <code>    def clean(self):</code> | Объявляет функцию `clean` и перечисляет принимаемые параметры. Контекст: `ClinicSettingsForm.clean`. |
-| 1107 | <code>        cleaned_data = super().clean()</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `ClinicSettingsForm.clean`. |
-| 1108 | <code>        if cleaned_data.get('home_effect') == ClinicSettings.EFFECT_CUSTOM and not cleaned_data.get('particle_image'):</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `ClinicSettingsForm.clean`. |
-| 1109 | <code>            self.add_error('particle_image', 'Завантажте зображення для власного пресета.')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ClinicSettingsForm.clean`. |
-| 1110 | <code>        return cleaned_data</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `ClinicSettingsForm.clean`. |
-| 1113 | <code>class HomeHeroSlideForm(FormStyleMixin, forms.ModelForm):</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `HomeHeroSlideForm`. |
-| 1114 | <code>    class Meta:</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `HomeHeroSlideForm.Meta`. |
-| 1115 | <code>        model = HomeHeroSlide</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `HomeHeroSlideForm.Meta`. |
-| 1116 | <code>        fields = ['title', 'image', 'is_active']</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `HomeHeroSlideForm.Meta`. |
-| 1117 | <code>        labels = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `HomeHeroSlideForm.Meta`. |
-| 1118 | <code>            'title': 'Коротка назва фотографії',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `HomeHeroSlideForm.Meta`. |
-| 1119 | <code>            'image': 'Фотографія для верхнього слайдера',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `HomeHeroSlideForm.Meta`. |
-| 1120 | <code>            'is_active': 'Показувати фотографію на головній сторінці',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `HomeHeroSlideForm.Meta`. |
-| 1121 | <code>        }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `HomeHeroSlideForm.Meta`. |
-| 1122 | <code>        help_texts = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `HomeHeroSlideForm.Meta`. |
-| 1123 | <code>            'title': 'Назву бачить лише адміністратор. Вона допомагає розрізняти фотографії.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `HomeHeroSlideForm.Meta`. |
-| 1124 | <code>        }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `HomeHeroSlideForm.Meta`. |
-| 1127 | <code>class NewsPostForm(FormStyleMixin, forms.ModelForm):</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `NewsPostForm`. |
-| 1128 | <code>    class Meta:</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `NewsPostForm.Meta`. |
-| 1129 | <code>        model = NewsPost</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `NewsPostForm.Meta`. |
-| 1130 | <code>        fields = ['title', 'text', 'image', 'is_published']</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `NewsPostForm.Meta`. |
-| 1131 | <code>        widgets = {'text': forms.Textarea(attrs={'rows': 7})}</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `NewsPostForm.Meta`. |
-| 1132 | <code>        labels = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `NewsPostForm.Meta`. |
-| 1133 | <code>            'title': 'Заголовок',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `NewsPostForm.Meta`. |
-| 1134 | <code>            'text': 'Текст новини',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `NewsPostForm.Meta`. |
-| 1135 | <code>            'image': 'Зображення',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `NewsPostForm.Meta`. |
-| 1136 | <code>            'is_published': 'Показувати на головній сторінці',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `NewsPostForm.Meta`. |
-| 1137 | <code>        }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `NewsPostForm.Meta`. |
-| 1140 | <code>class GalleryImageForm(FormStyleMixin, forms.ModelForm):</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `GalleryImageForm`. |
-| 1141 | <code>    class Meta:</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `GalleryImageForm.Meta`. |
-| 1142 | <code>        model = GalleryImage</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `GalleryImageForm.Meta`. |
-| 1143 | <code>        fields = ['title', 'image', 'is_published']</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `GalleryImageForm.Meta`. |
-| 1144 | <code>        labels = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `GalleryImageForm.Meta`. |
-| 1145 | <code>            'title': 'Підпис до фото',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `GalleryImageForm.Meta`. |
-| 1146 | <code>            'image': 'Фотографія',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `GalleryImageForm.Meta`. |
-| 1147 | <code>            'is_published': 'Показувати в галереї',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `GalleryImageForm.Meta`. |
-| 1148 | <code>        }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `GalleryImageForm.Meta`. |
+| 918 | <code>    def clean_username(self):</code> | Объявляет функцию `clean_username` и перечисляет принимаемые параметры. Контекст: `AdminDoctorCreateForm.clean_username`. |
+| 919 | <code>        username = self.cleaned_data['username'].strip()</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.clean_username`. |
+| 920 | <code>        if User.objects.filter(username__iexact=username).exists():</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `AdminDoctorCreateForm.clean_username`. |
+| 921 | <code>            raise forms.ValidationError('Такий логін уже використовується.')</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `AdminDoctorCreateForm.clean_username`. |
+| 922 | <code>        return username</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `AdminDoctorCreateForm.clean_username`. |
+| 924 | <code>    def clean_email(self):</code> | Объявляет функцию `clean_email` и перечисляет принимаемые параметры. Контекст: `AdminDoctorCreateForm.clean_email`. |
+| 925 | <code>        email = self.cleaned_data.get('email', '').lower().strip()</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.clean_email`. |
+| 926 | <code>        if email and User.objects.filter(email__iexact=email).exists():</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `AdminDoctorCreateForm.clean_email`. |
+| 927 | <code>            raise forms.ValidationError('Ця електронна пошта вже використовується.')</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `AdminDoctorCreateForm.clean_email`. |
+| 928 | <code>        return email</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `AdminDoctorCreateForm.clean_email`. |
+| 930 | <code>    def clean_phone(self):</code> | Объявляет функцию `clean_phone` и перечисляет принимаемые параметры. Контекст: `AdminDoctorCreateForm.clean_phone`. |
+| 931 | <code>        return normalize_phone_number(self.cleaned_data['phone'])</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.clean_phone`. |
+| 933 | <code>    def save(self):</code> | Объявляет функцию `save` и перечисляет принимаемые параметры. Контекст: `AdminDoctorCreateForm.save`. |
+| 934 | <code>        user = User.objects.create_user(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminDoctorCreateForm.save`. |
+| 935 | <code>            username=self.cleaned_data['username'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
+| 936 | <code>            email=self.cleaned_data['email'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
+| 937 | <code>            password=self.cleaned_data['password'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
+| 938 | <code>            first_name=self.cleaned_data['first_name'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
+| 939 | <code>            last_name=self.cleaned_data['last_name'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
+| 940 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminDoctorCreateForm.save`. |
+| 941 | <code>        Profile.objects.create(</code> | Начинает создание новой строки базы через Django ORM. Контекст: `AdminDoctorCreateForm.save`. |
+| 942 | <code>            user=user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminDoctorCreateForm.save`. |
+| 943 | <code>            role=Profile.ROLE_DOCTOR,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminDoctorCreateForm.save`. |
+| 944 | <code>            phone=self.cleaned_data['phone'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
+| 945 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminDoctorCreateForm.save`. |
+| 946 | <code>        Doctor.objects.create(</code> | Начинает создание новой строки базы через Django ORM. Контекст: `AdminDoctorCreateForm.save`. |
+| 947 | <code>            user=user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminDoctorCreateForm.save`. |
+| 948 | <code>            specialization=self.cleaned_data['specialization'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
+| 949 | <code>            phone=self.cleaned_data['phone'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
+| 950 | <code>            photo=self.cleaned_data.get('photo'),</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminDoctorCreateForm.save`. |
+| 951 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminDoctorCreateForm.save`. |
+| 952 | <code>        return user</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `AdminDoctorCreateForm.save`. |
+| 955 | <code>class AdminUserEditForm(FormStyleMixin, forms.Form):</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `AdminUserEditForm`. |
+| 956 | <code>    username = forms.CharField(label='Логін', max_length=150)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminUserEditForm`. |
+| 957 | <code>    first_name = forms.CharField(label="Ім'я", max_length=80)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminUserEditForm`. |
+| 958 | <code>    last_name = forms.CharField(label='Прізвище', max_length=80)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminUserEditForm`. |
+| 959 | <code>    email = forms.EmailField(label='Електронна пошта', required=False)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminUserEditForm`. |
+| 960 | <code>    phone = forms.CharField(label='Телефон', validators=[validate_ukrainian_phone], required=False)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminUserEditForm`. |
+| 961 | <code>    is_active = forms.BooleanField(label='Активний акаунт', required=False)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminUserEditForm`. |
+| 963 | <code>    def __init__(self, *args, user=None, **kwargs):</code> | Объявляет функцию `__init__` и перечисляет принимаемые параметры. Контекст: `AdminUserEditForm.__init__`. |
+| 964 | <code>        self.user = user</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `AdminUserEditForm.__init__`. |
+| 965 | <code>        initial = kwargs.pop('initial', {})</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminUserEditForm.__init__`. |
+| 966 | <code>        if user:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `AdminUserEditForm.__init__`. |
+| 967 | <code>            initial.update(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminUserEditForm.__init__`. |
+| 968 | <code>                {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminUserEditForm.__init__`. |
+| 969 | <code>                    'username': user.username,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminUserEditForm.__init__`. |
+| 970 | <code>                    'first_name': user.first_name,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminUserEditForm.__init__`. |
+| 971 | <code>                    'last_name': user.last_name,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminUserEditForm.__init__`. |
+| 972 | <code>                    'email': user.email,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminUserEditForm.__init__`. |
+| 973 | <code>                    'phone': getattr(getattr(user, 'profile', None), 'phone', ''),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminUserEditForm.__init__`. |
+| 974 | <code>                    'is_active': user.is_active,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminUserEditForm.__init__`. |
+| 975 | <code>                }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminUserEditForm.__init__`. |
+| 976 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminUserEditForm.__init__`. |
+| 977 | <code>        super().__init__(*args, initial=initial, **kwargs)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminUserEditForm.__init__`. |
+| 979 | <code>    def clean_username(self):</code> | Объявляет функцию `clean_username` и перечисляет принимаемые параметры. Контекст: `AdminUserEditForm.clean_username`. |
+| 980 | <code>        username = self.cleaned_data['username'].strip()</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminUserEditForm.clean_username`. |
+| 981 | <code>        qs = User.objects.filter(username__iexact=username).exclude(pk=self.user.pk)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `AdminUserEditForm.clean_username`. |
+| 982 | <code>        if qs.exists():</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `AdminUserEditForm.clean_username`. |
+| 983 | <code>            raise forms.ValidationError('Такий логін уже використовується.')</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `AdminUserEditForm.clean_username`. |
+| 984 | <code>        return username</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `AdminUserEditForm.clean_username`. |
+| 986 | <code>    def clean_email(self):</code> | Объявляет функцию `clean_email` и перечисляет принимаемые параметры. Контекст: `AdminUserEditForm.clean_email`. |
+| 987 | <code>        email = self.cleaned_data.get('email', '').lower().strip()</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminUserEditForm.clean_email`. |
+| 988 | <code>        qs = User.objects.filter(email__iexact=email).exclude(pk=self.user.pk)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `AdminUserEditForm.clean_email`. |
+| 989 | <code>        if email and qs.exists():</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `AdminUserEditForm.clean_email`. |
+| 990 | <code>            raise forms.ValidationError('Ця електронна пошта вже використовується.')</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `AdminUserEditForm.clean_email`. |
+| 991 | <code>        return email</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `AdminUserEditForm.clean_email`. |
+| 993 | <code>    def clean_phone(self):</code> | Объявляет функцию `clean_phone` и перечисляет принимаемые параметры. Контекст: `AdminUserEditForm.clean_phone`. |
+| 994 | <code>        phone = normalize_phone_number(self.cleaned_data.get('phone', ''))</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminUserEditForm.clean_phone`. |
+| 995 | <code>        profile = getattr(self.user, 'profile', None)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminUserEditForm.clean_phone`. |
+| 996 | <code>        if profile and profile.role == Profile.ROLE_PATIENT:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `AdminUserEditForm.clean_phone`. |
+| 997 | <code>            if patient_phone_is_used(phone, exclude_user=self.user):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `AdminUserEditForm.clean_phone`. |
+| 998 | <code>                raise forms.ValidationError('Цей номер телефону вже прив’язаний до іншого пацієнта.')</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `AdminUserEditForm.clean_phone`. |
+| 999 | <code>        return phone</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `AdminUserEditForm.clean_phone`. |
+| 1001 | <code>    def save(self):</code> | Объявляет функцию `save` и перечисляет принимаемые параметры. Контекст: `AdminUserEditForm.save`. |
+| 1002 | <code>        self.user.username = self.cleaned_data['username']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminUserEditForm.save`. |
+| 1003 | <code>        self.user.first_name = self.cleaned_data['first_name']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminUserEditForm.save`. |
+| 1004 | <code>        self.user.last_name = self.cleaned_data['last_name']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminUserEditForm.save`. |
+| 1005 | <code>        self.user.email = self.cleaned_data['email']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminUserEditForm.save`. |
+| 1006 | <code>        self.user.is_active = self.cleaned_data['is_active']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminUserEditForm.save`. |
+| 1007 | <code>        self.user.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `AdminUserEditForm.save`. |
+| 1009 | <code>        if hasattr(self.user, 'profile'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `AdminUserEditForm.save`. |
+| 1010 | <code>            self.user.profile.phone = self.cleaned_data['phone']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminUserEditForm.save`. |
+| 1011 | <code>            self.user.profile.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `AdminUserEditForm.save`. |
+| 1012 | <code>        return self.user</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `AdminUserEditForm.save`. |
+| 1015 | <code>class TelegramConnectionChoiceField(forms.ModelChoiceField):</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `TelegramConnectionChoiceField`. |
+| 1016 | <code>    def label_from_instance(self, connection):</code> | Объявляет функцию `label_from_instance` и перечисляет принимаемые параметры. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
+| 1017 | <code>        user = connection.user</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
+| 1018 | <code>        name = user.get_full_name().strip() or user.username</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
+| 1019 | <code>        role = 'Адміністратор' if user.is_staff else getattr(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
+| 1020 | <code>            getattr(user, 'profile', None),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
+| 1021 | <code>            'get_role_display',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
+| 1022 | <code>            lambda: 'Користувач',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
+| 1023 | <code>        )()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
+| 1024 | <code>        telegram_name = f'@{connection.username}' if connection.username else f'ID {connection.chat_id}'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
+| 1025 | <code>        return f'{name} · {role} · {telegram_name}'</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `TelegramConnectionChoiceField.label_from_instance`. |
+| 1028 | <code>class AdminTelegramBroadcastForm(FormStyleMixin, forms.Form):</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `AdminTelegramBroadcastForm`. |
+| 1029 | <code>    AUDIENCE_ALL = 'all'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1030 | <code>    AUDIENCE_SINGLE = 'single'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1031 | <code>    AUDIENCE_CHOICES = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1032 | <code>        (AUDIENCE_ALL, 'Усім підключеним користувачам'),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminTelegramBroadcastForm`. |
+| 1033 | <code>        (AUDIENCE_SINGLE, 'Одному користувачу'),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminTelegramBroadcastForm`. |
+| 1034 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminTelegramBroadcastForm`. |
+| 1036 | <code>    audience = forms.ChoiceField(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1037 | <code>        label='Кому надіслати',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1038 | <code>        choices=AUDIENCE_CHOICES,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1039 | <code>        initial=AUDIENCE_ALL,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1040 | <code>        widget=forms.RadioSelect,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1041 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminTelegramBroadcastForm`. |
+| 1042 | <code>    recipient = TelegramConnectionChoiceField(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1043 | <code>        label='Користувач',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1044 | <code>        queryset=TelegramConnection.objects.none(),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1045 | <code>        required=False,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1046 | <code>        empty_label='Оберіть користувача',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1047 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminTelegramBroadcastForm`. |
+| 1048 | <code>    message = forms.CharField(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1049 | <code>        label='Текст повідомлення',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1050 | <code>        max_length=ADMIN_BROADCAST_MAX_LENGTH,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1051 | <code>        widget=forms.Textarea(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1052 | <code>            attrs={</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1053 | <code>                'rows': 8,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminTelegramBroadcastForm`. |
+| 1054 | <code>                'maxlength': str(ADMIN_BROADCAST_MAX_LENGTH),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminTelegramBroadcastForm`. |
+| 1055 | <code>                'placeholder': 'Напишіть повідомлення, яке користувач отримає у Telegram…',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminTelegramBroadcastForm`. |
+| 1056 | <code>            }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminTelegramBroadcastForm`. |
+| 1057 | <code>        ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminTelegramBroadcastForm`. |
+| 1058 | <code>        help_text=f'До {ADMIN_BROADCAST_MAX_LENGTH} символів. Медичні дані у масових повідомленнях краще не вказувати.',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `AdminTelegramBroadcastForm`. |
+| 1059 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminTelegramBroadcastForm`. |
+| 1061 | <code>    def __init__(self, *args, connections=None, **kwargs):</code> | Объявляет функцию `__init__` и перечисляет принимаемые параметры. Контекст: `AdminTelegramBroadcastForm.__init__`. |
+| 1062 | <code>        super().__init__(*args, **kwargs)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminTelegramBroadcastForm.__init__`. |
+| 1063 | <code>        self.fields['recipient'].queryset = connections if connections is not None else (</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `AdminTelegramBroadcastForm.__init__`. |
+| 1064 | <code>            TelegramConnection.objects.filter(is_active=True, user__is_active=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `AdminTelegramBroadcastForm.__init__`. |
+| 1065 | <code>            .select_related('user__profile')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `AdminTelegramBroadcastForm.__init__`. |
+| 1066 | <code>            .order_by('user__last_name', 'user__first_name', 'user__username')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `AdminTelegramBroadcastForm.__init__`. |
+| 1067 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `AdminTelegramBroadcastForm.__init__`. |
+| 1069 | <code>    def clean(self):</code> | Объявляет функцию `clean` и перечисляет принимаемые параметры. Контекст: `AdminTelegramBroadcastForm.clean`. |
+| 1070 | <code>        cleaned_data = super().clean()</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminTelegramBroadcastForm.clean`. |
+| 1071 | <code>        audience = cleaned_data.get('audience')</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminTelegramBroadcastForm.clean`. |
+| 1072 | <code>        recipient = cleaned_data.get('recipient')</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminTelegramBroadcastForm.clean`. |
+| 1073 | <code>        if audience == self.AUDIENCE_SINGLE and recipient is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `AdminTelegramBroadcastForm.clean`. |
+| 1074 | <code>            self.add_error('recipient', 'Оберіть користувача, якому потрібно надіслати повідомлення.')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `AdminTelegramBroadcastForm.clean`. |
+| 1075 | <code>        if audience == self.AUDIENCE_ALL:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `AdminTelegramBroadcastForm.clean`. |
+| 1076 | <code>            cleaned_data['recipient'] = None</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminTelegramBroadcastForm.clean`. |
+| 1077 | <code>        return cleaned_data</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `AdminTelegramBroadcastForm.clean`. |
+| 1080 | <code>class ClinicSettingsForm(FormStyleMixin, forms.ModelForm):</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `ClinicSettingsForm`. |
+| 1081 | <code>    class Meta:</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `ClinicSettingsForm.Meta`. |
+| 1082 | <code>        model = ClinicSettings</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ClinicSettingsForm.Meta`. |
+| 1083 | <code>        fields = ['clinic_name', 'logo', 'home_background', 'home_effect', 'particle_image']</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ClinicSettingsForm.Meta`. |
+| 1084 | <code>        widgets = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ClinicSettingsForm.Meta`. |
+| 1085 | <code>            'logo': forms.ClearableFileInput(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ClinicSettingsForm.Meta`. |
+| 1086 | <code>                attrs={'accept': 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg'}</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ClinicSettingsForm.Meta`. |
+| 1087 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `ClinicSettingsForm.Meta`. |
+| 1088 | <code>        }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `ClinicSettingsForm.Meta`. |
+| 1089 | <code>        labels = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ClinicSettingsForm.Meta`. |
+| 1090 | <code>            'clinic_name': 'Назва клініки',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ClinicSettingsForm.Meta`. |
+| 1091 | <code>            'logo': 'Логотип клініки',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ClinicSettingsForm.Meta`. |
+| 1092 | <code>            'home_background': 'Фон усього сайту',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ClinicSettingsForm.Meta`. |
+| 1093 | <code>            'home_effect': 'Анімований ефект поверх фону',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ClinicSettingsForm.Meta`. |
+| 1094 | <code>            'particle_image': 'Зображення для власного пресета',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ClinicSettingsForm.Meta`. |
+| 1095 | <code>        }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `ClinicSettingsForm.Meta`. |
+| 1097 | <code>    def clean(self):</code> | Объявляет функцию `clean` и перечисляет принимаемые параметры. Контекст: `ClinicSettingsForm.clean`. |
+| 1098 | <code>        cleaned_data = super().clean()</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `ClinicSettingsForm.clean`. |
+| 1099 | <code>        if cleaned_data.get('home_effect') == ClinicSettings.EFFECT_CUSTOM and not cleaned_data.get('particle_image'):</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `ClinicSettingsForm.clean`. |
+| 1100 | <code>            self.add_error('particle_image', 'Завантажте зображення для власного пресета.')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ClinicSettingsForm.clean`. |
+| 1101 | <code>        return cleaned_data</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `ClinicSettingsForm.clean`. |
+| 1104 | <code>class HomeHeroSlideForm(FormStyleMixin, forms.ModelForm):</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `HomeHeroSlideForm`. |
+| 1105 | <code>    class Meta:</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `HomeHeroSlideForm.Meta`. |
+| 1106 | <code>        model = HomeHeroSlide</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `HomeHeroSlideForm.Meta`. |
+| 1107 | <code>        fields = ['title', 'image', 'is_active']</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `HomeHeroSlideForm.Meta`. |
+| 1108 | <code>        labels = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `HomeHeroSlideForm.Meta`. |
+| 1109 | <code>            'title': 'Коротка назва фотографії',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `HomeHeroSlideForm.Meta`. |
+| 1110 | <code>            'image': 'Фотографія для верхнього слайдера',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `HomeHeroSlideForm.Meta`. |
+| 1111 | <code>            'is_active': 'Показувати фотографію на головній сторінці',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `HomeHeroSlideForm.Meta`. |
+| 1112 | <code>        }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `HomeHeroSlideForm.Meta`. |
+| 1113 | <code>        help_texts = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `HomeHeroSlideForm.Meta`. |
+| 1114 | <code>            'title': 'Назву бачить лише адміністратор. Вона допомагає розрізняти фотографії.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `HomeHeroSlideForm.Meta`. |
+| 1115 | <code>        }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `HomeHeroSlideForm.Meta`. |
+| 1118 | <code>class NewsPostForm(FormStyleMixin, forms.ModelForm):</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `NewsPostForm`. |
+| 1119 | <code>    class Meta:</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `NewsPostForm.Meta`. |
+| 1120 | <code>        model = NewsPost</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `NewsPostForm.Meta`. |
+| 1121 | <code>        fields = ['title', 'text', 'image', 'is_published']</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `NewsPostForm.Meta`. |
+| 1122 | <code>        widgets = {'text': forms.Textarea(attrs={'rows': 7})}</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `NewsPostForm.Meta`. |
+| 1123 | <code>        labels = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `NewsPostForm.Meta`. |
+| 1124 | <code>            'title': 'Заголовок',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `NewsPostForm.Meta`. |
+| 1125 | <code>            'text': 'Текст новини',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `NewsPostForm.Meta`. |
+| 1126 | <code>            'image': 'Зображення',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `NewsPostForm.Meta`. |
+| 1127 | <code>            'is_published': 'Показувати на головній сторінці',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `NewsPostForm.Meta`. |
+| 1128 | <code>        }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `NewsPostForm.Meta`. |
+| 1131 | <code>class GalleryImageForm(FormStyleMixin, forms.ModelForm):</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `GalleryImageForm`. |
+| 1132 | <code>    class Meta:</code> | Объявляет класс: общий шаблон для объектов с данными и методами. Контекст: `GalleryImageForm.Meta`. |
+| 1133 | <code>        model = GalleryImage</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `GalleryImageForm.Meta`. |
+| 1134 | <code>        fields = ['title', 'image', 'is_published']</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `GalleryImageForm.Meta`. |
+| 1135 | <code>        labels = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `GalleryImageForm.Meta`. |
+| 1136 | <code>            'title': 'Підпис до фото',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `GalleryImageForm.Meta`. |
+| 1137 | <code>            'image': 'Фотографія',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `GalleryImageForm.Meta`. |
+| 1138 | <code>            'is_published': 'Показувати в галереї',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `GalleryImageForm.Meta`. |
+| 1139 | <code>        }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `GalleryImageForm.Meta`. |
 
 ## Файл `clinic/views.py`
 

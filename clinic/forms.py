@@ -914,13 +914,6 @@ class AdminDoctorCreateForm(FormStyleMixin, forms.Form):
         required=False,
         validators=[validate_image_upload],
     )
-    description = forms.CharField(
-        label='Опис',
-        required=False,
-        max_length=MAX_DOCTOR_DESCRIPTION_LENGTH,
-        widget=forms.Textarea(attrs={'rows': 4}),
-    )
-    photo_url = forms.URLField(label='Посилання на фото', required=False)
 
     def clean_username(self):
         username = self.cleaned_data['username'].strip()
@@ -955,8 +948,6 @@ class AdminDoctorCreateForm(FormStyleMixin, forms.Form):
             specialization=self.cleaned_data['specialization'],
             phone=self.cleaned_data['phone'],
             photo=self.cleaned_data.get('photo'),
-            description=self.cleaned_data['description'],
-            photo_url=self.cleaned_data['photo_url'],
         )
         return user
 

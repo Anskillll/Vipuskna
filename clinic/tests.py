@@ -3217,6 +3217,39 @@ class ClinicModelTests(TestCase):
         self.assertNotIn('email', DoctorProfileForm(doctor=self.doctor).fields)
         self.assertNotIn('email', DoctorPatientBookingForm(doctor=self.doctor).fields)
 
+    def test_admin_leaves_doctor_description_and_photo_link_for_doctor(self):
+        admin_user = User.objects.create_superuser(
+            username='admin-create-doctor',
+            password='pass12345',
+            email='admin@example.com',
+        )
+        self.client.force_login(admin_user)
+
+        page = self.client.get(reverse('admin_add_doctor'))
+        self.assertContains(page, 'Фото з пристрою')
+        self.assertNotContains(page, 'Опис:')
+        self.assertNotContains(page, 'Посилання на фото')
+
+        response = self.client.post(
+            reverse('admin_add_doctor'),
+            data={
+                'username': 'new-doctor',
+                'first_name': 'Новий',
+                'last_name': 'Лікар',
+                'email': '',
+                'phone': '+380501234568',
+                'password': 'pass12345',
+                'specialization': 'Ортодонт',
+                'description': 'Це поле адміністратор не повинен задавати.',
+                'photo_url': 'https://example.com/doctor.jpg',
+            },
+        )
+
+        doctor = Doctor.objects.get(user__username='new-doctor')
+        self.assertRedirects(response, reverse('admin_panel'))
+        self.assertEqual(doctor.description, '')
+        self.assertEqual(doctor.photo_url, '')
+
     def test_doctor_can_publish_short_about_text(self):
         self.client.login(username='doctor@test.local', password='pass12345')
         about_text = 'Працюю уважно та пояснюю кожен етап лікування.'
