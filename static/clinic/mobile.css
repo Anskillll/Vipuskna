@@ -745,6 +745,20 @@
   }
 }
 
+@media (max-width: 620px) {
+  .admin-broadcast-page .back-link {
+    margin-bottom: 12px;
+  }
+
+  .admin-broadcast-page .admin-broadcast-message textarea {
+    min-height: 150px;
+  }
+
+  .admin-broadcast-page .admin-broadcast-note {
+    padding: 16px;
+  }
+}
+
 @media (max-width: 420px) {
   .hero-admin-actions,
   .content-admin-row > .actions {

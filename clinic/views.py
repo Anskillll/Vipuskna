@@ -27,6 +27,7 @@ from django.views.static import serve
 
 from .forms import (
     AdminDoctorCreateForm,
+    AdminTelegramBroadcastForm,
     AdminUserEditForm,
     AppointmentDecisionForm,
     AppointmentRescheduleForm,
@@ -78,6 +79,7 @@ from .telegram import (
     notify_doctor_patient_action,
     notify_patient_status,
     process_update,
+    send_admin_broadcast,
 )
 
 
@@ -2556,6 +2558,72 @@ def admin_panel(request):
             ),
             'appointments': appointments,
             'audit_events': AuditLog.objects.select_related('actor')[:12],
+        },
+    )
+
+
+@admin_required
+def admin_telegram_broadcast(request):
+    connections = (
+        TelegramConnection.objects.filter(is_active=True, user__is_active=True)
+        .select_related('user__profile')
+        .order_by('user__last_name', 'user__first_name', 'user__username')
+    )
+    form = AdminTelegramBroadcastForm(
+        request.POST or None,
+        connections=connections,
+    )
+
+    if request.method == 'POST' and form.is_valid():
+        audience = form.cleaned_data['audience']
+        recipient = form.cleaned_data['recipient']
+        selected_connections = connections
+        recipient_label = 'усім підключеним користувачам'
+        if audience == AdminTelegramBroadcastForm.AUDIENCE_SINGLE:
+            selected_connections = connections.filter(pk=recipient.pk)
+            recipient_user = recipient.user
+            recipient_label = recipient_user.get_full_name().strip() or recipient_user.username
+
+        selected_connections = list(selected_connections)
+        if not selected_connections:
+            messages.warning(request, 'Немає активних користувачів із підключеним Telegram.')
+        else:
+            try:
+                sent_count, failures = send_admin_broadcast(
+                    selected_connections,
+                    form.cleaned_data['message'],
+                )
+            except TelegramError as error:
+                form.add_error(None, str(error))
+            else:
+                write_audit_log(
+                    request,
+                    'Надіслано Telegram-повідомлення',
+                    request.user,
+                    (
+                        f'Адресат: {recipient_label}. Успішно: {sent_count}. '
+                        f'Помилок: {len(failures)}. '
+                        f'Текст: {form.cleaned_data["message"][:180]}'
+                    ),
+                )
+                if sent_count:
+                    messages.success(
+                        request,
+                        f'Telegram-повідомлення надіслано: {sent_count}.',
+                    )
+                if failures:
+                    messages.warning(
+                        request,
+                        f'Не вдалося доставити повідомлення: {len(failures)}.',
+                    )
+                return redirect('admin_telegram_broadcast')
+
+    return render(
+        request,
+        'clinic/admin_telegram_broadcast.html',
+        {
+            'form': form,
+            'connected_count': connections.count(),
         },
     )
 

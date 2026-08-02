@@ -15,8 +15,10 @@ from .models import (
     NewsPost,
     PatientRecordEntry,
     Profile,
+    TelegramConnection,
     WorkSchedule,
 )
+from .telegram import ADMIN_BROADCAST_MAX_LENGTH
 from .validators import (
     MAX_APPOINTMENT_DURATION_MINUTES,
     MAX_DOCTOR_DESCRIPTION_LENGTH,
@@ -1017,6 +1019,71 @@ class AdminUserEditForm(FormStyleMixin, forms.Form):
             self.user.profile.phone = self.cleaned_data['phone']
             self.user.profile.save()
         return self.user
+
+
+class TelegramConnectionChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, connection):
+        user = connection.user
+        name = user.get_full_name().strip() or user.username
+        role = 'Адміністратор' if user.is_staff else getattr(
+            getattr(user, 'profile', None),
+            'get_role_display',
+            lambda: 'Користувач',
+        )()
+        telegram_name = f'@{connection.username}' if connection.username else f'ID {connection.chat_id}'
+        return f'{name} · {role} · {telegram_name}'
+
+
+class AdminTelegramBroadcastForm(FormStyleMixin, forms.Form):
+    AUDIENCE_ALL = 'all'
+    AUDIENCE_SINGLE = 'single'
+    AUDIENCE_CHOICES = (
+        (AUDIENCE_ALL, 'Усім підключеним користувачам'),
+        (AUDIENCE_SINGLE, 'Одному користувачу'),
+    )
+
+    audience = forms.ChoiceField(
+        label='Кому надіслати',
+        choices=AUDIENCE_CHOICES,
+        initial=AUDIENCE_ALL,
+        widget=forms.RadioSelect,
+    )
+    recipient = TelegramConnectionChoiceField(
+        label='Користувач',
+        queryset=TelegramConnection.objects.none(),
+        required=False,
+        empty_label='Оберіть користувача',
+    )
+    message = forms.CharField(
+        label='Текст повідомлення',
+        max_length=ADMIN_BROADCAST_MAX_LENGTH,
+        widget=forms.Textarea(
+            attrs={
+                'rows': 8,
+                'maxlength': str(ADMIN_BROADCAST_MAX_LENGTH),
+                'placeholder': 'Напишіть повідомлення, яке користувач отримає у Telegram…',
+            }
+        ),
+        help_text=f'До {ADMIN_BROADCAST_MAX_LENGTH} символів. Медичні дані у масових повідомленнях краще не вказувати.',
+    )
+
+    def __init__(self, *args, connections=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['recipient'].queryset = connections if connections is not None else (
+            TelegramConnection.objects.filter(is_active=True, user__is_active=True)
+            .select_related('user__profile')
+            .order_by('user__last_name', 'user__first_name', 'user__username')
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        audience = cleaned_data.get('audience')
+        recipient = cleaned_data.get('recipient')
+        if audience == self.AUDIENCE_SINGLE and recipient is None:
+            self.add_error('recipient', 'Оберіть користувача, якому потрібно надіслати повідомлення.')
+        if audience == self.AUDIENCE_ALL:
+            cleaned_data['recipient'] = None
+        return cleaned_data
 
 
 class ClinicSettingsForm(FormStyleMixin, forms.ModelForm):

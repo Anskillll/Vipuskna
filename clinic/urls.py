@@ -65,6 +65,11 @@ urlpatterns = [
     path('panel/', views.admin_panel, name='admin_panel'),
     path('panel/doctors/add/', views.admin_add_doctor, name='admin_add_doctor'),
     path('panel/content/', views.admin_content, name='admin_content'),
+    path(
+        'panel/telegram-message/',
+        views.admin_telegram_broadcast,
+        name='admin_telegram_broadcast',
+    ),
     path('panel/users/<int:user_id>/edit/', views.admin_edit_user, name='admin_edit_user'),
     path('panel/users/<int:user_id>/toggle/', views.admin_toggle_user, name='admin_toggle_user'),
     path('panel/users/<int:user_id>/delete/', views.admin_delete_user, name='admin_delete_user'),

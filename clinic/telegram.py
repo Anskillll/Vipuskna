@@ -19,6 +19,7 @@ from .models import (
 
 LINK_TOKEN_LIFETIME = timedelta(minutes=10)
 REMINDER_SEND_FROM = time(18, 0)
+ADMIN_BROADCAST_MAX_LENGTH = 3500
 
 
 class TelegramError(Exception):
@@ -91,6 +92,35 @@ class TelegramBotClient:
 
 def telegram_is_configured():
     return bool(settings.TELEGRAM_BOT_TOKEN and settings.TELEGRAM_BOT_USERNAME)
+
+
+def send_admin_broadcast(connections, message):
+    """Send a clinic announcement to the supplied active Telegram connections."""
+    if not telegram_is_configured():
+        raise TelegramError('Telegram-бот не налаштований на сервері.')
+
+    message = (message or '').strip()
+    if not message:
+        raise TelegramError('Текст повідомлення не може бути порожнім.')
+    if len(message) > ADMIN_BROADCAST_MAX_LENGTH:
+        raise TelegramError(
+            f'Повідомлення не може бути довшим за {ADMIN_BROADCAST_MAX_LENGTH} символів.'
+        )
+
+    text = f'<b>Повідомлення від клініки</b>\n\n{html.escape(message)}'
+    client = TelegramBotClient()
+    sent_count = 0
+    failures = []
+
+    for connection in connections:
+        try:
+            client.send_message(connection.chat_id, text)
+        except (requests.RequestException, ValueError, TelegramError) as error:
+            failures.append((connection, str(error)))
+        else:
+            sent_count += 1
+
+    return sent_count, failures
 
 
 def create_link_url(user):

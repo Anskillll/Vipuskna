@@ -1,0 +1,85 @@
+{% extends 'clinic/base.html' %}
+{% load static %}
+
+{% block title %}Telegram-повідомлення - MedClinic{% endblock %}
+{% block body_class %}admin-broadcast-page{% endblock %}
+
+{% block content %}
+  <a class="back-link" href="{% url 'admin_panel' %}">← Повернутися до панелі адміністратора</a>
+
+  <div class="admin-broadcast-shell">
+    <section class="page-head admin-page-head">
+      <div>
+        <span class="admin-eyebrow">Telegram-бот</span>
+        <h1 class="page-title">Масове повідомлення</h1>
+        <p class="page-subtitle">Надішліть оголошення всім підключеним користувачам або одній людині.</p>
+      </div>
+      <div class="admin-broadcast-count" aria-label="Кількість доступних адресатів">
+        <strong>{{ connected_count }}</strong>
+        <span>підключено до бота</span>
+      </div>
+    </section>
+
+    <nav class="page-tabs admin-tabs" aria-label="Розділи панелі адміністратора">
+      <a class="page-tab" href="{% url 'admin_panel' %}">Огляд</a>
+      <a class="page-tab" href="{% url 'admin_add_doctor' %}">Додати лікаря</a>
+      <a class="page-tab" href="{% url 'admin_content' %}">Контент сайту</a>
+      <a class="page-tab active" href="{% url 'admin_telegram_broadcast' %}">Telegram-повідомлення</a>
+      <a class="page-tab" href="/admin/">Системні налаштування</a>
+    </nav>
+
+    <section class="admin-broadcast-layout">
+      <form class="card admin-broadcast-form" method="post" data-admin-broadcast-form>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="form-error">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <fieldset class="admin-broadcast-audience">
+          <legend>{{ form.audience.label }}</legend>
+          <div class="admin-broadcast-options">
+            {% for choice in form.audience %}
+              <label class="admin-broadcast-option">
+                {{ choice.tag }}
+                <span>{{ choice.choice_label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+          {% for error in form.audience.errors %}<div class="form-error">{{ error }}</div>{% endfor %}
+        </fieldset>
+
+        <div class="field admin-broadcast-recipient" data-broadcast-recipient>
+          <label for="{{ form.recipient.id_for_label }}">{{ form.recipient.label }}</label>
+          {{ form.recipient }}
+          {% for error in form.recipient.errors %}<div class="form-error">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="field admin-broadcast-message">
+          <div class="admin-broadcast-message-head">
+            <label for="{{ form.message.id_for_label }}">{{ form.message.label }}</label>
+            <span aria-live="polite"><strong data-broadcast-count>0</strong>/3500</span>
+          </div>
+          {{ form.message }}
+          {% if form.message.help_text %}<div class="field-help">{{ form.message.help_text }}</div>{% endif %}
+          {% for error in form.message.errors %}<div class="form-error">{{ error }}</div>{% endfor %}
+        </div>
+
+        <button class="admin-broadcast-submit" type="submit"{% if not connected_count %} disabled{% endif %}>
+          Надіслати повідомлення
+        </button>
+      </form>
+
+      <aside class="admin-broadcast-note">
+        <span class="admin-eyebrow">Перед відправленням</span>
+        <h2>Коротко й зрозуміло</h2>
+        <p>Повідомлення отримають лише активні користувачі, які вже приєднали Telegram-бота.</p>
+        <p>Не додавайте діагнози, фотографії або іншу приватну медичну інформацію до загальної розсилки.</p>
+        <p>Після відправлення результат збережеться у журналі дій адміністратора.</p>
+      </aside>
+    </section>
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="{% static 'clinic/admin_broadcast.js' %}?v=20260802-1" defer></script>
+{% endblock %}

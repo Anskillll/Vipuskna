@@ -157,8 +157,8 @@ class ClinicModelTests(TestCase):
     def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
         response = self.client.get(reverse('home'))
 
-        self.assertContains(response, 'clinic/site.css?v=20260802-4')
-        self.assertContains(response, 'clinic/mobile.css?v=20260802-2')
+        self.assertContains(response, 'clinic/site.css?v=20260802-5')
+        self.assertContains(response, 'clinic/mobile.css?v=20260802-3')
         self.assertContains(response, 'Нікополь, вул. Шевченка, 200')
         self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
         self.assertContains(response, 'https://www.google.com/maps/search/?api=1&amp;query=')
@@ -3492,6 +3492,122 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Це ви')
         self.assertContains(response, reverse('admin_edit_user', args=[admin_user.id]))
         self.assertNotContains(response, '<th>Електронна пошта</th>', html=True)
+
+    def test_telegram_broadcast_page_requires_admin(self):
+        self.client.login(username='patient@test.local', password='pass12345')
+
+        response = self.client.get(reverse('admin_telegram_broadcast'))
+
+        self.assertRedirects(response, reverse('administration_login'))
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='test-clinic-bot',
+    )
+    @patch('clinic.telegram.TelegramBotClient.send_message')
+    def test_admin_can_broadcast_telegram_message_to_all_active_connections(self, send_message):
+        admin_user = User.objects.create_superuser(
+            username='broadcast-admin@test.local',
+            email='broadcast-admin@test.local',
+            password='pass12345',
+        )
+        TelegramConnection.objects.create(
+            user=self.patient,
+            chat_id=101,
+            username='patient_chat',
+        )
+        TelegramConnection.objects.create(
+            user=self.doctor.user,
+            chat_id=202,
+            username='doctor_chat',
+        )
+        inactive_user = User.objects.create_user(
+            username='inactive@test.local',
+            password='pass12345',
+            is_active=False,
+        )
+        TelegramConnection.objects.create(
+            user=inactive_user,
+            chat_id=303,
+            username='inactive_chat',
+        )
+        self.client.login(username=admin_user.username, password='pass12345')
+
+        response = self.client.post(
+            reverse('admin_telegram_broadcast'),
+            data={
+                'audience': 'all',
+                'recipient': '',
+                'message': 'Графік <змінено> & перевірено.',
+            },
+        )
+
+        self.assertRedirects(response, reverse('admin_telegram_broadcast'))
+        self.assertEqual(send_message.call_count, 2)
+        self.assertEqual({call.args[0] for call in send_message.call_args_list}, {101, 202})
+        sent_text = send_message.call_args_list[0].args[1]
+        self.assertIn('<b>Повідомлення від клініки</b>', sent_text)
+        self.assertIn('Графік &lt;змінено&gt; &amp; перевірено.', sent_text)
+        self.assertTrue(
+            AuditLog.objects.filter(action='Надіслано Telegram-повідомлення').exists()
+        )
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='test-clinic-bot',
+    )
+    @patch('clinic.telegram.TelegramBotClient.send_message')
+    def test_admin_can_send_telegram_message_to_one_user(self, send_message):
+        admin_user = User.objects.create_superuser(
+            username='single-broadcast-admin@test.local',
+            email='single-broadcast-admin@test.local',
+            password='pass12345',
+        )
+        patient_connection = TelegramConnection.objects.create(
+            user=self.patient,
+            chat_id=404,
+            username='single_patient',
+        )
+        TelegramConnection.objects.create(
+            user=self.doctor.user,
+            chat_id=505,
+            username='other_doctor',
+        )
+        self.client.login(username=admin_user.username, password='pass12345')
+
+        response = self.client.post(
+            reverse('admin_telegram_broadcast'),
+            data={
+                'audience': 'single',
+                'recipient': patient_connection.pk,
+                'message': 'Особисте повідомлення.',
+            },
+        )
+
+        self.assertRedirects(response, reverse('admin_telegram_broadcast'))
+        send_message.assert_called_once()
+        self.assertEqual(send_message.call_args.args[0], 404)
+
+    def test_admin_broadcast_requires_recipient_in_single_mode(self):
+        admin_user = User.objects.create_superuser(
+            username='invalid-broadcast-admin@test.local',
+            email='invalid-broadcast-admin@test.local',
+            password='pass12345',
+        )
+        TelegramConnection.objects.create(user=self.patient, chat_id=606)
+        self.client.login(username=admin_user.username, password='pass12345')
+
+        response = self.client.post(
+            reverse('admin_telegram_broadcast'),
+            data={
+                'audience': 'single',
+                'recipient': '',
+                'message': 'Текст без адресата.',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Оберіть користувача, якому потрібно надіслати повідомлення.')
 
     def test_admin_can_add_home_hero_slide(self):
         User.objects.create_superuser(
