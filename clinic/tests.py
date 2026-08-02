@@ -65,6 +65,7 @@ from .validators import (
 from .views import (
     active_appointment_for_doctor,
     appointment_conflicts,
+    next_working_date,
     patient_appointment_conflicts,
 )
 from .telegram import (
@@ -152,7 +153,7 @@ class ClinicModelTests(TestCase):
     def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
         response = self.client.get(reverse('home'))
 
-        self.assertContains(response, 'clinic/site.css?v=20260802-1')
+        self.assertContains(response, 'clinic/site.css?v=20260802-2')
         self.assertContains(response, 'clinic/mobile.css?v=20260729-4')
         self.assertContains(response, 'Нікополь, вул. Шевченка, 200')
         self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
@@ -1690,12 +1691,108 @@ class ClinicModelTests(TestCase):
     def test_booking_calendar_starts_from_tomorrow(self):
         self.client.login(username='patient@test.local', password='pass12345')
         tomorrow = timezone.localdate() + timedelta(days=1)
+        first_working_date = next_working_date(
+            tomorrow,
+            [self.schedule.weekday],
+        )
 
         response = self.client.get(reverse('booking'), {'date': timezone.localdate().isoformat()})
 
-        self.assertEqual(response.context['selected_date'], tomorrow)
+        self.assertEqual(response.context['selected_date'], first_working_date)
         self.assertContains(response, f'min="{tomorrow.isoformat()}"')
-        self.assertContains(response, f'value="{tomorrow.isoformat()}"')
+        self.assertContains(response, f'value="{first_working_date.isoformat()}"')
+        self.assertContains(response, 'data-working-date-picker')
+        self.assertContains(
+            response,
+            f'data-working-weekdays="{self.schedule.weekday}"',
+        )
+        self.assertContains(response, 'clinic/working_date_picker.js?v=20260802-1')
+
+    def test_patient_cannot_book_doctor_day_off(self):
+        self.client.login(username='patient@test.local', password='pass12345')
+        off_weekday = (self.schedule.weekday + 1) % 7
+        off_date = timezone.localdate() + timedelta(days=1)
+        while off_date.weekday() != off_weekday:
+            off_date += timedelta(days=1)
+        WorkSchedule.objects.create(
+            doctor=self.doctor,
+            workplace=self.workplace,
+            weekday=off_weekday,
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            start_time=time(9, 0),
+            end_time=time(11, 0),
+            slot_minutes=60,
+            is_working=False,
+        )
+
+        response = self.client.post(
+            reverse('booking'),
+            data={
+                'doctor': self.doctor.id,
+                'date': off_date.isoformat(),
+                'time': '09:00',
+                'service': self.service.id,
+                'reason': 'Спроба запису у вихідний',
+            },
+            follow=True,
+        )
+
+        self.assertFalse(
+            Appointment.objects.filter(reason='Спроба запису у вихідний').exists()
+        )
+        self.assertContains(
+            response,
+            'У цей день лікар не приймає. Оберіть робочий день у календарі.',
+        )
+
+    def test_doctor_booking_calendar_disables_days_off(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+        off_weekday = (self.schedule.weekday + 1) % 7
+        off_date = timezone.localdate() + timedelta(days=1)
+        while off_date.weekday() != off_weekday:
+            off_date += timedelta(days=1)
+        WorkSchedule.objects.create(
+            doctor=self.doctor,
+            workplace=self.workplace,
+            weekday=off_weekday,
+            city='Дніпро',
+            address='вул. Тестова, 1',
+            start_time=time(9, 0),
+            end_time=time(11, 0),
+            slot_minutes=60,
+            is_working=False,
+        )
+
+        calendar_response = self.client.get(reverse('doctor_book_patient'))
+        self.assertContains(calendar_response, 'data-working-date-picker')
+        self.assertContains(
+            calendar_response,
+            f'data-working-weekdays="{self.schedule.weekday}"',
+        )
+
+        response = self.client.post(
+            reverse('doctor_book_patient'),
+            data={
+                'date': off_date.isoformat(),
+                'time': '09:00',
+                'patient': self.patient.id,
+                'service': self.service.id,
+                'duration_minutes': 60,
+                'reason': 'Спроба лікаря записати у вихідний',
+            },
+            follow=True,
+        )
+
+        self.assertFalse(
+            Appointment.objects.filter(
+                reason='Спроба лікаря записати у вихідний'
+            ).exists()
+        )
+        self.assertContains(
+            response,
+            'У цей день ви не приймаєте. Оберіть робочий день у календарі.',
+        )
 
     def test_patient_does_not_choose_appointment_duration(self):
         self.assertNotIn('duration_slots', BookingReasonForm(doctor=self.doctor).fields)

@@ -1,0 +1,63 @@
+<div
+  class="working-date-picker"
+  data-working-date-picker
+  data-working-weekdays="{{ working_weekdays|join:',' }}"
+  data-min-date="{{ earliest_booking_date|date:'Y-m-d' }}"
+>
+  <input
+    class="working-date-native"
+    id="{{ date_input_id }}"
+    type="date"
+    name="date"
+    value="{{ selected_date|date:'Y-m-d' }}"
+    min="{{ earliest_booking_date|date:'Y-m-d' }}"
+    data-working-date-input
+  >
+  <button
+    class="working-date-trigger"
+    type="button"
+    aria-haspopup="dialog"
+    aria-expanded="false"
+    data-working-date-trigger
+    hidden
+  >
+    <span data-working-date-value>{{ selected_date|date:'d.m.Y' }}</span>
+    <span class="working-date-trigger-mark" aria-hidden="true">▾</span>
+  </button>
+  <div class="working-date-popover" data-working-date-popover hidden>
+    <div class="working-date-calendar-head">
+      <button
+        class="working-date-nav"
+        type="button"
+        aria-label="Попередній місяць"
+        title="Попередній місяць"
+        data-working-date-prev
+      >←</button>
+      <strong data-working-date-month></strong>
+      <button
+        class="working-date-nav"
+        type="button"
+        aria-label="Наступний місяць"
+        title="Наступний місяць"
+        data-working-date-next
+      >→</button>
+    </div>
+    <div class="working-date-weekdays" aria-hidden="true">
+      <span>Пн</span>
+      <span>Вт</span>
+      <span>Ср</span>
+      <span>Чт</span>
+      <span>Пт</span>
+      <span>Сб</span>
+      <span>Нд</span>
+    </div>
+    <div class="working-date-grid" data-working-date-grid></div>
+  </div>
+  <p class="working-date-help">
+    {% if working_weekday_labels %}
+      Доступні дні: {{ working_weekday_labels|join:", " }}.
+    {% else %}
+      Лікар ще не позначив робочі дні.
+    {% endif %}
+  </p>
+</div>

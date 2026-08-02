@@ -8820,3 +8820,169 @@ body:not(.public-home-page) .nav a.nav-active:hover {
   background: #d9f1ec;
   color: var(--clinic-teal-dark);
 }
+
+.working-date-picker {
+  position: relative;
+}
+
+.working-date-picker.is-enhanced .working-date-native {
+  display: none;
+}
+
+.working-date-trigger {
+  display: flex;
+  width: 100%;
+  min-height: 46px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: 1px solid #b9cec8;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: none;
+  color: #143d37;
+  font-weight: 700;
+  text-align: left;
+}
+
+.working-date-trigger:hover,
+.working-date-trigger[aria-expanded="true"] {
+  border-color: var(--clinic-teal);
+  background: #f2fbf8;
+  color: #0a675b;
+}
+
+.working-date-trigger-mark {
+  color: var(--clinic-teal);
+  font-size: 16px;
+}
+
+.working-date-popover {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 8px);
+  left: 0;
+  width: min(340px, 100%);
+  padding: 14px;
+  border: 1px solid #b8cec8;
+  border-radius: 7px;
+  background: #fff;
+  box-shadow: 0 18px 38px rgba(24, 61, 54, 0.18);
+}
+
+.working-date-popover[hidden] {
+  display: none;
+}
+
+.working-date-calendar-head {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.working-date-calendar-head strong {
+  color: #153e38;
+  font-size: 15px;
+  text-transform: capitalize;
+}
+
+.working-date-nav {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #bdd0cb;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: none;
+  color: #174b43;
+  font-size: 18px;
+}
+
+.working-date-nav:hover:not(:disabled) {
+  border-color: var(--clinic-teal);
+  background: #e8f7f3;
+  color: #087f70;
+}
+
+.working-date-nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.working-date-weekdays,
+.working-date-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.working-date-weekdays {
+  margin-bottom: 5px;
+  color: #69807b;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.working-date-day,
+.working-date-spacer {
+  width: 100%;
+  aspect-ratio: 1;
+}
+
+.working-date-day {
+  display: grid;
+  min-height: 36px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #bad1cb;
+  border-radius: 5px;
+  background: #f7fbfa;
+  box-shadow: none;
+  color: #17443d;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.working-date-day:hover:not(:disabled) {
+  border-color: #078f7f;
+  background: #dff4ef;
+  color: #075f55;
+}
+
+.working-date-day:disabled {
+  border-color: #e2e8e6;
+  background: #f1f4f3;
+  color: #a8b2af;
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.working-date-day.is-selected {
+  border-color: #087f70;
+  background: #087f70;
+  color: #fff;
+}
+
+.working-date-day.is-today:not(.is-selected) {
+  box-shadow: inset 0 0 0 1px #c37b0c;
+}
+
+.working-date-help {
+  margin: 7px 0 0;
+  color: #637873;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+@media (max-width: 520px) {
+  .working-date-popover {
+    right: 0;
+    width: 100%;
+  }
+}

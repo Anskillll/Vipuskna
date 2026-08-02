@@ -1,4 +1,5 @@
 {% extends 'clinic/base.html' %}
+{% load static %}
 
 {% block title %}Запис до лікаря - MedClinic{% endblock %}
 
@@ -28,13 +29,7 @@
         </div>
         <div class="field">
           <label for="date">Дата</label>
-          <input
-            id="date"
-            type="date"
-            name="date"
-            value="{{ selected_date|date:'Y-m-d' }}"
-            min="{{ earliest_booking_date|date:'Y-m-d' }}"
-          >
+          {% include 'clinic/_working_date_picker.html' with date_input_id='date' %}
         </div>
       </form>
     </section>
@@ -248,4 +243,8 @@
       }
     })();
   </script>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="{% static 'clinic/working_date_picker.js' %}?v=20260802-1" defer></script>
 {% endblock %}

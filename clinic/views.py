@@ -358,6 +358,39 @@ def schedule_for_date(doctor, selected_date):
     ).first()
 
 
+def doctor_working_weekdays(doctor):
+    if doctor is None:
+        return []
+    return sorted(
+        set(
+            doctor.schedules.filter(is_working=True).values_list(
+                'weekday',
+                flat=True,
+            )
+        )
+    )
+
+
+def next_working_date(start_date, working_weekdays):
+    working_weekdays = set(working_weekdays)
+    if not working_weekdays:
+        return None
+    for offset in range(7):
+        candidate = start_date + timedelta(days=offset)
+        if candidate.weekday() in working_weekdays:
+            return candidate
+    return None
+
+
+def working_weekday_labels(working_weekdays):
+    allowed = set(working_weekdays)
+    return [
+        label
+        for value, label in WorkSchedule.WEEKDAY_CHOICES
+        if value in allowed
+    ]
+
+
 def appointment_range(date_value, time_value, slot_minutes, duration_slots=1, duration_minutes=None):
     start = datetime.combine(date_value, time_value)
     minutes = duration_minutes if duration_minutes is not None else slot_minutes * duration_slots
@@ -1330,15 +1363,21 @@ def booking(request):
 
     doctors = Doctor.objects.filter(user__is_active=True).select_related('user')
     selected_doctor = get_object_or_404(doctors, pk=request.GET.get('doctor')) if request.GET.get('doctor') else doctors.first()
+    working_weekdays = doctor_working_weekdays(selected_doctor)
     selected_date = parse_date(request.GET.get('date')) if request.GET.get('date') else earliest_booking_date
     if not selected_date or selected_date < earliest_booking_date:
         if request.GET.get('date'):
             messages.error(request, 'Записатися можна лише починаючи із завтрашнього дня.')
         selected_date = earliest_booking_date
-    selected_time = parse_time(request.GET.get('time'))
+    adjusted_date = next_working_date(selected_date, working_weekdays)
+    date_was_adjusted = bool(adjusted_date and adjusted_date != selected_date)
+    if adjusted_date:
+        selected_date = adjusted_date
+    selected_time = None if date_was_adjusted else parse_time(request.GET.get('time'))
 
     if request.method == 'POST':
         selected_doctor = get_object_or_404(doctors, pk=request.POST.get('doctor'))
+        working_weekdays = doctor_working_weekdays(selected_doctor)
         selected_date = parse_date(request.POST.get('date'))
         selected_time = parse_time(request.POST.get('time'))
         reason_form = BookingReasonForm(request.POST, request.FILES, doctor=selected_doctor)
@@ -1360,7 +1399,10 @@ def booking(request):
             )
             available_times = [slot['time'] for slot in slots if not slot['busy']]
 
-            if daily_booking_count >= PATIENT_DAILY_BOOKING_LIMIT:
+            if not schedule or not schedule.is_working:
+                messages.error(request, 'У цей день лікар не приймає. Оберіть робочий день у календарі.')
+                selected_time = None
+            elif daily_booking_count >= PATIENT_DAILY_BOOKING_LIMIT:
                 messages.error(
                     request,
                     'Самостійно можна створити не більше 2 заявок або прийомів на один день. Оберіть іншу дату.',
@@ -1490,6 +1532,8 @@ def booking(request):
             'daily_booking_count': daily_booking_count,
             'daily_booking_limit': PATIENT_DAILY_BOOKING_LIMIT,
             'daily_booking_limit_reached': daily_booking_limit_reached,
+            'working_weekdays': working_weekdays,
+            'working_weekday_labels': working_weekday_labels(working_weekdays),
         },
     )
 
@@ -1848,11 +1892,17 @@ def doctor_cancel_appointment(request, appointment_id):
 def doctor_book_patient(request):
     refresh_completed_appointments()
     doctor = request.user.doctor_profile
+    earliest_booking_date = timezone.localdate()
+    working_weekdays = doctor_working_weekdays(doctor)
     selected_date = parse_date(request.GET.get('date')) if request.GET.get('date') else timezone.localdate()
     if selected_date < timezone.localdate():
         messages.error(request, 'Не можна вибрати минулу дату.')
         selected_date = timezone.localdate()
-    selected_time = parse_time(request.GET.get('time'))
+    adjusted_date = next_working_date(selected_date, working_weekdays)
+    date_was_adjusted = bool(adjusted_date and adjusted_date != selected_date)
+    if adjusted_date:
+        selected_date = adjusted_date
+    selected_time = None if date_was_adjusted else parse_time(request.GET.get('time'))
     schedule, slots = slots_for_doctor(doctor, selected_date, include_split_options=True)
     split_option = None
     split_appointment_id = request.GET.get('split')
@@ -1924,7 +1974,10 @@ def doctor_book_patient(request):
             and selected_time == split_option['time']
         )
 
-        if is_past_appointment(selected_date, selected_time):
+        if not schedule or not schedule.is_working:
+            messages.error(request, 'У цей день ви не приймаєте. Оберіть робочий день у календарі.')
+            selected_time = None
+        elif is_past_appointment(selected_date, selected_time):
             messages.error(request, 'Не можна записати пацієнта на минулу дату або час.')
         elif split_appointment_id and not split_time_is_valid:
             messages.error(request, 'Цей слот уже не можна поділити.')
@@ -2066,6 +2119,9 @@ def doctor_book_patient(request):
             'slots': slots,
             'split_option': split_option,
             'form': form,
+            'earliest_booking_date': earliest_booking_date,
+            'working_weekdays': working_weekdays,
+            'working_weekday_labels': working_weekday_labels(working_weekdays),
         },
     )
 

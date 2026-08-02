@@ -13,7 +13,7 @@
       <form method="get">
         <div class="field">
           <label for="date">Дата</label>
-          <input id="date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+          {% include 'clinic/_working_date_picker.html' with date_input_id='date' %}
         </div>
         <button type="submit">Показати час</button>
       </form>
@@ -173,4 +173,8 @@
   {% endif %}
 
   <script src="{% static 'clinic/patient_picker.js' %}?v=20260723-2" defer></script>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="{% static 'clinic/working_date_picker.js' %}?v=20260802-1" defer></script>
 {% endblock %}
