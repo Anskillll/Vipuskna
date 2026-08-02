@@ -399,6 +399,18 @@
 8. Интерфейс показывает количество доставленных и неудачных сообщений.
 9. `write_audit_log()` сохраняет адресата, счетчики и короткий фрагмент текста.
 
+## Действие 32. Пациент перепривязывает Telegram
+
+1. Зеленый статус выводится только при активной `TelegramConnection` и настроенном боте.
+2. Маленькая кнопка отправляет POST на `telegram_reconnect`; GET для этого действия запрещен.
+3. View повторно проверяет роль пациента или врача и обязательную Google-связь пациента.
+4. Внутри `transaction.atomic()` сначала вызывается `create_link_url()`.
+5. Функция удаляет прежние неиспользованные коды и создает новый код сроком на 10 минут.
+6. Только после успешного создания кода старая `TelegramConnection` удаляется.
+7. Если настройки бота недоступны, транзакция не удаляет рабочую старую связь.
+8. Браузер перенаправляется в Telegram, где пользователь нажимает `Start`.
+9. Бот связывает новый `chat_id` с тем же Django-пользователем.
+
 # Индекс кнопок и ссылок: от надписи до backend
 
 Ниже перечислены интерактивные элементы шаблонов. Для многострочных кнопок берется видимый текст после удаления HTML и команд шаблона. Если цель является Django URL, указано имя маршрута, по которому можно найти view в `clinic/urls.py`.
@@ -659,6 +671,7 @@
 | `templates/clinic/patient_dashboard.html` | × | POST action `reject` | Браузер отправляет ближайшую форму; view повторно проверяет данные и права. |
 | `templates/clinic/patient_dashboard.html` | Редагувати профіль → | URL `patient_edit_profile` | Браузер делает GET по адресу; Django URL resolver выбирает связанную view. |
 | `templates/clinic/patient_dashboard.html` | Додати телефон | URL `patient_edit_profile` | Браузер делает GET по адресу; Django URL resolver выбирает связанную view. |
+| `templates/clinic/patient_dashboard.html` | Переприв’язати бота | текущая форма или JavaScript | Браузер отправляет ближайшую форму; view повторно проверяет данные и права. |
 | `templates/clinic/patient_dashboard.html` | Створити запис | URL `booking` | Браузер делает GET по адресу; Django URL resolver выбирает связанную view. |
 | `templates/clinic/patient_dashboard.html` | Редагувати профіль | URL `patient_edit_profile` | Браузер делает GET по адресу; Django URL resolver выбирает связанную view. |
 | `templates/clinic/patient_dashboard.html` | Змінити пароль | URL `patient_change_password` | Браузер делает GET по адресу; Django URL resolver выбирает связанную view. |
@@ -1063,13 +1076,13 @@
 
 ## Шаблон `templates/clinic/patient_dashboard.html`
 
-- Физический размер: 290 строк.
+- Физический размер: 299 строк.
 - Родитель: `clinic/base.html`.
 - Переопределяемые блоки: `title`, `content`.
 - Подключаемые фрагменты: `clinic/_patient_appointment_card.html`, `clinic/_patient_appointment_card.html`, `clinic/_patient_appointment_card.html`, `clinic/_patient_appointment_card.html`.
-- Формы: 2; ссылки: 13; кнопки: 2.
-- Django-маршруты: `booking`, `patient_appointment_detail`, `patient_change_password`, `patient_edit_profile`, `patient_reschedule_response`.
-- Условия и циклы: 25; выводы значений: 42.
+- Формы: 3; ссылки: 13; кнопки: 3.
+- Django-маршруты: `booking`, `patient_appointment_detail`, `patient_change_password`, `patient_edit_profile`, `patient_reschedule_response`, `telegram_reconnect`.
+- Условия и циклы: 26; выводы значений: 42.
 - Связь с backend: view передает этому шаблону context; формы возвращают POST в view, а URL-теги строят переходы по именам маршрутов.
 
 ## Шаблон `templates/clinic/patient_edit_profile.html`
@@ -1493,7 +1506,7 @@
 
 ## Файл `clinic/urls.py`
 
-- Всего физических строк в файле: 77.
+- Всего физических строк в файле: 78.
 - Тип файла: `.py`.
 - Роль файла объясняется в первой части документации; ниже приведены структурные досье и построчный атлас.
 
@@ -1519,64 +1532,65 @@
 | 17 | <code>    path('admin-login/', views.login_view, {'role': 'administration'}, name='admin_login'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
 | 18 | <code>    path('logout/', views.logout_view, name='logout'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
 | 19 | <code>    path('telegram/connect/', views.telegram_connect, name='telegram_connect'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 20 | <code>    path('telegram/disconnect/', views.telegram_disconnect, name='telegram_disconnect'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 21 | <code>    path('telegram/webhook/', views.telegram_webhook, name='telegram_webhook'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 22 | <code>    path('forgot-password/', views.forgot_password, name='forgot_password'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 23 | <code>    path('patient/claim/', views.claim_patient, name='claim_patient'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 24 | <code>    path('patient/pending/', views.pending_patient_dashboard, name='pending_patient_dashboard'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 25 | <code>    path('patient/claim/complete/', views.claim_patient_complete, name='claim_patient_complete'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 26 | <code>    path('doctors/', views.doctors_list, name='doctors'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 27 | <code>    path('doctors/&lt;int:doctor_id&gt;/', views.doctor_detail, name='doctor_detail'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 28 | <code>    path(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
-| 29 | <code>        'doctors/&lt;int:doctor_id&gt;/services/&lt;int:service_id&gt;/',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
-| 30 | <code>        views.service_detail,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
-| 31 | <code>        name='service_detail',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 32 | <code>    ),</code> | Закрывает или продолжает многострочную Python-конструкцию. |
-| 33 | <code>    path('booking/', views.booking, name='booking'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 34 | <code>    path('patient/', views.patient_dashboard, name='patient_dashboard'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 35 | <code>    path('patient/profile/', views.patient_edit_profile, name='patient_edit_profile'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 36 | <code>    path('patient/password/', views.patient_change_password, name='patient_change_password'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 37 | <code>    path('patient/appointments/&lt;int:appointment_id&gt;/cancel/', views.cancel_appointment, name='cancel_appointment'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 38 | <code>    path('patient/appointments/&lt;int:appointment_id&gt;/restore/', views.restore_appointment, name='restore_appointment'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 39 | <code>    path('patient/appointments/&lt;int:appointment_id&gt;/', views.patient_appointment_detail, name='patient_appointment_detail'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 40 | <code>    path(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
-| 41 | <code>        'patient/appointments/&lt;int:appointment_id&gt;/reschedule/',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
-| 42 | <code>        views.patient_reschedule_response,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
-| 43 | <code>        name='patient_reschedule_response',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 44 | <code>    ),</code> | Закрывает или продолжает многострочную Python-конструкцию. |
-| 45 | <code>    path('doctor/', views.doctor_dashboard, name='doctor_dashboard'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 46 | <code>    path('doctor/requests/', views.doctor_requests, name='doctor_requests'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 47 | <code>    path('doctor/appointments/', views.doctor_appointments, name='doctor_appointments'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 48 | <code>    path('doctor/appointments/&lt;int:appointment_id&gt;/', views.doctor_appointment_detail, name='doctor_appointment_detail'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 49 | <code>    path(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
-| 50 | <code>        'doctor/appointments/&lt;int:appointment_id&gt;/reschedule/',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
-| 51 | <code>        views.doctor_propose_reschedule,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
-| 52 | <code>        name='doctor_propose_reschedule',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 53 | <code>    ),</code> | Закрывает или продолжает многострочную Python-конструкцию. |
-| 54 | <code>    path('doctor/appointments/&lt;int:appointment_id&gt;/review/', views.doctor_review_appointment, name='doctor_review_appointment'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 55 | <code>    path('doctor/appointments/&lt;int:appointment_id&gt;/cancel/', views.doctor_cancel_appointment, name='doctor_cancel_appointment'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 56 | <code>    path('doctor/book-patient/', views.doctor_book_patient, name='doctor_book_patient'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 57 | <code>    path('doctor/patients/', views.doctor_patient_cards, name='doctor_patient_cards'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 58 | <code>    path('doctor/patients/&lt;int:card_id&gt;/', views.doctor_patient_card_detail, name='doctor_patient_card_detail'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 59 | <code>    path('doctor/schedule/', views.doctor_schedule, name='doctor_schedule'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 60 | <code>    path('doctor/workplaces/', views.doctor_workplaces, name='doctor_workplaces'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 61 | <code>    path('doctor/services/', views.doctor_services, name='doctor_services'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 62 | <code>    path('doctor/news/', views.doctor_news, name='doctor_news'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 63 | <code>    path('doctor/profile/', views.doctor_edit_profile, name='doctor_edit_profile'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 64 | <code>    path('doctor/password/', views.doctor_change_password, name='doctor_change_password'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 65 | <code>    path('panel/', views.admin_panel, name='admin_panel'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 66 | <code>    path('panel/doctors/add/', views.admin_add_doctor, name='admin_add_doctor'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 67 | <code>    path('panel/content/', views.admin_content, name='admin_content'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 68 | <code>    path(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
-| 69 | <code>        'panel/telegram-message/',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
-| 70 | <code>        views.admin_telegram_broadcast,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
-| 71 | <code>        name='admin_telegram_broadcast',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 72 | <code>    ),</code> | Закрывает или продолжает многострочную Python-конструкцию. |
-| 73 | <code>    path('panel/users/&lt;int:user_id&gt;/edit/', views.admin_edit_user, name='admin_edit_user'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 74 | <code>    path('panel/users/&lt;int:user_id&gt;/toggle/', views.admin_toggle_user, name='admin_toggle_user'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 75 | <code>    path('panel/users/&lt;int:user_id&gt;/delete/', views.admin_delete_user, name='admin_delete_user'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 76 | <code>    path('panel/appointments/&lt;int:appointment_id&gt;/cancel/', views.admin_cancel_appointment, name='admin_cancel_appointment'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 77 | <code>]</code> | Закрывает или продолжает многострочную Python-конструкцию. |
+| 20 | <code>    path('telegram/reconnect/', views.telegram_reconnect, name='telegram_reconnect'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 21 | <code>    path('telegram/disconnect/', views.telegram_disconnect, name='telegram_disconnect'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 22 | <code>    path('telegram/webhook/', views.telegram_webhook, name='telegram_webhook'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 23 | <code>    path('forgot-password/', views.forgot_password, name='forgot_password'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 24 | <code>    path('patient/claim/', views.claim_patient, name='claim_patient'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 25 | <code>    path('patient/pending/', views.pending_patient_dashboard, name='pending_patient_dashboard'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 26 | <code>    path('patient/claim/complete/', views.claim_patient_complete, name='claim_patient_complete'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 27 | <code>    path('doctors/', views.doctors_list, name='doctors'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 28 | <code>    path('doctors/&lt;int:doctor_id&gt;/', views.doctor_detail, name='doctor_detail'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 29 | <code>    path(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
+| 30 | <code>        'doctors/&lt;int:doctor_id&gt;/services/&lt;int:service_id&gt;/',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
+| 31 | <code>        views.service_detail,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
+| 32 | <code>        name='service_detail',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 33 | <code>    ),</code> | Закрывает или продолжает многострочную Python-конструкцию. |
+| 34 | <code>    path('booking/', views.booking, name='booking'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 35 | <code>    path('patient/', views.patient_dashboard, name='patient_dashboard'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 36 | <code>    path('patient/profile/', views.patient_edit_profile, name='patient_edit_profile'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 37 | <code>    path('patient/password/', views.patient_change_password, name='patient_change_password'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 38 | <code>    path('patient/appointments/&lt;int:appointment_id&gt;/cancel/', views.cancel_appointment, name='cancel_appointment'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 39 | <code>    path('patient/appointments/&lt;int:appointment_id&gt;/restore/', views.restore_appointment, name='restore_appointment'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 40 | <code>    path('patient/appointments/&lt;int:appointment_id&gt;/', views.patient_appointment_detail, name='patient_appointment_detail'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 41 | <code>    path(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
+| 42 | <code>        'patient/appointments/&lt;int:appointment_id&gt;/reschedule/',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
+| 43 | <code>        views.patient_reschedule_response,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
+| 44 | <code>        name='patient_reschedule_response',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 45 | <code>    ),</code> | Закрывает или продолжает многострочную Python-конструкцию. |
+| 46 | <code>    path('doctor/', views.doctor_dashboard, name='doctor_dashboard'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 47 | <code>    path('doctor/requests/', views.doctor_requests, name='doctor_requests'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 48 | <code>    path('doctor/appointments/', views.doctor_appointments, name='doctor_appointments'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 49 | <code>    path('doctor/appointments/&lt;int:appointment_id&gt;/', views.doctor_appointment_detail, name='doctor_appointment_detail'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 50 | <code>    path(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
+| 51 | <code>        'doctor/appointments/&lt;int:appointment_id&gt;/reschedule/',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
+| 52 | <code>        views.doctor_propose_reschedule,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
+| 53 | <code>        name='doctor_propose_reschedule',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 54 | <code>    ),</code> | Закрывает или продолжает многострочную Python-конструкцию. |
+| 55 | <code>    path('doctor/appointments/&lt;int:appointment_id&gt;/review/', views.doctor_review_appointment, name='doctor_review_appointment'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 56 | <code>    path('doctor/appointments/&lt;int:appointment_id&gt;/cancel/', views.doctor_cancel_appointment, name='doctor_cancel_appointment'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 57 | <code>    path('doctor/book-patient/', views.doctor_book_patient, name='doctor_book_patient'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 58 | <code>    path('doctor/patients/', views.doctor_patient_cards, name='doctor_patient_cards'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 59 | <code>    path('doctor/patients/&lt;int:card_id&gt;/', views.doctor_patient_card_detail, name='doctor_patient_card_detail'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 60 | <code>    path('doctor/schedule/', views.doctor_schedule, name='doctor_schedule'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 61 | <code>    path('doctor/workplaces/', views.doctor_workplaces, name='doctor_workplaces'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 62 | <code>    path('doctor/services/', views.doctor_services, name='doctor_services'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 63 | <code>    path('doctor/news/', views.doctor_news, name='doctor_news'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 64 | <code>    path('doctor/profile/', views.doctor_edit_profile, name='doctor_edit_profile'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 65 | <code>    path('doctor/password/', views.doctor_change_password, name='doctor_change_password'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 66 | <code>    path('panel/', views.admin_panel, name='admin_panel'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 67 | <code>    path('panel/doctors/add/', views.admin_add_doctor, name='admin_add_doctor'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 68 | <code>    path('panel/content/', views.admin_content, name='admin_content'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 69 | <code>    path(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
+| 70 | <code>        'panel/telegram-message/',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
+| 71 | <code>        views.admin_telegram_broadcast,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. |
+| 72 | <code>        name='admin_telegram_broadcast',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 73 | <code>    ),</code> | Закрывает или продолжает многострочную Python-конструкцию. |
+| 74 | <code>    path('panel/users/&lt;int:user_id&gt;/edit/', views.admin_edit_user, name='admin_edit_user'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 75 | <code>    path('panel/users/&lt;int:user_id&gt;/toggle/', views.admin_toggle_user, name='admin_toggle_user'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 76 | <code>    path('panel/users/&lt;int:user_id&gt;/delete/', views.admin_delete_user, name='admin_delete_user'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 77 | <code>    path('panel/appointments/&lt;int:appointment_id&gt;/cancel/', views.admin_cancel_appointment, name='admin_cancel_appointment'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
+| 78 | <code>]</code> | Закрывает или продолжает многострочную Python-конструкцию. |
 
 ## Файл `clinic/models.py`
 
@@ -5145,7 +5159,7 @@
 
 ## Файл `clinic/views.py`
 
-- Всего физических строк в файле: 2861.
+- Всего физических строк в файле: 2894.
 - Тип файла: `.py`.
 - Роль файла объясняется в первой части документации; ниже приведены структурные досье и построчный атлас.
 
@@ -5169,9 +5183,18 @@
 - Модели в этом фрагменте: `Profile`.
 - HTML-шаблоны: не возвращает шаблон напрямую.
 
+#### Функция `telegram_reconnect`
+
+- Расположение: `clinic/views.py:139`, заканчивается около строки 167.
+- Параметры или родители: `request`.
+- Назначение: Создает новый одноразовый Telegram-код и только после этого удаляет старую связь пользователя.
+- Декораторы: `login_required`, `require_POST`.
+- Модели в этом фрагменте: `Profile`, `TelegramConnection`.
+- HTML-шаблоны: не возвращает шаблон напрямую.
+
 #### Функция `telegram_disconnect`
 
-- Расположение: `clinic/views.py:139`, заканчивается около строки 143.
+- Расположение: `clinic/views.py:172`, заканчивается около строки 176.
 - Параметры или родители: `request`.
 - Назначение: Выключает активное Telegram-подключение текущего пользователя.
 - Декораторы: `login_required`, `require_POST`.
@@ -5180,7 +5203,7 @@
 
 #### Функция `telegram_webhook`
 
-- Расположение: `clinic/views.py:147`, заканчивается около строки 165.
+- Расположение: `clinic/views.py:180`, заканчивается около строки 198.
 - Параметры или родители: `request`.
 - Назначение: Принимает подписанное событие Telegram, проверяет секрет и передает обновление обработчику бота.
 - Декораторы: `csrf_exempt`.
@@ -5189,7 +5212,7 @@
 
 #### Функция `private_media`
 
-- Расположение: `clinic/views.py:168`, заканчивается около строки 247.
+- Расположение: `clinic/views.py:201`, заканчивается около строки 280.
 - Параметры или родители: `request, path`.
 - Назначение: Выдает медицинский файл только администратору, связанному врачу или разрешенному пациенту.
 - Декораторы: нет.
@@ -5198,7 +5221,7 @@
 
 #### Функция `public_media`
 
-- Расположение: `clinic/views.py:250`, заканчивается около строки 259.
+- Расположение: `clinic/views.py:283`, заканчивается около строки 292.
 - Параметры или родители: `request, path`.
 - Назначение: Локально выдает только публичные media-файлы и блокирует приватные префиксы.
 - Декораторы: нет.
@@ -5207,7 +5230,7 @@
 
 #### Функция `user_role`
 
-- Расположение: `clinic/views.py:262`, заканчивается около строки 272.
+- Расположение: `clinic/views.py:295`, заканчивается около строки 305.
 - Параметры или родители: `user`.
 - Назначение: Определяет фактическую роль вошедшего пользователя.
 - Декораторы: нет.
@@ -5216,7 +5239,7 @@
 
 #### Функция `redirect_by_role`
 
-- Расположение: `clinic/views.py:275`, заканчивается около строки 281.
+- Расположение: `clinic/views.py:308`, заканчивается около строки 314.
 - Параметры или родители: `user`.
 - Назначение: Направляет администратора, врача или пациента в правильный кабинет.
 - Декораторы: нет.
@@ -5225,7 +5248,7 @@
 
 #### Функция `patient_required`
 
-- Расположение: `clinic/views.py:284`, заканчивается около строки 305.
+- Расположение: `clinic/views.py:317`, заканчивается около строки 338.
 - Параметры или родители: `view_func`.
 - Назначение: Создает защитный декоратор для функций полноценного Google-пациента.
 - Декораторы: нет.
@@ -5234,7 +5257,7 @@
 
 #### Функция `doctor_required`
 
-- Расположение: `clinic/views.py:308`, заканчивается около строки 319.
+- Расположение: `clinic/views.py:341`, заканчивается около строки 352.
 - Параметры или родители: `view_func`.
 - Назначение: Создает защитный декоратор для активного врача.
 - Декораторы: нет.
@@ -5243,7 +5266,7 @@
 
 #### Функция `admin_required`
 
-- Расположение: `clinic/views.py:322`, заканчивается около строки 330.
+- Расположение: `clinic/views.py:355`, заканчивается около строки 363.
 - Параметры или родители: `view_func`.
 - Назначение: Создает защитный декоратор для администратора Django.
 - Декораторы: нет.
@@ -5252,7 +5275,7 @@
 
 #### Функция `parse_date`
 
-- Расположение: `clinic/views.py:333`, заканчивается около строки 337.
+- Расположение: `clinic/views.py:366`, заканчивается около строки 370.
 - Параметры или родители: `value`.
 - Назначение: Безопасно преобразует строку формата YYYY-MM-DD в дату.
 - Декораторы: нет.
@@ -5261,7 +5284,7 @@
 
 #### Функция `parse_time`
 
-- Расположение: `clinic/views.py:340`, заканчивается около строки 344.
+- Расположение: `clinic/views.py:373`, заканчивается около строки 377.
 - Параметры или родители: `value`.
 - Назначение: Безопасно преобразует строку HH:MM во время.
 - Декораторы: нет.
@@ -5270,7 +5293,7 @@
 
 #### Функция `is_past_appointment`
 
-- Расположение: `clinic/views.py:347`, заканчивается около строки 353.
+- Расположение: `clinic/views.py:380`, заканчивается около строки 386.
 - Параметры или родители: `selected_date, selected_time`.
 - Назначение: Определяет, относится ли выбранная дата или время к прошлому.
 - Декораторы: нет.
@@ -5279,7 +5302,7 @@
 
 #### Функция `schedule_for_date`
 
-- Расположение: `clinic/views.py:356`, заканчивается около строки 360.
+- Расположение: `clinic/views.py:389`, заканчивается около строки 393.
 - Параметры или родители: `doctor, selected_date`.
 - Назначение: Находит повторяющийся день графика врача по дню недели даты.
 - Декораторы: нет.
@@ -5288,7 +5311,7 @@
 
 #### Функция `doctor_working_weekdays`
 
-- Расположение: `clinic/views.py:363`, заканчивается около строки 373.
+- Расположение: `clinic/views.py:396`, заканчивается около строки 406.
 - Параметры или родители: `doctor`.
 - Назначение: Возвращает номера рабочих дней недели, сохраненных в графике выбранного врача.
 - Декораторы: нет.
@@ -5297,7 +5320,7 @@
 
 #### Функция `next_working_date`
 
-- Расположение: `clinic/views.py:376`, заканчивается около строки 384.
+- Расположение: `clinic/views.py:409`, заканчивается около строки 417.
 - Параметры или родители: `start_date, working_weekdays`.
 - Назначение: Находит ближайшую разрешенную графиком дату, начиная с переданного дня.
 - Декораторы: нет.
@@ -5306,7 +5329,7 @@
 
 #### Функция `working_weekday_labels`
 
-- Расположение: `clinic/views.py:387`, заканчивается около строки 393.
+- Расположение: `clinic/views.py:420`, заканчивается около строки 426.
 - Параметры или родители: `working_weekdays`.
 - Назначение: Преобразует номера рабочих дней в понятные украинские названия для календаря.
 - Декораторы: нет.
@@ -5315,7 +5338,7 @@
 
 #### Функция `appointment_range`
 
-- Расположение: `clinic/views.py:396`, заканчивается около строки 400.
+- Расположение: `clinic/views.py:429`, заканчивается около строки 433.
 - Параметры или родители: `date_value, time_value, slot_minutes, duration_slots, duration_minutes`.
 - Назначение: Вычисляет начало и конец интервала приема.
 - Декораторы: нет.
@@ -5324,7 +5347,7 @@
 
 #### Функция `appointment_conflicts`
 
-- Расположение: `clinic/views.py:403`, заканчивается около строки 452.
+- Расположение: `clinic/views.py:436`, заканчивается около строки 485.
 - Параметры или родители: `doctor, selected_date, selected_time, duration_slots, duration_minutes, exclude_id`.
 - Назначение: Проверяет рабочий день, конец смены, обед и пересечения приемов врача.
 - Декораторы: нет.
@@ -5333,7 +5356,7 @@
 
 #### Функция `patient_appointment_conflicts`
 
-- Расположение: `clinic/views.py:455`, заканчивается около строки 502.
+- Расположение: `clinic/views.py:488`, заканчивается около строки 535.
 - Параметры или родители: `patient, selected_date, selected_time, duration_minutes, patient_phone, exclude_id`.
 - Назначение: Проверяет пересечение пациента с его другими приемами у любых врачей.
 - Декораторы: нет.
@@ -5342,7 +5365,7 @@
 
 #### Функция `patient_daily_appointment_count`
 
-- Расположение: `clinic/views.py:505`, заканчивается около строки 536.
+- Расположение: `clinic/views.py:538`, заканчивается около строки 569.
 - Параметры или родители: `patient, selected_date, patient_phone`.
 - Назначение: Считает активные самостоятельные записи пациента на выбранную дату.
 - Декораторы: нет.
@@ -5351,7 +5374,7 @@
 
 #### Функция `split_slot_option`
 
-- Расположение: `clinic/views.py:539`, заканчивается около строки 583.
+- Расположение: `clinic/views.py:572`, заканчивается около строки 616.
 - Параметры или родители: `doctor, selected_date, slot_time, schedule, appointment_id`.
 - Назначение: Проверяет, можно ли врачу разделить стандартный слот пополам.
 - Декораторы: нет.
@@ -5360,7 +5383,7 @@
 
 #### Функция `slots_for_doctor`
 
-- Расположение: `clinic/views.py:586`, заканчивается около строки 621.
+- Расположение: `clinic/views.py:619`, заканчивается около строки 654.
 - Параметры или родители: `doctor, selected_date, patient, patient_phone, include_split_options`.
 - Назначение: Строит список времени дня и помечает каждый слот свободным или занятым.
 - Декораторы: нет.
@@ -5369,7 +5392,7 @@
 
 #### Функция `appointment_finished`
 
-- Расположение: `clinic/views.py:624`, заканчивается около строки 626.
+- Расположение: `clinic/views.py:657`, заканчивается около строки 659.
 - Параметры или родители: `appointment`.
 - Назначение: Сравнивает вычисленный конец приема с текущим временем.
 - Декораторы: нет.
@@ -5378,7 +5401,7 @@
 
 #### Функция `active_appointment_for_doctor`
 
-- Расположение: `clinic/views.py:629`, заканчивается около строки 640.
+- Расположение: `clinic/views.py:662`, заканчивается около строки 673.
 - Параметры или родители: `doctor`.
 - Назначение: Находит подтвержденный прием, который идет у врача прямо сейчас.
 - Декораторы: нет.
@@ -5387,7 +5410,7 @@
 
 #### Функция `refresh_completed_appointments`
 
-- Расположение: `clinic/views.py:643`, заканчивается около строки 650.
+- Расположение: `clinic/views.py:676`, заканчивается около строки 683.
 - Параметры или родители: `без параметров`.
 - Назначение: Переводит закончившиеся подтвержденные приемы в завершенные.
 - Декораторы: нет.
@@ -5396,7 +5419,7 @@
 
 #### Функция `find_patient_by_contacts`
 
-- Расположение: `clinic/views.py:653`, заканчивается около строки 677.
+- Расположение: `clinic/views.py:686`, заканчивается около строки 710.
 - Параметры или родители: `email, phone`.
 - Назначение: Ищет зарегистрированного пациента по технической почте или нормализованному телефону.
 - Декораторы: нет.
@@ -5405,7 +5428,7 @@
 
 #### Функция `find_doctor_card_by_phone`
 
-- Расположение: `clinic/views.py:680`, заканчивается около строки 689.
+- Расположение: `clinic/views.py:713`, заканчивается около строки 722.
 - Параметры или родители: `doctor, phone`.
 - Назначение: Ищет существующую карточку конкретного врача по телефону.
 - Декораторы: нет.
@@ -5414,7 +5437,7 @@
 
 #### Функция `patient_card_for_appointment`
 
-- Расположение: `clinic/views.py:692`, заканчивается около строки 716.
+- Расположение: `clinic/views.py:725`, заканчивается около строки 749.
 - Параметры или родители: `appointment`.
 - Назначение: Сопоставляет прием с правильной карточкой, не смешивая запись для другого человека.
 - Декораторы: нет.
@@ -5423,7 +5446,7 @@
 
 #### Функция `appointments_for_patient_card`
 
-- Расположение: `clinic/views.py:719`, заканчивается около строки 729.
+- Расположение: `clinic/views.py:752`, заканчивается около строки 762.
 - Параметры или родители: `doctor, card`.
 - Назначение: Возвращает приемы, принадлежащие одной карточке пациента.
 - Декораторы: нет.
@@ -5432,7 +5455,7 @@
 
 #### Функция `ensure_patient_card_from_appointment`
 
-- Расположение: `clinic/views.py:732`, заканчивается около строки 777.
+- Расположение: `clinic/views.py:765`, заканчивается около строки 810.
 - Параметры или родители: `appointment`.
 - Назначение: Создает или синхронизирует карточку пациента по данным приема.
 - Декораторы: нет.
@@ -5441,7 +5464,7 @@
 
 #### Функция `unclaimed_records_for_phone`
 
-- Расположение: `clinic/views.py:780`, заканчивается около строки 795.
+- Расположение: `clinic/views.py:813`, заканчивается около строки 828.
 - Параметры или родители: `phone`.
 - Назначение: Находит ручные приемы и карточки, еще не связанные с аккаунтом.
 - Декораторы: нет.
@@ -5450,7 +5473,7 @@
 
 #### Функция `pending_patient_identity`
 
-- Расположение: `clinic/views.py:798`, заканчивается около строки 812.
+- Расположение: `clinic/views.py:831`, заканчивается около строки 845.
 - Параметры или родители: `phone`.
 - Назначение: Строит имя и инициалы временного кабинета по найденным ручным данным.
 - Декораторы: нет.
@@ -5459,7 +5482,7 @@
 
 #### Функция `sync_patient_cards_for_doctor`
 
-- Расположение: `clinic/views.py:815`, заканчивается около строки 820.
+- Расположение: `clinic/views.py:848`, заканчивается около строки 853.
 - Параметры или родители: `doctor`.
 - Назначение: Гарантирует наличие карточек для всех актуальных приемов врача.
 - Декораторы: нет.
@@ -5468,7 +5491,7 @@
 
 #### Функция `home`
 
-- Расположение: `clinic/views.py:823`, заканчивается около строки 849.
+- Расположение: `clinic/views.py:856`, заканчивается около строки 882.
 - Параметры или родители: `request`.
 - Назначение: Собирает слайды, новости, галерею и ведущих врачей для публичной главной.
 - Декораторы: нет.
@@ -5477,7 +5500,7 @@
 
 #### Функция `login_view`
 
-- Расположение: `clinic/views.py:852`, заканчивается около строки 896.
+- Расположение: `clinic/views.py:885`, заканчивается около строки 929.
 - Параметры или родители: `request, role`.
 - Назначение: Проверяет общий логин администрации и автоматически определяет врача или администратора.
 - Декораторы: нет.
@@ -5486,7 +5509,7 @@
 
 #### Функция `logout_view`
 
-- Расположение: `clinic/views.py:899`, заканчивается около строки 902.
+- Расположение: `clinic/views.py:932`, заканчивается около строки 935.
 - Параметры или родители: `request`.
 - Назначение: Завершает Django-сессию и возвращает пользователя на главную.
 - Декораторы: нет.
@@ -5495,7 +5518,7 @@
 
 #### Функция `forgot_password`
 
-- Расположение: `clinic/views.py:905`, заканчивается около строки 913.
+- Расположение: `clinic/views.py:938`, заканчивается около строки 946.
 - Параметры или родители: `request`.
 - Назначение: Проверяет форму обращения по восстановлению доступа и показывает безопасный ответ.
 - Декораторы: нет.
@@ -5504,7 +5527,7 @@
 
 #### Функция `claim_patient`
 
-- Расположение: `clinic/views.py:916`, заканчивается около строки 948.
+- Расположение: `clinic/views.py:949`, заканчивается около строки 981.
 - Параметры или родители: `request`.
 - Назначение: Проверяет введенный телефон и открывает временный кабинет перед Google-входом.
 - Декораторы: нет.
@@ -5513,7 +5536,7 @@
 
 #### Функция `pending_patient_dashboard`
 
-- Расположение: `clinic/views.py:951`, заканчивается около строки 984.
+- Расположение: `clinic/views.py:984`, заканчивается около строки 1017.
 - Параметры или родители: `request`.
 - Назначение: Показывает временный профиль и будущие ручные записи по телефону.
 - Декораторы: нет.
@@ -5522,7 +5545,7 @@
 
 #### Функция `claim_patient_complete`
 
-- Расположение: `clinic/views.py:988`, заканчивается около строки 1045.
+- Расположение: `clinic/views.py:1021`, заканчивается около строки 1078.
 - Параметры или родители: `request`.
 - Назначение: После Google-входа связывает телефон, приемы и карточки с аккаунтом пациента.
 - Декораторы: `login_required`.
@@ -5531,7 +5554,7 @@
 
 #### Функция `patient_dashboard`
 
-- Расположение: `clinic/views.py:1049`, заканчивается около строки 1084.
+- Расположение: `clinic/views.py:1082`, заканчивается около строки 1117.
 - Параметры или родители: `request`.
 - Назначение: Разделяет приемы пациента по статусам и загружает видимое лечение и рекомендации.
 - Декораторы: `patient_required`.
@@ -5540,7 +5563,7 @@
 
 #### Функция `patient_edit_profile`
 
-- Расположение: `clinic/views.py:1088`, заканчивается около строки 1100.
+- Расположение: `clinic/views.py:1121`, заканчивается около строки 1133.
 - Параметры или родители: `request`.
 - Назначение: Проверяет и сохраняет имя, фамилию, возраст, телефон и фото пациента.
 - Декораторы: `patient_required`.
@@ -5549,7 +5572,7 @@
 
 #### Функция `patient_change_password`
 
-- Расположение: `clinic/views.py:1104`, заканчивается около строки 1115.
+- Расположение: `clinic/views.py:1137`, заканчивается около строки 1148.
 - Параметры или родители: `request`.
 - Назначение: Меняет локальный пароль, сохраняя текущую сессию.
 - Декораторы: `patient_required`.
@@ -5558,7 +5581,7 @@
 
 #### Функция `cancel_appointment`
 
-- Расположение: `clinic/views.py:1119`, заканчивается около строки 1142.
+- Расположение: `clinic/views.py:1152`, заканчивается около строки 1175.
 - Параметры или родители: `request, appointment_id`.
 - Назначение: Отменяет только принадлежащую пациенту будущую активную запись.
 - Декораторы: `patient_required`.
@@ -5567,7 +5590,7 @@
 
 #### Функция `restore_appointment`
 
-- Расположение: `clinic/views.py:1146`, заканчивается около строки 1180.
+- Расположение: `clinic/views.py:1179`, заканчивается около строки 1213.
 - Параметры или родители: `request, appointment_id`.
 - Назначение: Повторно проверяет освободившийся интервал и возвращает отмененную запись в заявки.
 - Декораторы: `patient_required`.
@@ -5576,7 +5599,7 @@
 
 #### Функция `patient_appointment_detail`
 
-- Расположение: `clinic/views.py:1184`, заканчивается около строки 1194.
+- Расположение: `clinic/views.py:1217`, заканчивается около строки 1227.
 - Параметры или родители: `request, appointment_id`.
 - Назначение: Показывает пациенту только принадлежащую ему запись и ее файлы.
 - Декораторы: `patient_required`.
@@ -5585,7 +5608,7 @@
 
 #### Функция `patient_reschedule_response`
 
-- Расположение: `clinic/views.py:1198`, заканчивается около строки 1264.
+- Расположение: `clinic/views.py:1231`, заканчивается около строки 1297.
 - Параметры или родители: `request, appointment_id`.
 - Назначение: Принимает или отклоняет предложенное врачом новое время.
 - Декораторы: `patient_required`.
@@ -5594,7 +5617,7 @@
 
 #### Функция `doctors_list`
 
-- Расположение: `clinic/views.py:1267`, заканчивается около строки 1287.
+- Расположение: `clinic/views.py:1300`, заканчивается около строки 1320.
 - Параметры или родители: `request`.
 - Назначение: Выводит активных врачей и поддерживает серверный параметр поиска.
 - Декораторы: нет.
@@ -5603,7 +5626,7 @@
 
 #### Функция `doctor_detail`
 
-- Расположение: `clinic/views.py:1290`, заканчивается около строки 1304.
+- Расположение: `clinic/views.py:1323`, заканчивается около строки 1337.
 - Параметры или родители: `request, doctor_id`.
 - Назначение: Загружает публичный профиль, расписание, услуги и новости одного активного врача.
 - Декораторы: нет.
@@ -5612,7 +5635,7 @@
 
 #### Функция `service_detail`
 
-- Расположение: `clinic/views.py:1307`, заканчивается около строки 1348.
+- Расположение: `clinic/views.py:1340`, заканчивается около строки 1381.
 - Параметры или родители: `request, doctor_id, service_id`.
 - Назначение: Показывает подробную услугу и формирует безопасный возврат в текущую заявку.
 - Декораторы: нет.
@@ -5621,7 +5644,7 @@
 
 #### Функция `booking`
 
-- Расположение: `clinic/views.py:1352`, заканчивается около строки 1540.
+- Расположение: `clinic/views.py:1385`, заканчивается около строки 1573.
 - Параметры или родители: `request`.
 - Назначение: Выполняет полный сценарий онлайн-заявки пациента со всеми временными проверками и файлами.
 - Декораторы: `patient_required`.
@@ -5630,7 +5653,7 @@
 
 #### Функция `doctor_dashboard`
 
-- Расположение: `clinic/views.py:1544`, заканчивается около строки 1555.
+- Расположение: `clinic/views.py:1577`, заканчивается около строки 1588.
 - Параметры или родители: `request`.
 - Назначение: Показывает профиль, адреса, график, услуги и новости текущего врача.
 - Декораторы: `doctor_required`.
@@ -5639,7 +5662,7 @@
 
 #### Функция `doctor_requests`
 
-- Расположение: `clinic/views.py:1559`, заканчивается около строки 1581.
+- Расположение: `clinic/views.py:1592`, заканчивается около строки 1614.
 - Параметры или родители: `request`.
 - Назначение: Выводит только новые заявки текущего врача, сгруппированные по датам.
 - Декораторы: `doctor_required`.
@@ -5648,7 +5671,7 @@
 
 #### Функция `doctor_appointments`
 
-- Расположение: `clinic/views.py:1585`, заканчивается около строки 1658.
+- Расположение: `clinic/views.py:1618`, заканчивается около строки 1691.
 - Параметры или родители: `request`.
 - Назначение: Строит одну выбранную неделю приемов и действия записи на день или между приемами.
 - Декораторы: `doctor_required`.
@@ -5657,7 +5680,7 @@
 
 #### Функция `doctor_appointments_week_url`
 
-- Расположение: `clinic/views.py:1661`, заканчивается около строки 1662.
+- Расположение: `clinic/views.py:1694`, заканчивается около строки 1695.
 - Параметры или родители: `appointment_date`.
 - Назначение: Формирует адрес недели, в которую входит переданная дата.
 - Декораторы: нет.
@@ -5666,7 +5689,7 @@
 
 #### Функция `doctor_appointment_detail`
 
-- Расположение: `clinic/views.py:1666`, заканчивается около строки 1693.
+- Расположение: `clinic/views.py:1699`, заканчивается около строки 1726.
 - Параметры или родители: `request, appointment_id`.
 - Назначение: Загружает полную заявку, пациента, медиа и соседние приемы дня.
 - Декораторы: `doctor_required`.
@@ -5675,7 +5698,7 @@
 
 #### Функция `doctor_propose_reschedule`
 
-- Расположение: `clinic/views.py:1697`, заканчивается около строки 1792.
+- Расположение: `clinic/views.py:1730`, заканчивается около строки 1825.
 - Параметры или родители: `request, appointment_id`.
 - Назначение: Проверяет и резервирует новое время, после чего спрашивает решение пациента.
 - Декораторы: `doctor_required`.
@@ -5684,7 +5707,7 @@
 
 #### Функция `doctor_review_appointment`
 
-- Расположение: `clinic/views.py:1796`, заканчивается около строки 1867.
+- Расположение: `clinic/views.py:1829`, заканчивается около строки 1900.
 - Параметры или родители: `request, appointment_id`.
 - Назначение: Позволяет врачу подтвердить длительность или отклонить новую заявку.
 - Декораторы: `doctor_required`.
@@ -5693,7 +5716,7 @@
 
 #### Функция `doctor_cancel_appointment`
 
-- Расположение: `clinic/views.py:1871`, заканчивается около строки 1890.
+- Расположение: `clinic/views.py:1904`, заканчивается около строки 1923.
 - Параметры или родители: `request, appointment_id`.
 - Назначение: Отменяет будущий прием врача и уведомляет пациента.
 - Декораторы: `doctor_required`.
@@ -5702,7 +5725,7 @@
 
 #### Функция `doctor_book_patient`
 
-- Расположение: `clinic/views.py:1894`, заканчивается около строки 2128.
+- Расположение: `clinic/views.py:1927`, заканчивается около строки 2161.
 - Параметры или родители: `request`.
 - Назначение: Записывает существующего или нового пациента, включая безопасное деление слота.
 - Декораторы: `doctor_required`.
@@ -5711,7 +5734,7 @@
 
 #### Функция `doctor_patient_cards`
 
-- Расположение: `clinic/views.py:2132`, заканчивается около строки 2174.
+- Расположение: `clinic/views.py:2165`, заканчивается около строки 2207.
 - Параметры или родители: `request`.
 - Назначение: Собирает список карточек с последним, следующим визитом и поиском.
 - Декораторы: `doctor_required`.
@@ -5720,7 +5743,7 @@
 
 #### Функция `doctor_patient_card_detail`
 
-- Расположение: `clinic/views.py:2178`, заканчивается около строки 2281.
+- Расположение: `clinic/views.py:2211`, заканчивается около строки 2314.
 - Параметры или родители: `request, card_id`.
 - Назначение: Управляет заметками, расширенными записями и медицинскими файлами карточки.
 - Декораторы: `doctor_required`.
@@ -5729,7 +5752,7 @@
 
 #### Функция `doctor_schedule`
 
-- Расположение: `clinic/views.py:2285`, заканчивается около строки 2339.
+- Расположение: `clinic/views.py:2318`, заканчивается около строки 2372.
 - Параметры или родители: `request`.
 - Назначение: Добавляет незаполненный день или полностью заменяет выбранный день недельного графика врача.
 - Декораторы: `doctor_required`.
@@ -5738,7 +5761,7 @@
 
 #### Функция `doctor_workplaces`
 
-- Расположение: `clinic/views.py:2343`, заканчивается около строки 2383.
+- Расположение: `clinic/views.py:2376`, заканчивается около строки 2416.
 - Параметры или родители: `request`.
 - Назначение: Создает, редактирует и безопасно удаляет сохраненные места приема.
 - Декораторы: `doctor_required`.
@@ -5747,7 +5770,7 @@
 
 #### Функция `doctor_services`
 
-- Расположение: `clinic/views.py:2387`, заканчивается около строки 2478.
+- Расположение: `clinic/views.py:2420`, заканчивается около строки 2511.
 - Параметры или родители: `request`.
 - Назначение: Управляет услугами, порядком, видимостью, описанием, фото и видео.
 - Декораторы: `doctor_required`.
@@ -5756,7 +5779,7 @@
 
 #### Функция `doctor_edit_profile`
 
-- Расположение: `clinic/views.py:2482`, заканчивается около строки 2490.
+- Расположение: `clinic/views.py:2515`, заканчивается около строки 2523.
 - Параметры или родители: `request`.
 - Назначение: Сохраняет публичные данные текущего врача.
 - Декораторы: `doctor_required`.
@@ -5765,7 +5788,7 @@
 
 #### Функция `doctor_change_password`
 
-- Расположение: `clinic/views.py:2494`, заканчивается около строки 2502.
+- Расположение: `clinic/views.py:2527`, заканчивается около строки 2535.
 - Параметры или родители: `request`.
 - Назначение: Меняет пароль врача и не завершает его текущую сессию.
 - Декораторы: `doctor_required`.
@@ -5774,7 +5797,7 @@
 
 #### Функция `doctor_news`
 
-- Расположение: `clinic/views.py:2506`, заканчивается около строки 2531.
+- Расположение: `clinic/views.py:2539`, заканчивается около строки 2564.
 - Параметры или родители: `request`.
 - Назначение: Позволяет врачу управлять только собственными публикациями.
 - Декораторы: `doctor_required`.
@@ -5783,7 +5806,7 @@
 
 #### Функция `admin_panel`
 
-- Расположение: `clinic/views.py:2535`, заканчивается около строки 2562.
+- Расположение: `clinic/views.py:2568`, заканчивается около строки 2595.
 - Параметры или родители: `request`.
 - Назначение: Собирает статистику, пользователей, врачей, приемы и журнал действий.
 - Декораторы: `admin_required`.
@@ -5792,7 +5815,7 @@
 
 #### Функция `admin_telegram_broadcast`
 
-- Расположение: `clinic/views.py:2566`, заканчивается около строки 2628.
+- Расположение: `clinic/views.py:2599`, заканчивается около строки 2661.
 - Параметры или родители: `request`.
 - Назначение: Проверяет адресата и отправляет ручное Telegram-сообщение всем активным связям или одному пользователю.
 - Декораторы: `admin_required`.
@@ -5801,7 +5824,7 @@
 
 #### Функция `admin_content`
 
-- Расположение: `clinic/views.py:2632`, заканчивается около строки 2768.
+- Расположение: `clinic/views.py:2665`, заканчивается около строки 2801.
 - Параметры или родители: `request`.
 - Назначение: Обрабатывает все действия редактора главной страницы и оформления.
 - Декораторы: `admin_required`.
@@ -5810,7 +5833,7 @@
 
 #### Функция `admin_add_doctor`
 
-- Расположение: `clinic/views.py:2772`, заканчивается около строки 2779.
+- Расположение: `clinic/views.py:2805`, заканчивается около строки 2812.
 - Параметры или родители: `request`.
 - Назначение: Создает связанный аккаунт, роль и профиль врача.
 - Декораторы: `admin_required`.
@@ -5819,7 +5842,7 @@
 
 #### Функция `admin_edit_user`
 
-- Расположение: `clinic/views.py:2783`, заканчивается около строки 2803.
+- Расположение: `clinic/views.py:2816`, заканчивается около строки 2836.
 - Параметры или родители: `request, user_id`.
 - Назначение: Редактирует пользователя и повторно защищает уникальность телефона.
 - Декораторы: `admin_required`.
@@ -5828,7 +5851,7 @@
 
 #### Функция `admin_toggle_user`
 
-- Расположение: `clinic/views.py:2807`, заканчивается около строки 2819.
+- Расположение: `clinic/views.py:2840`, заканчивается около строки 2852.
 - Параметры или родители: `request, user_id`.
 - Назначение: Архивирует или восстанавливает аккаунт без удаления медицинской истории.
 - Декораторы: `admin_required`.
@@ -5837,7 +5860,7 @@
 
 #### Функция `admin_delete_user`
 
-- Расположение: `clinic/views.py:2823`, заканчивается около строки 2842.
+- Расположение: `clinic/views.py:2856`, заканчивается около строки 2875.
 - Параметры или родители: `request, user_id`.
 - Назначение: Окончательно удаляет только предварительно архивированного пациента.
 - Декораторы: `admin_required`.
@@ -5846,7 +5869,7 @@
 
 #### Функция `admin_cancel_appointment`
 
-- Расположение: `clinic/views.py:2846`, заканчивается около строки 2861.
+- Расположение: `clinic/views.py:2879`, заканчивается около строки 2894.
 - Параметры или родители: `request, appointment_id`.
 - Назначение: Отменяет будущую запись от имени администратора.
 - Декораторы: `admin_required`.
@@ -5855,7 +5878,7 @@
 
 #### Функция `wrapper`
 
-- Расположение: `clinic/views.py:286`, заканчивается около строки 303.
+- Расположение: `clinic/views.py:319`, заканчивается около строки 336.
 - Параметры или родители: `request`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: `wraps(view_func)`.
@@ -5864,7 +5887,7 @@
 
 #### Функция `wrapper`
 
-- Расположение: `clinic/views.py:310`, заканчивается около строки 317.
+- Расположение: `clinic/views.py:343`, заканчивается около строки 350.
 - Параметры или родители: `request`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: `wraps(view_func)`.
@@ -5873,7 +5896,7 @@
 
 #### Функция `wrapper`
 
-- Расположение: `clinic/views.py:324`, заканчивается около строки 328.
+- Расположение: `clinic/views.py:357`, заканчивается около строки 361.
 - Параметры или родители: `request`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: `wraps(view_func)`.
@@ -6009,2489 +6032,2517 @@
 | 134 | <code>        return redirect_by_role(request.user)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `telegram_connect`. |
 | 137 | <code>@login_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
 | 138 | <code>@require_POST</code> | Декоратор добавляет функции или классу дополнительное поведение. |
-| 139 | <code>def telegram_disconnect(request):</code> | Выключает активное Telegram-подключение текущего пользователя. Контекст: `telegram_disconnect`. |
-| 140 | <code>    disconnected = TelegramConnection.objects.filter(user=request.user).update(is_active=False)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `telegram_disconnect`. |
-| 141 | <code>    if disconnected:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `telegram_disconnect`. |
-| 142 | <code>        messages.success(request, 'Telegram-сповіщення вимкнено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `telegram_disconnect`. |
-| 143 | <code>    return redirect_by_role(request.user)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `telegram_disconnect`. |
-| 146 | <code>@csrf_exempt</code> | Декоратор добавляет функции или классу дополнительное поведение. |
-| 147 | <code>def telegram_webhook(request):</code> | Принимает подписанное событие Telegram, проверяет секрет и передает обновление обработчику бота. Контекст: `telegram_webhook`. |
-| 148 | <code>    if request.method != 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `telegram_webhook`. |
-| 149 | <code>        return JsonResponse({'ok': False}, status=405)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `telegram_webhook`. |
-| 151 | <code>    expected_secret = settings.TELEGRAM_WEBHOOK_SECRET</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `telegram_webhook`. |
-| 152 | <code>    received_secret = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `telegram_webhook`. |
-| 153 | <code>    if not expected_secret:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `telegram_webhook`. |
-| 154 | <code>        return JsonResponse({'ok': False}, status=503)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `telegram_webhook`. |
-| 155 | <code>    if not hmac.compare_digest(received_secret, expected_secret):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `telegram_webhook`. |
-| 156 | <code>        return JsonResponse({'ok': False}, status=403)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `telegram_webhook`. |
-| 158 | <code>    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `telegram_webhook`. |
-| 159 | <code>        update = json.loads(request.body.decode('utf-8'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `telegram_webhook`. |
-| 160 | <code>        process_update(update)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `telegram_webhook`. |
-| 161 | <code>    except (json.JSONDecodeError, UnicodeDecodeError):</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `telegram_webhook`. |
-| 162 | <code>        return JsonResponse({'ok': False}, status=400)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `telegram_webhook`. |
-| 163 | <code>    except (TelegramError, requests.RequestException):</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `telegram_webhook`. |
-| 164 | <code>        return JsonResponse({'ok': False}, status=503)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `telegram_webhook`. |
-| 165 | <code>    return JsonResponse({'ok': True})</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `telegram_webhook`. |
-| 168 | <code>def private_media(request, path):</code> | Выдает медицинский файл только администратору, связанному врачу или разрешенному пациенту. Контекст: `private_media`. |
-| 169 | <code>    if not request.user.is_authenticated:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `private_media`. |
-| 170 | <code>        raise PermissionDenied</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `private_media`. |
-| 172 | <code>    item = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 173 | <code>    field = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 174 | <code>    appointment = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 175 | <code>    entry = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 177 | <code>    if path.startswith('appointment_images/'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `private_media`. |
-| 178 | <code>        item = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `private_media`. |
-| 179 | <code>            AppointmentImage.objects.select_related('appointment__doctor__user'),</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `private_media`. |
-| 180 | <code>            image=path,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 181 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
-| 182 | <code>        field = item.image</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 183 | <code>        appointment = item.appointment</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 184 | <code>    elif path.startswith('appointment_videos/'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `private_media`. |
-| 185 | <code>        item = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `private_media`. |
-| 186 | <code>            AppointmentVideo.objects.select_related('appointment__doctor__user'),</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `private_media`. |
-| 187 | <code>            video=path,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 188 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
-| 189 | <code>        field = item.video</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 190 | <code>        appointment = item.appointment</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 191 | <code>    elif path.startswith('patient_records/'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `private_media`. |
-| 192 | <code>        item = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `private_media`. |
-| 193 | <code>            PatientRecordImage.objects.select_related(</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `private_media`. |
-| 194 | <code>                'entry__doctor__user',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
-| 195 | <code>                'entry__card__patient',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
-| 196 | <code>                'entry__appointment__patient',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
-| 197 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
-| 198 | <code>            image=path,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 199 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
-| 200 | <code>        field = item.image</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 201 | <code>        entry = item.entry</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 202 | <code>    elif path.startswith('patient_record_videos/'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `private_media`. |
-| 203 | <code>        item = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `private_media`. |
-| 204 | <code>            PatientRecordVideo.objects.select_related(</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `private_media`. |
-| 205 | <code>                'entry__doctor__user',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
-| 206 | <code>                'entry__card__patient',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
-| 207 | <code>                'entry__appointment__patient',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
-| 208 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
-| 209 | <code>            video=path,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 210 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
-| 211 | <code>        field = item.video</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 212 | <code>        entry = item.entry</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 213 | <code>    else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `private_media`. |
-| 214 | <code>        raise PermissionDenied</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `private_media`. |
-| 216 | <code>    allowed = request.user.is_staff</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 217 | <code>    has_patient_google = SocialAccount.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `private_media`. |
-| 218 | <code>        user=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 219 | <code>        provider='google',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 220 | <code>    ).exists()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
-| 221 | <code>    if appointment:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `private_media`. |
-| 222 | <code>        allowed = allowed or appointment.doctor.user_id == request.user.id</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
-| 223 | <code>        allowed = allowed or (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 224 | <code>            appointment.patient_id == request.user.id and has_patient_google</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `private_media`. |
-| 225 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
-| 226 | <code>    if entry:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `private_media`. |
-| 227 | <code>        allowed = allowed or entry.doctor.user_id == request.user.id</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
-| 228 | <code>        patient_can_see = entry.kind in {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 229 | <code>            PatientRecordEntry.KIND_TREATMENT,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
-| 230 | <code>            PatientRecordEntry.KIND_RECOMMENDATION,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
-| 231 | <code>        }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
-| 232 | <code>        patient_id = entry.card.patient_id or (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 233 | <code>            entry.appointment.patient_id if entry.appointment_id else None</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
-| 234 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
-| 235 | <code>        allowed = allowed or (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 236 | <code>            patient_can_see</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
-| 237 | <code>            and patient_id == request.user.id</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
-| 238 | <code>            and has_patient_google</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
-| 239 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
-| 240 | <code>    if not allowed:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `private_media`. |
-| 241 | <code>        raise PermissionDenied</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `private_media`. |
-| 243 | <code>    content_type = mimetypes.guess_type(field.name)[0] or 'application/octet-stream'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 244 | <code>    response = FileResponse(field.open('rb'), content_type=content_type)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 245 | <code>    response['Cache-Control'] = 'private, max-age=3600'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 246 | <code>    response['X-Content-Type-Options'] = 'nosniff'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
-| 247 | <code>    return response</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `private_media`. |
-| 250 | <code>def public_media(request, path):</code> | Локально выдает только публичные media-файлы и блокирует приватные префиксы. Контекст: `public_media`. |
-| 251 | <code>    private_prefixes = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `public_media`. |
-| 252 | <code>        'appointment_images/',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `public_media`. |
-| 253 | <code>        'appointment_videos/',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `public_media`. |
-| 254 | <code>        'patient_records/',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `public_media`. |
-| 255 | <code>        'patient_record_videos/',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `public_media`. |
-| 256 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `public_media`. |
-| 257 | <code>    if path.replace('\\', '/').startswith(private_prefixes):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `public_media`. |
-| 258 | <code>        raise PermissionDenied</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `public_media`. |
-| 259 | <code>    return serve(request, path, document_root=settings.MEDIA_ROOT)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `public_media`. |
-| 262 | <code>def user_role(user):</code> | Определяет фактическую роль вошедшего пользователя. Контекст: `user_role`. |
-| 263 | <code>    if not user.is_authenticated:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `user_role`. |
-| 264 | <code>        return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `user_role`. |
-| 265 | <code>    if user.is_staff:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `user_role`. |
-| 266 | <code>        return 'admin'</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `user_role`. |
-| 267 | <code>    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `user_role`. |
-| 268 | <code>        return user.profile.role</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `user_role`. |
-| 269 | <code>    except Profile.DoesNotExist:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `user_role`. |
-| 270 | <code>        if hasattr(user, 'doctor_profile'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `user_role`. |
-| 271 | <code>            return Profile.ROLE_DOCTOR</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `user_role`. |
-| 272 | <code>        return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `user_role`. |
-| 275 | <code>def redirect_by_role(user):</code> | Направляет администратора, врача или пациента в правильный кабинет. Контекст: `redirect_by_role`. |
-| 276 | <code>    role = user_role(user)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `redirect_by_role`. |
-| 277 | <code>    if role == 'admin':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `redirect_by_role`. |
-| 278 | <code>        return redirect('admin_panel')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `redirect_by_role`. |
-| 279 | <code>    if role == Profile.ROLE_DOCTOR:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `redirect_by_role`. |
-| 280 | <code>        return redirect('doctor_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `redirect_by_role`. |
-| 281 | <code>    return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `redirect_by_role`. |
-| 284 | <code>def patient_required(view_func):</code> | Создает защитный декоратор для функций полноценного Google-пациента. Контекст: `patient_required`. |
-| 285 | <code>    @wraps(view_func)</code> | Декоратор добавляет функции или классу дополнительное поведение. Контекст: `patient_required`. |
-| 286 | <code>    def wrapper(request, *args, **kwargs):</code> | Объявляет функцию `wrapper` и перечисляет принимаемые параметры. Контекст: `patient_required.wrapper`. |
-| 287 | <code>        if request.user.is_authenticated:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_required.wrapper`. |
-| 288 | <code>            if user_role(request.user) == Profile.ROLE_PATIENT:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_required.wrapper`. |
-| 289 | <code>                has_google = SocialAccount.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_required.wrapper`. |
-| 290 | <code>                    user=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_required.wrapper`. |
-| 291 | <code>                    provider='google',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_required.wrapper`. |
-| 292 | <code>                ).exists()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_required.wrapper`. |
-| 293 | <code>                if has_google:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_required.wrapper`. |
-| 294 | <code>                    return view_func(request, *args, **kwargs)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_required.wrapper`. |
-| 295 | <code>                logout(request)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_required.wrapper`. |
-| 296 | <code>                messages.error(request, 'Спочатку увійдіть в акаунт Google.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `patient_required.wrapper`. |
-| 297 | <code>                return redirect('home')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_required.wrapper`. |
-| 298 | <code>            messages.error(request, 'Ця функція доступна лише пацієнтам.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `patient_required.wrapper`. |
-| 299 | <code>            return redirect_by_role(request.user)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_required.wrapper`. |
-| 300 | <code>        messages.error(request, 'Спочатку увійдіть в акаунт Google.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `patient_required.wrapper`. |
-| 301 | <code>        if request.session.get('patient_claim_phone'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_required.wrapper`. |
-| 302 | <code>            return redirect('pending_patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_required.wrapper`. |
-| 303 | <code>        return redirect('home')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_required.wrapper`. |
-| 305 | <code>    return wrapper</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_required`. |
-| 308 | <code>def doctor_required(view_func):</code> | Создает защитный декоратор для активного врача. Контекст: `doctor_required`. |
-| 309 | <code>    @wraps(view_func)</code> | Декоратор добавляет функции или классу дополнительное поведение. Контекст: `doctor_required`. |
-| 310 | <code>    def wrapper(request, *args, **kwargs):</code> | Объявляет функцию `wrapper` и перечисляет принимаемые параметры. Контекст: `doctor_required.wrapper`. |
-| 311 | <code>        if request.user.is_authenticated and user_role(request.user) == Profile.ROLE_DOCTOR:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_required.wrapper`. |
-| 312 | <code>            if not request.user.is_active:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_required.wrapper`. |
-| 313 | <code>                messages.error(request, 'Ваш акаунт архівовано.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_required.wrapper`. |
-| 314 | <code>                return redirect('home')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_required.wrapper`. |
-| 315 | <code>            return view_func(request, *args, **kwargs)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `doctor_required.wrapper`. |
-| 316 | <code>        messages.error(request, 'Увійдіть як лікар.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_required.wrapper`. |
-| 317 | <code>        return redirect('administration_login')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_required.wrapper`. |
-| 319 | <code>    return wrapper</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `doctor_required`. |
-| 322 | <code>def admin_required(view_func):</code> | Создает защитный декоратор для администратора Django. Контекст: `admin_required`. |
-| 323 | <code>    @wraps(view_func)</code> | Декоратор добавляет функции или классу дополнительное поведение. Контекст: `admin_required`. |
-| 324 | <code>    def wrapper(request, *args, **kwargs):</code> | Объявляет функцию `wrapper` и перечисляет принимаемые параметры. Контекст: `admin_required.wrapper`. |
-| 325 | <code>        if request.user.is_authenticated and request.user.is_staff:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_required.wrapper`. |
-| 326 | <code>            return view_func(request, *args, **kwargs)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `admin_required.wrapper`. |
-| 327 | <code>        messages.error(request, 'Увійдіть як адміністратор.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `admin_required.wrapper`. |
-| 328 | <code>        return redirect('administration_login')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_required.wrapper`. |
-| 330 | <code>    return wrapper</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `admin_required`. |
-| 333 | <code>def parse_date(value):</code> | Безопасно преобразует строку формата YYYY-MM-DD в дату. Контекст: `parse_date`. |
-| 334 | <code>    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `parse_date`. |
-| 335 | <code>        return datetime.strptime(value, '%Y-%m-%d').date()</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `parse_date`. |
-| 336 | <code>    except (TypeError, ValueError):</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `parse_date`. |
-| 337 | <code>        return timezone.localdate()</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `parse_date`. |
-| 340 | <code>def parse_time(value):</code> | Безопасно преобразует строку HH:MM во время. Контекст: `parse_time`. |
-| 341 | <code>    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `parse_time`. |
-| 342 | <code>        return datetime.strptime(value, '%H:%M').time()</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `parse_time`. |
-| 343 | <code>    except (TypeError, ValueError):</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `parse_time`. |
-| 344 | <code>        return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `parse_time`. |
-| 347 | <code>def is_past_appointment(selected_date, selected_time=None):</code> | Определяет, относится ли выбранная дата или время к прошлому. Контекст: `is_past_appointment`. |
-| 348 | <code>    now = timezone.localtime()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `is_past_appointment`. |
-| 349 | <code>    if selected_date &lt; now.date():</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `is_past_appointment`. |
-| 350 | <code>        return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `is_past_appointment`. |
-| 351 | <code>    if selected_time and selected_date == now.date() and selected_time &lt;= now.time().replace(second=0, microsecond=0):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `is_past_appointment`. |
-| 352 | <code>        return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `is_past_appointment`. |
-| 353 | <code>    return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `is_past_appointment`. |
-| 356 | <code>def schedule_for_date(doctor, selected_date):</code> | Находит повторяющийся день графика врача по дню недели даты. Контекст: `schedule_for_date`. |
-| 357 | <code>    return WorkSchedule.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `schedule_for_date`. |
-| 358 | <code>        doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `schedule_for_date`. |
-| 359 | <code>        weekday=selected_date.weekday(),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `schedule_for_date`. |
-| 360 | <code>    ).first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `schedule_for_date`. |
-| 363 | <code>def doctor_working_weekdays(doctor):</code> | Возвращает номера рабочих дней недели, сохраненных в графике выбранного врача. Контекст: `doctor_working_weekdays`. |
-| 364 | <code>    if doctor is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_working_weekdays`. |
-| 365 | <code>        return []</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `doctor_working_weekdays`. |
-| 366 | <code>    return sorted(</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `doctor_working_weekdays`. |
-| 367 | <code>        set(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_working_weekdays`. |
-| 368 | <code>            doctor.schedules.filter(is_working=True).values_list(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_working_weekdays`. |
-| 369 | <code>                'weekday',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_working_weekdays`. |
-| 370 | <code>                flat=True,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_working_weekdays`. |
-| 371 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_working_weekdays`. |
-| 372 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_working_weekdays`. |
-| 373 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_working_weekdays`. |
-| 376 | <code>def next_working_date(start_date, working_weekdays):</code> | Находит ближайшую разрешенную графиком дату, начиная с переданного дня. Контекст: `next_working_date`. |
-| 377 | <code>    working_weekdays = set(working_weekdays)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `next_working_date`. |
-| 378 | <code>    if not working_weekdays:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `next_working_date`. |
-| 379 | <code>        return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `next_working_date`. |
-| 380 | <code>    for offset in range(7):</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `next_working_date`. |
-| 381 | <code>        candidate = start_date + timedelta(days=offset)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `next_working_date`. |
-| 382 | <code>        if candidate.weekday() in working_weekdays:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `next_working_date`. |
-| 383 | <code>            return candidate</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `next_working_date`. |
-| 384 | <code>    return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `next_working_date`. |
-| 387 | <code>def working_weekday_labels(working_weekdays):</code> | Преобразует номера рабочих дней в понятные украинские названия для календаря. Контекст: `working_weekday_labels`. |
-| 388 | <code>    allowed = set(working_weekdays)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `working_weekday_labels`. |
-| 389 | <code>    return [</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `working_weekday_labels`. |
-| 390 | <code>        label</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `working_weekday_labels`. |
-| 391 | <code>        for value, label in WorkSchedule.WEEKDAY_CHOICES</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `working_weekday_labels`. |
-| 392 | <code>        if value in allowed</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `working_weekday_labels`. |
-| 393 | <code>    ]</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `working_weekday_labels`. |
-| 396 | <code>def appointment_range(date_value, time_value, slot_minutes, duration_slots=1, duration_minutes=None):</code> | Вычисляет начало и конец интервала приема. Контекст: `appointment_range`. |
-| 397 | <code>    start = datetime.combine(date_value, time_value)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_range`. |
-| 398 | <code>    minutes = duration_minutes if duration_minutes is not None else slot_minutes * duration_slots</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_range`. |
-| 399 | <code>    end = start + timedelta(minutes=minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_range`. |
-| 400 | <code>    return start, end</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `appointment_range`. |
-| 403 | <code>def appointment_conflicts(</code> | Проверяет рабочий день, конец смены, обед и пересечения приемов врача. Контекст: `appointment_conflicts`. |
-| 404 | <code>    doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
-| 405 | <code>    selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
-| 406 | <code>    selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
-| 407 | <code>    duration_slots=1,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
-| 408 | <code>    duration_minutes=None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
-| 409 | <code>    exclude_id=None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
-| 410 | <code>):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
-| 411 | <code>    schedule = schedule_for_date(doctor, selected_date)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
-| 412 | <code>    if not schedule:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `appointment_conflicts`. |
-| 413 | <code>        return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `appointment_conflicts`. |
-| 415 | <code>    target_start, target_end = appointment_range(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
-| 416 | <code>        selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
-| 417 | <code>        selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
-| 418 | <code>        schedule.slot_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
-| 419 | <code>        duration_slots,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
-| 420 | <code>        duration_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
-| 421 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `appointment_conflicts`. |
-| 423 | <code>    day_end = datetime.combine(selected_date, schedule.end_time)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
-| 424 | <code>    if target_end &gt; day_end:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `appointment_conflicts`. |
-| 425 | <code>        return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `appointment_conflicts`. |
-| 427 | <code>    if schedule.break_start_time and schedule.break_duration_minutes:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `appointment_conflicts`. |
-| 428 | <code>        break_start = datetime.combine(selected_date, schedule.break_start_time)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
-| 429 | <code>        break_end = break_start + timedelta(minutes=schedule.break_duration_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
-| 430 | <code>        if target_start &lt; break_end and target_end &gt; break_start:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `appointment_conflicts`. |
-| 431 | <code>            return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `appointment_conflicts`. |
-| 433 | <code>    appointments = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
-| 434 | <code>        Appointment.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `appointment_conflicts`. |
-| 435 | <code>            doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
-| 436 | <code>            date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
-| 437 | <code>            status__in=BLOCKING_APPOINTMENT_STATUSES,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
-| 438 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `appointment_conflicts`. |
-| 439 | <code>        .exclude(pk=exclude_id)</code> | Исключает из ORM-запроса строки, подходящие под указанное условие. Контекст: `appointment_conflicts`. |
-| 440 | <code>        .order_by('time')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `appointment_conflicts`. |
-| 441 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `appointment_conflicts`. |
-| 443 | <code>    for appointment in appointments:</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `appointment_conflicts`. |
-| 444 | <code>        item_start, item_end = appointment_range(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
-| 445 | <code>            appointment.date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
-| 446 | <code>            appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
-| 447 | <code>            schedule.slot_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
-| 448 | <code>            duration_minutes=appointment.duration_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
-| 449 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `appointment_conflicts`. |
-| 450 | <code>        if target_start &lt; item_end and target_end &gt; item_start:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `appointment_conflicts`. |
-| 451 | <code>            return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `appointment_conflicts`. |
-| 452 | <code>    return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `appointment_conflicts`. |
-| 455 | <code>def patient_appointment_conflicts(</code> | Проверяет пересечение пациента с его другими приемами у любых врачей. Контекст: `patient_appointment_conflicts`. |
-| 456 | <code>    patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
-| 457 | <code>    selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
-| 458 | <code>    selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
-| 459 | <code>    duration_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
-| 460 | <code>    patient_phone='',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
-| 461 | <code>    exclude_id=None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
-| 462 | <code>):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
-| 463 | <code>    if not selected_date or not selected_time or not duration_minutes:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_appointment_conflicts`. |
-| 464 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_appointment_conflicts`. |
-| 466 | <code>    identity_filter = Q(patient=patient) if patient else None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
-| 467 | <code>    normalized_phone = normalize_phone_number(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
-| 468 | <code>        patient_phone</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
-| 469 | <code>        or (</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
-| 470 | <code>            patient.profile.phone</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
-| 471 | <code>            if patient and hasattr(patient, 'profile')</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_appointment_conflicts`. |
-| 472 | <code>            else ''</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
-| 473 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_appointment_conflicts`. |
-| 474 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_appointment_conflicts`. |
-| 475 | <code>    if normalized_phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_appointment_conflicts`. |
-| 476 | <code>        phone_filter = Q(patient_phone=normalized_phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
-| 477 | <code>        identity_filter = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
-| 478 | <code>            identity_filter &#124; phone_filter</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
-| 479 | <code>            if identity_filter is not None</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_appointment_conflicts`. |
-| 480 | <code>            else phone_filter</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
-| 481 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_appointment_conflicts`. |
-| 482 | <code>    if identity_filter is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_appointment_conflicts`. |
-| 483 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_appointment_conflicts`. |
-| 485 | <code>    target_start = datetime.combine(selected_date, selected_time)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
-| 486 | <code>    target_end = target_start + timedelta(minutes=duration_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
-| 487 | <code>    appointments = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
-| 488 | <code>        Appointment.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_appointment_conflicts`. |
-| 489 | <code>            identity_filter,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
-| 490 | <code>            date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
-| 491 | <code>            status__in=BLOCKING_APPOINTMENT_STATUSES,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
-| 492 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_appointment_conflicts`. |
-| 493 | <code>        .exclude(pk=exclude_id)</code> | Исключает из ORM-запроса строки, подходящие под указанное условие. Контекст: `patient_appointment_conflicts`. |
-| 494 | <code>        .select_related('doctor')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `patient_appointment_conflicts`. |
-| 495 | <code>        .order_by('time')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `patient_appointment_conflicts`. |
-| 496 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_appointment_conflicts`. |
-| 497 | <code>    for appointment in appointments:</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `patient_appointment_conflicts`. |
-| 498 | <code>        item_start = datetime.combine(appointment.date, appointment.time)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
-| 499 | <code>        item_end = item_start + timedelta(minutes=appointment.duration_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
-| 500 | <code>        if target_start &lt; item_end and target_end &gt; item_start:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_appointment_conflicts`. |
-| 501 | <code>            return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_appointment_conflicts`. |
-| 502 | <code>    return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_appointment_conflicts`. |
-| 505 | <code>def patient_daily_appointment_count(</code> | Считает активные самостоятельные записи пациента на выбранную дату. Контекст: `patient_daily_appointment_count`. |
-| 506 | <code>    patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
-| 507 | <code>    selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
-| 508 | <code>    patient_phone='',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_daily_appointment_count`. |
-| 509 | <code>):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
-| 510 | <code>    if not selected_date:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_daily_appointment_count`. |
-| 511 | <code>        return 0</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_daily_appointment_count`. |
-| 513 | <code>    identity_filter = Q(patient=patient) if patient else None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_daily_appointment_count`. |
-| 514 | <code>    normalized_phone = normalize_phone_number(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_daily_appointment_count`. |
-| 515 | <code>        patient_phone</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
-| 516 | <code>        or (</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
-| 517 | <code>            patient.profile.phone</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
-| 518 | <code>            if patient and hasattr(patient, 'profile')</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_daily_appointment_count`. |
-| 519 | <code>            else ''</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
-| 520 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_daily_appointment_count`. |
-| 521 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_daily_appointment_count`. |
-| 522 | <code>    if normalized_phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_daily_appointment_count`. |
-| 523 | <code>        phone_filter = Q(patient_phone=normalized_phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_daily_appointment_count`. |
-| 524 | <code>        identity_filter = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_daily_appointment_count`. |
-| 525 | <code>            identity_filter &#124; phone_filter</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
-| 526 | <code>            if identity_filter is not None</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_daily_appointment_count`. |
-| 527 | <code>            else phone_filter</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
-| 528 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_daily_appointment_count`. |
-| 529 | <code>    if identity_filter is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_daily_appointment_count`. |
-| 530 | <code>        return 0</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_daily_appointment_count`. |
-| 532 | <code>    return Appointment.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_daily_appointment_count`. |
-| 533 | <code>        identity_filter,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
-| 534 | <code>        date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_daily_appointment_count`. |
-| 535 | <code>        status__in=BLOCKING_APPOINTMENT_STATUSES,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_daily_appointment_count`. |
-| 536 | <code>    ).count()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
-| 539 | <code>def split_slot_option(doctor, selected_date, slot_time, schedule=None, appointment_id=None):</code> | Проверяет, можно ли врачу разделить стандартный слот пополам. Контекст: `split_slot_option`. |
-| 540 | <code>    schedule = schedule or schedule_for_date(doctor, selected_date)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
-| 541 | <code>    if (</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `split_slot_option`. |
-| 542 | <code>        not schedule</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
-| 543 | <code>        or not schedule.is_working</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
-| 544 | <code>        or schedule.slot_minutes &lt; 2</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
-| 545 | <code>        or schedule.slot_minutes % 2</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
-| 546 | <code>        or is_past_appointment(selected_date, slot_time)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
-| 547 | <code>    ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
-| 548 | <code>        return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `split_slot_option`. |
-| 550 | <code>    source_query = Appointment.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `split_slot_option`. |
-| 551 | <code>        doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
-| 552 | <code>        date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
-| 553 | <code>        time=slot_time,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
-| 554 | <code>        status=Appointment.STATUS_APPROVED,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
-| 555 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `split_slot_option`. |
-| 556 | <code>    if appointment_id:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `split_slot_option`. |
-| 557 | <code>        source_query = source_query.filter(pk=appointment_id)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `split_slot_option`. |
-| 558 | <code>    source = source_query.first()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
-| 559 | <code>    if not source or source.duration_minutes != schedule.slot_minutes:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `split_slot_option`. |
-| 560 | <code>        return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `split_slot_option`. |
-| 562 | <code>    source_start = datetime.combine(selected_date, slot_time)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
-| 563 | <code>    next_start = source_start + timedelta(minutes=schedule.slot_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
-| 564 | <code>    if next_start.date() != selected_date:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `split_slot_option`. |
-| 565 | <code>        return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `split_slot_option`. |
-| 567 | <code>    has_following_appointment = Appointment.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `split_slot_option`. |
-| 568 | <code>        doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
-| 569 | <code>        date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
-| 570 | <code>        time=next_start.time(),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
-| 571 | <code>        status__in=BLOCKING_APPOINTMENT_STATUSES,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
-| 572 | <code>    ).exists()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
-| 573 | <code>    if not has_following_appointment:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `split_slot_option`. |
-| 574 | <code>        return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `split_slot_option`. |
-| 576 | <code>    half_minutes = schedule.slot_minutes // 2</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
-| 577 | <code>    split_start = source_start + timedelta(minutes=half_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
-| 578 | <code>    return {</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `split_slot_option`. |
-| 579 | <code>        'appointment': source,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
-| 580 | <code>        'time': split_start.time(),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
-| 581 | <code>        'duration_minutes': half_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
-| 582 | <code>        'original_duration_minutes': schedule.slot_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
-| 583 | <code>    }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `split_slot_option`. |
-| 586 | <code>def slots_for_doctor(</code> | Строит список времени дня и помечает каждый слот свободным или занятым. Контекст: `slots_for_doctor`. |
-| 587 | <code>    doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
-| 588 | <code>    selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
-| 589 | <code>    patient=None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
-| 590 | <code>    patient_phone='',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
-| 591 | <code>    include_split_options=False,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
-| 592 | <code>):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
-| 593 | <code>    schedule = schedule_for_date(doctor, selected_date)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
-| 594 | <code>    if not schedule:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `slots_for_doctor`. |
-| 595 | <code>        return None, []</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `slots_for_doctor`. |
-| 597 | <code>    now = timezone.localtime()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
-| 598 | <code>    slots = []</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
-| 599 | <code>    for slot in schedule.get_slots():</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `slots_for_doctor`. |
-| 600 | <code>        busy = appointment_conflicts(doctor, selected_date, slot, duration_slots=1) or (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
-| 601 | <code>                selected_date == now.date() and slot &lt;= now.time().replace(second=0, microsecond=0)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
-| 602 | <code>            ) or patient_appointment_conflicts(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
-| 603 | <code>                patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
-| 604 | <code>                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
-| 605 | <code>                slot,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
-| 606 | <code>                schedule.slot_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
-| 607 | <code>                patient_phone=patient_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
-| 608 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `slots_for_doctor`. |
-| 609 | <code>        slot_data = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
-| 610 | <code>            'time': slot,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
-| 611 | <code>            'busy': busy,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
-| 612 | <code>        }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `slots_for_doctor`. |
-| 613 | <code>        if busy and include_split_options:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `slots_for_doctor`. |
-| 614 | <code>            slot_data['split_option'] = split_slot_option(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
-| 615 | <code>                doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
-| 616 | <code>                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
-| 617 | <code>                slot,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
-| 618 | <code>                schedule=schedule,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
-| 619 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `slots_for_doctor`. |
-| 620 | <code>        slots.append(slot_data)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
-| 621 | <code>    return schedule, slots</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `slots_for_doctor`. |
-| 624 | <code>def appointment_finished(appointment):</code> | Сравнивает вычисленный конец приема с текущим временем. Контекст: `appointment_finished`. |
-| 625 | <code>    visit_end = timezone.make_aware(datetime.combine(appointment.date, appointment.end_time))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_finished`. |
-| 626 | <code>    return visit_end &lt;= timezone.localtime()</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `appointment_finished`. |
-| 629 | <code>def active_appointment_for_doctor(doctor):</code> | Находит подтвержденный прием, который идет у врача прямо сейчас. Контекст: `active_appointment_for_doctor`. |
-| 630 | <code>    now = timezone.localtime()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `active_appointment_for_doctor`. |
-| 631 | <code>    appointments = doctor.appointments.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `active_appointment_for_doctor`. |
-| 632 | <code>        date=now.date(),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `active_appointment_for_doctor`. |
-| 633 | <code>        status=Appointment.STATUS_APPROVED,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `active_appointment_for_doctor`. |
-| 634 | <code>    ).select_related('service', 'patient').order_by('time')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `active_appointment_for_doctor`. |
-| 635 | <code>    for appointment in appointments:</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `active_appointment_for_doctor`. |
-| 636 | <code>        start = timezone.make_aware(datetime.combine(appointment.date, appointment.time))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `active_appointment_for_doctor`. |
-| 637 | <code>        end = timezone.make_aware(datetime.combine(appointment.date, appointment.end_time))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `active_appointment_for_doctor`. |
-| 638 | <code>        if start &lt;= now &lt; end:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `active_appointment_for_doctor`. |
-| 639 | <code>            return appointment</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `active_appointment_for_doctor`. |
-| 640 | <code>    return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `active_appointment_for_doctor`. |
-| 643 | <code>def refresh_completed_appointments():</code> | Переводит закончившиеся подтвержденные приемы в завершенные. Контекст: `refresh_completed_appointments`. |
-| 644 | <code>    changed = []</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `refresh_completed_appointments`. |
-| 645 | <code>    for appointment in Appointment.objects.filter(status=Appointment.STATUS_APPROVED).select_related('doctor'):</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `refresh_completed_appointments`. |
-| 646 | <code>        if appointment_finished(appointment):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `refresh_completed_appointments`. |
-| 647 | <code>            appointment.status = Appointment.STATUS_COMPLETED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `refresh_completed_appointments`. |
-| 648 | <code>            changed.append(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `refresh_completed_appointments`. |
-| 649 | <code>    if changed:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `refresh_completed_appointments`. |
-| 650 | <code>        Appointment.objects.bulk_update(changed, ['status'])</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `refresh_completed_appointments`. |
-| 653 | <code>def find_patient_by_contacts(email, phone):</code> | Ищет зарегистрированного пациента по технической почте или нормализованному телефону. Контекст: `find_patient_by_contacts`. |
-| 654 | <code>    patient = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `find_patient_by_contacts`. |
-| 655 | <code>    if email:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `find_patient_by_contacts`. |
-| 656 | <code>        patient = User.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `find_patient_by_contacts`. |
-| 657 | <code>            email__iexact=email,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `find_patient_by_contacts`. |
-| 658 | <code>            profile__role=Profile.ROLE_PATIENT,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `find_patient_by_contacts`. |
-| 659 | <code>        ).first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `find_patient_by_contacts`. |
-| 660 | <code>    if not patient and phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `find_patient_by_contacts`. |
-| 661 | <code>        patient = User.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `find_patient_by_contacts`. |
-| 662 | <code>            profile__role=Profile.ROLE_PATIENT,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `find_patient_by_contacts`. |
-| 663 | <code>            profile__phone=phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `find_patient_by_contacts`. |
-| 664 | <code>        ).first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `find_patient_by_contacts`. |
-| 665 | <code>    if not patient and phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `find_patient_by_contacts`. |
-| 666 | <code>        normalized_phone = normalize_phone_number(phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `find_patient_by_contacts`. |
-| 667 | <code>        patient = next(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `find_patient_by_contacts`. |
-| 668 | <code>            (</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `find_patient_by_contacts`. |
-| 669 | <code>                candidate</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `find_patient_by_contacts`. |
-| 670 | <code>                for candidate in User.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `find_patient_by_contacts`. |
-| 671 | <code>                    profile__role=Profile.ROLE_PATIENT,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `find_patient_by_contacts`. |
-| 672 | <code>                ).select_related('profile')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `find_patient_by_contacts`. |
-| 673 | <code>                if normalize_phone_number(candidate.profile.phone) == normalized_phone</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `find_patient_by_contacts`. |
-| 674 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `find_patient_by_contacts`. |
-| 675 | <code>            None,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `find_patient_by_contacts`. |
-| 676 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `find_patient_by_contacts`. |
-| 677 | <code>    return patient</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `find_patient_by_contacts`. |
-| 680 | <code>def find_doctor_card_by_phone(doctor, phone):</code> | Ищет существующую карточку конкретного врача по телефону. Контекст: `find_doctor_card_by_phone`. |
-| 681 | <code>    normalized_phone = normalize_phone_number(phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `find_doctor_card_by_phone`. |
-| 682 | <code>    return next(</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `find_doctor_card_by_phone`. |
-| 683 | <code>        (</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `find_doctor_card_by_phone`. |
-| 684 | <code>            card</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `find_doctor_card_by_phone`. |
-| 685 | <code>            for card in doctor.patient_cards.select_related('patient', 'patient__profile')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `find_doctor_card_by_phone`. |
-| 686 | <code>            if normalize_phone_number(card.patient_phone) == normalized_phone</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `find_doctor_card_by_phone`. |
-| 687 | <code>        ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `find_doctor_card_by_phone`. |
-| 688 | <code>        None,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `find_doctor_card_by_phone`. |
-| 689 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `find_doctor_card_by_phone`. |
-| 692 | <code>def patient_card_for_appointment(appointment):</code> | Сопоставляет прием с правильной карточкой, не смешивая запись для другого человека. Контекст: `patient_card_for_appointment`. |
-| 693 | <code>    cards = appointment.doctor.patient_cards.select_related(</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `patient_card_for_appointment`. |
-| 694 | <code>        'patient',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_card_for_appointment`. |
-| 695 | <code>        'patient__profile',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_card_for_appointment`. |
-| 696 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_card_for_appointment`. |
-| 697 | <code>    if appointment.booked_for_other or not appointment.patient_id:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_card_for_appointment`. |
-| 698 | <code>        normalized_phone = normalize_phone_number(appointment.patient_phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_card_for_appointment`. |
-| 699 | <code>        first_name = appointment.patient_first_name.strip().casefold()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_card_for_appointment`. |
-| 700 | <code>        last_name = appointment.patient_last_name.strip().casefold()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_card_for_appointment`. |
-| 701 | <code>        return next(</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_card_for_appointment`. |
-| 702 | <code>            (</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_card_for_appointment`. |
-| 703 | <code>                card</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_card_for_appointment`. |
-| 704 | <code>                for card in cards.filter(patient__isnull=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_card_for_appointment`. |
-| 705 | <code>                if (</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_card_for_appointment`. |
-| 706 | <code>                    normalize_phone_number(card.patient_phone)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_card_for_appointment`. |
-| 707 | <code>                    == normalized_phone</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_card_for_appointment`. |
-| 708 | <code>                    and card.patient_first_name.strip().casefold() == first_name</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_card_for_appointment`. |
-| 709 | <code>                    and card.patient_last_name.strip().casefold() == last_name</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_card_for_appointment`. |
-| 710 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_card_for_appointment`. |
-| 711 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_card_for_appointment`. |
-| 712 | <code>            None,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_card_for_appointment`. |
-| 713 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_card_for_appointment`. |
-| 714 | <code>    if appointment.patient_id:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_card_for_appointment`. |
-| 715 | <code>        return cards.filter(patient_id=appointment.patient_id).first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_card_for_appointment`. |
-| 716 | <code>    return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_card_for_appointment`. |
-| 719 | <code>def appointments_for_patient_card(doctor, card):</code> | Возвращает приемы, принадлежащие одной карточке пациента. Контекст: `appointments_for_patient_card`. |
-| 720 | <code>    if card.patient_id:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `appointments_for_patient_card`. |
-| 721 | <code>        return doctor.appointments.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `appointments_for_patient_card`. |
-| 722 | <code>            patient_id=card.patient_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointments_for_patient_card`. |
-| 723 | <code>            booked_for_other=False,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointments_for_patient_card`. |
-| 724 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `appointments_for_patient_card`. |
-| 725 | <code>    return doctor.appointments.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `appointments_for_patient_card`. |
-| 726 | <code>        patient_phone=card.patient_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointments_for_patient_card`. |
-| 727 | <code>        patient_first_name__iexact=card.patient_first_name,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointments_for_patient_card`. |
-| 728 | <code>        patient_last_name__iexact=card.patient_last_name,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointments_for_patient_card`. |
-| 729 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `appointments_for_patient_card`. |
-| 732 | <code>def ensure_patient_card_from_appointment(appointment):</code> | Создает или синхронизирует карточку пациента по данным приема. Контекст: `ensure_patient_card_from_appointment`. |
-| 733 | <code>    normalized_phone = normalize_phone_number(appointment.patient_phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
-| 734 | <code>    if appointment.patient_phone != normalized_phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `ensure_patient_card_from_appointment`. |
-| 735 | <code>        appointment.patient_phone = normalized_phone</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `ensure_patient_card_from_appointment`. |
-| 736 | <code>        appointment.save(update_fields=['patient_phone'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `ensure_patient_card_from_appointment`. |
-| 737 | <code>    patient = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
-| 738 | <code>        None</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
-| 739 | <code>        if appointment.booked_for_other</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `ensure_patient_card_from_appointment`. |
-| 740 | <code>        else (</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
-| 741 | <code>            appointment.patient</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
-| 742 | <code>            or find_patient_by_contacts(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
-| 743 | <code>                appointment.patient_email,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
-| 744 | <code>                appointment.patient_phone,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
-| 745 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `ensure_patient_card_from_appointment`. |
-| 746 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `ensure_patient_card_from_appointment`. |
-| 747 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `ensure_patient_card_from_appointment`. |
-| 748 | <code>    card = patient_card_for_appointment(appointment)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
-| 749 | <code>    created = card is None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
-| 750 | <code>    if created:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `ensure_patient_card_from_appointment`. |
-| 751 | <code>        card = DoctorPatientCard.objects.create(</code> | Начинает создание новой строки базы через Django ORM. Контекст: `ensure_patient_card_from_appointment`. |
-| 752 | <code>            doctor=appointment.doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
-| 753 | <code>            patient_phone=normalized_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
-| 754 | <code>            patient=patient,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
-| 755 | <code>            patient_first_name=appointment.patient_first_name,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
-| 756 | <code>            patient_last_name=appointment.patient_last_name,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
-| 757 | <code>            patient_email=appointment.patient_email,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
-| 758 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `ensure_patient_card_from_appointment`. |
-| 759 | <code>    changed_fields = []</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
-| 760 | <code>    if card.patient_phone != normalized_phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `ensure_patient_card_from_appointment`. |
-| 761 | <code>        card.patient_phone = normalized_phone</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
-| 762 | <code>        changed_fields.append('patient_phone')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
-| 763 | <code>    if patient and card.patient_id != patient.id:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `ensure_patient_card_from_appointment`. |
-| 764 | <code>        card.patient = patient</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
-| 765 | <code>        changed_fields.append('patient')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
-| 766 | <code>    if card.patient_first_name != appointment.patient_first_name:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `ensure_patient_card_from_appointment`. |
-| 767 | <code>        card.patient_first_name = appointment.patient_first_name</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
-| 768 | <code>        changed_fields.append('patient_first_name')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
-| 769 | <code>    if card.patient_last_name != appointment.patient_last_name:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `ensure_patient_card_from_appointment`. |
-| 770 | <code>        card.patient_last_name = appointment.patient_last_name</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
-| 771 | <code>        changed_fields.append('patient_last_name')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
-| 772 | <code>    if card.patient_email != appointment.patient_email:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `ensure_patient_card_from_appointment`. |
-| 773 | <code>        card.patient_email = appointment.patient_email</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
-| 774 | <code>        changed_fields.append('patient_email')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
-| 775 | <code>    if changed_fields:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `ensure_patient_card_from_appointment`. |
-| 776 | <code>        card.save(update_fields=changed_fields)</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `ensure_patient_card_from_appointment`. |
-| 777 | <code>    return card, created</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `ensure_patient_card_from_appointment`. |
-| 780 | <code>def unclaimed_records_for_phone(phone):</code> | Находит ручные приемы и карточки, еще не связанные с аккаунтом. Контекст: `unclaimed_records_for_phone`. |
-| 781 | <code>    appointments = [</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `unclaimed_records_for_phone`. |
-| 782 | <code>        appointment</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `unclaimed_records_for_phone`. |
-| 783 | <code>        for appointment in Appointment.objects.filter(patient__isnull=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `unclaimed_records_for_phone`. |
-| 784 | <code>        .only('id', 'patient_phone', 'patient_first_name', 'patient_last_name', 'created_at')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `unclaimed_records_for_phone`. |
-| 785 | <code>        .order_by('-created_at')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `unclaimed_records_for_phone`. |
-| 786 | <code>        if normalize_phone_number(appointment.patient_phone) == phone</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `unclaimed_records_for_phone`. |
-| 787 | <code>    ]</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `unclaimed_records_for_phone`. |
-| 788 | <code>    cards = [</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `unclaimed_records_for_phone`. |
-| 789 | <code>        card</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `unclaimed_records_for_phone`. |
-| 790 | <code>        for card in DoctorPatientCard.objects.filter(patient__isnull=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `unclaimed_records_for_phone`. |
-| 791 | <code>        .only('id', 'patient_phone', 'patient_first_name', 'patient_last_name', 'updated_at')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `unclaimed_records_for_phone`. |
-| 792 | <code>        .order_by('-updated_at')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `unclaimed_records_for_phone`. |
-| 793 | <code>        if normalize_phone_number(card.patient_phone) == phone</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `unclaimed_records_for_phone`. |
-| 794 | <code>    ]</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `unclaimed_records_for_phone`. |
-| 795 | <code>    return appointments, cards</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `unclaimed_records_for_phone`. |
-| 798 | <code>def pending_patient_identity(phone):</code> | Строит имя и инициалы временного кабинета по найденным ручным данным. Контекст: `pending_patient_identity`. |
-| 799 | <code>    appointments, cards = unclaimed_records_for_phone(phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_identity`. |
-| 800 | <code>    source = appointments[0] if appointments else (cards[0] if cards else None)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_identity`. |
-| 801 | <code>    if source:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `pending_patient_identity`. |
-| 802 | <code>        first_name = source.patient_first_name.strip()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_identity`. |
-| 803 | <code>        last_name = source.patient_last_name.strip()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_identity`. |
-| 804 | <code>    else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `pending_patient_identity`. |
-| 805 | <code>        first_name = 'Новий'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_identity`. |
-| 806 | <code>        last_name = 'пацієнт'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_identity`. |
-| 807 | <code>    return {</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `pending_patient_identity`. |
-| 808 | <code>        'first_name': first_name,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_identity`. |
-| 809 | <code>        'last_name': last_name,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_identity`. |
-| 810 | <code>        'full_name': f'{first_name} {last_name}'.strip(),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_identity`. |
-| 811 | <code>        'initials': f'{first_name[:1]}{last_name[:1]}'.upper(),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_identity`. |
-| 812 | <code>    }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `pending_patient_identity`. |
-| 815 | <code>def sync_patient_cards_for_doctor(doctor):</code> | Гарантирует наличие карточек для всех актуальных приемов врача. Контекст: `sync_patient_cards_for_doctor`. |
-| 816 | <code>    appointments = doctor.appointments.exclude(</code> | Исключает из ORM-запроса строки, подходящие под указанное условие. Контекст: `sync_patient_cards_for_doctor`. |
-| 817 | <code>        status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `sync_patient_cards_for_doctor`. |
-| 818 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `sync_patient_cards_for_doctor`. |
-| 819 | <code>    for appointment in appointments:</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `sync_patient_cards_for_doctor`. |
-| 820 | <code>        ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `sync_patient_cards_for_doctor`. |
-| 823 | <code>def home(request):</code> | Собирает слайды, новости, галерею и ведущих врачей для публичной главной. Контекст: `home`. |
-| 824 | <code>    featured_doctors = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `home`. |
-| 825 | <code>        Doctor.objects.filter(user__is_active=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `home`. |
-| 826 | <code>        .select_related('user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `home`. |
-| 827 | <code>        .annotate(home_appointments=Count('appointments'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `home`. |
-| 828 | <code>        .order_by('-home_appointments', 'user__last_name', 'user__first_name')[:4]</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `home`. |
-| 829 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `home`. |
-| 830 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `home`. |
-| 831 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `home`. |
-| 832 | <code>        'clinic/home.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `home`. |
-| 833 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `home`. |
-| 834 | <code>            'clinic_news': NewsPost.objects.filter(doctor__isnull=True, is_published=True)[:6],</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `home`. |
-| 835 | <code>            'doctor_news': NewsPost.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `home`. |
-| 836 | <code>                doctor__isnull=False,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `home`. |
-| 837 | <code>                is_published=True,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `home`. |
-| 838 | <code>            ).select_related('doctor__user')[:6],</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `home`. |
-| 839 | <code>            'gallery_images': GalleryImage.objects.filter(is_published=True)[:18],</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `home`. |
-| 840 | <code>            'featured_doctors': featured_doctors,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `home`. |
-| 841 | <code>            'hero_slides': HomeHeroSlide.objects.filter(is_active=True),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `home`. |
-| 842 | <code>            'patient_google_login_url': (</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `home`. |
-| 843 | <code>                f'{reverse("google_login")}?'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `home`. |
-| 844 | <code>                f'{urlencode({"next": reverse("claim_patient_complete")})}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `home`. |
-| 845 | <code>                if request.session.get('patient_claim_phone')</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `home`. |
-| 846 | <code>                else reverse('google_login')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `home`. |
-| 847 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `home`. |
-| 848 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `home`. |
-| 849 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `home`. |
-| 852 | <code>def login_view(request, role='patient'):</code> | Проверяет общий логин администрации и автоматически определяет врача или администратора. Контекст: `login_view`. |
-| 853 | <code>    if role == 'patient':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `login_view`. |
-| 854 | <code>        messages.info(request, 'Для пацієнта використовується вхід через Google.')</code> | Записывает информационное сообщение без изменения данных. Контекст: `login_view`. |
-| 855 | <code>        return redirect('home')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `login_view`. |
-| 857 | <code>    if request.method == 'GET':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `login_view`. |
-| 858 | <code>        return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `login_view`. |
-| 859 | <code>            request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
-| 860 | <code>            'clinic/login.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
-| 861 | <code>            {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `login_view`. |
-| 862 | <code>                'form': UsernameLoginForm(),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
-| 863 | <code>                'role': role,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
-| 864 | <code>            },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `login_view`. |
-| 865 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `login_view`. |
-| 867 | <code>    form = UsernameLoginForm(request.POST)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `login_view`. |
-| 868 | <code>    if form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `login_view`. |
-| 869 | <code>        user = form.get_user(request)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `login_view`. |
-| 870 | <code>        if user and user.is_active:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `login_view`. |
-| 871 | <code>            actual_role = user_role(user)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `login_view`. |
-| 872 | <code>            if role == 'administration' and not (</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `login_view`. |
-| 873 | <code>                user.is_staff or actual_role == Profile.ROLE_DOCTOR</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
-| 874 | <code>            ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
-| 875 | <code>                messages.error(request, 'Цей акаунт не належить лікарю або адміністратору.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `login_view`. |
-| 876 | <code>            elif role == 'admin' and not user.is_staff:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `login_view`. |
-| 877 | <code>                messages.error(request, 'Цей акаунт не є акаунтом адміністратора.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `login_view`. |
-| 878 | <code>            elif role == 'doctor' and actual_role != Profile.ROLE_DOCTOR:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `login_view`. |
-| 879 | <code>                messages.error(request, 'Цей акаунт не є акаунтом лікаря.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `login_view`. |
-| 880 | <code>            elif role == 'patient' and actual_role != Profile.ROLE_PATIENT:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `login_view`. |
-| 881 | <code>                messages.error(request, 'Цей акаунт не є акаунтом пацієнта.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `login_view`. |
-| 882 | <code>            else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `login_view`. |
-| 883 | <code>                login(request, user)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
-| 884 | <code>                messages.success(request, 'Ви успішно увійшли в систему.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `login_view`. |
-| 885 | <code>                return redirect_by_role(user)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `login_view`. |
-| 886 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `login_view`. |
-| 887 | <code>            messages.error(request, 'Невірний логін або пароль.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `login_view`. |
-| 889 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `login_view`. |
-| 890 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
-| 891 | <code>        'clinic/login.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
-| 892 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `login_view`. |
-| 893 | <code>            'form': form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
-| 894 | <code>            'role': role,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
-| 895 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `login_view`. |
-| 896 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `login_view`. |
-| 899 | <code>def logout_view(request):</code> | Завершает Django-сессию и возвращает пользователя на главную. Контекст: `logout_view`. |
-| 900 | <code>    logout(request)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `logout_view`. |
-| 901 | <code>    messages.success(request, 'Ви вийшли з акаунта.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `logout_view`. |
-| 902 | <code>    return redirect('home')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `logout_view`. |
-| 905 | <code>def forgot_password(request):</code> | Проверяет форму обращения по восстановлению доступа и показывает безопасный ответ. Контекст: `forgot_password`. |
-| 906 | <code>    form = EmailForm(request.POST or None)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `forgot_password`. |
-| 907 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `forgot_password`. |
-| 908 | <code>        messages.success(</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `forgot_password`. |
-| 909 | <code>            request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `forgot_password`. |
-| 910 | <code>            'Якщо така пошта є в системі, адміністратор допоможе відновити доступ.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `forgot_password`. |
-| 911 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `forgot_password`. |
-| 912 | <code>        return redirect('home')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `forgot_password`. |
-| 913 | <code>    return render(request, 'clinic/forgot_password.html', {'form': form})</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `forgot_password`. |
-| 916 | <code>def claim_patient(request):</code> | Проверяет введенный телефон и открывает временный кабинет перед Google-входом. Контекст: `claim_patient`. |
-| 917 | <code>    if request.user.is_authenticated and user_role(request.user) != Profile.ROLE_PATIENT:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient`. |
-| 918 | <code>        messages.error(request, 'Ця функція доступна лише пацієнтам.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `claim_patient`. |
-| 919 | <code>        return redirect_by_role(request.user)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `claim_patient`. |
-| 921 | <code>    form = ClaimPatientForm(request.POST or None)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient`. |
-| 922 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `claim_patient`. |
-| 923 | <code>        phone = form.cleaned_data['phone']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `claim_patient`. |
-| 924 | <code>        exclude_user = request.user if request.user.is_authenticated else None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient`. |
-| 925 | <code>        if patient_phone_is_used(phone, exclude_user=exclude_user):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient`. |
-| 926 | <code>            form.add_error(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient`. |
-| 927 | <code>                'phone',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient`. |
-| 928 | <code>                'Цей номер уже прив’язаний до кабінету. Увійдіть через Google, щоб відкрити його.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient`. |
-| 929 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `claim_patient`. |
-| 930 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `claim_patient`. |
-| 931 | <code>            complete_url = reverse('claim_patient_complete')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient`. |
-| 932 | <code>            if request.user.is_authenticated and SocialAccount.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `claim_patient`. |
-| 933 | <code>                user=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient`. |
-| 934 | <code>                provider='google',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient`. |
-| 935 | <code>            ).exists():</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient`. |
-| 936 | <code>                request.session['patient_claim_phone'] = phone</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `claim_patient`. |
-| 937 | <code>                return redirect(complete_url)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `claim_patient`. |
-| 938 | <code>            if request.user.is_authenticated:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient`. |
-| 939 | <code>                logout(request)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient`. |
-| 940 | <code>            request.session['patient_claim_phone'] = phone</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `claim_patient`. |
-| 941 | <code>            messages.info(</code> | Записывает информационное сообщение без изменения данных. Контекст: `claim_patient`. |
-| 942 | <code>                request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient`. |
-| 943 | <code>                'Увійдіть через Google для подальшої роботи із сайтом.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient`. |
-| 944 | <code>                extra_tags='claim-google-message',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient`. |
-| 945 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `claim_patient`. |
-| 946 | <code>            return redirect('pending_patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `claim_patient`. |
-| 948 | <code>    return render(request, 'clinic/claim_patient.html', {'form': form})</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `claim_patient`. |
-| 951 | <code>def pending_patient_dashboard(request):</code> | Показывает временный профиль и будущие ручные записи по телефону. Контекст: `pending_patient_dashboard`. |
-| 952 | <code>    if request.user.is_authenticated:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `pending_patient_dashboard`. |
-| 953 | <code>        return redirect_by_role(request.user)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `pending_patient_dashboard`. |
-| 955 | <code>    phone = request.session.get('patient_claim_phone')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_dashboard`. |
-| 956 | <code>    if not phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `pending_patient_dashboard`. |
-| 957 | <code>        return redirect('claim_patient')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `pending_patient_dashboard`. |
-| 959 | <code>    google_url = reverse('google_login')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_dashboard`. |
-| 960 | <code>    complete_url = reverse('claim_patient_complete')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_dashboard`. |
-| 961 | <code>    unclaimed_appointments, _ = unclaimed_records_for_phone(phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_dashboard`. |
-| 962 | <code>    future_candidates = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_dashboard`. |
-| 963 | <code>        Appointment.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `pending_patient_dashboard`. |
-| 964 | <code>            pk__in=[appointment.pk for appointment in unclaimed_appointments],</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_dashboard`. |
-| 965 | <code>            status__in=[</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_dashboard`. |
-| 966 | <code>                Appointment.STATUS_PENDING,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_dashboard`. |
-| 967 | <code>                Appointment.STATUS_APPROVED,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_dashboard`. |
-| 968 | <code>                Appointment.STATUS_RESCHEDULE_PROPOSED,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_dashboard`. |
-| 969 | <code>            ],</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `pending_patient_dashboard`. |
-| 970 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `pending_patient_dashboard`. |
-| 971 | <code>        .select_related('doctor__user', 'service')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `pending_patient_dashboard`. |
-| 972 | <code>        .order_by('date', 'time')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `pending_patient_dashboard`. |
-| 973 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `pending_patient_dashboard`. |
-| 974 | <code>    future_appointments = [appointment for appointment in future_candidates if appointment.is_future]</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_dashboard`. |
-| 975 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `pending_patient_dashboard`. |
-| 976 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_dashboard`. |
-| 977 | <code>        'clinic/pending_patient_dashboard.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_dashboard`. |
-| 978 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `pending_patient_dashboard`. |
-| 979 | <code>            'pending_phone': phone,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_dashboard`. |
-| 980 | <code>            'pending_identity': pending_patient_identity(phone),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_dashboard`. |
-| 981 | <code>            'pending_google_login_url': f'{google_url}?{urlencode({"next": complete_url})}',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_dashboard`. |
-| 982 | <code>            'future_appointments': future_appointments,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_dashboard`. |
-| 983 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `pending_patient_dashboard`. |
-| 984 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `pending_patient_dashboard`. |
-| 987 | <code>@login_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 988 | <code>def claim_patient_complete(request):</code> | После Google-входа связывает телефон, приемы и карточки с аккаунтом пациента. Контекст: `claim_patient_complete`. |
-| 989 | <code>    phone = request.session.get('patient_claim_phone')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient_complete`. |
-| 990 | <code>    if not phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient_complete`. |
-| 991 | <code>        return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `claim_patient_complete`. |
-| 993 | <code>    if request.user.is_staff:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient_complete`. |
-| 994 | <code>        request.session.pop('patient_claim_phone', None)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient_complete`. |
-| 995 | <code>        messages.error(request, 'Записи можна прив’язати лише до кабінету пацієнта.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `claim_patient_complete`. |
-| 996 | <code>        return redirect_by_role(request.user)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `claim_patient_complete`. |
-| 998 | <code>    profile, _ = Profile.objects.get_or_create(</code> | Находит существующую запись или создает ее, не заставляя вызывающий код делать две отдельные операции. Контекст: `claim_patient_complete`. |
-| 999 | <code>        user=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient_complete`. |
-| 1000 | <code>        defaults={'role': Profile.ROLE_PATIENT, 'phone': ''},</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient_complete`. |
-| 1001 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `claim_patient_complete`. |
-| 1002 | <code>    if profile.role != Profile.ROLE_PATIENT:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient_complete`. |
-| 1003 | <code>        request.session.pop('patient_claim_phone', None)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient_complete`. |
-| 1004 | <code>        messages.error(request, 'Записи можна прив’язати лише до кабінету пацієнта.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `claim_patient_complete`. |
-| 1005 | <code>        return redirect_by_role(request.user)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `claim_patient_complete`. |
-| 1007 | <code>    if not SocialAccount.objects.filter(user=request.user, provider='google').exists():</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `claim_patient_complete`. |
-| 1008 | <code>        messages.error(request, 'Для прив’язування записів потрібно увійти через Google.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `claim_patient_complete`. |
-| 1009 | <code>        google_url = reverse('google_login')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient_complete`. |
-| 1010 | <code>        return redirect(f'{google_url}?{urlencode({"next": reverse("claim_patient_complete")})}')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `claim_patient_complete`. |
-| 1012 | <code>    current_phone = normalize_phone_number(profile.phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient_complete`. |
-| 1013 | <code>    if current_phone and current_phone != phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient_complete`. |
-| 1014 | <code>        request.session.pop('patient_claim_phone', None)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient_complete`. |
-| 1015 | <code>        messages.error(request, 'У цьому кабінеті вже вказано інший номер телефону.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `claim_patient_complete`. |
-| 1016 | <code>        return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `claim_patient_complete`. |
-| 1018 | <code>    phone_belongs_to_another_user = any(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient_complete`. |
-| 1019 | <code>        normalize_phone_number(item.phone) == phone</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient_complete`. |
-| 1020 | <code>        for item in Profile.objects.filter(role=Profile.ROLE_PATIENT).exclude(user=request.user).exclude(phone='')</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `claim_patient_complete`. |
-| 1021 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `claim_patient_complete`. |
-| 1022 | <code>    if phone_belongs_to_another_user:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient_complete`. |
-| 1023 | <code>        request.session.pop('patient_claim_phone', None)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient_complete`. |
-| 1024 | <code>        messages.error(request, 'Цей номер уже прив’язаний до іншого кабінету.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `claim_patient_complete`. |
-| 1025 | <code>        return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `claim_patient_complete`. |
-| 1027 | <code>    appointments, cards = unclaimed_records_for_phone(phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient_complete`. |
-| 1028 | <code>    doctor_identity = appointments[0] if appointments else (cards[0] if cards else None)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient_complete`. |
-| 1030 | <code>    with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `claim_patient_complete`. |
-| 1031 | <code>        if doctor_identity:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient_complete`. |
-| 1032 | <code>            request.user.first_name = doctor_identity.patient_first_name.strip()</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `claim_patient_complete`. |
-| 1033 | <code>            request.user.last_name = doctor_identity.patient_last_name.strip()</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `claim_patient_complete`. |
-| 1034 | <code>            request.user.save(update_fields=['first_name', 'last_name'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `claim_patient_complete`. |
-| 1035 | <code>        profile.phone = phone</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `claim_patient_complete`. |
-| 1036 | <code>        profile.save(update_fields=['phone'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `claim_patient_complete`. |
-| 1037 | <code>        Appointment.objects.filter(pk__in=[item.pk for item in appointments]).update(patient=request.user)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `claim_patient_complete`. |
-| 1038 | <code>        DoctorPatientCard.objects.filter(pk__in=[item.pk for item in cards]).update(patient=request.user)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `claim_patient_complete`. |
-| 1040 | <code>    request.session.pop('patient_claim_phone', None)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient_complete`. |
-| 1041 | <code>    if appointments or cards:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient_complete`. |
-| 1042 | <code>        messages.success(request, 'Кабінет створено, а записи лікаря прив’язано до нього.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `claim_patient_complete`. |
-| 1043 | <code>    else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `claim_patient_complete`. |
-| 1044 | <code>        messages.success(request, 'Ваш кабінет створено. Заповніть особисті дані у профілі.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `claim_patient_complete`. |
-| 1045 | <code>    return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `claim_patient_complete`. |
-| 1048 | <code>@patient_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 1049 | <code>def patient_dashboard(request):</code> | Разделяет приемы пациента по статусам и загружает видимое лечение и рекомендации. Контекст: `patient_dashboard`. |
-| 1050 | <code>    if request.session.get('patient_claim_phone'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_dashboard`. |
-| 1051 | <code>        return redirect('claim_patient_complete')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_dashboard`. |
-| 1052 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
-| 1053 | <code>    appointments = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_dashboard`. |
-| 1054 | <code>        Appointment.objects.filter(patient=request.user)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_dashboard`. |
-| 1055 | <code>        .select_related('service', 'doctor__user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `patient_dashboard`. |
-| 1056 | <code>        .order_by('date', 'time')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `patient_dashboard`. |
-| 1057 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_dashboard`. |
-| 1058 | <code>    patient_records = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_dashboard`. |
-| 1059 | <code>        PatientRecordEntry.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_dashboard`. |
-| 1060 | <code>            Q(card__patient=request.user) &#124; Q(appointment__patient=request.user),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_dashboard`. |
-| 1061 | <code>            kind__in=[PatientRecordEntry.KIND_TREATMENT, PatientRecordEntry.KIND_RECOMMENDATION],</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_dashboard`. |
-| 1062 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_dashboard`. |
-| 1063 | <code>        .select_related('doctor__user', 'appointment__service')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `patient_dashboard`. |
-| 1064 | <code>        .prefetch_related('images', 'videos')</code> | Заранее загружает связанные списки отдельным оптимизированным запросом. Контекст: `patient_dashboard`. |
-| 1065 | <code>        .distinct()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
-| 1066 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_dashboard`. |
-| 1067 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `patient_dashboard`. |
-| 1068 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
-| 1069 | <code>        'clinic/patient_dashboard.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
-| 1070 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_dashboard`. |
-| 1071 | <code>            'pending': appointments.filter(status=Appointment.STATUS_PENDING),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_dashboard`. |
-| 1072 | <code>            'reschedule_requests': appointments.filter(status=Appointment.STATUS_RESCHEDULE_PROPOSED),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_dashboard`. |
-| 1073 | <code>            'approved': appointments.filter(status=Appointment.STATUS_APPROVED),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_dashboard`. |
-| 1074 | <code>            'completed': appointments.filter(status=Appointment.STATUS_COMPLETED),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_dashboard`. |
-| 1075 | <code>            'canceled': appointments.filter(status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_dashboard`. |
-| 1076 | <code>            'needs_phone': not request.user.profile.phone,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
-| 1077 | <code>            'profile_incomplete': not (</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
-| 1078 | <code>                request.user.first_name.strip()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
-| 1079 | <code>                and request.user.last_name.strip()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
-| 1080 | <code>                and request.user.profile.age</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
-| 1081 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_dashboard`. |
-| 1082 | <code>            'patient_records': patient_records,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
-| 1083 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_dashboard`. |
-| 1084 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_dashboard`. |
-| 1087 | <code>@patient_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 1088 | <code>def patient_edit_profile(request):</code> | Проверяет и сохраняет имя, фамилию, возраст, телефон и фото пациента. Контекст: `patient_edit_profile`. |
-| 1089 | <code>    form = PatientProfileForm(request.POST or None, request.FILES or None, user=request.user)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_edit_profile`. |
-| 1090 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `patient_edit_profile`. |
-| 1091 | <code>        try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `patient_edit_profile`. |
-| 1092 | <code>            with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `patient_edit_profile`. |
-| 1093 | <code>                form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `patient_edit_profile`. |
-| 1094 | <code>                write_audit_log(request, 'Оновлено профіль пацієнта', request.user.profile)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_edit_profile`. |
-| 1095 | <code>        except IntegrityError:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `patient_edit_profile`. |
-| 1096 | <code>            form.add_error('phone', 'Цей номер телефону вже прив’язаний до іншого пацієнта.')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_edit_profile`. |
-| 1097 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `patient_edit_profile`. |
-| 1098 | <code>            messages.success(request, 'Профіль оновлено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `patient_edit_profile`. |
-| 1099 | <code>            return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_edit_profile`. |
-| 1100 | <code>    return render(request, 'clinic/patient_edit_profile.html', {'form': form})</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `patient_edit_profile`. |
-| 1103 | <code>@patient_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 1104 | <code>def patient_change_password(request):</code> | Меняет локальный пароль, сохраняя текущую сессию. Контекст: `patient_change_password`. |
-| 1105 | <code>    if not request.user.has_usable_password():</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_change_password`. |
-| 1106 | <code>        messages.info(request, 'Ви входите через Google, тому окремий пароль MedClinic не потрібен.')</code> | Записывает информационное сообщение без изменения данных. Контекст: `patient_change_password`. |
-| 1107 | <code>        return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_change_password`. |
-| 1108 | <code>    form = PasswordChangeForm(request.user, request.POST or None)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_change_password`. |
-| 1109 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `patient_change_password`. |
-| 1110 | <code>        user = form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `patient_change_password`. |
-| 1111 | <code>        update_session_auth_hash(request, user)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_change_password`. |
-| 1112 | <code>        write_audit_log(request, 'Змінено пароль пацієнта', request.user.profile)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_change_password`. |
-| 1113 | <code>        messages.success(request, 'Пароль змінено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `patient_change_password`. |
-| 1114 | <code>        return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_change_password`. |
-| 1115 | <code>    return render(request, 'clinic/change_password.html', {'form': form})</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `patient_change_password`. |
-| 1118 | <code>@patient_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 1119 | <code>def cancel_appointment(request, appointment_id):</code> | Отменяет только принадлежащую пациенту будущую активную запись. Контекст: `cancel_appointment`. |
-| 1120 | <code>    appointment = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `cancel_appointment`. |
-| 1121 | <code>        Appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `cancel_appointment`. |
-| 1122 | <code>        pk=appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `cancel_appointment`. |
-| 1123 | <code>        patient=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `cancel_appointment`. |
-| 1124 | <code>        status__in=[</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `cancel_appointment`. |
-| 1125 | <code>            Appointment.STATUS_PENDING,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `cancel_appointment`. |
-| 1126 | <code>            Appointment.STATUS_APPROVED,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `cancel_appointment`. |
-| 1127 | <code>            Appointment.STATUS_RESCHEDULE_PROPOSED,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `cancel_appointment`. |
-| 1128 | <code>        ],</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `cancel_appointment`. |
-| 1129 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `cancel_appointment`. |
-| 1130 | <code>    if request.method == 'POST' and appointment.can_cancel:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `cancel_appointment`. |
-| 1131 | <code>        appointment.status = Appointment.STATUS_CANCELED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `cancel_appointment`. |
-| 1132 | <code>        appointment.save(update_fields=['status'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `cancel_appointment`. |
-| 1133 | <code>        write_audit_log(request, 'Скасовано запис пацієнтом', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `cancel_appointment`. |
-| 1134 | <code>        notify_doctor_patient_action(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `cancel_appointment`. |
-| 1135 | <code>            appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `cancel_appointment`. |
-| 1136 | <code>            'patient_canceled',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `cancel_appointment`. |
-| 1137 | <code>            'Пацієнт скасував запис',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `cancel_appointment`. |
-| 1138 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `cancel_appointment`. |
-| 1139 | <code>        messages.success(request, 'Запис скасовано.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `cancel_appointment`. |
-| 1140 | <code>    elif request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `cancel_appointment`. |
-| 1141 | <code>        messages.error(request, 'Цей запис уже не можна скасувати.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `cancel_appointment`. |
-| 1142 | <code>    return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `cancel_appointment`. |
-| 1145 | <code>@patient_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 1146 | <code>def restore_appointment(request, appointment_id):</code> | Повторно проверяет освободившийся интервал и возвращает отмененную запись в заявки. Контекст: `restore_appointment`. |
-| 1147 | <code>    appointment = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `restore_appointment`. |
-| 1148 | <code>        Appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
-| 1149 | <code>        pk=appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `restore_appointment`. |
-| 1150 | <code>        patient=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `restore_appointment`. |
-| 1151 | <code>        status=Appointment.STATUS_CANCELED,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `restore_appointment`. |
-| 1152 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `restore_appointment`. |
-| 1153 | <code>    if request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `restore_appointment`. |
-| 1154 | <code>        if (</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `restore_appointment`. |
-| 1155 | <code>            not appointment.can_restore</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
-| 1156 | <code>            or appointment_conflicts(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
-| 1157 | <code>                appointment.doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
-| 1158 | <code>                appointment.date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
-| 1159 | <code>                appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
-| 1160 | <code>                duration_slots=appointment.duration_slots,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `restore_appointment`. |
-| 1161 | <code>                duration_minutes=appointment.duration_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `restore_appointment`. |
-| 1162 | <code>                exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `restore_appointment`. |
-| 1163 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `restore_appointment`. |
-| 1164 | <code>            or patient_appointment_conflicts(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
-| 1165 | <code>                appointment.patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
-| 1166 | <code>                appointment.date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
-| 1167 | <code>                appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
-| 1168 | <code>                appointment.duration_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
-| 1169 | <code>                patient_phone=appointment.patient_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `restore_appointment`. |
-| 1170 | <code>                exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `restore_appointment`. |
-| 1171 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `restore_appointment`. |
-| 1172 | <code>        ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
-| 1173 | <code>            messages.error(request, 'Цей запис уже не можна відновити: час зайнятий іншим прийомом.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `restore_appointment`. |
-| 1174 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `restore_appointment`. |
-| 1175 | <code>            appointment.status = Appointment.STATUS_PENDING</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `restore_appointment`. |
-| 1176 | <code>            appointment.save(update_fields=['status'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `restore_appointment`. |
-| 1177 | <code>            write_audit_log(request, 'Відновлено заявку пацієнтом', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
-| 1178 | <code>            notify_doctor_new_request(appointment, event='restored')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `restore_appointment`. |
-| 1179 | <code>            messages.success(request, 'Заявку відновлено і знову відправлено лікарю.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `restore_appointment`. |
-| 1180 | <code>    return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `restore_appointment`. |
-| 1183 | <code>@patient_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 1184 | <code>def patient_appointment_detail(request, appointment_id):</code> | Показывает пациенту только принадлежащую ему запись и ее файлы. Контекст: `patient_appointment_detail`. |
-| 1185 | <code>    appointment = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `patient_appointment_detail`. |
-| 1186 | <code>        Appointment.objects.select_related('doctor__user', 'service').prefetch_related('images', 'videos'),</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `patient_appointment_detail`. |
-| 1187 | <code>        pk=appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_detail`. |
-| 1188 | <code>        patient=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_detail`. |
-| 1189 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_appointment_detail`. |
-| 1190 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `patient_appointment_detail`. |
-| 1191 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_detail`. |
-| 1192 | <code>        'clinic/patient_appointment_detail.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_detail`. |
-| 1193 | <code>        {'appointment': appointment},</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_detail`. |
-| 1194 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_appointment_detail`. |
-| 1197 | <code>@patient_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 1198 | <code>def patient_reschedule_response(request, appointment_id):</code> | Принимает или отклоняет предложенное врачом новое время. Контекст: `patient_reschedule_response`. |
-| 1199 | <code>    appointment = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `patient_reschedule_response`. |
-| 1200 | <code>        Appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1201 | <code>        pk=appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_reschedule_response`. |
-| 1202 | <code>        patient=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_reschedule_response`. |
-| 1203 | <code>        status=Appointment.STATUS_RESCHEDULE_PROPOSED,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_reschedule_response`. |
-| 1204 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_reschedule_response`. |
-| 1205 | <code>    if request.method != 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_reschedule_response`. |
-| 1206 | <code>        return redirect('patient_appointment_detail', appointment_id=appointment.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_reschedule_response`. |
-| 1208 | <code>    action = request.POST.get('action')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_reschedule_response`. |
-| 1209 | <code>    if action == 'reject':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_reschedule_response`. |
-| 1210 | <code>        appointment.status = Appointment.STATUS_CANCELED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `patient_reschedule_response`. |
-| 1211 | <code>        appointment.save(update_fields=['status'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `patient_reschedule_response`. |
-| 1212 | <code>        write_audit_log(request, 'Відхилено запропонований час', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1213 | <code>        notify_doctor_patient_action(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1214 | <code>            appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1215 | <code>            'reschedule_rejected',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1216 | <code>            'Пацієнт відхилив новий час',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1217 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_reschedule_response`. |
-| 1218 | <code>        messages.success(request, 'Запропонований час відхилено. Запис скасовано.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `patient_reschedule_response`. |
-| 1219 | <code>        return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_reschedule_response`. |
-| 1221 | <code>    if action != 'accept':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_reschedule_response`. |
-| 1222 | <code>        messages.error(request, 'Оберіть, чи погоджуєтеся ви з новим часом.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `patient_reschedule_response`. |
-| 1223 | <code>        return redirect('patient_appointment_detail', appointment_id=appointment.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_reschedule_response`. |
-| 1225 | <code>    schedule = schedule_for_date(appointment.doctor, appointment.date)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_reschedule_response`. |
-| 1226 | <code>    if (</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_reschedule_response`. |
-| 1227 | <code>        is_past_appointment(appointment.date, appointment.time)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1228 | <code>        or not schedule</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1229 | <code>        or not schedule.is_working</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1230 | <code>        or appointment.time not in schedule.get_slots()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1231 | <code>        or appointment_conflicts(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1232 | <code>            appointment.doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1233 | <code>            appointment.date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1234 | <code>            appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1235 | <code>            duration_minutes=appointment.duration_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_reschedule_response`. |
-| 1236 | <code>            exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_reschedule_response`. |
-| 1237 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_reschedule_response`. |
-| 1238 | <code>        or patient_appointment_conflicts(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1239 | <code>            appointment.patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1240 | <code>            appointment.date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1241 | <code>            appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1242 | <code>            appointment.duration_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1243 | <code>            patient_phone=appointment.patient_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_reschedule_response`. |
-| 1244 | <code>            exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_reschedule_response`. |
-| 1245 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_reschedule_response`. |
-| 1246 | <code>    ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1247 | <code>        messages.error(</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `patient_reschedule_response`. |
-| 1248 | <code>            request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1249 | <code>            'Цей час уже недоступний або перетинається з іншим прийомом. Зверніться до лікаря для нового перенесення.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 139 | <code>def telegram_reconnect(request):</code> | Создает новый одноразовый Telegram-код и только после этого удаляет старую связь пользователя. Контекст: `telegram_reconnect`. |
+| 140 | <code>    role = user_role(request.user)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `telegram_reconnect`. |
+| 141 | <code>    if request.user.is_staff or role not in {Profile.ROLE_PATIENT, Profile.ROLE_DOCTOR}:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `telegram_reconnect`. |
+| 142 | <code>        messages.error(request, 'Переприв’язування Telegram доступне пацієнтам і лікарям.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `telegram_reconnect`. |
+| 143 | <code>        return redirect_by_role(request.user)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `telegram_reconnect`. |
+| 145 | <code>    if role == Profile.ROLE_PATIENT and not SocialAccount.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `telegram_reconnect`. |
+| 146 | <code>        user=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `telegram_reconnect`. |
+| 147 | <code>        provider='google',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `telegram_reconnect`. |
+| 148 | <code>    ).exists():</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `telegram_reconnect`. |
+| 149 | <code>        messages.error(request, 'Спочатку увійдіть через Google, а потім підключіть Telegram.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `telegram_reconnect`. |
+| 150 | <code>        return redirect('home')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `telegram_reconnect`. |
+| 152 | <code>    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `telegram_reconnect`. |
+| 153 | <code>        with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `telegram_reconnect`. |
+| 154 | <code>            link = create_link_url(request.user)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `telegram_reconnect`. |
+| 155 | <code>            old_connection = TelegramConnection.objects.filter(user=request.user).first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `telegram_reconnect`. |
+| 156 | <code>            if old_connection is not None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `telegram_reconnect`. |
+| 157 | <code>                write_audit_log(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `telegram_reconnect`. |
+| 158 | <code>                    request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `telegram_reconnect`. |
+| 159 | <code>                    'Розпочато переприв’язування Telegram',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `telegram_reconnect`. |
+| 160 | <code>                    old_connection,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `telegram_reconnect`. |
+| 161 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `telegram_reconnect`. |
+| 162 | <code>                old_connection.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `telegram_reconnect`. |
+| 163 | <code>    except TelegramError as error:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `telegram_reconnect`. |
+| 164 | <code>        messages.error(request, str(error))</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `telegram_reconnect`. |
+| 165 | <code>        return redirect_by_role(request.user)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `telegram_reconnect`. |
+| 167 | <code>    return redirect(link)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `telegram_reconnect`. |
+| 170 | <code>@login_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 171 | <code>@require_POST</code> | Декоратор добавляет функции или классу дополнительное поведение. |
+| 172 | <code>def telegram_disconnect(request):</code> | Выключает активное Telegram-подключение текущего пользователя. Контекст: `telegram_disconnect`. |
+| 173 | <code>    disconnected = TelegramConnection.objects.filter(user=request.user).update(is_active=False)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `telegram_disconnect`. |
+| 174 | <code>    if disconnected:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `telegram_disconnect`. |
+| 175 | <code>        messages.success(request, 'Telegram-сповіщення вимкнено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `telegram_disconnect`. |
+| 176 | <code>    return redirect_by_role(request.user)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `telegram_disconnect`. |
+| 179 | <code>@csrf_exempt</code> | Декоратор добавляет функции или классу дополнительное поведение. |
+| 180 | <code>def telegram_webhook(request):</code> | Принимает подписанное событие Telegram, проверяет секрет и передает обновление обработчику бота. Контекст: `telegram_webhook`. |
+| 181 | <code>    if request.method != 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `telegram_webhook`. |
+| 182 | <code>        return JsonResponse({'ok': False}, status=405)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `telegram_webhook`. |
+| 184 | <code>    expected_secret = settings.TELEGRAM_WEBHOOK_SECRET</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `telegram_webhook`. |
+| 185 | <code>    received_secret = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `telegram_webhook`. |
+| 186 | <code>    if not expected_secret:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `telegram_webhook`. |
+| 187 | <code>        return JsonResponse({'ok': False}, status=503)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `telegram_webhook`. |
+| 188 | <code>    if not hmac.compare_digest(received_secret, expected_secret):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `telegram_webhook`. |
+| 189 | <code>        return JsonResponse({'ok': False}, status=403)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `telegram_webhook`. |
+| 191 | <code>    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `telegram_webhook`. |
+| 192 | <code>        update = json.loads(request.body.decode('utf-8'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `telegram_webhook`. |
+| 193 | <code>        process_update(update)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `telegram_webhook`. |
+| 194 | <code>    except (json.JSONDecodeError, UnicodeDecodeError):</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `telegram_webhook`. |
+| 195 | <code>        return JsonResponse({'ok': False}, status=400)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `telegram_webhook`. |
+| 196 | <code>    except (TelegramError, requests.RequestException):</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `telegram_webhook`. |
+| 197 | <code>        return JsonResponse({'ok': False}, status=503)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `telegram_webhook`. |
+| 198 | <code>    return JsonResponse({'ok': True})</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `telegram_webhook`. |
+| 201 | <code>def private_media(request, path):</code> | Выдает медицинский файл только администратору, связанному врачу или разрешенному пациенту. Контекст: `private_media`. |
+| 202 | <code>    if not request.user.is_authenticated:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `private_media`. |
+| 203 | <code>        raise PermissionDenied</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `private_media`. |
+| 205 | <code>    item = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 206 | <code>    field = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 207 | <code>    appointment = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 208 | <code>    entry = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 210 | <code>    if path.startswith('appointment_images/'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `private_media`. |
+| 211 | <code>        item = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `private_media`. |
+| 212 | <code>            AppointmentImage.objects.select_related('appointment__doctor__user'),</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `private_media`. |
+| 213 | <code>            image=path,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 214 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
+| 215 | <code>        field = item.image</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 216 | <code>        appointment = item.appointment</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 217 | <code>    elif path.startswith('appointment_videos/'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `private_media`. |
+| 218 | <code>        item = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `private_media`. |
+| 219 | <code>            AppointmentVideo.objects.select_related('appointment__doctor__user'),</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `private_media`. |
+| 220 | <code>            video=path,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 221 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
+| 222 | <code>        field = item.video</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 223 | <code>        appointment = item.appointment</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 224 | <code>    elif path.startswith('patient_records/'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `private_media`. |
+| 225 | <code>        item = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `private_media`. |
+| 226 | <code>            PatientRecordImage.objects.select_related(</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `private_media`. |
+| 227 | <code>                'entry__doctor__user',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
+| 228 | <code>                'entry__card__patient',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
+| 229 | <code>                'entry__appointment__patient',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
+| 230 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
+| 231 | <code>            image=path,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 232 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
+| 233 | <code>        field = item.image</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 234 | <code>        entry = item.entry</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 235 | <code>    elif path.startswith('patient_record_videos/'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `private_media`. |
+| 236 | <code>        item = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `private_media`. |
+| 237 | <code>            PatientRecordVideo.objects.select_related(</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `private_media`. |
+| 238 | <code>                'entry__doctor__user',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
+| 239 | <code>                'entry__card__patient',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
+| 240 | <code>                'entry__appointment__patient',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
+| 241 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
+| 242 | <code>            video=path,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 243 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
+| 244 | <code>        field = item.video</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 245 | <code>        entry = item.entry</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 246 | <code>    else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `private_media`. |
+| 247 | <code>        raise PermissionDenied</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `private_media`. |
+| 249 | <code>    allowed = request.user.is_staff</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 250 | <code>    has_patient_google = SocialAccount.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `private_media`. |
+| 251 | <code>        user=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 252 | <code>        provider='google',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 253 | <code>    ).exists()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
+| 254 | <code>    if appointment:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `private_media`. |
+| 255 | <code>        allowed = allowed or appointment.doctor.user_id == request.user.id</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
+| 256 | <code>        allowed = allowed or (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 257 | <code>            appointment.patient_id == request.user.id and has_patient_google</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `private_media`. |
+| 258 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
+| 259 | <code>    if entry:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `private_media`. |
+| 260 | <code>        allowed = allowed or entry.doctor.user_id == request.user.id</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
+| 261 | <code>        patient_can_see = entry.kind in {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 262 | <code>            PatientRecordEntry.KIND_TREATMENT,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
+| 263 | <code>            PatientRecordEntry.KIND_RECOMMENDATION,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
+| 264 | <code>        }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
+| 265 | <code>        patient_id = entry.card.patient_id or (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 266 | <code>            entry.appointment.patient_id if entry.appointment_id else None</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
+| 267 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
+| 268 | <code>        allowed = allowed or (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 269 | <code>            patient_can_see</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
+| 270 | <code>            and patient_id == request.user.id</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
+| 271 | <code>            and has_patient_google</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `private_media`. |
+| 272 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `private_media`. |
+| 273 | <code>    if not allowed:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `private_media`. |
+| 274 | <code>        raise PermissionDenied</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `private_media`. |
+| 276 | <code>    content_type = mimetypes.guess_type(field.name)[0] or 'application/octet-stream'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 277 | <code>    response = FileResponse(field.open('rb'), content_type=content_type)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 278 | <code>    response['Cache-Control'] = 'private, max-age=3600'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 279 | <code>    response['X-Content-Type-Options'] = 'nosniff'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `private_media`. |
+| 280 | <code>    return response</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `private_media`. |
+| 283 | <code>def public_media(request, path):</code> | Локально выдает только публичные media-файлы и блокирует приватные префиксы. Контекст: `public_media`. |
+| 284 | <code>    private_prefixes = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `public_media`. |
+| 285 | <code>        'appointment_images/',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `public_media`. |
+| 286 | <code>        'appointment_videos/',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `public_media`. |
+| 287 | <code>        'patient_records/',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `public_media`. |
+| 288 | <code>        'patient_record_videos/',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `public_media`. |
+| 289 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `public_media`. |
+| 290 | <code>    if path.replace('\\', '/').startswith(private_prefixes):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `public_media`. |
+| 291 | <code>        raise PermissionDenied</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `public_media`. |
+| 292 | <code>    return serve(request, path, document_root=settings.MEDIA_ROOT)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `public_media`. |
+| 295 | <code>def user_role(user):</code> | Определяет фактическую роль вошедшего пользователя. Контекст: `user_role`. |
+| 296 | <code>    if not user.is_authenticated:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `user_role`. |
+| 297 | <code>        return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `user_role`. |
+| 298 | <code>    if user.is_staff:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `user_role`. |
+| 299 | <code>        return 'admin'</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `user_role`. |
+| 300 | <code>    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `user_role`. |
+| 301 | <code>        return user.profile.role</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `user_role`. |
+| 302 | <code>    except Profile.DoesNotExist:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `user_role`. |
+| 303 | <code>        if hasattr(user, 'doctor_profile'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `user_role`. |
+| 304 | <code>            return Profile.ROLE_DOCTOR</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `user_role`. |
+| 305 | <code>        return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `user_role`. |
+| 308 | <code>def redirect_by_role(user):</code> | Направляет администратора, врача или пациента в правильный кабинет. Контекст: `redirect_by_role`. |
+| 309 | <code>    role = user_role(user)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `redirect_by_role`. |
+| 310 | <code>    if role == 'admin':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `redirect_by_role`. |
+| 311 | <code>        return redirect('admin_panel')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `redirect_by_role`. |
+| 312 | <code>    if role == Profile.ROLE_DOCTOR:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `redirect_by_role`. |
+| 313 | <code>        return redirect('doctor_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `redirect_by_role`. |
+| 314 | <code>    return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `redirect_by_role`. |
+| 317 | <code>def patient_required(view_func):</code> | Создает защитный декоратор для функций полноценного Google-пациента. Контекст: `patient_required`. |
+| 318 | <code>    @wraps(view_func)</code> | Декоратор добавляет функции или классу дополнительное поведение. Контекст: `patient_required`. |
+| 319 | <code>    def wrapper(request, *args, **kwargs):</code> | Объявляет функцию `wrapper` и перечисляет принимаемые параметры. Контекст: `patient_required.wrapper`. |
+| 320 | <code>        if request.user.is_authenticated:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_required.wrapper`. |
+| 321 | <code>            if user_role(request.user) == Profile.ROLE_PATIENT:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_required.wrapper`. |
+| 322 | <code>                has_google = SocialAccount.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_required.wrapper`. |
+| 323 | <code>                    user=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_required.wrapper`. |
+| 324 | <code>                    provider='google',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_required.wrapper`. |
+| 325 | <code>                ).exists()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_required.wrapper`. |
+| 326 | <code>                if has_google:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_required.wrapper`. |
+| 327 | <code>                    return view_func(request, *args, **kwargs)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_required.wrapper`. |
+| 328 | <code>                logout(request)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_required.wrapper`. |
+| 329 | <code>                messages.error(request, 'Спочатку увійдіть в акаунт Google.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `patient_required.wrapper`. |
+| 330 | <code>                return redirect('home')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_required.wrapper`. |
+| 331 | <code>            messages.error(request, 'Ця функція доступна лише пацієнтам.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `patient_required.wrapper`. |
+| 332 | <code>            return redirect_by_role(request.user)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_required.wrapper`. |
+| 333 | <code>        messages.error(request, 'Спочатку увійдіть в акаунт Google.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `patient_required.wrapper`. |
+| 334 | <code>        if request.session.get('patient_claim_phone'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_required.wrapper`. |
+| 335 | <code>            return redirect('pending_patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_required.wrapper`. |
+| 336 | <code>        return redirect('home')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_required.wrapper`. |
+| 338 | <code>    return wrapper</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_required`. |
+| 341 | <code>def doctor_required(view_func):</code> | Создает защитный декоратор для активного врача. Контекст: `doctor_required`. |
+| 342 | <code>    @wraps(view_func)</code> | Декоратор добавляет функции или классу дополнительное поведение. Контекст: `doctor_required`. |
+| 343 | <code>    def wrapper(request, *args, **kwargs):</code> | Объявляет функцию `wrapper` и перечисляет принимаемые параметры. Контекст: `doctor_required.wrapper`. |
+| 344 | <code>        if request.user.is_authenticated and user_role(request.user) == Profile.ROLE_DOCTOR:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_required.wrapper`. |
+| 345 | <code>            if not request.user.is_active:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_required.wrapper`. |
+| 346 | <code>                messages.error(request, 'Ваш акаунт архівовано.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_required.wrapper`. |
+| 347 | <code>                return redirect('home')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_required.wrapper`. |
+| 348 | <code>            return view_func(request, *args, **kwargs)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `doctor_required.wrapper`. |
+| 349 | <code>        messages.error(request, 'Увійдіть як лікар.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_required.wrapper`. |
+| 350 | <code>        return redirect('administration_login')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_required.wrapper`. |
+| 352 | <code>    return wrapper</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `doctor_required`. |
+| 355 | <code>def admin_required(view_func):</code> | Создает защитный декоратор для администратора Django. Контекст: `admin_required`. |
+| 356 | <code>    @wraps(view_func)</code> | Декоратор добавляет функции или классу дополнительное поведение. Контекст: `admin_required`. |
+| 357 | <code>    def wrapper(request, *args, **kwargs):</code> | Объявляет функцию `wrapper` и перечисляет принимаемые параметры. Контекст: `admin_required.wrapper`. |
+| 358 | <code>        if request.user.is_authenticated and request.user.is_staff:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_required.wrapper`. |
+| 359 | <code>            return view_func(request, *args, **kwargs)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `admin_required.wrapper`. |
+| 360 | <code>        messages.error(request, 'Увійдіть як адміністратор.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `admin_required.wrapper`. |
+| 361 | <code>        return redirect('administration_login')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_required.wrapper`. |
+| 363 | <code>    return wrapper</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `admin_required`. |
+| 366 | <code>def parse_date(value):</code> | Безопасно преобразует строку формата YYYY-MM-DD в дату. Контекст: `parse_date`. |
+| 367 | <code>    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `parse_date`. |
+| 368 | <code>        return datetime.strptime(value, '%Y-%m-%d').date()</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `parse_date`. |
+| 369 | <code>    except (TypeError, ValueError):</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `parse_date`. |
+| 370 | <code>        return timezone.localdate()</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `parse_date`. |
+| 373 | <code>def parse_time(value):</code> | Безопасно преобразует строку HH:MM во время. Контекст: `parse_time`. |
+| 374 | <code>    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `parse_time`. |
+| 375 | <code>        return datetime.strptime(value, '%H:%M').time()</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `parse_time`. |
+| 376 | <code>    except (TypeError, ValueError):</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `parse_time`. |
+| 377 | <code>        return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `parse_time`. |
+| 380 | <code>def is_past_appointment(selected_date, selected_time=None):</code> | Определяет, относится ли выбранная дата или время к прошлому. Контекст: `is_past_appointment`. |
+| 381 | <code>    now = timezone.localtime()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `is_past_appointment`. |
+| 382 | <code>    if selected_date &lt; now.date():</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `is_past_appointment`. |
+| 383 | <code>        return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `is_past_appointment`. |
+| 384 | <code>    if selected_time and selected_date == now.date() and selected_time &lt;= now.time().replace(second=0, microsecond=0):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `is_past_appointment`. |
+| 385 | <code>        return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `is_past_appointment`. |
+| 386 | <code>    return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `is_past_appointment`. |
+| 389 | <code>def schedule_for_date(doctor, selected_date):</code> | Находит повторяющийся день графика врача по дню недели даты. Контекст: `schedule_for_date`. |
+| 390 | <code>    return WorkSchedule.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `schedule_for_date`. |
+| 391 | <code>        doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `schedule_for_date`. |
+| 392 | <code>        weekday=selected_date.weekday(),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `schedule_for_date`. |
+| 393 | <code>    ).first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `schedule_for_date`. |
+| 396 | <code>def doctor_working_weekdays(doctor):</code> | Возвращает номера рабочих дней недели, сохраненных в графике выбранного врача. Контекст: `doctor_working_weekdays`. |
+| 397 | <code>    if doctor is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_working_weekdays`. |
+| 398 | <code>        return []</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `doctor_working_weekdays`. |
+| 399 | <code>    return sorted(</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `doctor_working_weekdays`. |
+| 400 | <code>        set(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_working_weekdays`. |
+| 401 | <code>            doctor.schedules.filter(is_working=True).values_list(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_working_weekdays`. |
+| 402 | <code>                'weekday',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_working_weekdays`. |
+| 403 | <code>                flat=True,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_working_weekdays`. |
+| 404 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_working_weekdays`. |
+| 405 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_working_weekdays`. |
+| 406 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_working_weekdays`. |
+| 409 | <code>def next_working_date(start_date, working_weekdays):</code> | Находит ближайшую разрешенную графиком дату, начиная с переданного дня. Контекст: `next_working_date`. |
+| 410 | <code>    working_weekdays = set(working_weekdays)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `next_working_date`. |
+| 411 | <code>    if not working_weekdays:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `next_working_date`. |
+| 412 | <code>        return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `next_working_date`. |
+| 413 | <code>    for offset in range(7):</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `next_working_date`. |
+| 414 | <code>        candidate = start_date + timedelta(days=offset)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `next_working_date`. |
+| 415 | <code>        if candidate.weekday() in working_weekdays:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `next_working_date`. |
+| 416 | <code>            return candidate</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `next_working_date`. |
+| 417 | <code>    return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `next_working_date`. |
+| 420 | <code>def working_weekday_labels(working_weekdays):</code> | Преобразует номера рабочих дней в понятные украинские названия для календаря. Контекст: `working_weekday_labels`. |
+| 421 | <code>    allowed = set(working_weekdays)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `working_weekday_labels`. |
+| 422 | <code>    return [</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `working_weekday_labels`. |
+| 423 | <code>        label</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `working_weekday_labels`. |
+| 424 | <code>        for value, label in WorkSchedule.WEEKDAY_CHOICES</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `working_weekday_labels`. |
+| 425 | <code>        if value in allowed</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `working_weekday_labels`. |
+| 426 | <code>    ]</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `working_weekday_labels`. |
+| 429 | <code>def appointment_range(date_value, time_value, slot_minutes, duration_slots=1, duration_minutes=None):</code> | Вычисляет начало и конец интервала приема. Контекст: `appointment_range`. |
+| 430 | <code>    start = datetime.combine(date_value, time_value)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_range`. |
+| 431 | <code>    minutes = duration_minutes if duration_minutes is not None else slot_minutes * duration_slots</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_range`. |
+| 432 | <code>    end = start + timedelta(minutes=minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_range`. |
+| 433 | <code>    return start, end</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `appointment_range`. |
+| 436 | <code>def appointment_conflicts(</code> | Проверяет рабочий день, конец смены, обед и пересечения приемов врача. Контекст: `appointment_conflicts`. |
+| 437 | <code>    doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
+| 438 | <code>    selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
+| 439 | <code>    selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
+| 440 | <code>    duration_slots=1,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
+| 441 | <code>    duration_minutes=None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
+| 442 | <code>    exclude_id=None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
+| 443 | <code>):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
+| 444 | <code>    schedule = schedule_for_date(doctor, selected_date)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
+| 445 | <code>    if not schedule:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `appointment_conflicts`. |
+| 446 | <code>        return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `appointment_conflicts`. |
+| 448 | <code>    target_start, target_end = appointment_range(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
+| 449 | <code>        selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
+| 450 | <code>        selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
+| 451 | <code>        schedule.slot_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
+| 452 | <code>        duration_slots,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
+| 453 | <code>        duration_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
+| 454 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `appointment_conflicts`. |
+| 456 | <code>    day_end = datetime.combine(selected_date, schedule.end_time)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
+| 457 | <code>    if target_end &gt; day_end:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `appointment_conflicts`. |
+| 458 | <code>        return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `appointment_conflicts`. |
+| 460 | <code>    if schedule.break_start_time and schedule.break_duration_minutes:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `appointment_conflicts`. |
+| 461 | <code>        break_start = datetime.combine(selected_date, schedule.break_start_time)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
+| 462 | <code>        break_end = break_start + timedelta(minutes=schedule.break_duration_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
+| 463 | <code>        if target_start &lt; break_end and target_end &gt; break_start:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `appointment_conflicts`. |
+| 464 | <code>            return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `appointment_conflicts`. |
+| 466 | <code>    appointments = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
+| 467 | <code>        Appointment.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `appointment_conflicts`. |
+| 468 | <code>            doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
+| 469 | <code>            date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
+| 470 | <code>            status__in=BLOCKING_APPOINTMENT_STATUSES,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
+| 471 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `appointment_conflicts`. |
+| 472 | <code>        .exclude(pk=exclude_id)</code> | Исключает из ORM-запроса строки, подходящие под указанное условие. Контекст: `appointment_conflicts`. |
+| 473 | <code>        .order_by('time')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `appointment_conflicts`. |
+| 474 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `appointment_conflicts`. |
+| 476 | <code>    for appointment in appointments:</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `appointment_conflicts`. |
+| 477 | <code>        item_start, item_end = appointment_range(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
+| 478 | <code>            appointment.date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
+| 479 | <code>            appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
+| 480 | <code>            schedule.slot_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `appointment_conflicts`. |
+| 481 | <code>            duration_minutes=appointment.duration_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_conflicts`. |
+| 482 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `appointment_conflicts`. |
+| 483 | <code>        if target_start &lt; item_end and target_end &gt; item_start:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `appointment_conflicts`. |
+| 484 | <code>            return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `appointment_conflicts`. |
+| 485 | <code>    return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `appointment_conflicts`. |
+| 488 | <code>def patient_appointment_conflicts(</code> | Проверяет пересечение пациента с его другими приемами у любых врачей. Контекст: `patient_appointment_conflicts`. |
+| 489 | <code>    patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
+| 490 | <code>    selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
+| 491 | <code>    selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
+| 492 | <code>    duration_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
+| 493 | <code>    patient_phone='',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
+| 494 | <code>    exclude_id=None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
+| 495 | <code>):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
+| 496 | <code>    if not selected_date or not selected_time or not duration_minutes:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_appointment_conflicts`. |
+| 497 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_appointment_conflicts`. |
+| 499 | <code>    identity_filter = Q(patient=patient) if patient else None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
+| 500 | <code>    normalized_phone = normalize_phone_number(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
+| 501 | <code>        patient_phone</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
+| 502 | <code>        or (</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
+| 503 | <code>            patient.profile.phone</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
+| 504 | <code>            if patient and hasattr(patient, 'profile')</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_appointment_conflicts`. |
+| 505 | <code>            else ''</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
+| 506 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_appointment_conflicts`. |
+| 507 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_appointment_conflicts`. |
+| 508 | <code>    if normalized_phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_appointment_conflicts`. |
+| 509 | <code>        phone_filter = Q(patient_phone=normalized_phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
+| 510 | <code>        identity_filter = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
+| 511 | <code>            identity_filter &#124; phone_filter</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
+| 512 | <code>            if identity_filter is not None</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_appointment_conflicts`. |
+| 513 | <code>            else phone_filter</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
+| 514 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_appointment_conflicts`. |
+| 515 | <code>    if identity_filter is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_appointment_conflicts`. |
+| 516 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_appointment_conflicts`. |
+| 518 | <code>    target_start = datetime.combine(selected_date, selected_time)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
+| 519 | <code>    target_end = target_start + timedelta(minutes=duration_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
+| 520 | <code>    appointments = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
+| 521 | <code>        Appointment.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_appointment_conflicts`. |
+| 522 | <code>            identity_filter,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_conflicts`. |
+| 523 | <code>            date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
+| 524 | <code>            status__in=BLOCKING_APPOINTMENT_STATUSES,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
+| 525 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_appointment_conflicts`. |
+| 526 | <code>        .exclude(pk=exclude_id)</code> | Исключает из ORM-запроса строки, подходящие под указанное условие. Контекст: `patient_appointment_conflicts`. |
+| 527 | <code>        .select_related('doctor')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `patient_appointment_conflicts`. |
+| 528 | <code>        .order_by('time')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `patient_appointment_conflicts`. |
+| 529 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_appointment_conflicts`. |
+| 530 | <code>    for appointment in appointments:</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `patient_appointment_conflicts`. |
+| 531 | <code>        item_start = datetime.combine(appointment.date, appointment.time)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
+| 532 | <code>        item_end = item_start + timedelta(minutes=appointment.duration_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_conflicts`. |
+| 533 | <code>        if target_start &lt; item_end and target_end &gt; item_start:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_appointment_conflicts`. |
+| 534 | <code>            return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_appointment_conflicts`. |
+| 535 | <code>    return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_appointment_conflicts`. |
+| 538 | <code>def patient_daily_appointment_count(</code> | Считает активные самостоятельные записи пациента на выбранную дату. Контекст: `patient_daily_appointment_count`. |
+| 539 | <code>    patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
+| 540 | <code>    selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
+| 541 | <code>    patient_phone='',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_daily_appointment_count`. |
+| 542 | <code>):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
+| 543 | <code>    if not selected_date:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_daily_appointment_count`. |
+| 544 | <code>        return 0</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_daily_appointment_count`. |
+| 546 | <code>    identity_filter = Q(patient=patient) if patient else None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_daily_appointment_count`. |
+| 547 | <code>    normalized_phone = normalize_phone_number(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_daily_appointment_count`. |
+| 548 | <code>        patient_phone</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
+| 549 | <code>        or (</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
+| 550 | <code>            patient.profile.phone</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
+| 551 | <code>            if patient and hasattr(patient, 'profile')</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_daily_appointment_count`. |
+| 552 | <code>            else ''</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
+| 553 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_daily_appointment_count`. |
+| 554 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_daily_appointment_count`. |
+| 555 | <code>    if normalized_phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_daily_appointment_count`. |
+| 556 | <code>        phone_filter = Q(patient_phone=normalized_phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_daily_appointment_count`. |
+| 557 | <code>        identity_filter = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_daily_appointment_count`. |
+| 558 | <code>            identity_filter &#124; phone_filter</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
+| 559 | <code>            if identity_filter is not None</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_daily_appointment_count`. |
+| 560 | <code>            else phone_filter</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
+| 561 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_daily_appointment_count`. |
+| 562 | <code>    if identity_filter is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_daily_appointment_count`. |
+| 563 | <code>        return 0</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_daily_appointment_count`. |
+| 565 | <code>    return Appointment.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_daily_appointment_count`. |
+| 566 | <code>        identity_filter,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
+| 567 | <code>        date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_daily_appointment_count`. |
+| 568 | <code>        status__in=BLOCKING_APPOINTMENT_STATUSES,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_daily_appointment_count`. |
+| 569 | <code>    ).count()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_daily_appointment_count`. |
+| 572 | <code>def split_slot_option(doctor, selected_date, slot_time, schedule=None, appointment_id=None):</code> | Проверяет, можно ли врачу разделить стандартный слот пополам. Контекст: `split_slot_option`. |
+| 573 | <code>    schedule = schedule or schedule_for_date(doctor, selected_date)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
+| 574 | <code>    if (</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `split_slot_option`. |
+| 575 | <code>        not schedule</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
+| 576 | <code>        or not schedule.is_working</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
+| 577 | <code>        or schedule.slot_minutes &lt; 2</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
+| 578 | <code>        or schedule.slot_minutes % 2</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
+| 579 | <code>        or is_past_appointment(selected_date, slot_time)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
+| 580 | <code>    ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
+| 581 | <code>        return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `split_slot_option`. |
+| 583 | <code>    source_query = Appointment.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `split_slot_option`. |
+| 584 | <code>        doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
+| 585 | <code>        date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
+| 586 | <code>        time=slot_time,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
+| 587 | <code>        status=Appointment.STATUS_APPROVED,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
+| 588 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `split_slot_option`. |
+| 589 | <code>    if appointment_id:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `split_slot_option`. |
+| 590 | <code>        source_query = source_query.filter(pk=appointment_id)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `split_slot_option`. |
+| 591 | <code>    source = source_query.first()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
+| 592 | <code>    if not source or source.duration_minutes != schedule.slot_minutes:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `split_slot_option`. |
+| 593 | <code>        return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `split_slot_option`. |
+| 595 | <code>    source_start = datetime.combine(selected_date, slot_time)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
+| 596 | <code>    next_start = source_start + timedelta(minutes=schedule.slot_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
+| 597 | <code>    if next_start.date() != selected_date:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `split_slot_option`. |
+| 598 | <code>        return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `split_slot_option`. |
+| 600 | <code>    has_following_appointment = Appointment.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `split_slot_option`. |
+| 601 | <code>        doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
+| 602 | <code>        date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
+| 603 | <code>        time=next_start.time(),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
+| 604 | <code>        status__in=BLOCKING_APPOINTMENT_STATUSES,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
+| 605 | <code>    ).exists()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
+| 606 | <code>    if not has_following_appointment:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `split_slot_option`. |
+| 607 | <code>        return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `split_slot_option`. |
+| 609 | <code>    half_minutes = schedule.slot_minutes // 2</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
+| 610 | <code>    split_start = source_start + timedelta(minutes=half_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `split_slot_option`. |
+| 611 | <code>    return {</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `split_slot_option`. |
+| 612 | <code>        'appointment': source,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
+| 613 | <code>        'time': split_start.time(),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
+| 614 | <code>        'duration_minutes': half_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
+| 615 | <code>        'original_duration_minutes': schedule.slot_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `split_slot_option`. |
+| 616 | <code>    }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `split_slot_option`. |
+| 619 | <code>def slots_for_doctor(</code> | Строит список времени дня и помечает каждый слот свободным или занятым. Контекст: `slots_for_doctor`. |
+| 620 | <code>    doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
+| 621 | <code>    selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
+| 622 | <code>    patient=None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
+| 623 | <code>    patient_phone='',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
+| 624 | <code>    include_split_options=False,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
+| 625 | <code>):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
+| 626 | <code>    schedule = schedule_for_date(doctor, selected_date)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
+| 627 | <code>    if not schedule:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `slots_for_doctor`. |
+| 628 | <code>        return None, []</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `slots_for_doctor`. |
+| 630 | <code>    now = timezone.localtime()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
+| 631 | <code>    slots = []</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
+| 632 | <code>    for slot in schedule.get_slots():</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `slots_for_doctor`. |
+| 633 | <code>        busy = appointment_conflicts(doctor, selected_date, slot, duration_slots=1) or (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
+| 634 | <code>                selected_date == now.date() and slot &lt;= now.time().replace(second=0, microsecond=0)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
+| 635 | <code>            ) or patient_appointment_conflicts(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
+| 636 | <code>                patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
+| 637 | <code>                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
+| 638 | <code>                slot,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
+| 639 | <code>                schedule.slot_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
+| 640 | <code>                patient_phone=patient_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
+| 641 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `slots_for_doctor`. |
+| 642 | <code>        slot_data = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
+| 643 | <code>            'time': slot,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
+| 644 | <code>            'busy': busy,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
+| 645 | <code>        }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `slots_for_doctor`. |
+| 646 | <code>        if busy and include_split_options:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `slots_for_doctor`. |
+| 647 | <code>            slot_data['split_option'] = split_slot_option(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
+| 648 | <code>                doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
+| 649 | <code>                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
+| 650 | <code>                slot,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
+| 651 | <code>                schedule=schedule,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `slots_for_doctor`. |
+| 652 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `slots_for_doctor`. |
+| 653 | <code>        slots.append(slot_data)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `slots_for_doctor`. |
+| 654 | <code>    return schedule, slots</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `slots_for_doctor`. |
+| 657 | <code>def appointment_finished(appointment):</code> | Сравнивает вычисленный конец приема с текущим временем. Контекст: `appointment_finished`. |
+| 658 | <code>    visit_end = timezone.make_aware(datetime.combine(appointment.date, appointment.end_time))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointment_finished`. |
+| 659 | <code>    return visit_end &lt;= timezone.localtime()</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `appointment_finished`. |
+| 662 | <code>def active_appointment_for_doctor(doctor):</code> | Находит подтвержденный прием, который идет у врача прямо сейчас. Контекст: `active_appointment_for_doctor`. |
+| 663 | <code>    now = timezone.localtime()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `active_appointment_for_doctor`. |
+| 664 | <code>    appointments = doctor.appointments.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `active_appointment_for_doctor`. |
+| 665 | <code>        date=now.date(),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `active_appointment_for_doctor`. |
+| 666 | <code>        status=Appointment.STATUS_APPROVED,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `active_appointment_for_doctor`. |
+| 667 | <code>    ).select_related('service', 'patient').order_by('time')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `active_appointment_for_doctor`. |
+| 668 | <code>    for appointment in appointments:</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `active_appointment_for_doctor`. |
+| 669 | <code>        start = timezone.make_aware(datetime.combine(appointment.date, appointment.time))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `active_appointment_for_doctor`. |
+| 670 | <code>        end = timezone.make_aware(datetime.combine(appointment.date, appointment.end_time))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `active_appointment_for_doctor`. |
+| 671 | <code>        if start &lt;= now &lt; end:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `active_appointment_for_doctor`. |
+| 672 | <code>            return appointment</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `active_appointment_for_doctor`. |
+| 673 | <code>    return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `active_appointment_for_doctor`. |
+| 676 | <code>def refresh_completed_appointments():</code> | Переводит закончившиеся подтвержденные приемы в завершенные. Контекст: `refresh_completed_appointments`. |
+| 677 | <code>    changed = []</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `refresh_completed_appointments`. |
+| 678 | <code>    for appointment in Appointment.objects.filter(status=Appointment.STATUS_APPROVED).select_related('doctor'):</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `refresh_completed_appointments`. |
+| 679 | <code>        if appointment_finished(appointment):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `refresh_completed_appointments`. |
+| 680 | <code>            appointment.status = Appointment.STATUS_COMPLETED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `refresh_completed_appointments`. |
+| 681 | <code>            changed.append(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `refresh_completed_appointments`. |
+| 682 | <code>    if changed:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `refresh_completed_appointments`. |
+| 683 | <code>        Appointment.objects.bulk_update(changed, ['status'])</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `refresh_completed_appointments`. |
+| 686 | <code>def find_patient_by_contacts(email, phone):</code> | Ищет зарегистрированного пациента по технической почте или нормализованному телефону. Контекст: `find_patient_by_contacts`. |
+| 687 | <code>    patient = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `find_patient_by_contacts`. |
+| 688 | <code>    if email:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `find_patient_by_contacts`. |
+| 689 | <code>        patient = User.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `find_patient_by_contacts`. |
+| 690 | <code>            email__iexact=email,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `find_patient_by_contacts`. |
+| 691 | <code>            profile__role=Profile.ROLE_PATIENT,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `find_patient_by_contacts`. |
+| 692 | <code>        ).first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `find_patient_by_contacts`. |
+| 693 | <code>    if not patient and phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `find_patient_by_contacts`. |
+| 694 | <code>        patient = User.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `find_patient_by_contacts`. |
+| 695 | <code>            profile__role=Profile.ROLE_PATIENT,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `find_patient_by_contacts`. |
+| 696 | <code>            profile__phone=phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `find_patient_by_contacts`. |
+| 697 | <code>        ).first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `find_patient_by_contacts`. |
+| 698 | <code>    if not patient and phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `find_patient_by_contacts`. |
+| 699 | <code>        normalized_phone = normalize_phone_number(phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `find_patient_by_contacts`. |
+| 700 | <code>        patient = next(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `find_patient_by_contacts`. |
+| 701 | <code>            (</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `find_patient_by_contacts`. |
+| 702 | <code>                candidate</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `find_patient_by_contacts`. |
+| 703 | <code>                for candidate in User.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `find_patient_by_contacts`. |
+| 704 | <code>                    profile__role=Profile.ROLE_PATIENT,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `find_patient_by_contacts`. |
+| 705 | <code>                ).select_related('profile')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `find_patient_by_contacts`. |
+| 706 | <code>                if normalize_phone_number(candidate.profile.phone) == normalized_phone</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `find_patient_by_contacts`. |
+| 707 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `find_patient_by_contacts`. |
+| 708 | <code>            None,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `find_patient_by_contacts`. |
+| 709 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `find_patient_by_contacts`. |
+| 710 | <code>    return patient</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `find_patient_by_contacts`. |
+| 713 | <code>def find_doctor_card_by_phone(doctor, phone):</code> | Ищет существующую карточку конкретного врача по телефону. Контекст: `find_doctor_card_by_phone`. |
+| 714 | <code>    normalized_phone = normalize_phone_number(phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `find_doctor_card_by_phone`. |
+| 715 | <code>    return next(</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `find_doctor_card_by_phone`. |
+| 716 | <code>        (</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `find_doctor_card_by_phone`. |
+| 717 | <code>            card</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `find_doctor_card_by_phone`. |
+| 718 | <code>            for card in doctor.patient_cards.select_related('patient', 'patient__profile')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `find_doctor_card_by_phone`. |
+| 719 | <code>            if normalize_phone_number(card.patient_phone) == normalized_phone</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `find_doctor_card_by_phone`. |
+| 720 | <code>        ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `find_doctor_card_by_phone`. |
+| 721 | <code>        None,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `find_doctor_card_by_phone`. |
+| 722 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `find_doctor_card_by_phone`. |
+| 725 | <code>def patient_card_for_appointment(appointment):</code> | Сопоставляет прием с правильной карточкой, не смешивая запись для другого человека. Контекст: `patient_card_for_appointment`. |
+| 726 | <code>    cards = appointment.doctor.patient_cards.select_related(</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `patient_card_for_appointment`. |
+| 727 | <code>        'patient',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_card_for_appointment`. |
+| 728 | <code>        'patient__profile',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_card_for_appointment`. |
+| 729 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_card_for_appointment`. |
+| 730 | <code>    if appointment.booked_for_other or not appointment.patient_id:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_card_for_appointment`. |
+| 731 | <code>        normalized_phone = normalize_phone_number(appointment.patient_phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_card_for_appointment`. |
+| 732 | <code>        first_name = appointment.patient_first_name.strip().casefold()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_card_for_appointment`. |
+| 733 | <code>        last_name = appointment.patient_last_name.strip().casefold()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_card_for_appointment`. |
+| 734 | <code>        return next(</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_card_for_appointment`. |
+| 735 | <code>            (</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_card_for_appointment`. |
+| 736 | <code>                card</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_card_for_appointment`. |
+| 737 | <code>                for card in cards.filter(patient__isnull=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_card_for_appointment`. |
+| 738 | <code>                if (</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_card_for_appointment`. |
+| 739 | <code>                    normalize_phone_number(card.patient_phone)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_card_for_appointment`. |
+| 740 | <code>                    == normalized_phone</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_card_for_appointment`. |
+| 741 | <code>                    and card.patient_first_name.strip().casefold() == first_name</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_card_for_appointment`. |
+| 742 | <code>                    and card.patient_last_name.strip().casefold() == last_name</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_card_for_appointment`. |
+| 743 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_card_for_appointment`. |
+| 744 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_card_for_appointment`. |
+| 745 | <code>            None,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_card_for_appointment`. |
+| 746 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_card_for_appointment`. |
+| 747 | <code>    if appointment.patient_id:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_card_for_appointment`. |
+| 748 | <code>        return cards.filter(patient_id=appointment.patient_id).first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_card_for_appointment`. |
+| 749 | <code>    return None</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `patient_card_for_appointment`. |
+| 752 | <code>def appointments_for_patient_card(doctor, card):</code> | Возвращает приемы, принадлежащие одной карточке пациента. Контекст: `appointments_for_patient_card`. |
+| 753 | <code>    if card.patient_id:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `appointments_for_patient_card`. |
+| 754 | <code>        return doctor.appointments.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `appointments_for_patient_card`. |
+| 755 | <code>            patient_id=card.patient_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointments_for_patient_card`. |
+| 756 | <code>            booked_for_other=False,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointments_for_patient_card`. |
+| 757 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `appointments_for_patient_card`. |
+| 758 | <code>    return doctor.appointments.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `appointments_for_patient_card`. |
+| 759 | <code>        patient_phone=card.patient_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointments_for_patient_card`. |
+| 760 | <code>        patient_first_name__iexact=card.patient_first_name,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointments_for_patient_card`. |
+| 761 | <code>        patient_last_name__iexact=card.patient_last_name,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `appointments_for_patient_card`. |
+| 762 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `appointments_for_patient_card`. |
+| 765 | <code>def ensure_patient_card_from_appointment(appointment):</code> | Создает или синхронизирует карточку пациента по данным приема. Контекст: `ensure_patient_card_from_appointment`. |
+| 766 | <code>    normalized_phone = normalize_phone_number(appointment.patient_phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
+| 767 | <code>    if appointment.patient_phone != normalized_phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `ensure_patient_card_from_appointment`. |
+| 768 | <code>        appointment.patient_phone = normalized_phone</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `ensure_patient_card_from_appointment`. |
+| 769 | <code>        appointment.save(update_fields=['patient_phone'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `ensure_patient_card_from_appointment`. |
+| 770 | <code>    patient = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
+| 771 | <code>        None</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
+| 772 | <code>        if appointment.booked_for_other</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `ensure_patient_card_from_appointment`. |
+| 773 | <code>        else (</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
+| 774 | <code>            appointment.patient</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
+| 775 | <code>            or find_patient_by_contacts(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
+| 776 | <code>                appointment.patient_email,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
+| 777 | <code>                appointment.patient_phone,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
+| 778 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `ensure_patient_card_from_appointment`. |
+| 779 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `ensure_patient_card_from_appointment`. |
+| 780 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `ensure_patient_card_from_appointment`. |
+| 781 | <code>    card = patient_card_for_appointment(appointment)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
+| 782 | <code>    created = card is None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
+| 783 | <code>    if created:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `ensure_patient_card_from_appointment`. |
+| 784 | <code>        card = DoctorPatientCard.objects.create(</code> | Начинает создание новой строки базы через Django ORM. Контекст: `ensure_patient_card_from_appointment`. |
+| 785 | <code>            doctor=appointment.doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
+| 786 | <code>            patient_phone=normalized_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
+| 787 | <code>            patient=patient,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
+| 788 | <code>            patient_first_name=appointment.patient_first_name,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
+| 789 | <code>            patient_last_name=appointment.patient_last_name,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
+| 790 | <code>            patient_email=appointment.patient_email,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
+| 791 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `ensure_patient_card_from_appointment`. |
+| 792 | <code>    changed_fields = []</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
+| 793 | <code>    if card.patient_phone != normalized_phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `ensure_patient_card_from_appointment`. |
+| 794 | <code>        card.patient_phone = normalized_phone</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
+| 795 | <code>        changed_fields.append('patient_phone')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
+| 796 | <code>    if patient and card.patient_id != patient.id:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `ensure_patient_card_from_appointment`. |
+| 797 | <code>        card.patient = patient</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
+| 798 | <code>        changed_fields.append('patient')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
+| 799 | <code>    if card.patient_first_name != appointment.patient_first_name:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `ensure_patient_card_from_appointment`. |
+| 800 | <code>        card.patient_first_name = appointment.patient_first_name</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
+| 801 | <code>        changed_fields.append('patient_first_name')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
+| 802 | <code>    if card.patient_last_name != appointment.patient_last_name:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `ensure_patient_card_from_appointment`. |
+| 803 | <code>        card.patient_last_name = appointment.patient_last_name</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
+| 804 | <code>        changed_fields.append('patient_last_name')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
+| 805 | <code>    if card.patient_email != appointment.patient_email:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `ensure_patient_card_from_appointment`. |
+| 806 | <code>        card.patient_email = appointment.patient_email</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `ensure_patient_card_from_appointment`. |
+| 807 | <code>        changed_fields.append('patient_email')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `ensure_patient_card_from_appointment`. |
+| 808 | <code>    if changed_fields:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `ensure_patient_card_from_appointment`. |
+| 809 | <code>        card.save(update_fields=changed_fields)</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `ensure_patient_card_from_appointment`. |
+| 810 | <code>    return card, created</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `ensure_patient_card_from_appointment`. |
+| 813 | <code>def unclaimed_records_for_phone(phone):</code> | Находит ручные приемы и карточки, еще не связанные с аккаунтом. Контекст: `unclaimed_records_for_phone`. |
+| 814 | <code>    appointments = [</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `unclaimed_records_for_phone`. |
+| 815 | <code>        appointment</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `unclaimed_records_for_phone`. |
+| 816 | <code>        for appointment in Appointment.objects.filter(patient__isnull=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `unclaimed_records_for_phone`. |
+| 817 | <code>        .only('id', 'patient_phone', 'patient_first_name', 'patient_last_name', 'created_at')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `unclaimed_records_for_phone`. |
+| 818 | <code>        .order_by('-created_at')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `unclaimed_records_for_phone`. |
+| 819 | <code>        if normalize_phone_number(appointment.patient_phone) == phone</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `unclaimed_records_for_phone`. |
+| 820 | <code>    ]</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `unclaimed_records_for_phone`. |
+| 821 | <code>    cards = [</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `unclaimed_records_for_phone`. |
+| 822 | <code>        card</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `unclaimed_records_for_phone`. |
+| 823 | <code>        for card in DoctorPatientCard.objects.filter(patient__isnull=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `unclaimed_records_for_phone`. |
+| 824 | <code>        .only('id', 'patient_phone', 'patient_first_name', 'patient_last_name', 'updated_at')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `unclaimed_records_for_phone`. |
+| 825 | <code>        .order_by('-updated_at')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `unclaimed_records_for_phone`. |
+| 826 | <code>        if normalize_phone_number(card.patient_phone) == phone</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `unclaimed_records_for_phone`. |
+| 827 | <code>    ]</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `unclaimed_records_for_phone`. |
+| 828 | <code>    return appointments, cards</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `unclaimed_records_for_phone`. |
+| 831 | <code>def pending_patient_identity(phone):</code> | Строит имя и инициалы временного кабинета по найденным ручным данным. Контекст: `pending_patient_identity`. |
+| 832 | <code>    appointments, cards = unclaimed_records_for_phone(phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_identity`. |
+| 833 | <code>    source = appointments[0] if appointments else (cards[0] if cards else None)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_identity`. |
+| 834 | <code>    if source:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `pending_patient_identity`. |
+| 835 | <code>        first_name = source.patient_first_name.strip()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_identity`. |
+| 836 | <code>        last_name = source.patient_last_name.strip()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_identity`. |
+| 837 | <code>    else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `pending_patient_identity`. |
+| 838 | <code>        first_name = 'Новий'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_identity`. |
+| 839 | <code>        last_name = 'пацієнт'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_identity`. |
+| 840 | <code>    return {</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `pending_patient_identity`. |
+| 841 | <code>        'first_name': first_name,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_identity`. |
+| 842 | <code>        'last_name': last_name,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_identity`. |
+| 843 | <code>        'full_name': f'{first_name} {last_name}'.strip(),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_identity`. |
+| 844 | <code>        'initials': f'{first_name[:1]}{last_name[:1]}'.upper(),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_identity`. |
+| 845 | <code>    }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `pending_patient_identity`. |
+| 848 | <code>def sync_patient_cards_for_doctor(doctor):</code> | Гарантирует наличие карточек для всех актуальных приемов врача. Контекст: `sync_patient_cards_for_doctor`. |
+| 849 | <code>    appointments = doctor.appointments.exclude(</code> | Исключает из ORM-запроса строки, подходящие под указанное условие. Контекст: `sync_patient_cards_for_doctor`. |
+| 850 | <code>        status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `sync_patient_cards_for_doctor`. |
+| 851 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `sync_patient_cards_for_doctor`. |
+| 852 | <code>    for appointment in appointments:</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `sync_patient_cards_for_doctor`. |
+| 853 | <code>        ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `sync_patient_cards_for_doctor`. |
+| 856 | <code>def home(request):</code> | Собирает слайды, новости, галерею и ведущих врачей для публичной главной. Контекст: `home`. |
+| 857 | <code>    featured_doctors = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `home`. |
+| 858 | <code>        Doctor.objects.filter(user__is_active=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `home`. |
+| 859 | <code>        .select_related('user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `home`. |
+| 860 | <code>        .annotate(home_appointments=Count('appointments'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `home`. |
+| 861 | <code>        .order_by('-home_appointments', 'user__last_name', 'user__first_name')[:4]</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `home`. |
+| 862 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `home`. |
+| 863 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `home`. |
+| 864 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `home`. |
+| 865 | <code>        'clinic/home.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `home`. |
+| 866 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `home`. |
+| 867 | <code>            'clinic_news': NewsPost.objects.filter(doctor__isnull=True, is_published=True)[:6],</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `home`. |
+| 868 | <code>            'doctor_news': NewsPost.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `home`. |
+| 869 | <code>                doctor__isnull=False,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `home`. |
+| 870 | <code>                is_published=True,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `home`. |
+| 871 | <code>            ).select_related('doctor__user')[:6],</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `home`. |
+| 872 | <code>            'gallery_images': GalleryImage.objects.filter(is_published=True)[:18],</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `home`. |
+| 873 | <code>            'featured_doctors': featured_doctors,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `home`. |
+| 874 | <code>            'hero_slides': HomeHeroSlide.objects.filter(is_active=True),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `home`. |
+| 875 | <code>            'patient_google_login_url': (</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `home`. |
+| 876 | <code>                f'{reverse("google_login")}?'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `home`. |
+| 877 | <code>                f'{urlencode({"next": reverse("claim_patient_complete")})}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `home`. |
+| 878 | <code>                if request.session.get('patient_claim_phone')</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `home`. |
+| 879 | <code>                else reverse('google_login')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `home`. |
+| 880 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `home`. |
+| 881 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `home`. |
+| 882 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `home`. |
+| 885 | <code>def login_view(request, role='patient'):</code> | Проверяет общий логин администрации и автоматически определяет врача или администратора. Контекст: `login_view`. |
+| 886 | <code>    if role == 'patient':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `login_view`. |
+| 887 | <code>        messages.info(request, 'Для пацієнта використовується вхід через Google.')</code> | Записывает информационное сообщение без изменения данных. Контекст: `login_view`. |
+| 888 | <code>        return redirect('home')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `login_view`. |
+| 890 | <code>    if request.method == 'GET':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `login_view`. |
+| 891 | <code>        return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `login_view`. |
+| 892 | <code>            request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
+| 893 | <code>            'clinic/login.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
+| 894 | <code>            {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `login_view`. |
+| 895 | <code>                'form': UsernameLoginForm(),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
+| 896 | <code>                'role': role,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
+| 897 | <code>            },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `login_view`. |
+| 898 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `login_view`. |
+| 900 | <code>    form = UsernameLoginForm(request.POST)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `login_view`. |
+| 901 | <code>    if form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `login_view`. |
+| 902 | <code>        user = form.get_user(request)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `login_view`. |
+| 903 | <code>        if user and user.is_active:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `login_view`. |
+| 904 | <code>            actual_role = user_role(user)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `login_view`. |
+| 905 | <code>            if role == 'administration' and not (</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `login_view`. |
+| 906 | <code>                user.is_staff or actual_role == Profile.ROLE_DOCTOR</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
+| 907 | <code>            ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
+| 908 | <code>                messages.error(request, 'Цей акаунт не належить лікарю або адміністратору.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `login_view`. |
+| 909 | <code>            elif role == 'admin' and not user.is_staff:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `login_view`. |
+| 910 | <code>                messages.error(request, 'Цей акаунт не є акаунтом адміністратора.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `login_view`. |
+| 911 | <code>            elif role == 'doctor' and actual_role != Profile.ROLE_DOCTOR:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `login_view`. |
+| 912 | <code>                messages.error(request, 'Цей акаунт не є акаунтом лікаря.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `login_view`. |
+| 913 | <code>            elif role == 'patient' and actual_role != Profile.ROLE_PATIENT:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `login_view`. |
+| 914 | <code>                messages.error(request, 'Цей акаунт не є акаунтом пацієнта.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `login_view`. |
+| 915 | <code>            else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `login_view`. |
+| 916 | <code>                login(request, user)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
+| 917 | <code>                messages.success(request, 'Ви успішно увійшли в систему.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `login_view`. |
+| 918 | <code>                return redirect_by_role(user)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `login_view`. |
+| 919 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `login_view`. |
+| 920 | <code>            messages.error(request, 'Невірний логін або пароль.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `login_view`. |
+| 922 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `login_view`. |
+| 923 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
+| 924 | <code>        'clinic/login.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
+| 925 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `login_view`. |
+| 926 | <code>            'form': form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
+| 927 | <code>            'role': role,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `login_view`. |
+| 928 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `login_view`. |
+| 929 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `login_view`. |
+| 932 | <code>def logout_view(request):</code> | Завершает Django-сессию и возвращает пользователя на главную. Контекст: `logout_view`. |
+| 933 | <code>    logout(request)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `logout_view`. |
+| 934 | <code>    messages.success(request, 'Ви вийшли з акаунта.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `logout_view`. |
+| 935 | <code>    return redirect('home')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `logout_view`. |
+| 938 | <code>def forgot_password(request):</code> | Проверяет форму обращения по восстановлению доступа и показывает безопасный ответ. Контекст: `forgot_password`. |
+| 939 | <code>    form = EmailForm(request.POST or None)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `forgot_password`. |
+| 940 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `forgot_password`. |
+| 941 | <code>        messages.success(</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `forgot_password`. |
+| 942 | <code>            request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `forgot_password`. |
+| 943 | <code>            'Якщо така пошта є в системі, адміністратор допоможе відновити доступ.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `forgot_password`. |
+| 944 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `forgot_password`. |
+| 945 | <code>        return redirect('home')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `forgot_password`. |
+| 946 | <code>    return render(request, 'clinic/forgot_password.html', {'form': form})</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `forgot_password`. |
+| 949 | <code>def claim_patient(request):</code> | Проверяет введенный телефон и открывает временный кабинет перед Google-входом. Контекст: `claim_patient`. |
+| 950 | <code>    if request.user.is_authenticated and user_role(request.user) != Profile.ROLE_PATIENT:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient`. |
+| 951 | <code>        messages.error(request, 'Ця функція доступна лише пацієнтам.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `claim_patient`. |
+| 952 | <code>        return redirect_by_role(request.user)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `claim_patient`. |
+| 954 | <code>    form = ClaimPatientForm(request.POST or None)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient`. |
+| 955 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `claim_patient`. |
+| 956 | <code>        phone = form.cleaned_data['phone']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `claim_patient`. |
+| 957 | <code>        exclude_user = request.user if request.user.is_authenticated else None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient`. |
+| 958 | <code>        if patient_phone_is_used(phone, exclude_user=exclude_user):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient`. |
+| 959 | <code>            form.add_error(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient`. |
+| 960 | <code>                'phone',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient`. |
+| 961 | <code>                'Цей номер уже прив’язаний до кабінету. Увійдіть через Google, щоб відкрити його.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient`. |
+| 962 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `claim_patient`. |
+| 963 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `claim_patient`. |
+| 964 | <code>            complete_url = reverse('claim_patient_complete')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient`. |
+| 965 | <code>            if request.user.is_authenticated and SocialAccount.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `claim_patient`. |
+| 966 | <code>                user=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient`. |
+| 967 | <code>                provider='google',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient`. |
+| 968 | <code>            ).exists():</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient`. |
+| 969 | <code>                request.session['patient_claim_phone'] = phone</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `claim_patient`. |
+| 970 | <code>                return redirect(complete_url)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `claim_patient`. |
+| 971 | <code>            if request.user.is_authenticated:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient`. |
+| 972 | <code>                logout(request)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient`. |
+| 973 | <code>            request.session['patient_claim_phone'] = phone</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `claim_patient`. |
+| 974 | <code>            messages.info(</code> | Записывает информационное сообщение без изменения данных. Контекст: `claim_patient`. |
+| 975 | <code>                request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient`. |
+| 976 | <code>                'Увійдіть через Google для подальшої роботи із сайтом.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient`. |
+| 977 | <code>                extra_tags='claim-google-message',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient`. |
+| 978 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `claim_patient`. |
+| 979 | <code>            return redirect('pending_patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `claim_patient`. |
+| 981 | <code>    return render(request, 'clinic/claim_patient.html', {'form': form})</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `claim_patient`. |
+| 984 | <code>def pending_patient_dashboard(request):</code> | Показывает временный профиль и будущие ручные записи по телефону. Контекст: `pending_patient_dashboard`. |
+| 985 | <code>    if request.user.is_authenticated:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `pending_patient_dashboard`. |
+| 986 | <code>        return redirect_by_role(request.user)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `pending_patient_dashboard`. |
+| 988 | <code>    phone = request.session.get('patient_claim_phone')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_dashboard`. |
+| 989 | <code>    if not phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `pending_patient_dashboard`. |
+| 990 | <code>        return redirect('claim_patient')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `pending_patient_dashboard`. |
+| 992 | <code>    google_url = reverse('google_login')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_dashboard`. |
+| 993 | <code>    complete_url = reverse('claim_patient_complete')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_dashboard`. |
+| 994 | <code>    unclaimed_appointments, _ = unclaimed_records_for_phone(phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_dashboard`. |
+| 995 | <code>    future_candidates = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_dashboard`. |
+| 996 | <code>        Appointment.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `pending_patient_dashboard`. |
+| 997 | <code>            pk__in=[appointment.pk for appointment in unclaimed_appointments],</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_dashboard`. |
+| 998 | <code>            status__in=[</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_dashboard`. |
+| 999 | <code>                Appointment.STATUS_PENDING,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_dashboard`. |
+| 1000 | <code>                Appointment.STATUS_APPROVED,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_dashboard`. |
+| 1001 | <code>                Appointment.STATUS_RESCHEDULE_PROPOSED,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_dashboard`. |
+| 1002 | <code>            ],</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `pending_patient_dashboard`. |
+| 1003 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `pending_patient_dashboard`. |
+| 1004 | <code>        .select_related('doctor__user', 'service')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `pending_patient_dashboard`. |
+| 1005 | <code>        .order_by('date', 'time')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `pending_patient_dashboard`. |
+| 1006 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `pending_patient_dashboard`. |
+| 1007 | <code>    future_appointments = [appointment for appointment in future_candidates if appointment.is_future]</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `pending_patient_dashboard`. |
+| 1008 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `pending_patient_dashboard`. |
+| 1009 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_dashboard`. |
+| 1010 | <code>        'clinic/pending_patient_dashboard.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_dashboard`. |
+| 1011 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `pending_patient_dashboard`. |
+| 1012 | <code>            'pending_phone': phone,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_dashboard`. |
+| 1013 | <code>            'pending_identity': pending_patient_identity(phone),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_dashboard`. |
+| 1014 | <code>            'pending_google_login_url': f'{google_url}?{urlencode({"next": complete_url})}',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_dashboard`. |
+| 1015 | <code>            'future_appointments': future_appointments,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `pending_patient_dashboard`. |
+| 1016 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `pending_patient_dashboard`. |
+| 1017 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `pending_patient_dashboard`. |
+| 1020 | <code>@login_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 1021 | <code>def claim_patient_complete(request):</code> | После Google-входа связывает телефон, приемы и карточки с аккаунтом пациента. Контекст: `claim_patient_complete`. |
+| 1022 | <code>    phone = request.session.get('patient_claim_phone')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient_complete`. |
+| 1023 | <code>    if not phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient_complete`. |
+| 1024 | <code>        return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `claim_patient_complete`. |
+| 1026 | <code>    if request.user.is_staff:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient_complete`. |
+| 1027 | <code>        request.session.pop('patient_claim_phone', None)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient_complete`. |
+| 1028 | <code>        messages.error(request, 'Записи можна прив’язати лише до кабінету пацієнта.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `claim_patient_complete`. |
+| 1029 | <code>        return redirect_by_role(request.user)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `claim_patient_complete`. |
+| 1031 | <code>    profile, _ = Profile.objects.get_or_create(</code> | Находит существующую запись или создает ее, не заставляя вызывающий код делать две отдельные операции. Контекст: `claim_patient_complete`. |
+| 1032 | <code>        user=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient_complete`. |
+| 1033 | <code>        defaults={'role': Profile.ROLE_PATIENT, 'phone': ''},</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient_complete`. |
+| 1034 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `claim_patient_complete`. |
+| 1035 | <code>    if profile.role != Profile.ROLE_PATIENT:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient_complete`. |
+| 1036 | <code>        request.session.pop('patient_claim_phone', None)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient_complete`. |
+| 1037 | <code>        messages.error(request, 'Записи можна прив’язати лише до кабінету пацієнта.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `claim_patient_complete`. |
+| 1038 | <code>        return redirect_by_role(request.user)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `claim_patient_complete`. |
+| 1040 | <code>    if not SocialAccount.objects.filter(user=request.user, provider='google').exists():</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `claim_patient_complete`. |
+| 1041 | <code>        messages.error(request, 'Для прив’язування записів потрібно увійти через Google.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `claim_patient_complete`. |
+| 1042 | <code>        google_url = reverse('google_login')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient_complete`. |
+| 1043 | <code>        return redirect(f'{google_url}?{urlencode({"next": reverse("claim_patient_complete")})}')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `claim_patient_complete`. |
+| 1045 | <code>    current_phone = normalize_phone_number(profile.phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient_complete`. |
+| 1046 | <code>    if current_phone and current_phone != phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient_complete`. |
+| 1047 | <code>        request.session.pop('patient_claim_phone', None)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient_complete`. |
+| 1048 | <code>        messages.error(request, 'У цьому кабінеті вже вказано інший номер телефону.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `claim_patient_complete`. |
+| 1049 | <code>        return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `claim_patient_complete`. |
+| 1051 | <code>    phone_belongs_to_another_user = any(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient_complete`. |
+| 1052 | <code>        normalize_phone_number(item.phone) == phone</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient_complete`. |
+| 1053 | <code>        for item in Profile.objects.filter(role=Profile.ROLE_PATIENT).exclude(user=request.user).exclude(phone='')</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `claim_patient_complete`. |
+| 1054 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `claim_patient_complete`. |
+| 1055 | <code>    if phone_belongs_to_another_user:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient_complete`. |
+| 1056 | <code>        request.session.pop('patient_claim_phone', None)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient_complete`. |
+| 1057 | <code>        messages.error(request, 'Цей номер уже прив’язаний до іншого кабінету.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `claim_patient_complete`. |
+| 1058 | <code>        return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `claim_patient_complete`. |
+| 1060 | <code>    appointments, cards = unclaimed_records_for_phone(phone)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient_complete`. |
+| 1061 | <code>    doctor_identity = appointments[0] if appointments else (cards[0] if cards else None)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `claim_patient_complete`. |
+| 1063 | <code>    with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `claim_patient_complete`. |
+| 1064 | <code>        if doctor_identity:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient_complete`. |
+| 1065 | <code>            request.user.first_name = doctor_identity.patient_first_name.strip()</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `claim_patient_complete`. |
+| 1066 | <code>            request.user.last_name = doctor_identity.patient_last_name.strip()</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `claim_patient_complete`. |
+| 1067 | <code>            request.user.save(update_fields=['first_name', 'last_name'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `claim_patient_complete`. |
+| 1068 | <code>        profile.phone = phone</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `claim_patient_complete`. |
+| 1069 | <code>        profile.save(update_fields=['phone'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `claim_patient_complete`. |
+| 1070 | <code>        Appointment.objects.filter(pk__in=[item.pk for item in appointments]).update(patient=request.user)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `claim_patient_complete`. |
+| 1071 | <code>        DoctorPatientCard.objects.filter(pk__in=[item.pk for item in cards]).update(patient=request.user)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `claim_patient_complete`. |
+| 1073 | <code>    request.session.pop('patient_claim_phone', None)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `claim_patient_complete`. |
+| 1074 | <code>    if appointments or cards:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient_complete`. |
+| 1075 | <code>        messages.success(request, 'Кабінет створено, а записи лікаря прив’язано до нього.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `claim_patient_complete`. |
+| 1076 | <code>    else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `claim_patient_complete`. |
+| 1077 | <code>        messages.success(request, 'Ваш кабінет створено. Заповніть особисті дані у профілі.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `claim_patient_complete`. |
+| 1078 | <code>    return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `claim_patient_complete`. |
+| 1081 | <code>@patient_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 1082 | <code>def patient_dashboard(request):</code> | Разделяет приемы пациента по статусам и загружает видимое лечение и рекомендации. Контекст: `patient_dashboard`. |
+| 1083 | <code>    if request.session.get('patient_claim_phone'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_dashboard`. |
+| 1084 | <code>        return redirect('claim_patient_complete')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_dashboard`. |
+| 1085 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
+| 1086 | <code>    appointments = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_dashboard`. |
+| 1087 | <code>        Appointment.objects.filter(patient=request.user)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_dashboard`. |
+| 1088 | <code>        .select_related('service', 'doctor__user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `patient_dashboard`. |
+| 1089 | <code>        .order_by('date', 'time')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `patient_dashboard`. |
+| 1090 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_dashboard`. |
+| 1091 | <code>    patient_records = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_dashboard`. |
+| 1092 | <code>        PatientRecordEntry.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_dashboard`. |
+| 1093 | <code>            Q(card__patient=request.user) &#124; Q(appointment__patient=request.user),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_dashboard`. |
+| 1094 | <code>            kind__in=[PatientRecordEntry.KIND_TREATMENT, PatientRecordEntry.KIND_RECOMMENDATION],</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_dashboard`. |
+| 1095 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_dashboard`. |
+| 1096 | <code>        .select_related('doctor__user', 'appointment__service')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `patient_dashboard`. |
+| 1097 | <code>        .prefetch_related('images', 'videos')</code> | Заранее загружает связанные списки отдельным оптимизированным запросом. Контекст: `patient_dashboard`. |
+| 1098 | <code>        .distinct()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
+| 1099 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_dashboard`. |
+| 1100 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `patient_dashboard`. |
+| 1101 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
+| 1102 | <code>        'clinic/patient_dashboard.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
+| 1103 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_dashboard`. |
+| 1104 | <code>            'pending': appointments.filter(status=Appointment.STATUS_PENDING),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_dashboard`. |
+| 1105 | <code>            'reschedule_requests': appointments.filter(status=Appointment.STATUS_RESCHEDULE_PROPOSED),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_dashboard`. |
+| 1106 | <code>            'approved': appointments.filter(status=Appointment.STATUS_APPROVED),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_dashboard`. |
+| 1107 | <code>            'completed': appointments.filter(status=Appointment.STATUS_COMPLETED),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_dashboard`. |
+| 1108 | <code>            'canceled': appointments.filter(status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `patient_dashboard`. |
+| 1109 | <code>            'needs_phone': not request.user.profile.phone,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
+| 1110 | <code>            'profile_incomplete': not (</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
+| 1111 | <code>                request.user.first_name.strip()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
+| 1112 | <code>                and request.user.last_name.strip()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
+| 1113 | <code>                and request.user.profile.age</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
+| 1114 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_dashboard`. |
+| 1115 | <code>            'patient_records': patient_records,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_dashboard`. |
+| 1116 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_dashboard`. |
+| 1117 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_dashboard`. |
+| 1120 | <code>@patient_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 1121 | <code>def patient_edit_profile(request):</code> | Проверяет и сохраняет имя, фамилию, возраст, телефон и фото пациента. Контекст: `patient_edit_profile`. |
+| 1122 | <code>    form = PatientProfileForm(request.POST or None, request.FILES or None, user=request.user)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_edit_profile`. |
+| 1123 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `patient_edit_profile`. |
+| 1124 | <code>        try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `patient_edit_profile`. |
+| 1125 | <code>            with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `patient_edit_profile`. |
+| 1126 | <code>                form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `patient_edit_profile`. |
+| 1127 | <code>                write_audit_log(request, 'Оновлено профіль пацієнта', request.user.profile)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_edit_profile`. |
+| 1128 | <code>        except IntegrityError:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `patient_edit_profile`. |
+| 1129 | <code>            form.add_error('phone', 'Цей номер телефону вже прив’язаний до іншого пацієнта.')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_edit_profile`. |
+| 1130 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `patient_edit_profile`. |
+| 1131 | <code>            messages.success(request, 'Профіль оновлено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `patient_edit_profile`. |
+| 1132 | <code>            return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_edit_profile`. |
+| 1133 | <code>    return render(request, 'clinic/patient_edit_profile.html', {'form': form})</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `patient_edit_profile`. |
+| 1136 | <code>@patient_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 1137 | <code>def patient_change_password(request):</code> | Меняет локальный пароль, сохраняя текущую сессию. Контекст: `patient_change_password`. |
+| 1138 | <code>    if not request.user.has_usable_password():</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_change_password`. |
+| 1139 | <code>        messages.info(request, 'Ви входите через Google, тому окремий пароль MedClinic не потрібен.')</code> | Записывает информационное сообщение без изменения данных. Контекст: `patient_change_password`. |
+| 1140 | <code>        return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_change_password`. |
+| 1141 | <code>    form = PasswordChangeForm(request.user, request.POST or None)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_change_password`. |
+| 1142 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `patient_change_password`. |
+| 1143 | <code>        user = form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `patient_change_password`. |
+| 1144 | <code>        update_session_auth_hash(request, user)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_change_password`. |
+| 1145 | <code>        write_audit_log(request, 'Змінено пароль пацієнта', request.user.profile)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_change_password`. |
+| 1146 | <code>        messages.success(request, 'Пароль змінено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `patient_change_password`. |
+| 1147 | <code>        return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_change_password`. |
+| 1148 | <code>    return render(request, 'clinic/change_password.html', {'form': form})</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `patient_change_password`. |
+| 1151 | <code>@patient_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 1152 | <code>def cancel_appointment(request, appointment_id):</code> | Отменяет только принадлежащую пациенту будущую активную запись. Контекст: `cancel_appointment`. |
+| 1153 | <code>    appointment = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `cancel_appointment`. |
+| 1154 | <code>        Appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `cancel_appointment`. |
+| 1155 | <code>        pk=appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `cancel_appointment`. |
+| 1156 | <code>        patient=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `cancel_appointment`. |
+| 1157 | <code>        status__in=[</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `cancel_appointment`. |
+| 1158 | <code>            Appointment.STATUS_PENDING,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `cancel_appointment`. |
+| 1159 | <code>            Appointment.STATUS_APPROVED,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `cancel_appointment`. |
+| 1160 | <code>            Appointment.STATUS_RESCHEDULE_PROPOSED,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `cancel_appointment`. |
+| 1161 | <code>        ],</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `cancel_appointment`. |
+| 1162 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `cancel_appointment`. |
+| 1163 | <code>    if request.method == 'POST' and appointment.can_cancel:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `cancel_appointment`. |
+| 1164 | <code>        appointment.status = Appointment.STATUS_CANCELED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `cancel_appointment`. |
+| 1165 | <code>        appointment.save(update_fields=['status'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `cancel_appointment`. |
+| 1166 | <code>        write_audit_log(request, 'Скасовано запис пацієнтом', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `cancel_appointment`. |
+| 1167 | <code>        notify_doctor_patient_action(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `cancel_appointment`. |
+| 1168 | <code>            appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `cancel_appointment`. |
+| 1169 | <code>            'patient_canceled',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `cancel_appointment`. |
+| 1170 | <code>            'Пацієнт скасував запис',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `cancel_appointment`. |
+| 1171 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `cancel_appointment`. |
+| 1172 | <code>        messages.success(request, 'Запис скасовано.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `cancel_appointment`. |
+| 1173 | <code>    elif request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `cancel_appointment`. |
+| 1174 | <code>        messages.error(request, 'Цей запис уже не можна скасувати.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `cancel_appointment`. |
+| 1175 | <code>    return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `cancel_appointment`. |
+| 1178 | <code>@patient_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 1179 | <code>def restore_appointment(request, appointment_id):</code> | Повторно проверяет освободившийся интервал и возвращает отмененную запись в заявки. Контекст: `restore_appointment`. |
+| 1180 | <code>    appointment = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `restore_appointment`. |
+| 1181 | <code>        Appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
+| 1182 | <code>        pk=appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `restore_appointment`. |
+| 1183 | <code>        patient=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `restore_appointment`. |
+| 1184 | <code>        status=Appointment.STATUS_CANCELED,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `restore_appointment`. |
+| 1185 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `restore_appointment`. |
+| 1186 | <code>    if request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `restore_appointment`. |
+| 1187 | <code>        if (</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `restore_appointment`. |
+| 1188 | <code>            not appointment.can_restore</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
+| 1189 | <code>            or appointment_conflicts(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
+| 1190 | <code>                appointment.doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
+| 1191 | <code>                appointment.date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
+| 1192 | <code>                appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
+| 1193 | <code>                duration_slots=appointment.duration_slots,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `restore_appointment`. |
+| 1194 | <code>                duration_minutes=appointment.duration_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `restore_appointment`. |
+| 1195 | <code>                exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `restore_appointment`. |
+| 1196 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `restore_appointment`. |
+| 1197 | <code>            or patient_appointment_conflicts(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
+| 1198 | <code>                appointment.patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
+| 1199 | <code>                appointment.date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
+| 1200 | <code>                appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
+| 1201 | <code>                appointment.duration_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
+| 1202 | <code>                patient_phone=appointment.patient_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `restore_appointment`. |
+| 1203 | <code>                exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `restore_appointment`. |
+| 1204 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `restore_appointment`. |
+| 1205 | <code>        ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
+| 1206 | <code>            messages.error(request, 'Цей запис уже не можна відновити: час зайнятий іншим прийомом.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `restore_appointment`. |
+| 1207 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `restore_appointment`. |
+| 1208 | <code>            appointment.status = Appointment.STATUS_PENDING</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `restore_appointment`. |
+| 1209 | <code>            appointment.save(update_fields=['status'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `restore_appointment`. |
+| 1210 | <code>            write_audit_log(request, 'Відновлено заявку пацієнтом', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `restore_appointment`. |
+| 1211 | <code>            notify_doctor_new_request(appointment, event='restored')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `restore_appointment`. |
+| 1212 | <code>            messages.success(request, 'Заявку відновлено і знову відправлено лікарю.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `restore_appointment`. |
+| 1213 | <code>    return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `restore_appointment`. |
+| 1216 | <code>@patient_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 1217 | <code>def patient_appointment_detail(request, appointment_id):</code> | Показывает пациенту только принадлежащую ему запись и ее файлы. Контекст: `patient_appointment_detail`. |
+| 1218 | <code>    appointment = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `patient_appointment_detail`. |
+| 1219 | <code>        Appointment.objects.select_related('doctor__user', 'service').prefetch_related('images', 'videos'),</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `patient_appointment_detail`. |
+| 1220 | <code>        pk=appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_detail`. |
+| 1221 | <code>        patient=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_appointment_detail`. |
+| 1222 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_appointment_detail`. |
+| 1223 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `patient_appointment_detail`. |
+| 1224 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_detail`. |
+| 1225 | <code>        'clinic/patient_appointment_detail.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_detail`. |
+| 1226 | <code>        {'appointment': appointment},</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_appointment_detail`. |
+| 1227 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_appointment_detail`. |
+| 1230 | <code>@patient_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 1231 | <code>def patient_reschedule_response(request, appointment_id):</code> | Принимает или отклоняет предложенное врачом новое время. Контекст: `patient_reschedule_response`. |
+| 1232 | <code>    appointment = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `patient_reschedule_response`. |
+| 1233 | <code>        Appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1234 | <code>        pk=appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_reschedule_response`. |
+| 1235 | <code>        patient=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_reschedule_response`. |
+| 1236 | <code>        status=Appointment.STATUS_RESCHEDULE_PROPOSED,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_reschedule_response`. |
+| 1237 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_reschedule_response`. |
+| 1238 | <code>    if request.method != 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_reschedule_response`. |
+| 1239 | <code>        return redirect('patient_appointment_detail', appointment_id=appointment.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_reschedule_response`. |
+| 1241 | <code>    action = request.POST.get('action')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_reschedule_response`. |
+| 1242 | <code>    if action == 'reject':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_reschedule_response`. |
+| 1243 | <code>        appointment.status = Appointment.STATUS_CANCELED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `patient_reschedule_response`. |
+| 1244 | <code>        appointment.save(update_fields=['status'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `patient_reschedule_response`. |
+| 1245 | <code>        write_audit_log(request, 'Відхилено запропонований час', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1246 | <code>        notify_doctor_patient_action(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1247 | <code>            appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1248 | <code>            'reschedule_rejected',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1249 | <code>            'Пацієнт відхилив новий час',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
 | 1250 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_reschedule_response`. |
-| 1251 | <code>        return redirect('patient_appointment_detail', appointment_id=appointment.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_reschedule_response`. |
-| 1253 | <code>    appointment.status = Appointment.STATUS_APPROVED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `patient_reschedule_response`. |
-| 1254 | <code>    appointment.approved_at = timezone.now()</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `patient_reschedule_response`. |
-| 1255 | <code>    appointment.save(update_fields=['status', 'approved_at'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `patient_reschedule_response`. |
-| 1256 | <code>    ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1257 | <code>    write_audit_log(request, 'Погоджено новий час', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1258 | <code>    notify_doctor_patient_action(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1259 | <code>        appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1260 | <code>        'reschedule_accepted',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1261 | <code>        'Пацієнт погодив новий час',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
-| 1262 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_reschedule_response`. |
-| 1263 | <code>    messages.success(request, 'Новий час прийому підтверджено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `patient_reschedule_response`. |
-| 1264 | <code>    return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_reschedule_response`. |
-| 1267 | <code>def doctors_list(request):</code> | Выводит активных врачей и поддерживает серверный параметр поиска. Контекст: `doctors_list`. |
-| 1268 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctors_list`. |
-| 1269 | <code>    query = request.GET.get('q', '').strip()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctors_list`. |
-| 1270 | <code>    doctors = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctors_list`. |
-| 1271 | <code>        Doctor.objects.filter(user__is_active=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctors_list`. |
-| 1272 | <code>        .select_related('user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctors_list`. |
-| 1273 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctors_list`. |
-| 1274 | <code>    if query:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctors_list`. |
-| 1275 | <code>        doctors = doctors.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctors_list`. |
-| 1276 | <code>            Q(user__first_name__icontains=query)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctors_list`. |
-| 1277 | <code>            &#124; Q(user__last_name__icontains=query)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctors_list`. |
-| 1278 | <code>            &#124; Q(specialization__icontains=query)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctors_list`. |
-| 1279 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctors_list`. |
-| 1280 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctors_list`. |
-| 1281 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctors_list`. |
-| 1282 | <code>        'clinic/doctors.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctors_list`. |
-| 1283 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctors_list`. |
-| 1284 | <code>            'doctors': doctors.distinct(),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctors_list`. |
-| 1285 | <code>            'query': query,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctors_list`. |
-| 1286 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctors_list`. |
-| 1287 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctors_list`. |
-| 1290 | <code>def doctor_detail(request, doctor_id):</code> | Загружает публичный профиль, расписание, услуги и новости одного активного врача. Контекст: `doctor_detail`. |
-| 1291 | <code>    doctor = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_detail`. |
-| 1292 | <code>        Doctor.objects.filter(user__is_active=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_detail`. |
-| 1293 | <code>        .select_related('user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_detail`. |
-| 1294 | <code>        .prefetch_related('services', 'schedules__workplace'),</code> | Заранее загружает связанные списки отдельным оптимизированным запросом. Контекст: `doctor_detail`. |
-| 1295 | <code>        pk=doctor_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_detail`. |
-| 1296 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_detail`. |
-| 1297 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_detail`. |
-| 1298 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_detail`. |
-| 1299 | <code>        'clinic/doctor_detail.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_detail`. |
-| 1300 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_detail`. |
-| 1301 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_detail`. |
-| 1302 | <code>            'doctor_news': doctor.news_posts.filter(is_published=True)[:6],</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_detail`. |
-| 1303 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_detail`. |
-| 1304 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_detail`. |
-| 1307 | <code>def service_detail(request, doctor_id, service_id):</code> | Показывает подробную услугу и формирует безопасный возврат в текущую заявку. Контекст: `service_detail`. |
-| 1308 | <code>    service = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `service_detail`. |
-| 1309 | <code>        MedicalService.objects.filter(doctor_id=doctor_id, doctor__user__is_active=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `service_detail`. |
-| 1310 | <code>        .select_related('doctor__user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `service_detail`. |
-| 1311 | <code>        .prefetch_related('images', 'videos', 'doctor__schedules'),</code> | Заранее загружает связанные списки отдельным оптимизированным запросом. Контекст: `service_detail`. |
-| 1312 | <code>        pk=service_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `service_detail`. |
-| 1313 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `service_detail`. |
-| 1314 | <code>    booking_return_url = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `service_detail`. |
-| 1315 | <code>    if (</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `service_detail`. |
-| 1316 | <code>        request.GET.get('from') == 'booking'</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `service_detail`. |
-| 1317 | <code>        and request.user.is_authenticated</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
-| 1318 | <code>        and user_role(request.user) == Profile.ROLE_PATIENT</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
-| 1319 | <code>    ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
-| 1320 | <code>        booking_params = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `service_detail`. |
-| 1321 | <code>            'doctor': service.doctor_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
-| 1322 | <code>            'service': service.id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
-| 1323 | <code>        }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `service_detail`. |
-| 1324 | <code>        selected_date = request.GET.get('date', '')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `service_detail`. |
-| 1325 | <code>        selected_time = request.GET.get('time', '')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `service_detail`. |
-| 1326 | <code>        try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `service_detail`. |
-| 1327 | <code>            datetime.strptime(selected_date, '%Y-%m-%d')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
-| 1328 | <code>        except ValueError:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `service_detail`. |
-| 1329 | <code>            pass</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
-| 1330 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `service_detail`. |
-| 1331 | <code>            booking_params['date'] = selected_date</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `service_detail`. |
-| 1332 | <code>        try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `service_detail`. |
-| 1333 | <code>            datetime.strptime(selected_time, '%H:%M')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
-| 1334 | <code>        except ValueError:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `service_detail`. |
-| 1335 | <code>            pass</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
-| 1336 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `service_detail`. |
-| 1337 | <code>            booking_params['time'] = selected_time</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `service_detail`. |
-| 1338 | <code>        booking_return_url = f"{reverse('booking')}?{urlencode(booking_params)}"</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `service_detail`. |
-| 1340 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `service_detail`. |
-| 1341 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
-| 1342 | <code>        'clinic/service_detail.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
-| 1343 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `service_detail`. |
-| 1344 | <code>            'doctor': service.doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
-| 1345 | <code>            'service': service,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
-| 1346 | <code>            'booking_return_url': booking_return_url,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
-| 1347 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `service_detail`. |
-| 1348 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `service_detail`. |
-| 1351 | <code>@patient_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 1352 | <code>def booking(request):</code> | Выполняет полный сценарий онлайн-заявки пациента со всеми временными проверками и файлами. Контекст: `booking`. |
-| 1353 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1354 | <code>    earliest_booking_date = timezone.localdate() + timedelta(days=1)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1355 | <code>    if not (</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
-| 1356 | <code>        request.user.first_name.strip()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1357 | <code>        and request.user.last_name.strip()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1358 | <code>        and request.user.profile.age</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1359 | <code>    ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1360 | <code>        messages.error(request, 'Спочатку перевірте ім’я та прізвище і вкажіть свій вік у профілі.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
-| 1361 | <code>        return redirect('patient_edit_profile')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `booking`. |
-| 1362 | <code>    if not request.user.profile.phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
-| 1363 | <code>        messages.error(request, 'Спочатку заповніть телефон у профілі пацієнта.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
-| 1364 | <code>        return redirect('patient_edit_profile')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `booking`. |
-| 1366 | <code>    doctors = Doctor.objects.filter(user__is_active=True).select_related('user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `booking`. |
-| 1367 | <code>    selected_doctor = get_object_or_404(doctors, pk=request.GET.get('doctor')) if request.GET.get('doctor') else doctors.first()</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `booking`. |
-| 1368 | <code>    working_weekdays = doctor_working_weekdays(selected_doctor)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1369 | <code>    selected_date = parse_date(request.GET.get('date')) if request.GET.get('date') else earliest_booking_date</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1370 | <code>    if not selected_date or selected_date &lt; earliest_booking_date:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
-| 1371 | <code>        if request.GET.get('date'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
-| 1372 | <code>            messages.error(request, 'Записатися можна лише починаючи із завтрашнього дня.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
-| 1373 | <code>        selected_date = earliest_booking_date</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1374 | <code>    adjusted_date = next_working_date(selected_date, working_weekdays)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1375 | <code>    date_was_adjusted = bool(adjusted_date and adjusted_date != selected_date)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1376 | <code>    if adjusted_date:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
-| 1377 | <code>        selected_date = adjusted_date</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1378 | <code>    selected_time = None if date_was_adjusted else parse_time(request.GET.get('time'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1380 | <code>    if request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
-| 1381 | <code>        selected_doctor = get_object_or_404(doctors, pk=request.POST.get('doctor'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `booking`. |
-| 1382 | <code>        working_weekdays = doctor_working_weekdays(selected_doctor)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1383 | <code>        selected_date = parse_date(request.POST.get('date'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1384 | <code>        selected_time = parse_time(request.POST.get('time'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1385 | <code>        reason_form = BookingReasonForm(request.POST, request.FILES, doctor=selected_doctor)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1386 | <code>        if not selected_date or selected_date &lt; earliest_booking_date:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
-| 1387 | <code>            messages.error(request, 'Записатися можна лише починаючи із завтрашнього дня.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
-| 1388 | <code>            selected_date = earliest_booking_date</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1389 | <code>            selected_time = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1390 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `booking`. |
-| 1391 | <code>            daily_booking_count = patient_daily_appointment_count(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1392 | <code>                request.user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1393 | <code>                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1394 | <code>                request.user.profile.phone,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1395 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
-| 1396 | <code>            schedule, slots = slots_for_doctor(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1397 | <code>                selected_doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1398 | <code>                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1399 | <code>                patient=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1400 | <code>                patient_phone=request.user.profile.phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1401 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
-| 1402 | <code>            available_times = [slot['time'] for slot in slots if not slot['busy']]</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1404 | <code>            if not schedule or not schedule.is_working:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
-| 1405 | <code>                messages.error(request, 'У цей день лікар не приймає. Оберіть робочий день у календарі.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
-| 1406 | <code>                selected_time = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1407 | <code>            elif daily_booking_count &gt;= PATIENT_DAILY_BOOKING_LIMIT:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
-| 1408 | <code>                messages.error(</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
-| 1409 | <code>                    request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1410 | <code>                    'Самостійно можна створити не більше 2 заявок або прийомів на один день. Оберіть іншу дату.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1411 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
-| 1412 | <code>            elif is_past_appointment(selected_date, selected_time):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
-| 1413 | <code>                messages.error(request, 'Цей час уже недоступний.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
-| 1414 | <code>            elif selected_time and schedule and patient_appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
-| 1415 | <code>                request.user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1416 | <code>                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1417 | <code>                selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1418 | <code>                schedule.slot_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1419 | <code>                patient_phone=request.user.profile.phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1420 | <code>            ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1421 | <code>                messages.error(</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
-| 1422 | <code>                    request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1423 | <code>                    'У цей час у вас уже є інша заявка або прийом. Оберіть вільний час.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1424 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
-| 1425 | <code>            elif not selected_time or selected_time not in available_times:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
-| 1426 | <code>                messages.error(request, 'Цей час уже недоступний.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
-| 1427 | <code>            elif reason_form.is_valid() and schedule:</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `booking`. |
-| 1428 | <code>                duration_slots = 1</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1429 | <code>                if appointment_conflicts(selected_doctor, selected_date, selected_time, duration_slots=1):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
-| 1430 | <code>                    messages.error(request, 'Цей час уже недоступний.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
-| 1431 | <code>                else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `booking`. |
-| 1432 | <code>                    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `booking`. |
-| 1433 | <code>                        appointment = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1434 | <code>                        daily_limit_reached_during_save = False</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1435 | <code>                        with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `booking`. |
-| 1436 | <code>                            User.objects.select_for_update().get(pk=request.user.pk)</code> | Блокирует выбранную строку до конца транзакции и защищает от одновременного изменения. Контекст: `booking`. |
-| 1437 | <code>                            if patient_daily_appointment_count(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
-| 1438 | <code>                                request.user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1439 | <code>                                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1440 | <code>                                request.user.profile.phone,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1441 | <code>                            ) &gt;= PATIENT_DAILY_BOOKING_LIMIT:</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1442 | <code>                                daily_limit_reached_during_save = True</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1443 | <code>                            else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `booking`. |
-| 1444 | <code>                                appointment = Appointment.objects.create(</code> | Начинает создание новой строки базы через Django ORM. Контекст: `booking`. |
-| 1445 | <code>                                    doctor=selected_doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1446 | <code>                                    service=reason_form.cleaned_data['service'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `booking`. |
-| 1447 | <code>                                    patient=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1448 | <code>                                    patient_first_name=(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1449 | <code>                                        reason_form.cleaned_data['other_first_name']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `booking`. |
-| 1450 | <code>                                        if reason_form.cleaned_data['booked_for_other']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `booking`. |
-| 1451 | <code>                                        else request.user.first_name</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1452 | <code>                                    ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
-| 1453 | <code>                                    patient_last_name=(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1454 | <code>                                        reason_form.cleaned_data['other_last_name']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `booking`. |
-| 1455 | <code>                                        if reason_form.cleaned_data['booked_for_other']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `booking`. |
-| 1456 | <code>                                        else request.user.last_name</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1457 | <code>                                    ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
-| 1458 | <code>                                    booked_for_other=reason_form.cleaned_data['booked_for_other'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `booking`. |
-| 1459 | <code>                                    patient_phone=request.user.profile.phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1460 | <code>                                    patient_email=request.user.email,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1461 | <code>                                    date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1462 | <code>                                    time=selected_time,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1463 | <code>                                    city=schedule.city,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1464 | <code>                                    address=schedule.address,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1465 | <code>                                    reason=reason_form.cleaned_data['reason'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `booking`. |
-| 1466 | <code>                                    duration_slots=duration_slots,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1467 | <code>                                    status=Appointment.STATUS_PENDING,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1468 | <code>                                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
-| 1469 | <code>                                for photo in reason_form.cleaned_data['photos']:</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `booking`. |
-| 1470 | <code>                                    AppointmentImage.objects.create(appointment=appointment, image=photo)</code> | Начинает создание новой строки базы через Django ORM. Контекст: `booking`. |
-| 1471 | <code>                                for video in reason_form.cleaned_data['videos']:</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `booking`. |
-| 1472 | <code>                                    AppointmentVideo.objects.create(appointment=appointment, video=video)</code> | Начинает создание новой строки базы через Django ORM. Контекст: `booking`. |
-| 1473 | <code>                        if daily_limit_reached_during_save:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
-| 1474 | <code>                            messages.error(</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
-| 1475 | <code>                                request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1476 | <code>                                'Самостійно можна створити не більше 2 заявок або прийомів на один день. Оберіть іншу дату.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1477 | <code>                            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
-| 1478 | <code>                        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `booking`. |
-| 1479 | <code>                            ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1480 | <code>                            write_audit_log(request, 'Створено заявку', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1481 | <code>                            notify_doctor_new_request(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1482 | <code>                            messages.success(request, 'Заявку відправлено лікарю на підтвердження.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `booking`. |
-| 1483 | <code>                            return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `booking`. |
-| 1484 | <code>                    except IntegrityError:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `booking`. |
-| 1485 | <code>                        messages.error(request, 'Цей час уже недоступний.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
-| 1486 | <code>    else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `booking`. |
-| 1487 | <code>        selected_service = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1488 | <code>        if selected_doctor and request.GET.get('service'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
-| 1489 | <code>            selected_service = selected_doctor.services.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `booking`. |
-| 1490 | <code>                pk=request.GET.get('service'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1491 | <code>                is_patient_selectable=True,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1492 | <code>            ).first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1493 | <code>        reason_form = BookingReasonForm(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1494 | <code>            doctor=selected_doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1495 | <code>            initial={'service': selected_service} if selected_service else None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1496 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
-| 1498 | <code>    schedule, slots = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1499 | <code>        slots_for_doctor(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1500 | <code>            selected_doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1501 | <code>            selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1502 | <code>            patient=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1503 | <code>            patient_phone=request.user.profile.phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1504 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
-| 1505 | <code>        if selected_doctor</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
-| 1506 | <code>        else (None, [])</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1507 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
-| 1508 | <code>    has_bookable_services = bool(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1509 | <code>        selected_doctor</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1510 | <code>        and selected_doctor.services.filter(is_patient_selectable=True).exists()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `booking`. |
-| 1511 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
-| 1512 | <code>    daily_booking_count = patient_daily_appointment_count(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1513 | <code>        request.user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1514 | <code>        selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1515 | <code>        request.user.profile.phone,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1516 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
-| 1517 | <code>    daily_booking_limit_reached = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
-| 1518 | <code>        daily_booking_count &gt;= PATIENT_DAILY_BOOKING_LIMIT</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1519 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
-| 1521 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `booking`. |
-| 1522 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1523 | <code>        'clinic/booking.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1524 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
-| 1525 | <code>            'doctors': doctors,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1526 | <code>            'selected_doctor': selected_doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1527 | <code>            'selected_date': selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1528 | <code>            'earliest_booking_date': earliest_booking_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1529 | <code>            'selected_time': selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1530 | <code>            'selected_schedule': schedule,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1531 | <code>            'slots': slots,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1532 | <code>            'reason_form': reason_form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1533 | <code>            'has_bookable_services': has_bookable_services,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1534 | <code>            'daily_booking_count': daily_booking_count,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1535 | <code>            'daily_booking_limit': PATIENT_DAILY_BOOKING_LIMIT,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1536 | <code>            'daily_booking_limit_reached': daily_booking_limit_reached,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1537 | <code>            'working_weekdays': working_weekdays,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1538 | <code>            'working_weekday_labels': working_weekday_labels(working_weekdays),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
-| 1539 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
+| 1251 | <code>        messages.success(request, 'Запропонований час відхилено. Запис скасовано.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `patient_reschedule_response`. |
+| 1252 | <code>        return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_reschedule_response`. |
+| 1254 | <code>    if action != 'accept':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_reschedule_response`. |
+| 1255 | <code>        messages.error(request, 'Оберіть, чи погоджуєтеся ви з новим часом.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `patient_reschedule_response`. |
+| 1256 | <code>        return redirect('patient_appointment_detail', appointment_id=appointment.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_reschedule_response`. |
+| 1258 | <code>    schedule = schedule_for_date(appointment.doctor, appointment.date)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_reschedule_response`. |
+| 1259 | <code>    if (</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `patient_reschedule_response`. |
+| 1260 | <code>        is_past_appointment(appointment.date, appointment.time)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1261 | <code>        or not schedule</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1262 | <code>        or not schedule.is_working</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1263 | <code>        or appointment.time not in schedule.get_slots()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1264 | <code>        or appointment_conflicts(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1265 | <code>            appointment.doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1266 | <code>            appointment.date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1267 | <code>            appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1268 | <code>            duration_minutes=appointment.duration_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_reschedule_response`. |
+| 1269 | <code>            exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_reschedule_response`. |
+| 1270 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_reschedule_response`. |
+| 1271 | <code>        or patient_appointment_conflicts(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1272 | <code>            appointment.patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1273 | <code>            appointment.date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1274 | <code>            appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1275 | <code>            appointment.duration_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1276 | <code>            patient_phone=appointment.patient_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_reschedule_response`. |
+| 1277 | <code>            exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `patient_reschedule_response`. |
+| 1278 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_reschedule_response`. |
+| 1279 | <code>    ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1280 | <code>        messages.error(</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `patient_reschedule_response`. |
+| 1281 | <code>            request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1282 | <code>            'Цей час уже недоступний або перетинається з іншим прийомом. Зверніться до лікаря для нового перенесення.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1283 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_reschedule_response`. |
+| 1284 | <code>        return redirect('patient_appointment_detail', appointment_id=appointment.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_reschedule_response`. |
+| 1286 | <code>    appointment.status = Appointment.STATUS_APPROVED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `patient_reschedule_response`. |
+| 1287 | <code>    appointment.approved_at = timezone.now()</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `patient_reschedule_response`. |
+| 1288 | <code>    appointment.save(update_fields=['status', 'approved_at'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `patient_reschedule_response`. |
+| 1289 | <code>    ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1290 | <code>    write_audit_log(request, 'Погоджено новий час', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1291 | <code>    notify_doctor_patient_action(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1292 | <code>        appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1293 | <code>        'reschedule_accepted',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1294 | <code>        'Пацієнт погодив новий час',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `patient_reschedule_response`. |
+| 1295 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `patient_reschedule_response`. |
+| 1296 | <code>    messages.success(request, 'Новий час прийому підтверджено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `patient_reschedule_response`. |
+| 1297 | <code>    return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `patient_reschedule_response`. |
+| 1300 | <code>def doctors_list(request):</code> | Выводит активных врачей и поддерживает серверный параметр поиска. Контекст: `doctors_list`. |
+| 1301 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctors_list`. |
+| 1302 | <code>    query = request.GET.get('q', '').strip()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctors_list`. |
+| 1303 | <code>    doctors = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctors_list`. |
+| 1304 | <code>        Doctor.objects.filter(user__is_active=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctors_list`. |
+| 1305 | <code>        .select_related('user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctors_list`. |
+| 1306 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctors_list`. |
+| 1307 | <code>    if query:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctors_list`. |
+| 1308 | <code>        doctors = doctors.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctors_list`. |
+| 1309 | <code>            Q(user__first_name__icontains=query)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctors_list`. |
+| 1310 | <code>            &#124; Q(user__last_name__icontains=query)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctors_list`. |
+| 1311 | <code>            &#124; Q(specialization__icontains=query)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctors_list`. |
+| 1312 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctors_list`. |
+| 1313 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctors_list`. |
+| 1314 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctors_list`. |
+| 1315 | <code>        'clinic/doctors.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctors_list`. |
+| 1316 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctors_list`. |
+| 1317 | <code>            'doctors': doctors.distinct(),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctors_list`. |
+| 1318 | <code>            'query': query,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctors_list`. |
+| 1319 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctors_list`. |
+| 1320 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctors_list`. |
+| 1323 | <code>def doctor_detail(request, doctor_id):</code> | Загружает публичный профиль, расписание, услуги и новости одного активного врача. Контекст: `doctor_detail`. |
+| 1324 | <code>    doctor = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_detail`. |
+| 1325 | <code>        Doctor.objects.filter(user__is_active=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_detail`. |
+| 1326 | <code>        .select_related('user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_detail`. |
+| 1327 | <code>        .prefetch_related('services', 'schedules__workplace'),</code> | Заранее загружает связанные списки отдельным оптимизированным запросом. Контекст: `doctor_detail`. |
+| 1328 | <code>        pk=doctor_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_detail`. |
+| 1329 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_detail`. |
+| 1330 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_detail`. |
+| 1331 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_detail`. |
+| 1332 | <code>        'clinic/doctor_detail.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_detail`. |
+| 1333 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_detail`. |
+| 1334 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_detail`. |
+| 1335 | <code>            'doctor_news': doctor.news_posts.filter(is_published=True)[:6],</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_detail`. |
+| 1336 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_detail`. |
+| 1337 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_detail`. |
+| 1340 | <code>def service_detail(request, doctor_id, service_id):</code> | Показывает подробную услугу и формирует безопасный возврат в текущую заявку. Контекст: `service_detail`. |
+| 1341 | <code>    service = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `service_detail`. |
+| 1342 | <code>        MedicalService.objects.filter(doctor_id=doctor_id, doctor__user__is_active=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `service_detail`. |
+| 1343 | <code>        .select_related('doctor__user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `service_detail`. |
+| 1344 | <code>        .prefetch_related('images', 'videos', 'doctor__schedules'),</code> | Заранее загружает связанные списки отдельным оптимизированным запросом. Контекст: `service_detail`. |
+| 1345 | <code>        pk=service_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `service_detail`. |
+| 1346 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `service_detail`. |
+| 1347 | <code>    booking_return_url = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `service_detail`. |
+| 1348 | <code>    if (</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `service_detail`. |
+| 1349 | <code>        request.GET.get('from') == 'booking'</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `service_detail`. |
+| 1350 | <code>        and request.user.is_authenticated</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
+| 1351 | <code>        and user_role(request.user) == Profile.ROLE_PATIENT</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
+| 1352 | <code>    ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
+| 1353 | <code>        booking_params = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `service_detail`. |
+| 1354 | <code>            'doctor': service.doctor_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
+| 1355 | <code>            'service': service.id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
+| 1356 | <code>        }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `service_detail`. |
+| 1357 | <code>        selected_date = request.GET.get('date', '')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `service_detail`. |
+| 1358 | <code>        selected_time = request.GET.get('time', '')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `service_detail`. |
+| 1359 | <code>        try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `service_detail`. |
+| 1360 | <code>            datetime.strptime(selected_date, '%Y-%m-%d')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
+| 1361 | <code>        except ValueError:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `service_detail`. |
+| 1362 | <code>            pass</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
+| 1363 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `service_detail`. |
+| 1364 | <code>            booking_params['date'] = selected_date</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `service_detail`. |
+| 1365 | <code>        try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `service_detail`. |
+| 1366 | <code>            datetime.strptime(selected_time, '%H:%M')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
+| 1367 | <code>        except ValueError:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `service_detail`. |
+| 1368 | <code>            pass</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
+| 1369 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `service_detail`. |
+| 1370 | <code>            booking_params['time'] = selected_time</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `service_detail`. |
+| 1371 | <code>        booking_return_url = f"{reverse('booking')}?{urlencode(booking_params)}"</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `service_detail`. |
+| 1373 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `service_detail`. |
+| 1374 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
+| 1375 | <code>        'clinic/service_detail.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
+| 1376 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `service_detail`. |
+| 1377 | <code>            'doctor': service.doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
+| 1378 | <code>            'service': service,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
+| 1379 | <code>            'booking_return_url': booking_return_url,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `service_detail`. |
+| 1380 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `service_detail`. |
+| 1381 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `service_detail`. |
+| 1384 | <code>@patient_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 1385 | <code>def booking(request):</code> | Выполняет полный сценарий онлайн-заявки пациента со всеми временными проверками и файлами. Контекст: `booking`. |
+| 1386 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1387 | <code>    earliest_booking_date = timezone.localdate() + timedelta(days=1)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1388 | <code>    if not (</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
+| 1389 | <code>        request.user.first_name.strip()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1390 | <code>        and request.user.last_name.strip()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1391 | <code>        and request.user.profile.age</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1392 | <code>    ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1393 | <code>        messages.error(request, 'Спочатку перевірте ім’я та прізвище і вкажіть свій вік у профілі.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
+| 1394 | <code>        return redirect('patient_edit_profile')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `booking`. |
+| 1395 | <code>    if not request.user.profile.phone:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
+| 1396 | <code>        messages.error(request, 'Спочатку заповніть телефон у профілі пацієнта.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
+| 1397 | <code>        return redirect('patient_edit_profile')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `booking`. |
+| 1399 | <code>    doctors = Doctor.objects.filter(user__is_active=True).select_related('user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `booking`. |
+| 1400 | <code>    selected_doctor = get_object_or_404(doctors, pk=request.GET.get('doctor')) if request.GET.get('doctor') else doctors.first()</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `booking`. |
+| 1401 | <code>    working_weekdays = doctor_working_weekdays(selected_doctor)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1402 | <code>    selected_date = parse_date(request.GET.get('date')) if request.GET.get('date') else earliest_booking_date</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1403 | <code>    if not selected_date or selected_date &lt; earliest_booking_date:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
+| 1404 | <code>        if request.GET.get('date'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
+| 1405 | <code>            messages.error(request, 'Записатися можна лише починаючи із завтрашнього дня.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
+| 1406 | <code>        selected_date = earliest_booking_date</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1407 | <code>    adjusted_date = next_working_date(selected_date, working_weekdays)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1408 | <code>    date_was_adjusted = bool(adjusted_date and adjusted_date != selected_date)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1409 | <code>    if adjusted_date:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
+| 1410 | <code>        selected_date = adjusted_date</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1411 | <code>    selected_time = None if date_was_adjusted else parse_time(request.GET.get('time'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1413 | <code>    if request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
+| 1414 | <code>        selected_doctor = get_object_or_404(doctors, pk=request.POST.get('doctor'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `booking`. |
+| 1415 | <code>        working_weekdays = doctor_working_weekdays(selected_doctor)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1416 | <code>        selected_date = parse_date(request.POST.get('date'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1417 | <code>        selected_time = parse_time(request.POST.get('time'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1418 | <code>        reason_form = BookingReasonForm(request.POST, request.FILES, doctor=selected_doctor)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1419 | <code>        if not selected_date or selected_date &lt; earliest_booking_date:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
+| 1420 | <code>            messages.error(request, 'Записатися можна лише починаючи із завтрашнього дня.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
+| 1421 | <code>            selected_date = earliest_booking_date</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1422 | <code>            selected_time = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1423 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `booking`. |
+| 1424 | <code>            daily_booking_count = patient_daily_appointment_count(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1425 | <code>                request.user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1426 | <code>                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1427 | <code>                request.user.profile.phone,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1428 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
+| 1429 | <code>            schedule, slots = slots_for_doctor(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1430 | <code>                selected_doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1431 | <code>                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1432 | <code>                patient=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1433 | <code>                patient_phone=request.user.profile.phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1434 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
+| 1435 | <code>            available_times = [slot['time'] for slot in slots if not slot['busy']]</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1437 | <code>            if not schedule or not schedule.is_working:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
+| 1438 | <code>                messages.error(request, 'У цей день лікар не приймає. Оберіть робочий день у календарі.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
+| 1439 | <code>                selected_time = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1440 | <code>            elif daily_booking_count &gt;= PATIENT_DAILY_BOOKING_LIMIT:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
+| 1441 | <code>                messages.error(</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
+| 1442 | <code>                    request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1443 | <code>                    'Самостійно можна створити не більше 2 заявок або прийомів на один день. Оберіть іншу дату.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1444 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
+| 1445 | <code>            elif is_past_appointment(selected_date, selected_time):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
+| 1446 | <code>                messages.error(request, 'Цей час уже недоступний.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
+| 1447 | <code>            elif selected_time and schedule and patient_appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
+| 1448 | <code>                request.user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1449 | <code>                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1450 | <code>                selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1451 | <code>                schedule.slot_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1452 | <code>                patient_phone=request.user.profile.phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1453 | <code>            ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1454 | <code>                messages.error(</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
+| 1455 | <code>                    request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1456 | <code>                    'У цей час у вас уже є інша заявка або прийом. Оберіть вільний час.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1457 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
+| 1458 | <code>            elif not selected_time or selected_time not in available_times:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
+| 1459 | <code>                messages.error(request, 'Цей час уже недоступний.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
+| 1460 | <code>            elif reason_form.is_valid() and schedule:</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `booking`. |
+| 1461 | <code>                duration_slots = 1</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1462 | <code>                if appointment_conflicts(selected_doctor, selected_date, selected_time, duration_slots=1):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
+| 1463 | <code>                    messages.error(request, 'Цей час уже недоступний.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
+| 1464 | <code>                else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `booking`. |
+| 1465 | <code>                    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `booking`. |
+| 1466 | <code>                        appointment = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1467 | <code>                        daily_limit_reached_during_save = False</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1468 | <code>                        with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `booking`. |
+| 1469 | <code>                            User.objects.select_for_update().get(pk=request.user.pk)</code> | Блокирует выбранную строку до конца транзакции и защищает от одновременного изменения. Контекст: `booking`. |
+| 1470 | <code>                            if patient_daily_appointment_count(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
+| 1471 | <code>                                request.user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1472 | <code>                                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1473 | <code>                                request.user.profile.phone,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1474 | <code>                            ) &gt;= PATIENT_DAILY_BOOKING_LIMIT:</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1475 | <code>                                daily_limit_reached_during_save = True</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1476 | <code>                            else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `booking`. |
+| 1477 | <code>                                appointment = Appointment.objects.create(</code> | Начинает создание новой строки базы через Django ORM. Контекст: `booking`. |
+| 1478 | <code>                                    doctor=selected_doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1479 | <code>                                    service=reason_form.cleaned_data['service'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `booking`. |
+| 1480 | <code>                                    patient=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1481 | <code>                                    patient_first_name=(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1482 | <code>                                        reason_form.cleaned_data['other_first_name']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `booking`. |
+| 1483 | <code>                                        if reason_form.cleaned_data['booked_for_other']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `booking`. |
+| 1484 | <code>                                        else request.user.first_name</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1485 | <code>                                    ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
+| 1486 | <code>                                    patient_last_name=(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1487 | <code>                                        reason_form.cleaned_data['other_last_name']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `booking`. |
+| 1488 | <code>                                        if reason_form.cleaned_data['booked_for_other']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `booking`. |
+| 1489 | <code>                                        else request.user.last_name</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1490 | <code>                                    ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
+| 1491 | <code>                                    booked_for_other=reason_form.cleaned_data['booked_for_other'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `booking`. |
+| 1492 | <code>                                    patient_phone=request.user.profile.phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1493 | <code>                                    patient_email=request.user.email,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1494 | <code>                                    date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1495 | <code>                                    time=selected_time,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1496 | <code>                                    city=schedule.city,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1497 | <code>                                    address=schedule.address,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1498 | <code>                                    reason=reason_form.cleaned_data['reason'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `booking`. |
+| 1499 | <code>                                    duration_slots=duration_slots,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1500 | <code>                                    status=Appointment.STATUS_PENDING,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1501 | <code>                                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
+| 1502 | <code>                                for photo in reason_form.cleaned_data['photos']:</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `booking`. |
+| 1503 | <code>                                    AppointmentImage.objects.create(appointment=appointment, image=photo)</code> | Начинает создание новой строки базы через Django ORM. Контекст: `booking`. |
+| 1504 | <code>                                for video in reason_form.cleaned_data['videos']:</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `booking`. |
+| 1505 | <code>                                    AppointmentVideo.objects.create(appointment=appointment, video=video)</code> | Начинает создание новой строки базы через Django ORM. Контекст: `booking`. |
+| 1506 | <code>                        if daily_limit_reached_during_save:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
+| 1507 | <code>                            messages.error(</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
+| 1508 | <code>                                request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1509 | <code>                                'Самостійно можна створити не більше 2 заявок або прийомів на один день. Оберіть іншу дату.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1510 | <code>                            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
+| 1511 | <code>                        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `booking`. |
+| 1512 | <code>                            ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1513 | <code>                            write_audit_log(request, 'Створено заявку', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1514 | <code>                            notify_doctor_new_request(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1515 | <code>                            messages.success(request, 'Заявку відправлено лікарю на підтвердження.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `booking`. |
+| 1516 | <code>                            return redirect('patient_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `booking`. |
+| 1517 | <code>                    except IntegrityError:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `booking`. |
+| 1518 | <code>                        messages.error(request, 'Цей час уже недоступний.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `booking`. |
+| 1519 | <code>    else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `booking`. |
+| 1520 | <code>        selected_service = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1521 | <code>        if selected_doctor and request.GET.get('service'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
+| 1522 | <code>            selected_service = selected_doctor.services.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `booking`. |
+| 1523 | <code>                pk=request.GET.get('service'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1524 | <code>                is_patient_selectable=True,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1525 | <code>            ).first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1526 | <code>        reason_form = BookingReasonForm(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1527 | <code>            doctor=selected_doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1528 | <code>            initial={'service': selected_service} if selected_service else None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1529 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
+| 1531 | <code>    schedule, slots = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1532 | <code>        slots_for_doctor(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1533 | <code>            selected_doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1534 | <code>            selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1535 | <code>            patient=request.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1536 | <code>            patient_phone=request.user.profile.phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1537 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
+| 1538 | <code>        if selected_doctor</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `booking`. |
+| 1539 | <code>        else (None, [])</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
 | 1540 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
-| 1543 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 1544 | <code>def doctor_dashboard(request):</code> | Показывает профиль, адреса, график, услуги и новости текущего врача. Контекст: `doctor_dashboard`. |
-| 1545 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_dashboard`. |
-| 1546 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_dashboard`. |
-| 1547 | <code>    sync_patient_cards_for_doctor(doctor)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_dashboard`. |
-| 1548 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_dashboard`. |
-| 1549 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_dashboard`. |
-| 1550 | <code>        'clinic/doctor_dashboard.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_dashboard`. |
-| 1551 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_dashboard`. |
-| 1552 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_dashboard`. |
-| 1553 | <code>            'schedules': doctor.schedules.select_related('workplace'),</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_dashboard`. |
-| 1554 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_dashboard`. |
-| 1555 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_dashboard`. |
-| 1558 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 1559 | <code>def doctor_requests(request):</code> | Выводит только новые заявки текущего врача, сгруппированные по датам. Контекст: `doctor_requests`. |
-| 1560 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_requests`. |
-| 1561 | <code>    sync_patient_cards_for_doctor(doctor)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_requests`. |
-| 1562 | <code>    appointments = list(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_requests`. |
-| 1563 | <code>        doctor.appointments.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_requests`. |
-| 1564 | <code>            status=Appointment.STATUS_PENDING,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_requests`. |
-| 1565 | <code>        ).select_related(</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_requests`. |
-| 1566 | <code>            'service',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_requests`. |
-| 1567 | <code>            'patient__profile',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_requests`. |
-| 1568 | <code>        ).order_by('date', 'time', 'created_at')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `doctor_requests`. |
-| 1569 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_requests`. |
-| 1570 | <code>    for appointment in appointments:</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `doctor_requests`. |
-| 1571 | <code>        appointment.patient_card = patient_card_for_appointment(appointment)</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_requests`. |
-| 1572 | <code>        appointment.weekday_name = UKRAINIAN_WEEKDAYS[appointment.date.weekday()]</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_requests`. |
-| 1574 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_requests`. |
-| 1575 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_requests`. |
-| 1576 | <code>        'clinic/doctor_requests.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_requests`. |
-| 1577 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_requests`. |
-| 1578 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_requests`. |
-| 1579 | <code>            'appointments': appointments,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_requests`. |
-| 1580 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_requests`. |
-| 1581 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_requests`. |
-| 1584 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 1585 | <code>def doctor_appointments(request):</code> | Строит одну выбранную неделю приемов и действия записи на день или между приемами. Контекст: `doctor_appointments`. |
-| 1586 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1587 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1588 | <code>    sync_patient_cards_for_doctor(doctor)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1589 | <code>    today = timezone.localdate()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1590 | <code>    current_week_start = today - timedelta(days=today.weekday())</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1591 | <code>    requested_week = parse_date(request.GET.get('week'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1592 | <code>    selected_date = requested_week or today</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1593 | <code>    week_start = selected_date - timedelta(days=selected_date.weekday())</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1594 | <code>    week_end = week_start + timedelta(days=6)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1595 | <code>    appointments = list(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1596 | <code>        doctor.appointments.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_appointments`. |
-| 1597 | <code>            date__range=(week_start, week_end),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1598 | <code>        ).select_related('service', 'patient__profile').order_by('date', 'time')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_appointments`. |
-| 1599 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
-| 1600 | <code>    appointments_by_date = {}</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1601 | <code>    for appointment in appointments:</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `doctor_appointments`. |
-| 1602 | <code>        appointment.patient_card = patient_card_for_appointment(appointment)</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_appointments`. |
-| 1603 | <code>        appointment.weekday_name = UKRAINIAN_WEEKDAYS[appointment.date.weekday()]</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_appointments`. |
-| 1604 | <code>        appointments_by_date.setdefault(appointment.date, []).append(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1606 | <code>    schedules_by_weekday = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1607 | <code>        schedule.weekday: schedule</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1608 | <code>        for schedule in doctor.schedules.select_related('workplace')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_appointments`. |
-| 1609 | <code>    }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
-| 1610 | <code>    week_days = []</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1611 | <code>    for day_offset, weekday_name in enumerate(UKRAINIAN_WEEKDAYS):</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `doctor_appointments`. |
-| 1612 | <code>        day_date = week_start + timedelta(days=day_offset)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1613 | <code>        day_schedule = schedules_by_weekday.get(day_date.weekday())</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1614 | <code>        day_appointments = appointments_by_date.get(day_date, [])</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1615 | <code>        is_working = bool(day_schedule and day_schedule.is_working)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1616 | <code>        if not is_working and not day_appointments:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_appointments`. |
-| 1617 | <code>            continue</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1618 | <code>        for appointment in day_appointments:</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `doctor_appointments`. |
-| 1619 | <code>            appointment.split_option = split_slot_option(</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_appointments`. |
-| 1620 | <code>                doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1621 | <code>                day_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1622 | <code>                appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1623 | <code>                schedule=day_schedule,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1624 | <code>                appointment_id=appointment.pk,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1625 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
-| 1626 | <code>        week_days.append(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1627 | <code>            {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
-| 1628 | <code>                'date': day_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1629 | <code>                'weekday_name': weekday_name,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1630 | <code>                'appointments': day_appointments,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1631 | <code>                'schedule': day_schedule,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1632 | <code>                'is_working': is_working,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1633 | <code>                'is_outside_schedule': bool(day_appointments and not is_working),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1634 | <code>                'can_book': bool(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1635 | <code>                    is_working</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1636 | <code>                    and day_date &gt;= today</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1637 | <code>                ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
-| 1638 | <code>            }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
-| 1639 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
-| 1640 | <code>    appointment_week = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1641 | <code>        'start': week_start,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1642 | <code>        'end': week_end,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1643 | <code>        'days': week_days,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1644 | <code>        'appointments_count': len(appointments),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1645 | <code>    }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
-| 1647 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_appointments`. |
-| 1648 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1649 | <code>        'clinic/doctor_appointments.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1650 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
-| 1651 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1652 | <code>            'appointments': appointments,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1653 | <code>            'appointment_week': appointment_week,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1654 | <code>            'previous_week_start': week_start - timedelta(days=7),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1655 | <code>            'next_week_start': week_start + timedelta(days=7),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
-| 1656 | <code>            'is_current_week': week_start == current_week_start,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
-| 1657 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
-| 1658 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
-| 1661 | <code>def doctor_appointments_week_url(appointment_date):</code> | Формирует адрес недели, в которую входит переданная дата. Контекст: `doctor_appointments_week_url`. |
-| 1662 | <code>    return f'{reverse("doctor_appointments")}?week={appointment_date.isoformat()}'</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `doctor_appointments_week_url`. |
-| 1665 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 1666 | <code>def doctor_appointment_detail(request, appointment_id):</code> | Загружает полную заявку, пациента, медиа и соседние приемы дня. Контекст: `doctor_appointment_detail`. |
-| 1667 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
-| 1668 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointment_detail`. |
-| 1669 | <code>    appointment = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_appointment_detail`. |
-| 1670 | <code>        doctor.appointments.select_related('service', 'patient__profile').prefetch_related('images', 'videos'),</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_appointment_detail`. |
-| 1671 | <code>        pk=appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointment_detail`. |
-| 1672 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointment_detail`. |
-| 1673 | <code>    appointment.weekday_name = UKRAINIAN_WEEKDAYS[appointment.date.weekday()]</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_appointment_detail`. |
-| 1674 | <code>    day_appointments = doctor.appointments.filter(date=appointment.date).select_related(</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_appointment_detail`. |
-| 1675 | <code>        'service',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
-| 1676 | <code>        'patient__profile',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
-| 1677 | <code>    ).order_by('time')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `doctor_appointment_detail`. |
-| 1678 | <code>    active_appointment = active_appointment_for_doctor(doctor)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointment_detail`. |
-| 1679 | <code>    patient_card, _ = ensure_patient_card_from_appointment(appointment)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointment_detail`. |
-| 1680 | <code>    reschedule_form = AppointmentRescheduleForm(appointment=appointment)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointment_detail`. |
-| 1681 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_appointment_detail`. |
-| 1682 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
-| 1683 | <code>        'clinic/doctor_appointment_detail.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
-| 1684 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointment_detail`. |
-| 1685 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
-| 1686 | <code>            'appointment': appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
-| 1687 | <code>            'day_appointments': day_appointments,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
-| 1688 | <code>            'active_appointment': active_appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
-| 1689 | <code>            'patient_card': patient_card,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
-| 1690 | <code>            'reschedule_form': reschedule_form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
-| 1691 | <code>            'show_reschedule_form': request.GET.get('reschedule') == '1',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
-| 1692 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointment_detail`. |
-| 1693 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointment_detail`. |
-| 1696 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 1697 | <code>def doctor_propose_reschedule(request, appointment_id):</code> | Проверяет и резервирует новое время, после чего спрашивает решение пациента. Контекст: `doctor_propose_reschedule`. |
-| 1698 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1699 | <code>    appointment = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_propose_reschedule`. |
-| 1700 | <code>        Appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1701 | <code>        pk=appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1702 | <code>        doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1703 | <code>        patient__isnull=False,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1704 | <code>        status__in=[Appointment.STATUS_PENDING, Appointment.STATUS_APPROVED],</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1705 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
-| 1706 | <code>    if request.method != 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_propose_reschedule`. |
-| 1707 | <code>        return redirect(</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_propose_reschedule`. |
-| 1708 | <code>            f'{reverse("doctor_appointment_detail", args=[appointment.id])}?reschedule=1#reschedule'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1709 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
-| 1711 | <code>    form = AppointmentRescheduleForm(request.POST, appointment=appointment)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1712 | <code>    if not form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_propose_reschedule`. |
-| 1713 | <code>        for errors in form.errors.values():</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `doctor_propose_reschedule`. |
-| 1714 | <code>            messages.error(request, errors[0])</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_propose_reschedule`. |
-| 1715 | <code>        return redirect(</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_propose_reschedule`. |
-| 1716 | <code>            f'{reverse("doctor_appointment_detail", args=[appointment.id])}?reschedule=1#reschedule'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1717 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
-| 1719 | <code>    selected_date = form.cleaned_data['date']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_propose_reschedule`. |
-| 1720 | <code>    selected_time = form.cleaned_data['time']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_propose_reschedule`. |
-| 1721 | <code>    duration_minutes = form.cleaned_data['duration_minutes']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_propose_reschedule`. |
-| 1722 | <code>    schedule = form.schedule</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1723 | <code>    duration_slots = ceil(duration_minutes / schedule.slot_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1724 | <code>    if appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_propose_reschedule`. |
-| 1725 | <code>        doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1726 | <code>        selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1727 | <code>        selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1728 | <code>        duration_slots=duration_slots,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1729 | <code>        duration_minutes=duration_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1730 | <code>        exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1731 | <code>    ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1732 | <code>        messages.error(request, 'Обраний час перетинається з іншим записом, обідом або кінцем робочого дня.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_propose_reschedule`. |
-| 1733 | <code>        return redirect(</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_propose_reschedule`. |
-| 1734 | <code>            f'{reverse("doctor_appointment_detail", args=[appointment.id])}?reschedule=1#reschedule'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1735 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
-| 1737 | <code>    if patient_appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_propose_reschedule`. |
-| 1738 | <code>        appointment.patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1739 | <code>        selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1740 | <code>        selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1741 | <code>        duration_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1742 | <code>        patient_phone=appointment.patient_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1743 | <code>        exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1744 | <code>    ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1745 | <code>        messages.error(</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_propose_reschedule`. |
-| 1746 | <code>            request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1747 | <code>            'У цей час пацієнт уже має іншу заявку або прийом. Оберіть інший час.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1748 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
-| 1749 | <code>        return redirect(</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_propose_reschedule`. |
-| 1750 | <code>            f'{reverse("doctor_appointment_detail", args=[appointment.id])}?reschedule=1#reschedule'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1751 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
-| 1753 | <code>    appointment.previous_date = appointment.date</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
-| 1754 | <code>    appointment.previous_time = appointment.time</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
-| 1755 | <code>    appointment.date = selected_date</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
-| 1756 | <code>    appointment.time = selected_time</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
-| 1757 | <code>    appointment.city = schedule.city</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
-| 1758 | <code>    appointment.address = schedule.address</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
-| 1759 | <code>    appointment.duration_slots = duration_slots</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
-| 1760 | <code>    appointment.duration_minutes_exact = duration_minutes</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
-| 1761 | <code>    appointment.status = Appointment.STATUS_RESCHEDULE_PROPOSED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
-| 1762 | <code>    appointment.reschedule_requested_at = timezone.now()</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
-| 1763 | <code>    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `doctor_propose_reschedule`. |
-| 1764 | <code>        with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `doctor_propose_reschedule`. |
-| 1765 | <code>            appointment.save(</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_propose_reschedule`. |
-| 1766 | <code>                update_fields=[</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1767 | <code>                    'previous_date',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1768 | <code>                    'previous_time',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1769 | <code>                    'date',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1770 | <code>                    'time',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1771 | <code>                    'city',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1772 | <code>                    'address',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1773 | <code>                    'duration_slots',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1774 | <code>                    'duration_minutes_exact',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1775 | <code>                    'status',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1776 | <code>                    'reschedule_requested_at',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1777 | <code>                ]</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
-| 1778 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
-| 1779 | <code>    except IntegrityError:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `doctor_propose_reschedule`. |
-| 1780 | <code>        messages.error(request, 'Цей час щойно зайняли. Оберіть інший варіант.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_propose_reschedule`. |
-| 1781 | <code>        return redirect(</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_propose_reschedule`. |
-| 1782 | <code>            f'{reverse("doctor_appointment_detail", args=[appointment.id])}?reschedule=1#reschedule'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
-| 1783 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
-| 1785 | <code>    write_audit_log(request, 'Запропоновано новий час', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1786 | <code>    notify_patient_status(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1787 | <code>        appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1788 | <code>        f'reschedule_{int(appointment.reschedule_requested_at.timestamp())}',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1789 | <code>        'Лікар пропонує змінити час прийому',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
-| 1790 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
-| 1791 | <code>    messages.success(request, 'Новий час надіслано пацієнту на погодження.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_propose_reschedule`. |
-| 1792 | <code>    return redirect('doctor_appointment_detail', appointment_id=appointment.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_propose_reschedule`. |
-| 1795 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 1796 | <code>def doctor_review_appointment(request, appointment_id):</code> | Позволяет врачу подтвердить длительность или отклонить новую заявку. Контекст: `doctor_review_appointment`. |
-| 1797 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1798 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
-| 1799 | <code>    appointment = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_review_appointment`. |
-| 1800 | <code>        Appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1801 | <code>        pk=appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
-| 1802 | <code>        doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
-| 1803 | <code>        status=Appointment.STATUS_PENDING,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
-| 1804 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_review_appointment`. |
-| 1805 | <code>    if request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_review_appointment`. |
-| 1806 | <code>        action = request.POST.get('action')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
-| 1807 | <code>        if action == 'reject':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_review_appointment`. |
-| 1808 | <code>            appointment.status = Appointment.STATUS_REJECTED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_review_appointment`. |
-| 1809 | <code>            appointment.save(update_fields=['status'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_review_appointment`. |
-| 1810 | <code>            ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1811 | <code>            write_audit_log(request, 'Відхилено заявку лікарем', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1812 | <code>            notify_patient_status(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1813 | <code>                appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1814 | <code>                'rejected',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1815 | <code>                'Лікар відхилив заявку на прийом',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1816 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_review_appointment`. |
-| 1817 | <code>            messages.success(request, 'Заявку відхилено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_review_appointment`. |
-| 1818 | <code>            return redirect(doctor_appointments_week_url(appointment.date))</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_review_appointment`. |
-| 1820 | <code>        schedule = schedule_for_date(doctor, appointment.date)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
-| 1821 | <code>        slot_minutes = schedule.slot_minutes if schedule else 60</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
-| 1822 | <code>        form = AppointmentDecisionForm(request.POST, slot_minutes=slot_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
-| 1823 | <code>        if form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_review_appointment`. |
-| 1824 | <code>            duration_minutes = form.cleaned_data['duration_minutes']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_review_appointment`. |
-| 1825 | <code>            duration_slots = ceil(duration_minutes / slot_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
-| 1826 | <code>            if is_past_appointment(appointment.date, appointment.time):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_review_appointment`. |
-| 1827 | <code>                messages.error(request, 'Не можна підтвердити заявку на минулий час.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_review_appointment`. |
-| 1828 | <code>            elif appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_review_appointment`. |
-| 1829 | <code>                doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1830 | <code>                appointment.date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1831 | <code>                appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1832 | <code>                duration_slots=duration_slots,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
-| 1833 | <code>                duration_minutes=duration_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
-| 1834 | <code>                exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
-| 1835 | <code>            ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1836 | <code>                messages.error(request, 'На цей час не вистачає вільних слотів для такої тривалості.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_review_appointment`. |
-| 1837 | <code>            elif patient_appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_review_appointment`. |
-| 1838 | <code>                appointment.patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1839 | <code>                appointment.date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1840 | <code>                appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1841 | <code>                duration_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1842 | <code>                patient_phone=appointment.patient_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
-| 1843 | <code>                exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
-| 1844 | <code>            ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1845 | <code>                messages.error(</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_review_appointment`. |
-| 1846 | <code>                    request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1847 | <code>                    'У цей час пацієнт уже має іншу заявку або прийом.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1848 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_review_appointment`. |
-| 1849 | <code>            else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `doctor_review_appointment`. |
-| 1850 | <code>                appointment.duration_slots = duration_slots</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_review_appointment`. |
-| 1851 | <code>                appointment.duration_minutes_exact = duration_minutes</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_review_appointment`. |
-| 1852 | <code>                appointment.status = Appointment.STATUS_APPROVED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_review_appointment`. |
-| 1853 | <code>                appointment.approved_at = timezone.now()</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_review_appointment`. |
-| 1854 | <code>                appointment.save(update_fields=['duration_slots', 'duration_minutes_exact', 'status', 'approved_at'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_review_appointment`. |
-| 1855 | <code>                ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1856 | <code>                write_audit_log(request, 'Підтверджено заявку лікарем', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1857 | <code>                notify_patient_status(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1858 | <code>                    appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1859 | <code>                    'approved',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1860 | <code>                    'Лікар підтвердив вашу заявку',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
-| 1861 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_review_appointment`. |
-| 1862 | <code>                messages.success(request, 'Заявку підтверджено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_review_appointment`. |
-| 1863 | <code>                return redirect(doctor_appointments_week_url(appointment.date))</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_review_appointment`. |
-| 1864 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `doctor_review_appointment`. |
-| 1865 | <code>            error = form.errors.get('duration_minutes')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
-| 1866 | <code>            messages.error(request, error[0] if error else 'Перевірте тривалість прийому.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_review_appointment`. |
-| 1867 | <code>    return redirect(doctor_appointments_week_url(appointment.date))</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_review_appointment`. |
-| 1870 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 1871 | <code>def doctor_cancel_appointment(request, appointment_id):</code> | Отменяет будущий прием врача и уведомляет пациента. Контекст: `doctor_cancel_appointment`. |
-| 1872 | <code>    appointment = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_cancel_appointment`. |
-| 1873 | <code>        Appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_cancel_appointment`. |
-| 1874 | <code>        pk=appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_cancel_appointment`. |
-| 1875 | <code>        doctor=request.user.doctor_profile,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_cancel_appointment`. |
-| 1876 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_cancel_appointment`. |
-| 1877 | <code>    if request.method == 'POST' and appointment.can_cancel:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_cancel_appointment`. |
-| 1878 | <code>        appointment.status = Appointment.STATUS_CANCELED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_cancel_appointment`. |
-| 1879 | <code>        appointment.save(update_fields=['status'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_cancel_appointment`. |
-| 1880 | <code>        ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_cancel_appointment`. |
-| 1881 | <code>        write_audit_log(request, 'Скасовано запис лікарем', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_cancel_appointment`. |
-| 1882 | <code>        notify_patient_status(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_cancel_appointment`. |
-| 1883 | <code>            appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_cancel_appointment`. |
-| 1884 | <code>            'doctor_canceled',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_cancel_appointment`. |
-| 1885 | <code>            'Лікар скасував прийом',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_cancel_appointment`. |
-| 1886 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_cancel_appointment`. |
-| 1887 | <code>        messages.success(request, 'Запис пацієнта скасовано.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_cancel_appointment`. |
-| 1888 | <code>    elif request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_cancel_appointment`. |
-| 1889 | <code>        messages.error(request, 'Цей запис уже не можна скасувати.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_cancel_appointment`. |
-| 1890 | <code>    return redirect('doctor_appointment_detail', appointment_id=appointment.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_cancel_appointment`. |
-| 1893 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 1894 | <code>def doctor_book_patient(request):</code> | Записывает существующего или нового пациента, включая безопасное деление слота. Контекст: `doctor_book_patient`. |
-| 1895 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1896 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1897 | <code>    earliest_booking_date = timezone.localdate()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1898 | <code>    working_weekdays = doctor_working_weekdays(doctor)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1899 | <code>    selected_date = parse_date(request.GET.get('date')) if request.GET.get('date') else timezone.localdate()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1900 | <code>    if selected_date &lt; timezone.localdate():</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 1901 | <code>        messages.error(request, 'Не можна вибрати минулу дату.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_book_patient`. |
-| 1902 | <code>        selected_date = timezone.localdate()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1903 | <code>    adjusted_date = next_working_date(selected_date, working_weekdays)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1904 | <code>    date_was_adjusted = bool(adjusted_date and adjusted_date != selected_date)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1905 | <code>    if adjusted_date:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 1906 | <code>        selected_date = adjusted_date</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1907 | <code>    selected_time = None if date_was_adjusted else parse_time(request.GET.get('time'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1908 | <code>    schedule, slots = slots_for_doctor(doctor, selected_date, include_split_options=True)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1909 | <code>    split_option = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1910 | <code>    split_appointment_id = request.GET.get('split')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1911 | <code>    if split_appointment_id and schedule:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 1912 | <code>        split_source = Appointment.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_book_patient`. |
-| 1913 | <code>            pk=split_appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1914 | <code>            doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1915 | <code>            date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1916 | <code>        ).first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1917 | <code>        if split_source:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 1918 | <code>            split_option = split_slot_option(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1919 | <code>                doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1920 | <code>                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1921 | <code>                split_source.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1922 | <code>                schedule=schedule,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1923 | <code>                appointment_id=split_source.pk,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1924 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 1925 | <code>        if split_option:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 1926 | <code>            selected_time = split_option['time']</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1927 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `doctor_book_patient`. |
-| 1928 | <code>            selected_time = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1929 | <code>            messages.error(request, 'Цей слот уже не можна поділити.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_book_patient`. |
-| 1930 | <code>    slot_minutes = schedule.slot_minutes if schedule else 60</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1931 | <code>    form = DoctorPatientBookingForm(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1932 | <code>        request.POST or None,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1933 | <code>        doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1934 | <code>        slot_minutes=slot_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1935 | <code>        fixed_duration_minutes=(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1936 | <code>            split_option['duration_minutes']</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1937 | <code>            if split_option</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 1938 | <code>            else None</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1939 | <code>        ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 1940 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 1942 | <code>    if request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 1943 | <code>        selected_date = parse_date(request.POST.get('date'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1944 | <code>        selected_time = parse_time(request.POST.get('time'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1945 | <code>        schedule, slots = slots_for_doctor(doctor, selected_date, include_split_options=True)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1946 | <code>        slot_minutes = schedule.slot_minutes if schedule else 60</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1947 | <code>        split_appointment_id = request.POST.get('split_appointment')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1948 | <code>        split_option = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1949 | <code>        if split_appointment_id and schedule:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 1950 | <code>            split_source = Appointment.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_book_patient`. |
-| 1951 | <code>                pk=split_appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1952 | <code>                doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1953 | <code>                date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1954 | <code>            ).first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1955 | <code>            if split_source:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 1956 | <code>                split_option = split_slot_option(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1957 | <code>                    doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1958 | <code>                    selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1959 | <code>                    split_source.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1960 | <code>                    schedule=schedule,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1961 | <code>                    appointment_id=split_source.pk,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1962 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 1963 | <code>        form = DoctorPatientBookingForm(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1964 | <code>            request.POST,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1965 | <code>            doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1966 | <code>            slot_minutes=slot_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1967 | <code>            fixed_duration_minutes=(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1968 | <code>                split_option['duration_minutes']</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1969 | <code>                if split_option</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 1970 | <code>                else None</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1971 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 1972 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 1973 | <code>        available_times = [slot['time'] for slot in slots if not slot['busy']]</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1974 | <code>        split_time_is_valid = bool(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1975 | <code>            split_option</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1976 | <code>            and selected_time == split_option['time']</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1977 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 1979 | <code>        if not schedule or not schedule.is_working:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 1980 | <code>            messages.error(request, 'У цей день ви не приймаєте. Оберіть робочий день у календарі.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_book_patient`. |
-| 1981 | <code>            selected_time = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1982 | <code>        elif is_past_appointment(selected_date, selected_time):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 1983 | <code>            messages.error(request, 'Не можна записати пацієнта на минулу дату або час.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_book_patient`. |
-| 1984 | <code>        elif split_appointment_id and not split_time_is_valid:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 1985 | <code>            messages.error(request, 'Цей слот уже не можна поділити.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_book_patient`. |
-| 1986 | <code>        elif not selected_time or (</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 1987 | <code>            selected_time not in available_times</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1988 | <code>            and not split_time_is_valid</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1989 | <code>        ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 1990 | <code>            messages.error(request, 'Цей час уже недоступний.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_book_patient`. |
-| 1991 | <code>        elif form.is_valid() and schedule:</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_book_patient`. |
-| 1992 | <code>            duration_minutes = form.cleaned_data['duration_minutes']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_book_patient`. |
-| 1993 | <code>            duration_slots = ceil(duration_minutes / slot_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1994 | <code>            selected_patient = form.cleaned_data.get('patient')</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_book_patient`. |
-| 1995 | <code>            patient = selected_patient</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1996 | <code>            existing_card = find_doctor_card_by_phone(doctor, form.cleaned_data['phone'])</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_book_patient`. |
-| 1997 | <code>            patient_phone = normalize_phone_number(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 1998 | <code>                patient.profile.phone if patient and patient.profile.phone else form.cleaned_data['phone']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_book_patient`. |
-| 1999 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 2000 | <code>            patient_first_name = form.cleaned_data['first_name']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_book_patient`. |
-| 2001 | <code>            patient_last_name = form.cleaned_data['last_name']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_book_patient`. |
-| 2002 | <code>            match_message = ''</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2003 | <code>            if patient:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 2004 | <code>                patient_first_name = patient.first_name or patient_first_name</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2005 | <code>                patient_last_name = patient.last_name or patient_last_name</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2006 | <code>            elif existing_card:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 2007 | <code>                patient_first_name = existing_card.patient_first_name</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2008 | <code>                patient_last_name = existing_card.patient_last_name</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2009 | <code>                match_message = ' Номер уже був у картці пацієнта, використано наявну картку.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2010 | <code>            split_source_id = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2011 | <code>                split_option['appointment'].pk</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2012 | <code>                if split_option</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 2013 | <code>                else None</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2014 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 2015 | <code>            if appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 2016 | <code>                doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2017 | <code>                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2018 | <code>                selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2019 | <code>                duration_slots=duration_slots,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2020 | <code>                duration_minutes=duration_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2021 | <code>                exclude_id=split_source_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2022 | <code>            ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2023 | <code>                messages.error(request, 'Для такої тривалості недостатньо вільного часу.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_book_patient`. |
-| 2024 | <code>            elif patient_appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 2025 | <code>                patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2026 | <code>                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2027 | <code>                selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2028 | <code>                duration_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2029 | <code>                patient_phone=patient_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2030 | <code>                exclude_id=split_source_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2031 | <code>            ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2032 | <code>                messages.error(</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_book_patient`. |
-| 2033 | <code>                    request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2034 | <code>                    'У цей час пацієнт уже має іншу заявку або прийом.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2035 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 2036 | <code>            else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `doctor_book_patient`. |
-| 2037 | <code>                try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `doctor_book_patient`. |
-| 2038 | <code>                    with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `doctor_book_patient`. |
-| 2039 | <code>                        if split_source_id:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 2040 | <code>                            locked_source = Appointment.objects.select_for_update().get(</code> | Блокирует выбранную строку до конца транзакции и защищает от одновременного изменения. Контекст: `doctor_book_patient`. |
-| 2041 | <code>                                pk=split_source_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2042 | <code>                                doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2043 | <code>                                date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2044 | <code>                            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 2045 | <code>                            locked_split_option = split_slot_option(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2046 | <code>                                doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2047 | <code>                                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2048 | <code>                                locked_source.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2049 | <code>                                schedule=schedule,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2050 | <code>                                appointment_id=locked_source.pk,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2051 | <code>                            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 2052 | <code>                            if (</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 2053 | <code>                                not locked_split_option</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2054 | <code>                                or selected_time != locked_split_option['time']</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2055 | <code>                                or duration_minutes != locked_split_option['duration_minutes']</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2056 | <code>                            ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2057 | <code>                                raise IntegrityError</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `doctor_book_patient`. |
-| 2058 | <code>                            if appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
-| 2059 | <code>                                doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2060 | <code>                                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2061 | <code>                                selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2062 | <code>                                duration_minutes=duration_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2063 | <code>                                exclude_id=locked_source.pk,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2064 | <code>                            ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2065 | <code>                                raise IntegrityError</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `doctor_book_patient`. |
-| 2066 | <code>                            locked_source.duration_minutes_exact = duration_minutes</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2067 | <code>                            locked_source.duration_slots = 1</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2068 | <code>                            locked_source.save(</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_book_patient`. |
-| 2069 | <code>                                update_fields=['duration_minutes_exact', 'duration_slots']</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2070 | <code>                            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 2071 | <code>                            write_audit_log(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2072 | <code>                                request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2073 | <code>                                'Лікар поділив слот прийому',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2074 | <code>                                locked_source,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2075 | <code>                                (</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 2076 | <code>                                    f'Тривалість змінено з '</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2077 | <code>                                    f'{locked_split_option["original_duration_minutes"]} '</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2078 | <code>                                    f'до {duration_minutes} хв.'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2079 | <code>                                ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 2080 | <code>                            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 2082 | <code>                        appointment = Appointment.objects.create(</code> | Начинает создание новой строки базы через Django ORM. Контекст: `doctor_book_patient`. |
-| 2083 | <code>                            doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2084 | <code>                            service=form.cleaned_data['service'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_book_patient`. |
-| 2085 | <code>                            patient=patient,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2086 | <code>                            patient_first_name=patient_first_name,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2087 | <code>                            patient_last_name=patient_last_name,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2088 | <code>                            patient_phone=patient_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2089 | <code>                            patient_email=patient.email if patient else '',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2090 | <code>                            date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2091 | <code>                            time=selected_time,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2092 | <code>                            city=schedule.city,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2093 | <code>                            address=schedule.address,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2094 | <code>                            reason=form.cleaned_data['reason'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_book_patient`. |
-| 2095 | <code>                            duration_slots=duration_slots,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2096 | <code>                            duration_minutes_exact=duration_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2097 | <code>                            status=Appointment.STATUS_APPROVED,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2098 | <code>                            approved_at=timezone.now(),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2099 | <code>                        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 2100 | <code>                    ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2101 | <code>                    write_audit_log(request, 'Лікар записав пацієнта', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2102 | <code>                    notify_patient_status(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2103 | <code>                        appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2104 | <code>                        'doctor_created',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2105 | <code>                        'Лікар створив для вас запис',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2106 | <code>                    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 2107 | <code>                    split_message = ' Стандартний слот поділено на два прийоми.' if split_source_id else ''</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
-| 2108 | <code>                    messages.success(request, f'Пацієнта записано.{split_message}{match_message}')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_book_patient`. |
-| 2109 | <code>                    return redirect(doctor_appointments_week_url(selected_date))</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_book_patient`. |
-| 2110 | <code>                except (IntegrityError, Appointment.DoesNotExist):</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `doctor_book_patient`. |
-| 2111 | <code>                    messages.error(request, 'Цей час уже недоступний.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_book_patient`. |
-| 2113 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_book_patient`. |
-| 2114 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2115 | <code>        'clinic/doctor_book_patient.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2116 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 2117 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2118 | <code>            'selected_date': selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2119 | <code>            'selected_time': selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2120 | <code>            'selected_schedule': schedule,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2121 | <code>            'slots': slots,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2122 | <code>            'split_option': split_option,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2123 | <code>            'form': form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2124 | <code>            'earliest_booking_date': earliest_booking_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2125 | <code>            'working_weekdays': working_weekdays,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2126 | <code>            'working_weekday_labels': working_weekday_labels(working_weekdays),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
-| 2127 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 2128 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
-| 2131 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 2132 | <code>def doctor_patient_cards(request):</code> | Собирает список карточек с последним, следующим визитом и поиском. Контекст: `doctor_patient_cards`. |
-| 2133 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
-| 2134 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
-| 2135 | <code>    sync_patient_cards_for_doctor(doctor)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
-| 2136 | <code>    query = request.GET.get('q', '').strip()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
-| 2137 | <code>    cards = doctor.patient_cards.select_related('patient__profile')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_patient_cards`. |
-| 2138 | <code>    if query:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_patient_cards`. |
-| 2139 | <code>        normalized_query = normalize_phone_number(query)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
-| 2140 | <code>        for term in query.split():</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `doctor_patient_cards`. |
-| 2141 | <code>            term_filter = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
-| 2142 | <code>                Q(patient_first_name__icontains=term)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
-| 2143 | <code>                &#124; Q(patient_last_name__icontains=term)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
-| 2144 | <code>                &#124; Q(patient_phone__icontains=term)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
-| 2145 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_cards`. |
-| 2146 | <code>            if normalized_query:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_patient_cards`. |
-| 2147 | <code>                term_filter &#124;= Q(patient_phone__icontains=normalized_query)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
-| 2148 | <code>            if term.isdigit() and len(term) &lt;= 3:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_patient_cards`. |
-| 2149 | <code>                term_filter &#124;= Q(patient__profile__age=int(term))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
-| 2150 | <code>            cards = cards.filter(term_filter)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_patient_cards`. |
-| 2151 | <code>    card_rows = []</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
-| 2152 | <code>    for card in cards:</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `doctor_patient_cards`. |
-| 2153 | <code>        appointments = appointments_for_patient_card(doctor, card).exclude(</code> | Исключает из ORM-запроса строки, подходящие под указанное условие. Контекст: `doctor_patient_cards`. |
-| 2154 | <code>            status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
-| 2155 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_cards`. |
-| 2156 | <code>        last_visit = appointments.filter(status=Appointment.STATUS_COMPLETED).order_by('-date', '-time').first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_patient_cards`. |
-| 2157 | <code>        next_visit = appointments.filter(status__in=[Appointment.STATUS_PENDING, Appointment.STATUS_APPROVED]).order_by('date', 'time').first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_patient_cards`. |
-| 2158 | <code>        card_rows.append(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
-| 2159 | <code>            {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_cards`. |
-| 2160 | <code>                'card': card,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
-| 2161 | <code>                'appointments_count': appointments.count(),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
-| 2162 | <code>                'last_visit': last_visit,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
-| 2163 | <code>                'next_visit': next_visit,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
-| 2164 | <code>            }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_cards`. |
-| 2165 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_cards`. |
-| 2166 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_patient_cards`. |
-| 2167 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
-| 2168 | <code>        'clinic/doctor_patient_cards.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
-| 2169 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_cards`. |
-| 2170 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
-| 2171 | <code>            'card_rows': card_rows,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
-| 2172 | <code>            'query': query,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
-| 2173 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_cards`. |
-| 2174 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_cards`. |
-| 2177 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 2178 | <code>def doctor_patient_card_detail(request, card_id):</code> | Управляет заметками, расширенными записями и медицинскими файлами карточки. Контекст: `doctor_patient_card_detail`. |
-| 2179 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2180 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
-| 2181 | <code>    sync_patient_cards_for_doctor(doctor)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2182 | <code>    card = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_patient_card_detail`. |
-| 2183 | <code>        DoctorPatientCard.objects.select_related('patient__profile'),</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_patient_card_detail`. |
-| 2184 | <code>        pk=card_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
-| 2185 | <code>        doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
-| 2186 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_card_detail`. |
-| 2187 | <code>    action = request.POST.get('action') if request.method == 'POST' else None</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2188 | <code>    form = DoctorPatientCardForm(request.POST if action == 'update_card' else None, instance=card)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2189 | <code>    entry_form = PatientRecordEntryForm(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
-| 2190 | <code>        request.POST if action == 'add_entry' else None,</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_patient_card_detail`. |
-| 2191 | <code>        request.FILES if action == 'add_entry' else None,</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_patient_card_detail`. |
-| 2192 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_card_detail`. |
-| 2194 | <code>    if action == 'update_card' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_patient_card_detail`. |
-| 2195 | <code>        form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_patient_card_detail`. |
-| 2196 | <code>        write_audit_log(request, 'Оновлено картку пацієнта', card)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2197 | <code>        messages.success(request, 'Картку пацієнта оновлено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_patient_card_detail`. |
-| 2198 | <code>        return redirect('doctor_patient_card_detail', card_id=card.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_patient_card_detail`. |
-| 2200 | <code>    if action == 'add_entry' and entry_form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_patient_card_detail`. |
-| 2201 | <code>        appointment = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
-| 2202 | <code>        if request.POST.get('appointment_id'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_patient_card_detail`. |
-| 2203 | <code>            appointment = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_patient_card_detail`. |
-| 2204 | <code>                appointments_for_patient_card(doctor, card),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2205 | <code>                pk=request.POST.get('appointment_id'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
-| 2206 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_card_detail`. |
-| 2207 | <code>        entry = entry_form.save(commit=False)</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_patient_card_detail`. |
-| 2208 | <code>        entry.card = card</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
-| 2209 | <code>        entry.doctor = doctor</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
-| 2210 | <code>        entry.appointment = appointment</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
-| 2211 | <code>        entry.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_patient_card_detail`. |
-| 2212 | <code>        for photo in entry_form.cleaned_data['photos']:</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_patient_card_detail`. |
-| 2213 | <code>            PatientRecordImage.objects.create(entry=entry, image=photo)</code> | Начинает создание новой строки базы через Django ORM. Контекст: `doctor_patient_card_detail`. |
-| 2214 | <code>        for video in entry_form.cleaned_data['videos']:</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_patient_card_detail`. |
-| 2215 | <code>            PatientRecordVideo.objects.create(entry=entry, video=video)</code> | Начинает создание новой строки базы через Django ORM. Контекст: `doctor_patient_card_detail`. |
-| 2216 | <code>        write_audit_log(request, 'Додано запис до картки', entry)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2217 | <code>        messages.success(request, 'Новий запис додано до картки пацієнта.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_patient_card_detail`. |
-| 2218 | <code>        return redirect('doctor_patient_card_detail', card_id=card.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_patient_card_detail`. |
-| 2220 | <code>    if action == 'delete_entry':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_patient_card_detail`. |
-| 2221 | <code>        entry = get_object_or_404(card.record_entries, pk=request.POST.get('entry_id'), doctor=doctor)</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_patient_card_detail`. |
-| 2222 | <code>        write_audit_log(request, 'Видалено запис із картки', entry)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2223 | <code>        entry.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `doctor_patient_card_detail`. |
-| 2224 | <code>        messages.success(request, 'Запис із картки видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_patient_card_detail`. |
-| 2225 | <code>        return redirect('doctor_patient_card_detail', card_id=card.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_patient_card_detail`. |
-| 2227 | <code>    if action == 'delete_image':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_patient_card_detail`. |
-| 2228 | <code>        image = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_patient_card_detail`. |
-| 2229 | <code>            PatientRecordImage,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2230 | <code>            pk=request.POST.get('image_id'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
-| 2231 | <code>            entry__card=card,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
-| 2232 | <code>            entry__doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
-| 2233 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_card_detail`. |
-| 2234 | <code>        image.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `doctor_patient_card_detail`. |
-| 2235 | <code>        write_audit_log(request, 'Видалено фото з картки', card)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2236 | <code>        messages.success(request, 'Фотографію видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_patient_card_detail`. |
-| 2237 | <code>        return redirect('doctor_patient_card_detail', card_id=card.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_patient_card_detail`. |
-| 2239 | <code>    if action == 'delete_video':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_patient_card_detail`. |
-| 2240 | <code>        video = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_patient_card_detail`. |
-| 2241 | <code>            PatientRecordVideo,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2242 | <code>            pk=request.POST.get('video_id'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
-| 2243 | <code>            entry__card=card,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
-| 2244 | <code>            entry__doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
-| 2245 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_card_detail`. |
-| 2246 | <code>        video.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `doctor_patient_card_detail`. |
-| 2247 | <code>        write_audit_log(request, 'Видалено відео з картки', card)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2248 | <code>        messages.success(request, 'Відео видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_patient_card_detail`. |
-| 2249 | <code>        return redirect('doctor_patient_card_detail', card_id=card.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_patient_card_detail`. |
-| 2251 | <code>    appointments = appointments_for_patient_card(doctor, card).select_related(</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_patient_card_detail`. |
-| 2252 | <code>        'service',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2253 | <code>    ).order_by('-date', '-time')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `doctor_patient_card_detail`. |
-| 2254 | <code>    completed_visits = appointments.filter(status=Appointment.STATUS_COMPLETED).count()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_patient_card_detail`. |
-| 2255 | <code>    last_visit = appointments.filter(status=Appointment.STATUS_COMPLETED).first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_patient_card_detail`. |
-| 2256 | <code>    first_visit = appointments.last()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
-| 2257 | <code>    next_visit = appointments.filter(status__in=[Appointment.STATUS_PENDING, Appointment.STATUS_APPROVED]).order_by('date', 'time').first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_patient_card_detail`. |
-| 2258 | <code>    selected_appointment = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
-| 2259 | <code>    if request.GET.get('appointment'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_patient_card_detail`. |
-| 2260 | <code>        selected_appointment = appointments.filter(pk=request.GET.get('appointment')).first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_patient_card_detail`. |
-| 2262 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_patient_card_detail`. |
-| 2263 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2264 | <code>        'clinic/doctor_patient_card_detail.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2265 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_card_detail`. |
-| 2266 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2267 | <code>            'card': card,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2268 | <code>            'form': form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2269 | <code>            'entry_form': entry_form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2270 | <code>            'record_entries': card.record_entries.select_related('appointment__service').prefetch_related(</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_patient_card_detail`. |
-| 2271 | <code>                'images',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2272 | <code>                'videos',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2273 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_card_detail`. |
-| 2274 | <code>            'selected_appointment': selected_appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2275 | <code>            'appointments': appointments,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2276 | <code>            'completed_visits': completed_visits,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2277 | <code>            'last_visit': last_visit,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2278 | <code>            'first_visit': first_visit,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2279 | <code>            'next_visit': next_visit,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
-| 2280 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_card_detail`. |
-| 2281 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_card_detail`. |
-| 2284 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 2285 | <code>def doctor_schedule(request):</code> | Добавляет незаполненный день или полностью заменяет выбранный день недельного графика врача. Контекст: `doctor_schedule`. |
-| 2286 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2287 | <code>    weekday_values = {value for value, _ in WorkSchedule.WEEKDAY_CHOICES}</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2288 | <code>    schedules = list(doctor.schedules.select_related('workplace'))</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_schedule`. |
-| 2289 | <code>    configured_weekdays = {schedule.weekday for schedule in schedules}</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2290 | <code>    missing_weekdays = weekday_values - configured_weekdays</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2292 | <code>    edit_weekday_raw = request.GET.get('edit')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2293 | <code>    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `doctor_schedule`. |
-| 2294 | <code>        edit_weekday = int(edit_weekday_raw) if edit_weekday_raw is not None else None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2295 | <code>    except (TypeError, ValueError):</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `doctor_schedule`. |
-| 2296 | <code>        edit_weekday = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2297 | <code>    editing_schedule = next(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2298 | <code>        (schedule for schedule in schedules if schedule.weekday == edit_weekday),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
-| 2299 | <code>        None,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
-| 2300 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_schedule`. |
-| 2301 | <code>    if edit_weekday_raw is not None and editing_schedule is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_schedule`. |
-| 2302 | <code>        messages.error(request, 'День графіка не знайдено.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_schedule`. |
-| 2303 | <code>        return redirect('doctor_schedule')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_schedule`. |
-| 2305 | <code>    if request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_schedule`. |
-| 2306 | <code>        form = WorkScheduleForm(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2307 | <code>            request.POST,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
-| 2308 | <code>            instance=editing_schedule,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2309 | <code>            doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2310 | <code>            allowed_weekdays=missing_weekdays if editing_schedule is None else None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2311 | <code>            locked_weekday=editing_schedule.weekday if editing_schedule else None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2312 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_schedule`. |
-| 2313 | <code>        if form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_schedule`. |
-| 2314 | <code>            schedule = form.save(commit=False)</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_schedule`. |
-| 2315 | <code>            schedule.doctor = doctor</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2316 | <code>            schedule.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_schedule`. |
-| 2317 | <code>            write_audit_log(request, 'Збережено графік лікаря', schedule)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
-| 2318 | <code>            messages.success(request, 'Графік збережено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_schedule`. |
-| 2319 | <code>            return redirect('doctor_schedule')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_schedule`. |
-| 2320 | <code>    else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `doctor_schedule`. |
-| 2321 | <code>        form = WorkScheduleForm(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2322 | <code>            doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2323 | <code>            allowed_weekdays=missing_weekdays if editing_schedule is None else None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2324 | <code>            locked_weekday=editing_schedule.weekday if editing_schedule else None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2325 | <code>            blank_existing=editing_schedule is not None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
-| 2326 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_schedule`. |
-| 2328 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_schedule`. |
-| 2329 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
-| 2330 | <code>        'clinic/doctor_schedule.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
-| 2331 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_schedule`. |
-| 2332 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
-| 2333 | <code>            'schedules': schedules,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
-| 2334 | <code>            'workplaces': doctor.workplaces.all(),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
-| 2335 | <code>            'form': form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
-| 2336 | <code>            'editing_schedule': editing_schedule,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
-| 2337 | <code>            'all_days_configured': not missing_weekdays,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
-| 2338 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_schedule`. |
-| 2339 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_schedule`. |
-| 2342 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 2343 | <code>def doctor_workplaces(request):</code> | Создает, редактирует и безопасно удаляет сохраненные места приема. Контекст: `doctor_workplaces`. |
-| 2344 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_workplaces`. |
-| 2345 | <code>    edit_id = request.GET.get('edit')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_workplaces`. |
-| 2346 | <code>    instance = doctor.workplaces.filter(pk=edit_id).first() if edit_id else None</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_workplaces`. |
-| 2348 | <code>    if request.method == 'POST' and request.POST.get('action') == 'delete':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_workplaces`. |
-| 2349 | <code>        workplace = get_object_or_404(doctor.workplaces, pk=request.POST.get('workplace_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_workplaces`. |
-| 2350 | <code>        if workplace.schedules.exists():</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_workplaces`. |
-| 2351 | <code>            messages.error(</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_workplaces`. |
-| 2352 | <code>                request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_workplaces`. |
-| 2353 | <code>                'Це місце використовується у графіку. Спочатку оберіть інше місце для відповідних днів.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_workplaces`. |
-| 2354 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_workplaces`. |
-| 2355 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `doctor_workplaces`. |
-| 2356 | <code>            write_audit_log(request, 'Видалено місце прийому', workplace)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_workplaces`. |
-| 2357 | <code>            workplace.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `doctor_workplaces`. |
-| 2358 | <code>            messages.success(request, 'Місце прийому видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_workplaces`. |
-| 2359 | <code>        return redirect('doctor_workplaces')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_workplaces`. |
-| 2361 | <code>    form = DoctorWorkplaceForm(request.POST or None, instance=instance)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_workplaces`. |
-| 2362 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_workplaces`. |
-| 2363 | <code>        workplace = form.save(commit=False)</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_workplaces`. |
-| 2364 | <code>        workplace.doctor = doctor</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_workplaces`. |
-| 2365 | <code>        workplace.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_workplaces`. |
-| 2366 | <code>        doctor.schedules.filter(workplace=workplace).update(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_workplaces`. |
-| 2367 | <code>            city=workplace.city,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_workplaces`. |
-| 2368 | <code>            address=workplace.address,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_workplaces`. |
-| 2369 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_workplaces`. |
-| 2370 | <code>        write_audit_log(request, 'Збережено місце прийому', workplace)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_workplaces`. |
-| 2371 | <code>        messages.success(request, 'Місце прийому збережено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_workplaces`. |
-| 2372 | <code>        return redirect('doctor_workplaces')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_workplaces`. |
-| 2374 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_workplaces`. |
-| 2375 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_workplaces`. |
-| 2376 | <code>        'clinic/doctor_workplaces.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_workplaces`. |
-| 2377 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_workplaces`. |
-| 2378 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_workplaces`. |
-| 2379 | <code>            'workplaces': doctor.workplaces.annotate(schedule_count=Count('schedules')),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_workplaces`. |
-| 2380 | <code>            'form': form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_workplaces`. |
-| 2381 | <code>            'editing': instance,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_workplaces`. |
-| 2382 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_workplaces`. |
-| 2383 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_workplaces`. |
-| 2386 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 2387 | <code>def doctor_services(request):</code> | Управляет услугами, порядком, видимостью, описанием, фото и видео. Контекст: `doctor_services`. |
-| 2388 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2389 | <code>    edit_id = request.GET.get('edit')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2390 | <code>    instance = doctor.services.filter(pk=edit_id).first() if edit_id else None</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_services`. |
-| 2392 | <code>    if request.method == 'POST' and request.POST.get('action') in {'move_up', 'move_down'}:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_services`. |
-| 2393 | <code>        service = get_object_or_404(doctor.services, pk=request.POST.get('service_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_services`. |
-| 2394 | <code>        services = list(doctor.services.order_by('sort_order', 'id'))</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `doctor_services`. |
-| 2395 | <code>        current_index = services.index(service)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2396 | <code>        offset = -1 if request.POST['action'] == 'move_up' else 1</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
-| 2397 | <code>        target_index = current_index + offset</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2398 | <code>        if 0 &lt;= target_index &lt; len(services):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_services`. |
-| 2399 | <code>            services[current_index], services[target_index] = services[target_index], services[current_index]</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2400 | <code>            for position, item in enumerate(services):</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `doctor_services`. |
-| 2401 | <code>                item.sort_order = position</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2402 | <code>            MedicalService.objects.bulk_update(services, ['sort_order'])</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
-| 2403 | <code>            write_audit_log(request, 'Змінено порядок послуг', service)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
-| 2404 | <code>            messages.success(request, 'Порядок послуг оновлено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_services`. |
-| 2405 | <code>        return redirect('doctor_services')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_services`. |
-| 2407 | <code>    if request.method == 'POST' and request.POST.get('action') == 'toggle_patient_visibility':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_services`. |
-| 2408 | <code>        service = get_object_or_404(doctor.services, pk=request.POST.get('service_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_services`. |
-| 2409 | <code>        service.is_patient_selectable = not service.is_patient_selectable</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2410 | <code>        service.save(update_fields=['is_patient_selectable'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_services`. |
-| 2411 | <code>        if service.is_patient_selectable:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_services`. |
-| 2412 | <code>            message = f'Послугу «{service.name}» показано пацієнтам під час запису.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2413 | <code>            audit_action = 'Послугу відкрито для онлайн-запису'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2414 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `doctor_services`. |
-| 2415 | <code>            message = f'Послугу «{service.name}» приховано від пацієнтів під час запису.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2416 | <code>            audit_action = 'Послугу приховано від онлайн-запису'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2417 | <code>        write_audit_log(request, audit_action, service)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
-| 2418 | <code>        messages.success(request, message)</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_services`. |
-| 2419 | <code>        return redirect('doctor_services')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_services`. |
-| 2421 | <code>    if request.method == 'POST' and request.POST.get('action') == 'delete':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_services`. |
-| 2422 | <code>        service = get_object_or_404(doctor.services, pk=request.POST.get('service_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_services`. |
-| 2423 | <code>        write_audit_log(request, 'Видалено послугу', service)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
-| 2424 | <code>        service.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `doctor_services`. |
-| 2425 | <code>        messages.success(request, 'Послугу видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_services`. |
-| 2426 | <code>        return redirect('doctor_services')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_services`. |
-| 2428 | <code>    if request.method == 'POST' and request.POST.get('action') == 'delete_image':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_services`. |
-| 2429 | <code>        image = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_services`. |
-| 2430 | <code>            MedicalServiceImage,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
-| 2431 | <code>            pk=request.POST.get('image_id'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2432 | <code>            service__doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2433 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_services`. |
-| 2434 | <code>        service_id = image.service_id</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2435 | <code>        write_audit_log(request, 'Видалено фото послуги', image.service)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
-| 2436 | <code>        image.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `doctor_services`. |
-| 2437 | <code>        messages.success(request, 'Фотографію послуги видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_services`. |
-| 2438 | <code>        return redirect(f"{reverse('doctor_services')}?edit={service_id}")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_services`. |
-| 2440 | <code>    if request.method == 'POST' and request.POST.get('action') == 'delete_video':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_services`. |
-| 2441 | <code>        video = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_services`. |
-| 2442 | <code>            MedicalServiceVideo,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
-| 2443 | <code>            pk=request.POST.get('video_id'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2444 | <code>            service__doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2445 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_services`. |
-| 2446 | <code>        service_id = video.service_id</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2447 | <code>        service = video.service</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2448 | <code>        write_audit_log(request, 'Видалено відео послуги', service)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
-| 2449 | <code>        video.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `doctor_services`. |
-| 2450 | <code>        messages.success(request, 'Відео послуги видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_services`. |
-| 2451 | <code>        return redirect(f"{reverse('doctor_services')}?edit={service_id}")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_services`. |
-| 2453 | <code>    form = ServiceForm(request.POST or None, request.FILES or None, instance=instance)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2454 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_services`. |
-| 2455 | <code>        service = form.save(commit=False)</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_services`. |
-| 2456 | <code>        service.doctor = doctor</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2457 | <code>        if service.pk is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_services`. |
-| 2458 | <code>            last_order = doctor.services.aggregate(max_order=Max('sort_order'))['max_order']</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2459 | <code>            service.sort_order = 0 if last_order is None else last_order + 1</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
-| 2460 | <code>        service.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_services`. |
-| 2461 | <code>        for photo in form.cleaned_data['photos']:</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_services`. |
-| 2462 | <code>            MedicalServiceImage.objects.create(service=service, image=photo)</code> | Начинает создание новой строки базы через Django ORM. Контекст: `doctor_services`. |
-| 2463 | <code>        for video in form.cleaned_data['videos']:</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_services`. |
-| 2464 | <code>            MedicalServiceVideo.objects.create(service=service, video=video)</code> | Начинает создание новой строки базы через Django ORM. Контекст: `doctor_services`. |
-| 2465 | <code>        write_audit_log(request, 'Збережено послугу', service)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
-| 2466 | <code>        messages.success(request, 'Послугу збережено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_services`. |
-| 2467 | <code>        return redirect('doctor_services')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_services`. |
-| 2469 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_services`. |
-| 2470 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
-| 2471 | <code>        'clinic/doctor_services.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
-| 2472 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_services`. |
-| 2473 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
-| 2474 | <code>            'services': doctor.services.prefetch_related('images', 'videos'),</code> | Заранее загружает связанные списки отдельным оптимизированным запросом. Контекст: `doctor_services`. |
-| 2475 | <code>            'form': form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
-| 2476 | <code>            'editing': instance,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
-| 2477 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_services`. |
-| 2478 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_services`. |
-| 2481 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 2482 | <code>def doctor_edit_profile(request):</code> | Сохраняет публичные данные текущего врача. Контекст: `doctor_edit_profile`. |
-| 2483 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_edit_profile`. |
-| 2484 | <code>    form = DoctorProfileForm(request.POST or None, request.FILES or None, doctor=doctor)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_edit_profile`. |
-| 2485 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_edit_profile`. |
-| 2486 | <code>        form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_edit_profile`. |
-| 2487 | <code>        write_audit_log(request, 'Оновлено профіль лікаря', doctor)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_edit_profile`. |
-| 2488 | <code>        messages.success(request, 'Профіль лікаря оновлено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_edit_profile`. |
-| 2489 | <code>        return redirect('doctor_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_edit_profile`. |
-| 2490 | <code>    return render(request, 'clinic/doctor_edit_profile.html', {'form': form, 'doctor': doctor})</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_edit_profile`. |
-| 2493 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 2494 | <code>def doctor_change_password(request):</code> | Меняет пароль врача и не завершает его текущую сессию. Контекст: `doctor_change_password`. |
-| 2495 | <code>    form = PasswordChangeForm(request.user, request.POST or None)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_change_password`. |
-| 2496 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_change_password`. |
-| 2497 | <code>        user = form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_change_password`. |
-| 2498 | <code>        update_session_auth_hash(request, user)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_change_password`. |
-| 2499 | <code>        write_audit_log(request, 'Змінено пароль лікаря', request.user.doctor_profile)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_change_password`. |
-| 2500 | <code>        messages.success(request, 'Пароль змінено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_change_password`. |
-| 2501 | <code>        return redirect('doctor_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_change_password`. |
-| 2502 | <code>    return render(request, 'clinic/change_password.html', {'form': form})</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_change_password`. |
-| 2505 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 2506 | <code>def doctor_news(request):</code> | Позволяет врачу управлять только собственными публикациями. Контекст: `doctor_news`. |
-| 2507 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_news`. |
-| 2508 | <code>    edit_id = request.GET.get('edit')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_news`. |
-| 2509 | <code>    instance = doctor.news_posts.filter(pk=edit_id).first() if edit_id else None</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_news`. |
-| 2511 | <code>    if request.method == 'POST' and request.POST.get('action') == 'delete':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_news`. |
-| 2512 | <code>        post = get_object_or_404(doctor.news_posts, pk=request.POST.get('post_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_news`. |
-| 2513 | <code>        write_audit_log(request, 'Видалено новину лікаря', post)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_news`. |
-| 2514 | <code>        post.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `doctor_news`. |
-| 2515 | <code>        messages.success(request, 'Новину видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_news`. |
-| 2516 | <code>        return redirect('doctor_news')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_news`. |
-| 2518 | <code>    form = NewsPostForm(request.POST or None, request.FILES or None, instance=instance)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_news`. |
-| 2519 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_news`. |
-| 2520 | <code>        post = form.save(commit=False)</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_news`. |
-| 2521 | <code>        post.doctor = doctor</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_news`. |
-| 2522 | <code>        post.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_news`. |
-| 2523 | <code>        write_audit_log(request, 'Збережено новину лікаря', post)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_news`. |
-| 2524 | <code>        messages.success(request, 'Новину збережено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_news`. |
-| 2525 | <code>        return redirect('doctor_news')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_news`. |
-| 2527 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_news`. |
-| 2528 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_news`. |
-| 2529 | <code>        'clinic/doctor_news.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_news`. |
-| 2530 | <code>        {'doctor': doctor, 'posts': doctor.news_posts.all(), 'form': form, 'editing': instance},</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_news`. |
-| 2531 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_news`. |
-| 2534 | <code>@admin_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 2535 | <code>def admin_panel(request):</code> | Собирает статистику, пользователей, врачей, приемы и журнал действий. Контекст: `admin_panel`. |
-| 2536 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_panel`. |
-| 2537 | <code>    stats = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_panel`. |
-| 2538 | <code>        'patients': Profile.objects.filter(role=Profile.ROLE_PATIENT, user__is_active=True).count(),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_panel`. |
-| 2539 | <code>        'doctors': Doctor.objects.filter(user__is_active=True).count(),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_panel`. |
-| 2540 | <code>        'appointments': Appointment.objects.count(),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_panel`. |
-| 2541 | <code>        'pending': Appointment.objects.filter(status=Appointment.STATUS_PENDING).count(),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_panel`. |
-| 2542 | <code>    }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_panel`. |
-| 2543 | <code>    users = User.objects.select_related('profile').order_by('last_name', 'first_name', 'username')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `admin_panel`. |
-| 2544 | <code>    appointments = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_panel`. |
-| 2545 | <code>        Appointment.objects.select_related('doctor__user', 'service')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `admin_panel`. |
-| 2546 | <code>        .order_by('-created_at')[:8]</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `admin_panel`. |
-| 2547 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_panel`. |
-| 2548 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `admin_panel`. |
-| 2549 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_panel`. |
-| 2550 | <code>        'clinic/admin_panel.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_panel`. |
-| 2551 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_panel`. |
-| 2552 | <code>            'stats': stats,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_panel`. |
-| 2553 | <code>            'users': users,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_panel`. |
-| 2554 | <code>            'doctors': (</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_panel`. |
-| 2555 | <code>                Doctor.objects.select_related('user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `admin_panel`. |
-| 2556 | <code>                .annotate(total=Count('appointments'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_panel`. |
-| 2557 | <code>                .order_by('user__last_name', 'user__first_name')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `admin_panel`. |
-| 2558 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_panel`. |
-| 2559 | <code>            'appointments': appointments,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_panel`. |
-| 2560 | <code>            'audit_events': AuditLog.objects.select_related('actor')[:12],</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `admin_panel`. |
-| 2561 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_panel`. |
-| 2562 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_panel`. |
-| 2565 | <code>@admin_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 2566 | <code>def admin_telegram_broadcast(request):</code> | Проверяет адресата и отправляет ручное Telegram-сообщение всем активным связям или одному пользователю. Контекст: `admin_telegram_broadcast`. |
-| 2567 | <code>    connections = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_telegram_broadcast`. |
-| 2568 | <code>        TelegramConnection.objects.filter(is_active=True, user__is_active=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_telegram_broadcast`. |
-| 2569 | <code>        .select_related('user__profile')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `admin_telegram_broadcast`. |
-| 2570 | <code>        .order_by('user__last_name', 'user__first_name', 'user__username')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `admin_telegram_broadcast`. |
-| 2571 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
-| 2572 | <code>    form = AdminTelegramBroadcastForm(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_telegram_broadcast`. |
-| 2573 | <code>        request.POST or None,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2574 | <code>        connections=connections,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_telegram_broadcast`. |
-| 2575 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
-| 2577 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `admin_telegram_broadcast`. |
-| 2578 | <code>        audience = form.cleaned_data['audience']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `admin_telegram_broadcast`. |
-| 2579 | <code>        recipient = form.cleaned_data['recipient']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `admin_telegram_broadcast`. |
-| 2580 | <code>        selected_connections = connections</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_telegram_broadcast`. |
-| 2581 | <code>        recipient_label = 'усім підключеним користувачам'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_telegram_broadcast`. |
-| 2582 | <code>        if audience == AdminTelegramBroadcastForm.AUDIENCE_SINGLE:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_telegram_broadcast`. |
-| 2583 | <code>            selected_connections = connections.filter(pk=recipient.pk)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_telegram_broadcast`. |
-| 2584 | <code>            recipient_user = recipient.user</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_telegram_broadcast`. |
-| 2585 | <code>            recipient_label = recipient_user.get_full_name().strip() or recipient_user.username</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_telegram_broadcast`. |
-| 2587 | <code>        selected_connections = list(selected_connections)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_telegram_broadcast`. |
-| 2588 | <code>        if not selected_connections:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_telegram_broadcast`. |
-| 2589 | <code>            messages.warning(request, 'Немає активних користувачів із підключеним Telegram.')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2590 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `admin_telegram_broadcast`. |
-| 2591 | <code>            try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `admin_telegram_broadcast`. |
-| 2592 | <code>                sent_count, failures = send_admin_broadcast(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_telegram_broadcast`. |
-| 2593 | <code>                    selected_connections,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2594 | <code>                    form.cleaned_data['message'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `admin_telegram_broadcast`. |
-| 2595 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
-| 2596 | <code>            except TelegramError as error:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `admin_telegram_broadcast`. |
-| 2597 | <code>                form.add_error(None, str(error))</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2598 | <code>            else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `admin_telegram_broadcast`. |
-| 2599 | <code>                write_audit_log(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2600 | <code>                    request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2601 | <code>                    'Надіслано Telegram-повідомлення',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2602 | <code>                    request.user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2603 | <code>                    (</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
-| 2604 | <code>                        f'Адресат: {recipient_label}. Успішно: {sent_count}. '</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2605 | <code>                        f'Помилок: {len(failures)}. '</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2606 | <code>                        f'Текст: {form.cleaned_data["message"][:180]}'</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `admin_telegram_broadcast`. |
-| 2607 | <code>                    ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
-| 2608 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
-| 2609 | <code>                if sent_count:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_telegram_broadcast`. |
-| 2610 | <code>                    messages.success(</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_telegram_broadcast`. |
-| 2611 | <code>                        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2612 | <code>                        f'Telegram-повідомлення надіслано: {sent_count}.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2613 | <code>                    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
-| 2614 | <code>                if failures:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_telegram_broadcast`. |
-| 2615 | <code>                    messages.warning(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2616 | <code>                        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2617 | <code>                        f'Не вдалося доставити повідомлення: {len(failures)}.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2618 | <code>                    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
-| 2619 | <code>                return redirect('admin_telegram_broadcast')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_telegram_broadcast`. |
-| 2621 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `admin_telegram_broadcast`. |
-| 2622 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2623 | <code>        'clinic/admin_telegram_broadcast.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2624 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
-| 2625 | <code>            'form': form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2626 | <code>            'connected_count': connections.count(),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
-| 2627 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
-| 2628 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
-| 2631 | <code>@admin_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 2632 | <code>def admin_content(request):</code> | Обрабатывает все действия редактора главной страницы и оформления. Контекст: `admin_content`. |
-| 2633 | <code>    branding, _ = ClinicSettings.objects.get_or_create(pk=1)</code> | Находит существующую запись или создает ее, не заставляя вызывающий код делать две отдельные операции. Контекст: `admin_content`. |
-| 2634 | <code>    hero_id = request.GET.get('hero')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2635 | <code>    news_id = request.GET.get('news')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2636 | <code>    gallery_id = request.GET.get('gallery')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2637 | <code>    hero_instance = HomeHeroSlide.objects.filter(pk=hero_id).first() if hero_id else None</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
-| 2638 | <code>    news_instance = NewsPost.objects.filter(pk=news_id).first() if news_id else None</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
-| 2639 | <code>    gallery_instance = GalleryImage.objects.filter(pk=gallery_id).first() if gallery_id else None</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
-| 2641 | <code>    settings_form = ClinicSettingsForm(instance=branding, prefix='settings')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2642 | <code>    hero_form = HomeHeroSlideForm(instance=hero_instance, prefix='hero')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2643 | <code>    news_form = NewsPostForm(instance=news_instance, prefix='news')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2644 | <code>    gallery_form = GalleryImageForm(instance=gallery_instance, prefix='gallery')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2646 | <code>    if request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
-| 2647 | <code>        action = request.POST.get('action')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2648 | <code>        if action == 'save_settings':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
-| 2649 | <code>            settings_form = ClinicSettingsForm(request.POST, request.FILES, instance=branding, prefix='settings')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2650 | <code>            if settings_form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `admin_content`. |
-| 2651 | <code>                saved_branding = settings_form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_content`. |
-| 2652 | <code>                write_audit_log(request, 'Оновлено оформлення сайту', saved_branding)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2653 | <code>                messages.success(request, 'Оформлення клініки збережено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_content`. |
-| 2654 | <code>                return redirect(f"{reverse('admin_content')}#branding")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_content`. |
-| 2655 | <code>        elif action == 'save_hero':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
-| 2656 | <code>            hero_instance = HomeHeroSlide.objects.filter(pk=request.POST.get('hero_id')).first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
-| 2657 | <code>            hero_form = HomeHeroSlideForm(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2658 | <code>                request.POST,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2659 | <code>                request.FILES,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2660 | <code>                instance=hero_instance,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2661 | <code>                prefix='hero',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2662 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_content`. |
-| 2663 | <code>            if hero_form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `admin_content`. |
-| 2664 | <code>                slide = hero_form.save(commit=False)</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_content`. |
-| 2665 | <code>                if not slide.pk:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
-| 2666 | <code>                    slide.sort_order = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2667 | <code>                        HomeHeroSlide.objects.aggregate(last_order=Max('sort_order'))['last_order'] or 0</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2668 | <code>                    ) + 1</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2669 | <code>                slide.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_content`. |
-| 2670 | <code>                write_audit_log(request, 'Збережено фото верхнього слайдера', slide)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2671 | <code>                messages.success(request, 'Фотографію верхнього слайдера збережено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_content`. |
-| 2672 | <code>                return redirect(f"{reverse('admin_content')}#hero-slides")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_content`. |
-| 2673 | <code>        elif action == 'toggle_hero':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
-| 2674 | <code>            slide = get_object_or_404(HomeHeroSlide, pk=request.POST.get('hero_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `admin_content`. |
-| 2675 | <code>            slide.is_active = not slide.is_active</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2676 | <code>            slide.save(update_fields=['is_active'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_content`. |
-| 2677 | <code>            write_audit_log(request, 'Змінено видимість фото слайдера', slide)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2678 | <code>            state = 'показується' if slide.is_active else 'прихована'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2679 | <code>            messages.success(request, f'Фотографія тепер {state} на головній сторінці.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_content`. |
-| 2680 | <code>            return redirect(f"{reverse('admin_content')}#hero-slides")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_content`. |
-| 2681 | <code>        elif action == 'move_hero':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
-| 2682 | <code>            slide = get_object_or_404(HomeHeroSlide, pk=request.POST.get('hero_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `admin_content`. |
-| 2683 | <code>            direction = request.POST.get('direction')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2684 | <code>            with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `admin_content`. |
-| 2685 | <code>                ordered_slides = list(HomeHeroSlide.objects.select_for_update().order_by('sort_order', 'id'))</code> | Блокирует выбранную строку до конца транзакции и защищает от одновременного изменения. Контекст: `admin_content`. |
-| 2686 | <code>                for position, ordered_slide in enumerate(ordered_slides, start=1):</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `admin_content`. |
-| 2687 | <code>                    if ordered_slide.sort_order != position:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
-| 2688 | <code>                        ordered_slide.sort_order = position</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2689 | <code>                        ordered_slide.save(update_fields=['sort_order'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_content`. |
-| 2690 | <code>                current_index = next(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2691 | <code>                    (index for index, ordered_slide in enumerate(ordered_slides) if ordered_slide.pk == slide.pk),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2692 | <code>                    None,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2693 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_content`. |
-| 2694 | <code>                offset = -1 if direction == 'up' else 1</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2695 | <code>                target_index = current_index + offset if current_index is not None else -1</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2696 | <code>                if current_index is not None and 0 &lt;= target_index &lt; len(ordered_slides):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
-| 2697 | <code>                    neighbour = ordered_slides[target_index]</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2698 | <code>                    slide.sort_order, neighbour.sort_order = neighbour.sort_order, slide.sort_order</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2699 | <code>                    slide.save(update_fields=['sort_order'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_content`. |
-| 2700 | <code>                    neighbour.save(update_fields=['sort_order'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_content`. |
-| 2701 | <code>                    write_audit_log(request, 'Змінено порядок фото слайдера', slide)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2702 | <code>                    messages.success(request, 'Порядок фотографій змінено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_content`. |
-| 2703 | <code>            return redirect(f"{reverse('admin_content')}#hero-slides")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_content`. |
-| 2704 | <code>        elif action == 'delete_hero':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
-| 2705 | <code>            slide = get_object_or_404(HomeHeroSlide, pk=request.POST.get('hero_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `admin_content`. |
-| 2706 | <code>            write_audit_log(request, 'Видалено фото слайдера', slide)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2707 | <code>            slide.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `admin_content`. |
-| 2708 | <code>            messages.success(request, 'Фотографію верхнього слайдера видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_content`. |
-| 2709 | <code>            return redirect(f"{reverse('admin_content')}#hero-slides")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_content`. |
-| 2710 | <code>        elif action == 'save_news':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
-| 2711 | <code>            news_instance = NewsPost.objects.filter(pk=request.POST.get('news_id')).first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
-| 2712 | <code>            news_form = NewsPostForm(request.POST, request.FILES, instance=news_instance, prefix='news')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2713 | <code>            if news_form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `admin_content`. |
-| 2714 | <code>                post = news_form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_content`. |
-| 2715 | <code>                write_audit_log(request, 'Збережено новину клініки', post)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2716 | <code>                messages.success(request, 'Новину збережено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_content`. |
-| 2717 | <code>                return redirect(f"{reverse('admin_content')}#news")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_content`. |
-| 2718 | <code>        elif action == 'delete_news':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
-| 2719 | <code>            post = get_object_or_404(NewsPost, pk=request.POST.get('news_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `admin_content`. |
-| 2720 | <code>            write_audit_log(request, 'Видалено новину', post)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2721 | <code>            post.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `admin_content`. |
-| 2722 | <code>            messages.success(request, 'Новину видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_content`. |
-| 2723 | <code>            return redirect(f"{reverse('admin_content')}#news")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_content`. |
-| 2724 | <code>        elif action == 'save_gallery':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
-| 2725 | <code>            gallery_instance = GalleryImage.objects.filter(pk=request.POST.get('gallery_id')).first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
-| 2726 | <code>            gallery_form = GalleryImageForm(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2727 | <code>                request.POST,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2728 | <code>                request.FILES,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2729 | <code>                instance=gallery_instance,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2730 | <code>                prefix='gallery',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2731 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_content`. |
-| 2732 | <code>            if gallery_form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `admin_content`. |
-| 2733 | <code>                gallery_item = gallery_form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_content`. |
-| 2734 | <code>                write_audit_log(request, 'Збережено фото галереї', gallery_item)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2735 | <code>                messages.success(request, 'Фотографію збережено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_content`. |
-| 2736 | <code>                return redirect(f"{reverse('admin_content')}#gallery")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_content`. |
-| 2737 | <code>        elif action == 'delete_gallery':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
-| 2738 | <code>            gallery_item = get_object_or_404(GalleryImage, pk=request.POST.get('gallery_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `admin_content`. |
-| 2739 | <code>            write_audit_log(request, 'Видалено фото галереї', gallery_item)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2740 | <code>            gallery_item.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `admin_content`. |
-| 2741 | <code>            messages.success(request, 'Фотографію видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_content`. |
-| 2742 | <code>            return redirect(f"{reverse('admin_content')}#gallery")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_content`. |
-| 2744 | <code>    hero_slides = HomeHeroSlide.objects.all()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2745 | <code>    posts = NewsPost.objects.select_related('doctor__user').all()</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `admin_content`. |
-| 2746 | <code>    gallery_images = GalleryImage.objects.all()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
-| 2747 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `admin_content`. |
-| 2748 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2749 | <code>        'clinic/admin_content.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2750 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_content`. |
-| 2751 | <code>            'settings_form': settings_form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2752 | <code>            'hero_form': hero_form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2753 | <code>            'news_form': news_form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2754 | <code>            'gallery_form': gallery_form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2755 | <code>            'hero_editing': hero_instance,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2756 | <code>            'news_editing': news_instance,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2757 | <code>            'gallery_editing': gallery_instance,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2758 | <code>            'hero_slides': hero_slides,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2759 | <code>            'posts': posts,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2760 | <code>            'gallery_images': gallery_images,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2761 | <code>            'content_stats': {</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
-| 2762 | <code>                'hero': hero_slides.filter(is_active=True).count(),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
-| 2763 | <code>                'clinic_news': posts.filter(doctor__isnull=True, is_published=True).count(),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
-| 2764 | <code>                'doctor_news': posts.filter(doctor__isnull=False, is_published=True).count(),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
-| 2765 | <code>                'gallery': gallery_images.filter(is_published=True).count(),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
-| 2766 | <code>            },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_content`. |
-| 2767 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_content`. |
-| 2768 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_content`. |
-| 2771 | <code>@admin_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 2772 | <code>def admin_add_doctor(request):</code> | Создает связанный аккаунт, роль и профиль врача. Контекст: `admin_add_doctor`. |
-| 2773 | <code>    form = AdminDoctorCreateForm(request.POST or None, request.FILES or None)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_add_doctor`. |
-| 2774 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `admin_add_doctor`. |
-| 2775 | <code>        user = form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_add_doctor`. |
-| 2776 | <code>        write_audit_log(request, 'Додано лікаря', user.doctor_profile)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_add_doctor`. |
-| 2777 | <code>        messages.success(request, f'Лікаря додано. Логін для входу: {user.username}')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_add_doctor`. |
-| 2778 | <code>        return redirect('admin_panel')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_add_doctor`. |
-| 2779 | <code>    return render(request, 'clinic/admin_add_doctor.html', {'form': form})</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `admin_add_doctor`. |
-| 2782 | <code>@admin_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 2783 | <code>def admin_edit_user(request, user_id):</code> | Редактирует пользователя и повторно защищает уникальность телефона. Контекст: `admin_edit_user`. |
-| 2784 | <code>    edited_user = get_object_or_404(User, pk=user_id)</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `admin_edit_user`. |
-| 2785 | <code>    form = AdminUserEditForm(request.POST or None, user=edited_user)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_edit_user`. |
-| 2786 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `admin_edit_user`. |
-| 2787 | <code>        try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `admin_edit_user`. |
-| 2788 | <code>            with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `admin_edit_user`. |
-| 2789 | <code>                form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_edit_user`. |
-| 2790 | <code>                write_audit_log(request, 'Оновлено користувача', edited_user)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_edit_user`. |
-| 2791 | <code>        except IntegrityError:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `admin_edit_user`. |
-| 2792 | <code>            form.add_error('phone', 'Цей номер телефону вже прив’язаний до іншого пацієнта.')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_edit_user`. |
-| 2793 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `admin_edit_user`. |
-| 2794 | <code>            messages.success(request, 'Дані користувача оновлено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_edit_user`. |
-| 2795 | <code>            return redirect('admin_panel')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_edit_user`. |
-| 2796 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `admin_edit_user`. |
-| 2797 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_edit_user`. |
-| 2798 | <code>        'clinic/admin_edit_user.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_edit_user`. |
-| 2799 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_edit_user`. |
-| 2800 | <code>            'form': form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_edit_user`. |
-| 2801 | <code>            'edited_user': edited_user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_edit_user`. |
-| 2802 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_edit_user`. |
-| 2803 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_edit_user`. |
-| 2806 | <code>@admin_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 2807 | <code>def admin_toggle_user(request, user_id):</code> | Архивирует или восстанавливает аккаунт без удаления медицинской истории. Контекст: `admin_toggle_user`. |
-| 2808 | <code>    edited_user = get_object_or_404(User, pk=user_id)</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `admin_toggle_user`. |
-| 2809 | <code>    if request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_toggle_user`. |
-| 2810 | <code>        if edited_user == request.user:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_toggle_user`. |
-| 2811 | <code>            messages.error(request, 'Не можна архівувати самого себе.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `admin_toggle_user`. |
-| 2812 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `admin_toggle_user`. |
-| 2813 | <code>            edited_user.is_active = not edited_user.is_active</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_toggle_user`. |
-| 2814 | <code>            edited_user.save(update_fields=['is_active'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_toggle_user`. |
-| 2815 | <code>            action = 'Відновлено акаунт' if edited_user.is_active else 'Архівовано акаунт'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_toggle_user`. |
-| 2816 | <code>            write_audit_log(request, action, edited_user)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_toggle_user`. |
-| 2817 | <code>            message = 'Акаунт відновлено.' if edited_user.is_active else 'Акаунт перенесено до архіву.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_toggle_user`. |
-| 2818 | <code>            messages.success(request, message)</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_toggle_user`. |
-| 2819 | <code>    return redirect('admin_panel')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_toggle_user`. |
-| 2822 | <code>@admin_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 2823 | <code>def admin_delete_user(request, user_id):</code> | Окончательно удаляет только предварительно архивированного пациента. Контекст: `admin_delete_user`. |
-| 2824 | <code>    edited_user = get_object_or_404(User, pk=user_id)</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `admin_delete_user`. |
-| 2825 | <code>    if request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_delete_user`. |
-| 2826 | <code>        if edited_user == request.user:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_delete_user`. |
-| 2827 | <code>            messages.error(request, 'Не можна видалити власний акаунт.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `admin_delete_user`. |
-| 2828 | <code>        elif not hasattr(edited_user, 'profile') or edited_user.profile.role != Profile.ROLE_PATIENT:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_delete_user`. |
-| 2829 | <code>            messages.error(request, 'Назавжди видаляти можна лише профілі пацієнтів.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `admin_delete_user`. |
-| 2830 | <code>        elif edited_user.is_active:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_delete_user`. |
-| 2831 | <code>            messages.error(request, 'Спочатку перенесіть профіль пацієнта до архіву.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `admin_delete_user`. |
-| 2832 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `admin_delete_user`. |
-| 2833 | <code>            profile_photo = edited_user.profile.photo</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_delete_user`. |
-| 2834 | <code>            write_audit_log(request, 'Назавжди видалено профіль пацієнта', edited_user)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_delete_user`. |
-| 2835 | <code>            edited_user.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `admin_delete_user`. |
-| 2836 | <code>            if profile_photo and profile_photo.name:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_delete_user`. |
-| 2837 | <code>                profile_photo.storage.delete(profile_photo.name)</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `admin_delete_user`. |
-| 2838 | <code>            messages.success(</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_delete_user`. |
-| 2839 | <code>                request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_delete_user`. |
-| 2840 | <code>                'Профіль пацієнта видалено назавжди. Історію прийомів і медичні записи збережено.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_delete_user`. |
-| 2841 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_delete_user`. |
-| 2842 | <code>    return redirect('admin_panel')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_delete_user`. |
-| 2845 | <code>@admin_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
-| 2846 | <code>def admin_cancel_appointment(request, appointment_id):</code> | Отменяет будущую запись от имени администратора. Контекст: `admin_cancel_appointment`. |
-| 2847 | <code>    appointment = get_object_or_404(Appointment, pk=appointment_id)</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `admin_cancel_appointment`. |
-| 2848 | <code>    if request.method == 'POST' and appointment.can_cancel:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_cancel_appointment`. |
-| 2849 | <code>        appointment.status = Appointment.STATUS_CANCELED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `admin_cancel_appointment`. |
-| 2850 | <code>        appointment.save(update_fields=['status'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_cancel_appointment`. |
-| 2851 | <code>        ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_cancel_appointment`. |
-| 2852 | <code>        write_audit_log(request, 'Скасовано запис адміністратором', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_cancel_appointment`. |
-| 2853 | <code>        notify_patient_status(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_cancel_appointment`. |
-| 2854 | <code>            appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_cancel_appointment`. |
-| 2855 | <code>            'admin_canceled',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_cancel_appointment`. |
-| 2856 | <code>            'Адміністратор скасував прийом',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_cancel_appointment`. |
-| 2857 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_cancel_appointment`. |
-| 2858 | <code>        messages.success(request, 'Запис скасовано адміністратором.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_cancel_appointment`. |
-| 2859 | <code>    elif request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_cancel_appointment`. |
-| 2860 | <code>        messages.error(request, 'Цей запис уже не можна скасувати.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `admin_cancel_appointment`. |
-| 2861 | <code>    return redirect('admin_panel')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_cancel_appointment`. |
+| 1541 | <code>    has_bookable_services = bool(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1542 | <code>        selected_doctor</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1543 | <code>        and selected_doctor.services.filter(is_patient_selectable=True).exists()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `booking`. |
+| 1544 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
+| 1545 | <code>    daily_booking_count = patient_daily_appointment_count(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1546 | <code>        request.user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1547 | <code>        selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1548 | <code>        request.user.profile.phone,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1549 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
+| 1550 | <code>    daily_booking_limit_reached = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `booking`. |
+| 1551 | <code>        daily_booking_count &gt;= PATIENT_DAILY_BOOKING_LIMIT</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1552 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
+| 1554 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `booking`. |
+| 1555 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1556 | <code>        'clinic/booking.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1557 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
+| 1558 | <code>            'doctors': doctors,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1559 | <code>            'selected_doctor': selected_doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1560 | <code>            'selected_date': selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1561 | <code>            'earliest_booking_date': earliest_booking_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1562 | <code>            'selected_time': selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1563 | <code>            'selected_schedule': schedule,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1564 | <code>            'slots': slots,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1565 | <code>            'reason_form': reason_form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1566 | <code>            'has_bookable_services': has_bookable_services,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1567 | <code>            'daily_booking_count': daily_booking_count,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1568 | <code>            'daily_booking_limit': PATIENT_DAILY_BOOKING_LIMIT,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1569 | <code>            'daily_booking_limit_reached': daily_booking_limit_reached,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1570 | <code>            'working_weekdays': working_weekdays,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1571 | <code>            'working_weekday_labels': working_weekday_labels(working_weekdays),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `booking`. |
+| 1572 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
+| 1573 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `booking`. |
+| 1576 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 1577 | <code>def doctor_dashboard(request):</code> | Показывает профиль, адреса, график, услуги и новости текущего врача. Контекст: `doctor_dashboard`. |
+| 1578 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_dashboard`. |
+| 1579 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_dashboard`. |
+| 1580 | <code>    sync_patient_cards_for_doctor(doctor)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_dashboard`. |
+| 1581 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_dashboard`. |
+| 1582 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_dashboard`. |
+| 1583 | <code>        'clinic/doctor_dashboard.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_dashboard`. |
+| 1584 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_dashboard`. |
+| 1585 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_dashboard`. |
+| 1586 | <code>            'schedules': doctor.schedules.select_related('workplace'),</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_dashboard`. |
+| 1587 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_dashboard`. |
+| 1588 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_dashboard`. |
+| 1591 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 1592 | <code>def doctor_requests(request):</code> | Выводит только новые заявки текущего врача, сгруппированные по датам. Контекст: `doctor_requests`. |
+| 1593 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_requests`. |
+| 1594 | <code>    sync_patient_cards_for_doctor(doctor)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_requests`. |
+| 1595 | <code>    appointments = list(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_requests`. |
+| 1596 | <code>        doctor.appointments.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_requests`. |
+| 1597 | <code>            status=Appointment.STATUS_PENDING,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_requests`. |
+| 1598 | <code>        ).select_related(</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_requests`. |
+| 1599 | <code>            'service',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_requests`. |
+| 1600 | <code>            'patient__profile',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_requests`. |
+| 1601 | <code>        ).order_by('date', 'time', 'created_at')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `doctor_requests`. |
+| 1602 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_requests`. |
+| 1603 | <code>    for appointment in appointments:</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `doctor_requests`. |
+| 1604 | <code>        appointment.patient_card = patient_card_for_appointment(appointment)</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_requests`. |
+| 1605 | <code>        appointment.weekday_name = UKRAINIAN_WEEKDAYS[appointment.date.weekday()]</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_requests`. |
+| 1607 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_requests`. |
+| 1608 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_requests`. |
+| 1609 | <code>        'clinic/doctor_requests.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_requests`. |
+| 1610 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_requests`. |
+| 1611 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_requests`. |
+| 1612 | <code>            'appointments': appointments,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_requests`. |
+| 1613 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_requests`. |
+| 1614 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_requests`. |
+| 1617 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 1618 | <code>def doctor_appointments(request):</code> | Строит одну выбранную неделю приемов и действия записи на день или между приемами. Контекст: `doctor_appointments`. |
+| 1619 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1620 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1621 | <code>    sync_patient_cards_for_doctor(doctor)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1622 | <code>    today = timezone.localdate()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1623 | <code>    current_week_start = today - timedelta(days=today.weekday())</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1624 | <code>    requested_week = parse_date(request.GET.get('week'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1625 | <code>    selected_date = requested_week or today</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1626 | <code>    week_start = selected_date - timedelta(days=selected_date.weekday())</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1627 | <code>    week_end = week_start + timedelta(days=6)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1628 | <code>    appointments = list(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1629 | <code>        doctor.appointments.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_appointments`. |
+| 1630 | <code>            date__range=(week_start, week_end),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1631 | <code>        ).select_related('service', 'patient__profile').order_by('date', 'time')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_appointments`. |
+| 1632 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
+| 1633 | <code>    appointments_by_date = {}</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1634 | <code>    for appointment in appointments:</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `doctor_appointments`. |
+| 1635 | <code>        appointment.patient_card = patient_card_for_appointment(appointment)</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_appointments`. |
+| 1636 | <code>        appointment.weekday_name = UKRAINIAN_WEEKDAYS[appointment.date.weekday()]</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_appointments`. |
+| 1637 | <code>        appointments_by_date.setdefault(appointment.date, []).append(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1639 | <code>    schedules_by_weekday = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1640 | <code>        schedule.weekday: schedule</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1641 | <code>        for schedule in doctor.schedules.select_related('workplace')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_appointments`. |
+| 1642 | <code>    }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
+| 1643 | <code>    week_days = []</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1644 | <code>    for day_offset, weekday_name in enumerate(UKRAINIAN_WEEKDAYS):</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `doctor_appointments`. |
+| 1645 | <code>        day_date = week_start + timedelta(days=day_offset)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1646 | <code>        day_schedule = schedules_by_weekday.get(day_date.weekday())</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1647 | <code>        day_appointments = appointments_by_date.get(day_date, [])</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1648 | <code>        is_working = bool(day_schedule and day_schedule.is_working)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1649 | <code>        if not is_working and not day_appointments:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_appointments`. |
+| 1650 | <code>            continue</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1651 | <code>        for appointment in day_appointments:</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `doctor_appointments`. |
+| 1652 | <code>            appointment.split_option = split_slot_option(</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_appointments`. |
+| 1653 | <code>                doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1654 | <code>                day_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1655 | <code>                appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1656 | <code>                schedule=day_schedule,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1657 | <code>                appointment_id=appointment.pk,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1658 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
+| 1659 | <code>        week_days.append(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1660 | <code>            {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
+| 1661 | <code>                'date': day_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1662 | <code>                'weekday_name': weekday_name,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1663 | <code>                'appointments': day_appointments,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1664 | <code>                'schedule': day_schedule,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1665 | <code>                'is_working': is_working,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1666 | <code>                'is_outside_schedule': bool(day_appointments and not is_working),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1667 | <code>                'can_book': bool(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1668 | <code>                    is_working</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1669 | <code>                    and day_date &gt;= today</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1670 | <code>                ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
+| 1671 | <code>            }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
+| 1672 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
+| 1673 | <code>    appointment_week = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1674 | <code>        'start': week_start,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1675 | <code>        'end': week_end,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1676 | <code>        'days': week_days,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1677 | <code>        'appointments_count': len(appointments),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1678 | <code>    }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
+| 1680 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_appointments`. |
+| 1681 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1682 | <code>        'clinic/doctor_appointments.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1683 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
+| 1684 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1685 | <code>            'appointments': appointments,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1686 | <code>            'appointment_week': appointment_week,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1687 | <code>            'previous_week_start': week_start - timedelta(days=7),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1688 | <code>            'next_week_start': week_start + timedelta(days=7),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointments`. |
+| 1689 | <code>            'is_current_week': week_start == current_week_start,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointments`. |
+| 1690 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
+| 1691 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointments`. |
+| 1694 | <code>def doctor_appointments_week_url(appointment_date):</code> | Формирует адрес недели, в которую входит переданная дата. Контекст: `doctor_appointments_week_url`. |
+| 1695 | <code>    return f'{reverse("doctor_appointments")}?week={appointment_date.isoformat()}'</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `doctor_appointments_week_url`. |
+| 1698 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 1699 | <code>def doctor_appointment_detail(request, appointment_id):</code> | Загружает полную заявку, пациента, медиа и соседние приемы дня. Контекст: `doctor_appointment_detail`. |
+| 1700 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
+| 1701 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointment_detail`. |
+| 1702 | <code>    appointment = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_appointment_detail`. |
+| 1703 | <code>        doctor.appointments.select_related('service', 'patient__profile').prefetch_related('images', 'videos'),</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_appointment_detail`. |
+| 1704 | <code>        pk=appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointment_detail`. |
+| 1705 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointment_detail`. |
+| 1706 | <code>    appointment.weekday_name = UKRAINIAN_WEEKDAYS[appointment.date.weekday()]</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_appointment_detail`. |
+| 1707 | <code>    day_appointments = doctor.appointments.filter(date=appointment.date).select_related(</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_appointment_detail`. |
+| 1708 | <code>        'service',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
+| 1709 | <code>        'patient__profile',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
+| 1710 | <code>    ).order_by('time')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `doctor_appointment_detail`. |
+| 1711 | <code>    active_appointment = active_appointment_for_doctor(doctor)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointment_detail`. |
+| 1712 | <code>    patient_card, _ = ensure_patient_card_from_appointment(appointment)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointment_detail`. |
+| 1713 | <code>    reschedule_form = AppointmentRescheduleForm(appointment=appointment)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_appointment_detail`. |
+| 1714 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_appointment_detail`. |
+| 1715 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
+| 1716 | <code>        'clinic/doctor_appointment_detail.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
+| 1717 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointment_detail`. |
+| 1718 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
+| 1719 | <code>            'appointment': appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
+| 1720 | <code>            'day_appointments': day_appointments,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
+| 1721 | <code>            'active_appointment': active_appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
+| 1722 | <code>            'patient_card': patient_card,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
+| 1723 | <code>            'reschedule_form': reschedule_form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
+| 1724 | <code>            'show_reschedule_form': request.GET.get('reschedule') == '1',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_appointment_detail`. |
+| 1725 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointment_detail`. |
+| 1726 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_appointment_detail`. |
+| 1729 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 1730 | <code>def doctor_propose_reschedule(request, appointment_id):</code> | Проверяет и резервирует новое время, после чего спрашивает решение пациента. Контекст: `doctor_propose_reschedule`. |
+| 1731 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1732 | <code>    appointment = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_propose_reschedule`. |
+| 1733 | <code>        Appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1734 | <code>        pk=appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1735 | <code>        doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1736 | <code>        patient__isnull=False,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1737 | <code>        status__in=[Appointment.STATUS_PENDING, Appointment.STATUS_APPROVED],</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1738 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
+| 1739 | <code>    if request.method != 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_propose_reschedule`. |
+| 1740 | <code>        return redirect(</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_propose_reschedule`. |
+| 1741 | <code>            f'{reverse("doctor_appointment_detail", args=[appointment.id])}?reschedule=1#reschedule'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1742 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
+| 1744 | <code>    form = AppointmentRescheduleForm(request.POST, appointment=appointment)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1745 | <code>    if not form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_propose_reschedule`. |
+| 1746 | <code>        for errors in form.errors.values():</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `doctor_propose_reschedule`. |
+| 1747 | <code>            messages.error(request, errors[0])</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_propose_reschedule`. |
+| 1748 | <code>        return redirect(</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_propose_reschedule`. |
+| 1749 | <code>            f'{reverse("doctor_appointment_detail", args=[appointment.id])}?reschedule=1#reschedule'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1750 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
+| 1752 | <code>    selected_date = form.cleaned_data['date']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_propose_reschedule`. |
+| 1753 | <code>    selected_time = form.cleaned_data['time']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_propose_reschedule`. |
+| 1754 | <code>    duration_minutes = form.cleaned_data['duration_minutes']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_propose_reschedule`. |
+| 1755 | <code>    schedule = form.schedule</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1756 | <code>    duration_slots = ceil(duration_minutes / schedule.slot_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1757 | <code>    if appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_propose_reschedule`. |
+| 1758 | <code>        doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1759 | <code>        selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1760 | <code>        selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1761 | <code>        duration_slots=duration_slots,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1762 | <code>        duration_minutes=duration_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1763 | <code>        exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1764 | <code>    ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1765 | <code>        messages.error(request, 'Обраний час перетинається з іншим записом, обідом або кінцем робочого дня.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_propose_reschedule`. |
+| 1766 | <code>        return redirect(</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_propose_reschedule`. |
+| 1767 | <code>            f'{reverse("doctor_appointment_detail", args=[appointment.id])}?reschedule=1#reschedule'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1768 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
+| 1770 | <code>    if patient_appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_propose_reschedule`. |
+| 1771 | <code>        appointment.patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1772 | <code>        selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1773 | <code>        selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1774 | <code>        duration_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1775 | <code>        patient_phone=appointment.patient_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1776 | <code>        exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1777 | <code>    ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1778 | <code>        messages.error(</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_propose_reschedule`. |
+| 1779 | <code>            request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1780 | <code>            'У цей час пацієнт уже має іншу заявку або прийом. Оберіть інший час.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1781 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
+| 1782 | <code>        return redirect(</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_propose_reschedule`. |
+| 1783 | <code>            f'{reverse("doctor_appointment_detail", args=[appointment.id])}?reschedule=1#reschedule'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1784 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
+| 1786 | <code>    appointment.previous_date = appointment.date</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
+| 1787 | <code>    appointment.previous_time = appointment.time</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
+| 1788 | <code>    appointment.date = selected_date</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
+| 1789 | <code>    appointment.time = selected_time</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
+| 1790 | <code>    appointment.city = schedule.city</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
+| 1791 | <code>    appointment.address = schedule.address</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
+| 1792 | <code>    appointment.duration_slots = duration_slots</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
+| 1793 | <code>    appointment.duration_minutes_exact = duration_minutes</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
+| 1794 | <code>    appointment.status = Appointment.STATUS_RESCHEDULE_PROPOSED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
+| 1795 | <code>    appointment.reschedule_requested_at = timezone.now()</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_propose_reschedule`. |
+| 1796 | <code>    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `doctor_propose_reschedule`. |
+| 1797 | <code>        with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `doctor_propose_reschedule`. |
+| 1798 | <code>            appointment.save(</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_propose_reschedule`. |
+| 1799 | <code>                update_fields=[</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1800 | <code>                    'previous_date',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1801 | <code>                    'previous_time',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1802 | <code>                    'date',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1803 | <code>                    'time',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1804 | <code>                    'city',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1805 | <code>                    'address',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1806 | <code>                    'duration_slots',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1807 | <code>                    'duration_minutes_exact',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1808 | <code>                    'status',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1809 | <code>                    'reschedule_requested_at',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1810 | <code>                ]</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
+| 1811 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
+| 1812 | <code>    except IntegrityError:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `doctor_propose_reschedule`. |
+| 1813 | <code>        messages.error(request, 'Цей час щойно зайняли. Оберіть інший варіант.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_propose_reschedule`. |
+| 1814 | <code>        return redirect(</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_propose_reschedule`. |
+| 1815 | <code>            f'{reverse("doctor_appointment_detail", args=[appointment.id])}?reschedule=1#reschedule'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_propose_reschedule`. |
+| 1816 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
+| 1818 | <code>    write_audit_log(request, 'Запропоновано новий час', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1819 | <code>    notify_patient_status(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1820 | <code>        appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1821 | <code>        f'reschedule_{int(appointment.reschedule_requested_at.timestamp())}',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1822 | <code>        'Лікар пропонує змінити час прийому',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_propose_reschedule`. |
+| 1823 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_propose_reschedule`. |
+| 1824 | <code>    messages.success(request, 'Новий час надіслано пацієнту на погодження.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_propose_reschedule`. |
+| 1825 | <code>    return redirect('doctor_appointment_detail', appointment_id=appointment.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_propose_reschedule`. |
+| 1828 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 1829 | <code>def doctor_review_appointment(request, appointment_id):</code> | Позволяет врачу подтвердить длительность или отклонить новую заявку. Контекст: `doctor_review_appointment`. |
+| 1830 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1831 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
+| 1832 | <code>    appointment = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_review_appointment`. |
+| 1833 | <code>        Appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1834 | <code>        pk=appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
+| 1835 | <code>        doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
+| 1836 | <code>        status=Appointment.STATUS_PENDING,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
+| 1837 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_review_appointment`. |
+| 1838 | <code>    if request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_review_appointment`. |
+| 1839 | <code>        action = request.POST.get('action')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
+| 1840 | <code>        if action == 'reject':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_review_appointment`. |
+| 1841 | <code>            appointment.status = Appointment.STATUS_REJECTED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_review_appointment`. |
+| 1842 | <code>            appointment.save(update_fields=['status'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_review_appointment`. |
+| 1843 | <code>            ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1844 | <code>            write_audit_log(request, 'Відхилено заявку лікарем', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1845 | <code>            notify_patient_status(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1846 | <code>                appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1847 | <code>                'rejected',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1848 | <code>                'Лікар відхилив заявку на прийом',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1849 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_review_appointment`. |
+| 1850 | <code>            messages.success(request, 'Заявку відхилено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_review_appointment`. |
+| 1851 | <code>            return redirect(doctor_appointments_week_url(appointment.date))</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_review_appointment`. |
+| 1853 | <code>        schedule = schedule_for_date(doctor, appointment.date)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
+| 1854 | <code>        slot_minutes = schedule.slot_minutes if schedule else 60</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
+| 1855 | <code>        form = AppointmentDecisionForm(request.POST, slot_minutes=slot_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
+| 1856 | <code>        if form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_review_appointment`. |
+| 1857 | <code>            duration_minutes = form.cleaned_data['duration_minutes']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_review_appointment`. |
+| 1858 | <code>            duration_slots = ceil(duration_minutes / slot_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
+| 1859 | <code>            if is_past_appointment(appointment.date, appointment.time):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_review_appointment`. |
+| 1860 | <code>                messages.error(request, 'Не можна підтвердити заявку на минулий час.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_review_appointment`. |
+| 1861 | <code>            elif appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_review_appointment`. |
+| 1862 | <code>                doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1863 | <code>                appointment.date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1864 | <code>                appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1865 | <code>                duration_slots=duration_slots,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
+| 1866 | <code>                duration_minutes=duration_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
+| 1867 | <code>                exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
+| 1868 | <code>            ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1869 | <code>                messages.error(request, 'На цей час не вистачає вільних слотів для такої тривалості.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_review_appointment`. |
+| 1870 | <code>            elif patient_appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_review_appointment`. |
+| 1871 | <code>                appointment.patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1872 | <code>                appointment.date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1873 | <code>                appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1874 | <code>                duration_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1875 | <code>                patient_phone=appointment.patient_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
+| 1876 | <code>                exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
+| 1877 | <code>            ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1878 | <code>                messages.error(</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_review_appointment`. |
+| 1879 | <code>                    request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1880 | <code>                    'У цей час пацієнт уже має іншу заявку або прийом.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1881 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_review_appointment`. |
+| 1882 | <code>            else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `doctor_review_appointment`. |
+| 1883 | <code>                appointment.duration_slots = duration_slots</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_review_appointment`. |
+| 1884 | <code>                appointment.duration_minutes_exact = duration_minutes</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_review_appointment`. |
+| 1885 | <code>                appointment.status = Appointment.STATUS_APPROVED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_review_appointment`. |
+| 1886 | <code>                appointment.approved_at = timezone.now()</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_review_appointment`. |
+| 1887 | <code>                appointment.save(update_fields=['duration_slots', 'duration_minutes_exact', 'status', 'approved_at'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_review_appointment`. |
+| 1888 | <code>                ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1889 | <code>                write_audit_log(request, 'Підтверджено заявку лікарем', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1890 | <code>                notify_patient_status(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1891 | <code>                    appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1892 | <code>                    'approved',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1893 | <code>                    'Лікар підтвердив вашу заявку',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_review_appointment`. |
+| 1894 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_review_appointment`. |
+| 1895 | <code>                messages.success(request, 'Заявку підтверджено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_review_appointment`. |
+| 1896 | <code>                return redirect(doctor_appointments_week_url(appointment.date))</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_review_appointment`. |
+| 1897 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `doctor_review_appointment`. |
+| 1898 | <code>            error = form.errors.get('duration_minutes')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_review_appointment`. |
+| 1899 | <code>            messages.error(request, error[0] if error else 'Перевірте тривалість прийому.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_review_appointment`. |
+| 1900 | <code>    return redirect(doctor_appointments_week_url(appointment.date))</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_review_appointment`. |
+| 1903 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 1904 | <code>def doctor_cancel_appointment(request, appointment_id):</code> | Отменяет будущий прием врача и уведомляет пациента. Контекст: `doctor_cancel_appointment`. |
+| 1905 | <code>    appointment = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_cancel_appointment`. |
+| 1906 | <code>        Appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_cancel_appointment`. |
+| 1907 | <code>        pk=appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_cancel_appointment`. |
+| 1908 | <code>        doctor=request.user.doctor_profile,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_cancel_appointment`. |
+| 1909 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_cancel_appointment`. |
+| 1910 | <code>    if request.method == 'POST' and appointment.can_cancel:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_cancel_appointment`. |
+| 1911 | <code>        appointment.status = Appointment.STATUS_CANCELED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_cancel_appointment`. |
+| 1912 | <code>        appointment.save(update_fields=['status'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_cancel_appointment`. |
+| 1913 | <code>        ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_cancel_appointment`. |
+| 1914 | <code>        write_audit_log(request, 'Скасовано запис лікарем', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_cancel_appointment`. |
+| 1915 | <code>        notify_patient_status(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_cancel_appointment`. |
+| 1916 | <code>            appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_cancel_appointment`. |
+| 1917 | <code>            'doctor_canceled',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_cancel_appointment`. |
+| 1918 | <code>            'Лікар скасував прийом',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_cancel_appointment`. |
+| 1919 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_cancel_appointment`. |
+| 1920 | <code>        messages.success(request, 'Запис пацієнта скасовано.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_cancel_appointment`. |
+| 1921 | <code>    elif request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_cancel_appointment`. |
+| 1922 | <code>        messages.error(request, 'Цей запис уже не можна скасувати.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_cancel_appointment`. |
+| 1923 | <code>    return redirect('doctor_appointment_detail', appointment_id=appointment.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_cancel_appointment`. |
+| 1926 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 1927 | <code>def doctor_book_patient(request):</code> | Записывает существующего или нового пациента, включая безопасное деление слота. Контекст: `doctor_book_patient`. |
+| 1928 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 1929 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1930 | <code>    earliest_booking_date = timezone.localdate()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1931 | <code>    working_weekdays = doctor_working_weekdays(doctor)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1932 | <code>    selected_date = parse_date(request.GET.get('date')) if request.GET.get('date') else timezone.localdate()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1933 | <code>    if selected_date &lt; timezone.localdate():</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 1934 | <code>        messages.error(request, 'Не можна вибрати минулу дату.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_book_patient`. |
+| 1935 | <code>        selected_date = timezone.localdate()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1936 | <code>    adjusted_date = next_working_date(selected_date, working_weekdays)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1937 | <code>    date_was_adjusted = bool(adjusted_date and adjusted_date != selected_date)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 1938 | <code>    if adjusted_date:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 1939 | <code>        selected_date = adjusted_date</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1940 | <code>    selected_time = None if date_was_adjusted else parse_time(request.GET.get('time'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1941 | <code>    schedule, slots = slots_for_doctor(doctor, selected_date, include_split_options=True)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1942 | <code>    split_option = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1943 | <code>    split_appointment_id = request.GET.get('split')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1944 | <code>    if split_appointment_id and schedule:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 1945 | <code>        split_source = Appointment.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_book_patient`. |
+| 1946 | <code>            pk=split_appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1947 | <code>            doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1948 | <code>            date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1949 | <code>        ).first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 1950 | <code>        if split_source:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 1951 | <code>            split_option = split_slot_option(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1952 | <code>                doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 1953 | <code>                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 1954 | <code>                split_source.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 1955 | <code>                schedule=schedule,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1956 | <code>                appointment_id=split_source.pk,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1957 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 1958 | <code>        if split_option:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 1959 | <code>            selected_time = split_option['time']</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1960 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `doctor_book_patient`. |
+| 1961 | <code>            selected_time = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1962 | <code>            messages.error(request, 'Цей слот уже не можна поділити.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_book_patient`. |
+| 1963 | <code>    slot_minutes = schedule.slot_minutes if schedule else 60</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1964 | <code>    form = DoctorPatientBookingForm(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1965 | <code>        request.POST or None,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 1966 | <code>        doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1967 | <code>        slot_minutes=slot_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1968 | <code>        fixed_duration_minutes=(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1969 | <code>            split_option['duration_minutes']</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 1970 | <code>            if split_option</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 1971 | <code>            else None</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 1972 | <code>        ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 1973 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 1975 | <code>    if request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 1976 | <code>        selected_date = parse_date(request.POST.get('date'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1977 | <code>        selected_time = parse_time(request.POST.get('time'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1978 | <code>        schedule, slots = slots_for_doctor(doctor, selected_date, include_split_options=True)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1979 | <code>        slot_minutes = schedule.slot_minutes if schedule else 60</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1980 | <code>        split_appointment_id = request.POST.get('split_appointment')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1981 | <code>        split_option = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1982 | <code>        if split_appointment_id and schedule:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 1983 | <code>            split_source = Appointment.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_book_patient`. |
+| 1984 | <code>                pk=split_appointment_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1985 | <code>                doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1986 | <code>                date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1987 | <code>            ).first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 1988 | <code>            if split_source:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 1989 | <code>                split_option = split_slot_option(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1990 | <code>                    doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 1991 | <code>                    selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 1992 | <code>                    split_source.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 1993 | <code>                    schedule=schedule,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1994 | <code>                    appointment_id=split_source.pk,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1995 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 1996 | <code>        form = DoctorPatientBookingForm(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1997 | <code>            request.POST,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 1998 | <code>            doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 1999 | <code>            slot_minutes=slot_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2000 | <code>            fixed_duration_minutes=(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2001 | <code>                split_option['duration_minutes']</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2002 | <code>                if split_option</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 2003 | <code>                else None</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2004 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 2005 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 2006 | <code>        available_times = [slot['time'] for slot in slots if not slot['busy']]</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2007 | <code>        split_time_is_valid = bool(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2008 | <code>            split_option</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2009 | <code>            and selected_time == split_option['time']</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2010 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 2012 | <code>        if not schedule or not schedule.is_working:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 2013 | <code>            messages.error(request, 'У цей день ви не приймаєте. Оберіть робочий день у календарі.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_book_patient`. |
+| 2014 | <code>            selected_time = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2015 | <code>        elif is_past_appointment(selected_date, selected_time):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 2016 | <code>            messages.error(request, 'Не можна записати пацієнта на минулу дату або час.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_book_patient`. |
+| 2017 | <code>        elif split_appointment_id and not split_time_is_valid:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 2018 | <code>            messages.error(request, 'Цей слот уже не можна поділити.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_book_patient`. |
+| 2019 | <code>        elif not selected_time or (</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 2020 | <code>            selected_time not in available_times</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2021 | <code>            and not split_time_is_valid</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2022 | <code>        ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2023 | <code>            messages.error(request, 'Цей час уже недоступний.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_book_patient`. |
+| 2024 | <code>        elif form.is_valid() and schedule:</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_book_patient`. |
+| 2025 | <code>            duration_minutes = form.cleaned_data['duration_minutes']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_book_patient`. |
+| 2026 | <code>            duration_slots = ceil(duration_minutes / slot_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2027 | <code>            selected_patient = form.cleaned_data.get('patient')</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_book_patient`. |
+| 2028 | <code>            patient = selected_patient</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2029 | <code>            existing_card = find_doctor_card_by_phone(doctor, form.cleaned_data['phone'])</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_book_patient`. |
+| 2030 | <code>            patient_phone = normalize_phone_number(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2031 | <code>                patient.profile.phone if patient and patient.profile.phone else form.cleaned_data['phone']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_book_patient`. |
+| 2032 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 2033 | <code>            patient_first_name = form.cleaned_data['first_name']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_book_patient`. |
+| 2034 | <code>            patient_last_name = form.cleaned_data['last_name']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_book_patient`. |
+| 2035 | <code>            match_message = ''</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2036 | <code>            if patient:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 2037 | <code>                patient_first_name = patient.first_name or patient_first_name</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2038 | <code>                patient_last_name = patient.last_name or patient_last_name</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2039 | <code>            elif existing_card:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 2040 | <code>                patient_first_name = existing_card.patient_first_name</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2041 | <code>                patient_last_name = existing_card.patient_last_name</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2042 | <code>                match_message = ' Номер уже був у картці пацієнта, використано наявну картку.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2043 | <code>            split_source_id = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2044 | <code>                split_option['appointment'].pk</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2045 | <code>                if split_option</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 2046 | <code>                else None</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2047 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 2048 | <code>            if appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 2049 | <code>                doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2050 | <code>                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2051 | <code>                selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2052 | <code>                duration_slots=duration_slots,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2053 | <code>                duration_minutes=duration_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2054 | <code>                exclude_id=split_source_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2055 | <code>            ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2056 | <code>                messages.error(request, 'Для такої тривалості недостатньо вільного часу.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_book_patient`. |
+| 2057 | <code>            elif patient_appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 2058 | <code>                patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2059 | <code>                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2060 | <code>                selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2061 | <code>                duration_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2062 | <code>                patient_phone=patient_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2063 | <code>                exclude_id=split_source_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2064 | <code>            ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2065 | <code>                messages.error(</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_book_patient`. |
+| 2066 | <code>                    request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2067 | <code>                    'У цей час пацієнт уже має іншу заявку або прийом.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2068 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 2069 | <code>            else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `doctor_book_patient`. |
+| 2070 | <code>                try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `doctor_book_patient`. |
+| 2071 | <code>                    with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `doctor_book_patient`. |
+| 2072 | <code>                        if split_source_id:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 2073 | <code>                            locked_source = Appointment.objects.select_for_update().get(</code> | Блокирует выбранную строку до конца транзакции и защищает от одновременного изменения. Контекст: `doctor_book_patient`. |
+| 2074 | <code>                                pk=split_source_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2075 | <code>                                doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2076 | <code>                                date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2077 | <code>                            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 2078 | <code>                            locked_split_option = split_slot_option(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2079 | <code>                                doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2080 | <code>                                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2081 | <code>                                locked_source.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2082 | <code>                                schedule=schedule,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2083 | <code>                                appointment_id=locked_source.pk,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2084 | <code>                            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 2085 | <code>                            if (</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 2086 | <code>                                not locked_split_option</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2087 | <code>                                or selected_time != locked_split_option['time']</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2088 | <code>                                or duration_minutes != locked_split_option['duration_minutes']</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2089 | <code>                            ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2090 | <code>                                raise IntegrityError</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `doctor_book_patient`. |
+| 2091 | <code>                            if appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_book_patient`. |
+| 2092 | <code>                                doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2093 | <code>                                selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2094 | <code>                                selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2095 | <code>                                duration_minutes=duration_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2096 | <code>                                exclude_id=locked_source.pk,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2097 | <code>                            ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2098 | <code>                                raise IntegrityError</code> | Немедленно прекращает текущую ветку и сообщает контролируемую ошибку. Контекст: `doctor_book_patient`. |
+| 2099 | <code>                            locked_source.duration_minutes_exact = duration_minutes</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2100 | <code>                            locked_source.duration_slots = 1</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2101 | <code>                            locked_source.save(</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_book_patient`. |
+| 2102 | <code>                                update_fields=['duration_minutes_exact', 'duration_slots']</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2103 | <code>                            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 2104 | <code>                            write_audit_log(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2105 | <code>                                request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2106 | <code>                                'Лікар поділив слот прийому',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2107 | <code>                                locked_source,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2108 | <code>                                (</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 2109 | <code>                                    f'Тривалість змінено з '</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2110 | <code>                                    f'{locked_split_option["original_duration_minutes"]} '</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2111 | <code>                                    f'до {duration_minutes} хв.'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2112 | <code>                                ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 2113 | <code>                            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 2115 | <code>                        appointment = Appointment.objects.create(</code> | Начинает создание новой строки базы через Django ORM. Контекст: `doctor_book_patient`. |
+| 2116 | <code>                            doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2117 | <code>                            service=form.cleaned_data['service'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_book_patient`. |
+| 2118 | <code>                            patient=patient,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2119 | <code>                            patient_first_name=patient_first_name,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2120 | <code>                            patient_last_name=patient_last_name,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2121 | <code>                            patient_phone=patient_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2122 | <code>                            patient_email=patient.email if patient else '',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2123 | <code>                            date=selected_date,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2124 | <code>                            time=selected_time,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2125 | <code>                            city=schedule.city,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2126 | <code>                            address=schedule.address,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2127 | <code>                            reason=form.cleaned_data['reason'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_book_patient`. |
+| 2128 | <code>                            duration_slots=duration_slots,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2129 | <code>                            duration_minutes_exact=duration_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2130 | <code>                            status=Appointment.STATUS_APPROVED,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2131 | <code>                            approved_at=timezone.now(),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2132 | <code>                        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 2133 | <code>                    ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2134 | <code>                    write_audit_log(request, 'Лікар записав пацієнта', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2135 | <code>                    notify_patient_status(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2136 | <code>                        appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2137 | <code>                        'doctor_created',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2138 | <code>                        'Лікар створив для вас запис',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2139 | <code>                    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 2140 | <code>                    split_message = ' Стандартний слот поділено на два прийоми.' if split_source_id else ''</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_book_patient`. |
+| 2141 | <code>                    messages.success(request, f'Пацієнта записано.{split_message}{match_message}')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_book_patient`. |
+| 2142 | <code>                    return redirect(doctor_appointments_week_url(selected_date))</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_book_patient`. |
+| 2143 | <code>                except (IntegrityError, Appointment.DoesNotExist):</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `doctor_book_patient`. |
+| 2144 | <code>                    messages.error(request, 'Цей час уже недоступний.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_book_patient`. |
+| 2146 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_book_patient`. |
+| 2147 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2148 | <code>        'clinic/doctor_book_patient.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2149 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 2150 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2151 | <code>            'selected_date': selected_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2152 | <code>            'selected_time': selected_time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2153 | <code>            'selected_schedule': schedule,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2154 | <code>            'slots': slots,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2155 | <code>            'split_option': split_option,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2156 | <code>            'form': form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2157 | <code>            'earliest_booking_date': earliest_booking_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2158 | <code>            'working_weekdays': working_weekdays,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2159 | <code>            'working_weekday_labels': working_weekday_labels(working_weekdays),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_book_patient`. |
+| 2160 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 2161 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_book_patient`. |
+| 2164 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 2165 | <code>def doctor_patient_cards(request):</code> | Собирает список карточек с последним, следующим визитом и поиском. Контекст: `doctor_patient_cards`. |
+| 2166 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
+| 2167 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
+| 2168 | <code>    sync_patient_cards_for_doctor(doctor)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
+| 2169 | <code>    query = request.GET.get('q', '').strip()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
+| 2170 | <code>    cards = doctor.patient_cards.select_related('patient__profile')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_patient_cards`. |
+| 2171 | <code>    if query:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_patient_cards`. |
+| 2172 | <code>        normalized_query = normalize_phone_number(query)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
+| 2173 | <code>        for term in query.split():</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `doctor_patient_cards`. |
+| 2174 | <code>            term_filter = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
+| 2175 | <code>                Q(patient_first_name__icontains=term)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
+| 2176 | <code>                &#124; Q(patient_last_name__icontains=term)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
+| 2177 | <code>                &#124; Q(patient_phone__icontains=term)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
+| 2178 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_cards`. |
+| 2179 | <code>            if normalized_query:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_patient_cards`. |
+| 2180 | <code>                term_filter &#124;= Q(patient_phone__icontains=normalized_query)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
+| 2181 | <code>            if term.isdigit() and len(term) &lt;= 3:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_patient_cards`. |
+| 2182 | <code>                term_filter &#124;= Q(patient__profile__age=int(term))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
+| 2183 | <code>            cards = cards.filter(term_filter)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_patient_cards`. |
+| 2184 | <code>    card_rows = []</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
+| 2185 | <code>    for card in cards:</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `doctor_patient_cards`. |
+| 2186 | <code>        appointments = appointments_for_patient_card(doctor, card).exclude(</code> | Исключает из ORM-запроса строки, подходящие под указанное условие. Контекст: `doctor_patient_cards`. |
+| 2187 | <code>            status__in=[Appointment.STATUS_CANCELED, Appointment.STATUS_REJECTED]</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_cards`. |
+| 2188 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_cards`. |
+| 2189 | <code>        last_visit = appointments.filter(status=Appointment.STATUS_COMPLETED).order_by('-date', '-time').first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_patient_cards`. |
+| 2190 | <code>        next_visit = appointments.filter(status__in=[Appointment.STATUS_PENDING, Appointment.STATUS_APPROVED]).order_by('date', 'time').first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_patient_cards`. |
+| 2191 | <code>        card_rows.append(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
+| 2192 | <code>            {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_cards`. |
+| 2193 | <code>                'card': card,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
+| 2194 | <code>                'appointments_count': appointments.count(),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
+| 2195 | <code>                'last_visit': last_visit,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
+| 2196 | <code>                'next_visit': next_visit,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
+| 2197 | <code>            }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_cards`. |
+| 2198 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_cards`. |
+| 2199 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_patient_cards`. |
+| 2200 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
+| 2201 | <code>        'clinic/doctor_patient_cards.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
+| 2202 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_cards`. |
+| 2203 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
+| 2204 | <code>            'card_rows': card_rows,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
+| 2205 | <code>            'query': query,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_cards`. |
+| 2206 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_cards`. |
+| 2207 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_cards`. |
+| 2210 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 2211 | <code>def doctor_patient_card_detail(request, card_id):</code> | Управляет заметками, расширенными записями и медицинскими файлами карточки. Контекст: `doctor_patient_card_detail`. |
+| 2212 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2213 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
+| 2214 | <code>    sync_patient_cards_for_doctor(doctor)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2215 | <code>    card = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_patient_card_detail`. |
+| 2216 | <code>        DoctorPatientCard.objects.select_related('patient__profile'),</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_patient_card_detail`. |
+| 2217 | <code>        pk=card_id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
+| 2218 | <code>        doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
+| 2219 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_card_detail`. |
+| 2220 | <code>    action = request.POST.get('action') if request.method == 'POST' else None</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2221 | <code>    form = DoctorPatientCardForm(request.POST if action == 'update_card' else None, instance=card)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2222 | <code>    entry_form = PatientRecordEntryForm(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
+| 2223 | <code>        request.POST if action == 'add_entry' else None,</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_patient_card_detail`. |
+| 2224 | <code>        request.FILES if action == 'add_entry' else None,</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `doctor_patient_card_detail`. |
+| 2225 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_card_detail`. |
+| 2227 | <code>    if action == 'update_card' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_patient_card_detail`. |
+| 2228 | <code>        form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_patient_card_detail`. |
+| 2229 | <code>        write_audit_log(request, 'Оновлено картку пацієнта', card)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2230 | <code>        messages.success(request, 'Картку пацієнта оновлено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_patient_card_detail`. |
+| 2231 | <code>        return redirect('doctor_patient_card_detail', card_id=card.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_patient_card_detail`. |
+| 2233 | <code>    if action == 'add_entry' and entry_form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_patient_card_detail`. |
+| 2234 | <code>        appointment = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
+| 2235 | <code>        if request.POST.get('appointment_id'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_patient_card_detail`. |
+| 2236 | <code>            appointment = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_patient_card_detail`. |
+| 2237 | <code>                appointments_for_patient_card(doctor, card),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2238 | <code>                pk=request.POST.get('appointment_id'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
+| 2239 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_card_detail`. |
+| 2240 | <code>        entry = entry_form.save(commit=False)</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_patient_card_detail`. |
+| 2241 | <code>        entry.card = card</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
+| 2242 | <code>        entry.doctor = doctor</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
+| 2243 | <code>        entry.appointment = appointment</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
+| 2244 | <code>        entry.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_patient_card_detail`. |
+| 2245 | <code>        for photo in entry_form.cleaned_data['photos']:</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_patient_card_detail`. |
+| 2246 | <code>            PatientRecordImage.objects.create(entry=entry, image=photo)</code> | Начинает создание новой строки базы через Django ORM. Контекст: `doctor_patient_card_detail`. |
+| 2247 | <code>        for video in entry_form.cleaned_data['videos']:</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_patient_card_detail`. |
+| 2248 | <code>            PatientRecordVideo.objects.create(entry=entry, video=video)</code> | Начинает создание новой строки базы через Django ORM. Контекст: `doctor_patient_card_detail`. |
+| 2249 | <code>        write_audit_log(request, 'Додано запис до картки', entry)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2250 | <code>        messages.success(request, 'Новий запис додано до картки пацієнта.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_patient_card_detail`. |
+| 2251 | <code>        return redirect('doctor_patient_card_detail', card_id=card.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_patient_card_detail`. |
+| 2253 | <code>    if action == 'delete_entry':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_patient_card_detail`. |
+| 2254 | <code>        entry = get_object_or_404(card.record_entries, pk=request.POST.get('entry_id'), doctor=doctor)</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_patient_card_detail`. |
+| 2255 | <code>        write_audit_log(request, 'Видалено запис із картки', entry)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2256 | <code>        entry.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `doctor_patient_card_detail`. |
+| 2257 | <code>        messages.success(request, 'Запис із картки видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_patient_card_detail`. |
+| 2258 | <code>        return redirect('doctor_patient_card_detail', card_id=card.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_patient_card_detail`. |
+| 2260 | <code>    if action == 'delete_image':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_patient_card_detail`. |
+| 2261 | <code>        image = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_patient_card_detail`. |
+| 2262 | <code>            PatientRecordImage,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2263 | <code>            pk=request.POST.get('image_id'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
+| 2264 | <code>            entry__card=card,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
+| 2265 | <code>            entry__doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
+| 2266 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_card_detail`. |
+| 2267 | <code>        image.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `doctor_patient_card_detail`. |
+| 2268 | <code>        write_audit_log(request, 'Видалено фото з картки', card)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2269 | <code>        messages.success(request, 'Фотографію видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_patient_card_detail`. |
+| 2270 | <code>        return redirect('doctor_patient_card_detail', card_id=card.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_patient_card_detail`. |
+| 2272 | <code>    if action == 'delete_video':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_patient_card_detail`. |
+| 2273 | <code>        video = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_patient_card_detail`. |
+| 2274 | <code>            PatientRecordVideo,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2275 | <code>            pk=request.POST.get('video_id'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
+| 2276 | <code>            entry__card=card,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
+| 2277 | <code>            entry__doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
+| 2278 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_card_detail`. |
+| 2279 | <code>        video.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `doctor_patient_card_detail`. |
+| 2280 | <code>        write_audit_log(request, 'Видалено відео з картки', card)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2281 | <code>        messages.success(request, 'Відео видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_patient_card_detail`. |
+| 2282 | <code>        return redirect('doctor_patient_card_detail', card_id=card.id)</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_patient_card_detail`. |
+| 2284 | <code>    appointments = appointments_for_patient_card(doctor, card).select_related(</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_patient_card_detail`. |
+| 2285 | <code>        'service',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2286 | <code>    ).order_by('-date', '-time')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `doctor_patient_card_detail`. |
+| 2287 | <code>    completed_visits = appointments.filter(status=Appointment.STATUS_COMPLETED).count()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_patient_card_detail`. |
+| 2288 | <code>    last_visit = appointments.filter(status=Appointment.STATUS_COMPLETED).first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_patient_card_detail`. |
+| 2289 | <code>    first_visit = appointments.last()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
+| 2290 | <code>    next_visit = appointments.filter(status__in=[Appointment.STATUS_PENDING, Appointment.STATUS_APPROVED]).order_by('date', 'time').first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_patient_card_detail`. |
+| 2291 | <code>    selected_appointment = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_patient_card_detail`. |
+| 2292 | <code>    if request.GET.get('appointment'):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_patient_card_detail`. |
+| 2293 | <code>        selected_appointment = appointments.filter(pk=request.GET.get('appointment')).first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_patient_card_detail`. |
+| 2295 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_patient_card_detail`. |
+| 2296 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2297 | <code>        'clinic/doctor_patient_card_detail.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2298 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_card_detail`. |
+| 2299 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2300 | <code>            'card': card,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2301 | <code>            'form': form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2302 | <code>            'entry_form': entry_form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2303 | <code>            'record_entries': card.record_entries.select_related('appointment__service').prefetch_related(</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_patient_card_detail`. |
+| 2304 | <code>                'images',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2305 | <code>                'videos',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2306 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_card_detail`. |
+| 2307 | <code>            'selected_appointment': selected_appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2308 | <code>            'appointments': appointments,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2309 | <code>            'completed_visits': completed_visits,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2310 | <code>            'last_visit': last_visit,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2311 | <code>            'first_visit': first_visit,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2312 | <code>            'next_visit': next_visit,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_patient_card_detail`. |
+| 2313 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_card_detail`. |
+| 2314 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_patient_card_detail`. |
+| 2317 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 2318 | <code>def doctor_schedule(request):</code> | Добавляет незаполненный день или полностью заменяет выбранный день недельного графика врача. Контекст: `doctor_schedule`. |
+| 2319 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2320 | <code>    weekday_values = {value for value, _ in WorkSchedule.WEEKDAY_CHOICES}</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2321 | <code>    schedules = list(doctor.schedules.select_related('workplace'))</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `doctor_schedule`. |
+| 2322 | <code>    configured_weekdays = {schedule.weekday for schedule in schedules}</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2323 | <code>    missing_weekdays = weekday_values - configured_weekdays</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2325 | <code>    edit_weekday_raw = request.GET.get('edit')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2326 | <code>    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `doctor_schedule`. |
+| 2327 | <code>        edit_weekday = int(edit_weekday_raw) if edit_weekday_raw is not None else None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2328 | <code>    except (TypeError, ValueError):</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `doctor_schedule`. |
+| 2329 | <code>        edit_weekday = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2330 | <code>    editing_schedule = next(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2331 | <code>        (schedule for schedule in schedules if schedule.weekday == edit_weekday),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
+| 2332 | <code>        None,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
+| 2333 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_schedule`. |
+| 2334 | <code>    if edit_weekday_raw is not None and editing_schedule is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_schedule`. |
+| 2335 | <code>        messages.error(request, 'День графіка не знайдено.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_schedule`. |
+| 2336 | <code>        return redirect('doctor_schedule')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_schedule`. |
+| 2338 | <code>    if request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_schedule`. |
+| 2339 | <code>        form = WorkScheduleForm(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2340 | <code>            request.POST,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
+| 2341 | <code>            instance=editing_schedule,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2342 | <code>            doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2343 | <code>            allowed_weekdays=missing_weekdays if editing_schedule is None else None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2344 | <code>            locked_weekday=editing_schedule.weekday if editing_schedule else None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2345 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_schedule`. |
+| 2346 | <code>        if form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_schedule`. |
+| 2347 | <code>            schedule = form.save(commit=False)</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_schedule`. |
+| 2348 | <code>            schedule.doctor = doctor</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2349 | <code>            schedule.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_schedule`. |
+| 2350 | <code>            write_audit_log(request, 'Збережено графік лікаря', schedule)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
+| 2351 | <code>            messages.success(request, 'Графік збережено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_schedule`. |
+| 2352 | <code>            return redirect('doctor_schedule')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_schedule`. |
+| 2353 | <code>    else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `doctor_schedule`. |
+| 2354 | <code>        form = WorkScheduleForm(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2355 | <code>            doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2356 | <code>            allowed_weekdays=missing_weekdays if editing_schedule is None else None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2357 | <code>            locked_weekday=editing_schedule.weekday if editing_schedule else None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2358 | <code>            blank_existing=editing_schedule is not None,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_schedule`. |
+| 2359 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_schedule`. |
+| 2361 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_schedule`. |
+| 2362 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
+| 2363 | <code>        'clinic/doctor_schedule.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
+| 2364 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_schedule`. |
+| 2365 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
+| 2366 | <code>            'schedules': schedules,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
+| 2367 | <code>            'workplaces': doctor.workplaces.all(),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
+| 2368 | <code>            'form': form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
+| 2369 | <code>            'editing_schedule': editing_schedule,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
+| 2370 | <code>            'all_days_configured': not missing_weekdays,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_schedule`. |
+| 2371 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_schedule`. |
+| 2372 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_schedule`. |
+| 2375 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 2376 | <code>def doctor_workplaces(request):</code> | Создает, редактирует и безопасно удаляет сохраненные места приема. Контекст: `doctor_workplaces`. |
+| 2377 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_workplaces`. |
+| 2378 | <code>    edit_id = request.GET.get('edit')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_workplaces`. |
+| 2379 | <code>    instance = doctor.workplaces.filter(pk=edit_id).first() if edit_id else None</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_workplaces`. |
+| 2381 | <code>    if request.method == 'POST' and request.POST.get('action') == 'delete':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_workplaces`. |
+| 2382 | <code>        workplace = get_object_or_404(doctor.workplaces, pk=request.POST.get('workplace_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_workplaces`. |
+| 2383 | <code>        if workplace.schedules.exists():</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_workplaces`. |
+| 2384 | <code>            messages.error(</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `doctor_workplaces`. |
+| 2385 | <code>                request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_workplaces`. |
+| 2386 | <code>                'Це місце використовується у графіку. Спочатку оберіть інше місце для відповідних днів.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_workplaces`. |
+| 2387 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_workplaces`. |
+| 2388 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `doctor_workplaces`. |
+| 2389 | <code>            write_audit_log(request, 'Видалено місце прийому', workplace)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_workplaces`. |
+| 2390 | <code>            workplace.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `doctor_workplaces`. |
+| 2391 | <code>            messages.success(request, 'Місце прийому видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_workplaces`. |
+| 2392 | <code>        return redirect('doctor_workplaces')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_workplaces`. |
+| 2394 | <code>    form = DoctorWorkplaceForm(request.POST or None, instance=instance)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_workplaces`. |
+| 2395 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_workplaces`. |
+| 2396 | <code>        workplace = form.save(commit=False)</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_workplaces`. |
+| 2397 | <code>        workplace.doctor = doctor</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_workplaces`. |
+| 2398 | <code>        workplace.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_workplaces`. |
+| 2399 | <code>        doctor.schedules.filter(workplace=workplace).update(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_workplaces`. |
+| 2400 | <code>            city=workplace.city,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_workplaces`. |
+| 2401 | <code>            address=workplace.address,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_workplaces`. |
+| 2402 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_workplaces`. |
+| 2403 | <code>        write_audit_log(request, 'Збережено місце прийому', workplace)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_workplaces`. |
+| 2404 | <code>        messages.success(request, 'Місце прийому збережено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_workplaces`. |
+| 2405 | <code>        return redirect('doctor_workplaces')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_workplaces`. |
+| 2407 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_workplaces`. |
+| 2408 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_workplaces`. |
+| 2409 | <code>        'clinic/doctor_workplaces.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_workplaces`. |
+| 2410 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_workplaces`. |
+| 2411 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_workplaces`. |
+| 2412 | <code>            'workplaces': doctor.workplaces.annotate(schedule_count=Count('schedules')),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_workplaces`. |
+| 2413 | <code>            'form': form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_workplaces`. |
+| 2414 | <code>            'editing': instance,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_workplaces`. |
+| 2415 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_workplaces`. |
+| 2416 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_workplaces`. |
+| 2419 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 2420 | <code>def doctor_services(request):</code> | Управляет услугами, порядком, видимостью, описанием, фото и видео. Контекст: `doctor_services`. |
+| 2421 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2422 | <code>    edit_id = request.GET.get('edit')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2423 | <code>    instance = doctor.services.filter(pk=edit_id).first() if edit_id else None</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_services`. |
+| 2425 | <code>    if request.method == 'POST' and request.POST.get('action') in {'move_up', 'move_down'}:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_services`. |
+| 2426 | <code>        service = get_object_or_404(doctor.services, pk=request.POST.get('service_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_services`. |
+| 2427 | <code>        services = list(doctor.services.order_by('sort_order', 'id'))</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `doctor_services`. |
+| 2428 | <code>        current_index = services.index(service)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2429 | <code>        offset = -1 if request.POST['action'] == 'move_up' else 1</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
+| 2430 | <code>        target_index = current_index + offset</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2431 | <code>        if 0 &lt;= target_index &lt; len(services):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_services`. |
+| 2432 | <code>            services[current_index], services[target_index] = services[target_index], services[current_index]</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2433 | <code>            for position, item in enumerate(services):</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `doctor_services`. |
+| 2434 | <code>                item.sort_order = position</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2435 | <code>            MedicalService.objects.bulk_update(services, ['sort_order'])</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
+| 2436 | <code>            write_audit_log(request, 'Змінено порядок послуг', service)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
+| 2437 | <code>            messages.success(request, 'Порядок послуг оновлено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_services`. |
+| 2438 | <code>        return redirect('doctor_services')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_services`. |
+| 2440 | <code>    if request.method == 'POST' and request.POST.get('action') == 'toggle_patient_visibility':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_services`. |
+| 2441 | <code>        service = get_object_or_404(doctor.services, pk=request.POST.get('service_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_services`. |
+| 2442 | <code>        service.is_patient_selectable = not service.is_patient_selectable</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2443 | <code>        service.save(update_fields=['is_patient_selectable'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_services`. |
+| 2444 | <code>        if service.is_patient_selectable:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_services`. |
+| 2445 | <code>            message = f'Послугу «{service.name}» показано пацієнтам під час запису.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2446 | <code>            audit_action = 'Послугу відкрито для онлайн-запису'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2447 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `doctor_services`. |
+| 2448 | <code>            message = f'Послугу «{service.name}» приховано від пацієнтів під час запису.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2449 | <code>            audit_action = 'Послугу приховано від онлайн-запису'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2450 | <code>        write_audit_log(request, audit_action, service)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
+| 2451 | <code>        messages.success(request, message)</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_services`. |
+| 2452 | <code>        return redirect('doctor_services')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_services`. |
+| 2454 | <code>    if request.method == 'POST' and request.POST.get('action') == 'delete':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_services`. |
+| 2455 | <code>        service = get_object_or_404(doctor.services, pk=request.POST.get('service_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_services`. |
+| 2456 | <code>        write_audit_log(request, 'Видалено послугу', service)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
+| 2457 | <code>        service.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `doctor_services`. |
+| 2458 | <code>        messages.success(request, 'Послугу видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_services`. |
+| 2459 | <code>        return redirect('doctor_services')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_services`. |
+| 2461 | <code>    if request.method == 'POST' and request.POST.get('action') == 'delete_image':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_services`. |
+| 2462 | <code>        image = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_services`. |
+| 2463 | <code>            MedicalServiceImage,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
+| 2464 | <code>            pk=request.POST.get('image_id'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2465 | <code>            service__doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2466 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_services`. |
+| 2467 | <code>        service_id = image.service_id</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2468 | <code>        write_audit_log(request, 'Видалено фото послуги', image.service)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
+| 2469 | <code>        image.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `doctor_services`. |
+| 2470 | <code>        messages.success(request, 'Фотографію послуги видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_services`. |
+| 2471 | <code>        return redirect(f"{reverse('doctor_services')}?edit={service_id}")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_services`. |
+| 2473 | <code>    if request.method == 'POST' and request.POST.get('action') == 'delete_video':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_services`. |
+| 2474 | <code>        video = get_object_or_404(</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_services`. |
+| 2475 | <code>            MedicalServiceVideo,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
+| 2476 | <code>            pk=request.POST.get('video_id'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2477 | <code>            service__doctor=doctor,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2478 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_services`. |
+| 2479 | <code>        service_id = video.service_id</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2480 | <code>        service = video.service</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2481 | <code>        write_audit_log(request, 'Видалено відео послуги', service)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
+| 2482 | <code>        video.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `doctor_services`. |
+| 2483 | <code>        messages.success(request, 'Відео послуги видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_services`. |
+| 2484 | <code>        return redirect(f"{reverse('doctor_services')}?edit={service_id}")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_services`. |
+| 2486 | <code>    form = ServiceForm(request.POST or None, request.FILES or None, instance=instance)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2487 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_services`. |
+| 2488 | <code>        service = form.save(commit=False)</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_services`. |
+| 2489 | <code>        service.doctor = doctor</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2490 | <code>        if service.pk is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_services`. |
+| 2491 | <code>            last_order = doctor.services.aggregate(max_order=Max('sort_order'))['max_order']</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2492 | <code>            service.sort_order = 0 if last_order is None else last_order + 1</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_services`. |
+| 2493 | <code>        service.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_services`. |
+| 2494 | <code>        for photo in form.cleaned_data['photos']:</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_services`. |
+| 2495 | <code>            MedicalServiceImage.objects.create(service=service, image=photo)</code> | Начинает создание новой строки базы через Django ORM. Контекст: `doctor_services`. |
+| 2496 | <code>        for video in form.cleaned_data['videos']:</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `doctor_services`. |
+| 2497 | <code>            MedicalServiceVideo.objects.create(service=service, video=video)</code> | Начинает создание новой строки базы через Django ORM. Контекст: `doctor_services`. |
+| 2498 | <code>        write_audit_log(request, 'Збережено послугу', service)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
+| 2499 | <code>        messages.success(request, 'Послугу збережено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_services`. |
+| 2500 | <code>        return redirect('doctor_services')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_services`. |
+| 2502 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_services`. |
+| 2503 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
+| 2504 | <code>        'clinic/doctor_services.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
+| 2505 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_services`. |
+| 2506 | <code>            'doctor': doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
+| 2507 | <code>            'services': doctor.services.prefetch_related('images', 'videos'),</code> | Заранее загружает связанные списки отдельным оптимизированным запросом. Контекст: `doctor_services`. |
+| 2508 | <code>            'form': form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
+| 2509 | <code>            'editing': instance,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_services`. |
+| 2510 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_services`. |
+| 2511 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_services`. |
+| 2514 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 2515 | <code>def doctor_edit_profile(request):</code> | Сохраняет публичные данные текущего врача. Контекст: `doctor_edit_profile`. |
+| 2516 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_edit_profile`. |
+| 2517 | <code>    form = DoctorProfileForm(request.POST or None, request.FILES or None, doctor=doctor)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_edit_profile`. |
+| 2518 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_edit_profile`. |
+| 2519 | <code>        form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_edit_profile`. |
+| 2520 | <code>        write_audit_log(request, 'Оновлено профіль лікаря', doctor)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_edit_profile`. |
+| 2521 | <code>        messages.success(request, 'Профіль лікаря оновлено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_edit_profile`. |
+| 2522 | <code>        return redirect('doctor_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_edit_profile`. |
+| 2523 | <code>    return render(request, 'clinic/doctor_edit_profile.html', {'form': form, 'doctor': doctor})</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_edit_profile`. |
+| 2526 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 2527 | <code>def doctor_change_password(request):</code> | Меняет пароль врача и не завершает его текущую сессию. Контекст: `doctor_change_password`. |
+| 2528 | <code>    form = PasswordChangeForm(request.user, request.POST or None)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_change_password`. |
+| 2529 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_change_password`. |
+| 2530 | <code>        user = form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_change_password`. |
+| 2531 | <code>        update_session_auth_hash(request, user)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_change_password`. |
+| 2532 | <code>        write_audit_log(request, 'Змінено пароль лікаря', request.user.doctor_profile)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_change_password`. |
+| 2533 | <code>        messages.success(request, 'Пароль змінено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_change_password`. |
+| 2534 | <code>        return redirect('doctor_dashboard')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_change_password`. |
+| 2535 | <code>    return render(request, 'clinic/change_password.html', {'form': form})</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_change_password`. |
+| 2538 | <code>@doctor_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 2539 | <code>def doctor_news(request):</code> | Позволяет врачу управлять только собственными публикациями. Контекст: `doctor_news`. |
+| 2540 | <code>    doctor = request.user.doctor_profile</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_news`. |
+| 2541 | <code>    edit_id = request.GET.get('edit')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_news`. |
+| 2542 | <code>    instance = doctor.news_posts.filter(pk=edit_id).first() if edit_id else None</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `doctor_news`. |
+| 2544 | <code>    if request.method == 'POST' and request.POST.get('action') == 'delete':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `doctor_news`. |
+| 2545 | <code>        post = get_object_or_404(doctor.news_posts, pk=request.POST.get('post_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `doctor_news`. |
+| 2546 | <code>        write_audit_log(request, 'Видалено новину лікаря', post)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_news`. |
+| 2547 | <code>        post.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `doctor_news`. |
+| 2548 | <code>        messages.success(request, 'Новину видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_news`. |
+| 2549 | <code>        return redirect('doctor_news')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_news`. |
+| 2551 | <code>    form = NewsPostForm(request.POST or None, request.FILES or None, instance=instance)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_news`. |
+| 2552 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `doctor_news`. |
+| 2553 | <code>        post = form.save(commit=False)</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_news`. |
+| 2554 | <code>        post.doctor = doctor</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `doctor_news`. |
+| 2555 | <code>        post.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `doctor_news`. |
+| 2556 | <code>        write_audit_log(request, 'Збережено новину лікаря', post)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_news`. |
+| 2557 | <code>        messages.success(request, 'Новину збережено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `doctor_news`. |
+| 2558 | <code>        return redirect('doctor_news')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `doctor_news`. |
+| 2560 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `doctor_news`. |
+| 2561 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_news`. |
+| 2562 | <code>        'clinic/doctor_news.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_news`. |
+| 2563 | <code>        {'doctor': doctor, 'posts': doctor.news_posts.all(), 'form': form, 'editing': instance},</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `doctor_news`. |
+| 2564 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `doctor_news`. |
+| 2567 | <code>@admin_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 2568 | <code>def admin_panel(request):</code> | Собирает статистику, пользователей, врачей, приемы и журнал действий. Контекст: `admin_panel`. |
+| 2569 | <code>    refresh_completed_appointments()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_panel`. |
+| 2570 | <code>    stats = {</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_panel`. |
+| 2571 | <code>        'patients': Profile.objects.filter(role=Profile.ROLE_PATIENT, user__is_active=True).count(),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_panel`. |
+| 2572 | <code>        'doctors': Doctor.objects.filter(user__is_active=True).count(),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_panel`. |
+| 2573 | <code>        'appointments': Appointment.objects.count(),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_panel`. |
+| 2574 | <code>        'pending': Appointment.objects.filter(status=Appointment.STATUS_PENDING).count(),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_panel`. |
+| 2575 | <code>    }</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_panel`. |
+| 2576 | <code>    users = User.objects.select_related('profile').order_by('last_name', 'first_name', 'username')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `admin_panel`. |
+| 2577 | <code>    appointments = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_panel`. |
+| 2578 | <code>        Appointment.objects.select_related('doctor__user', 'service')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `admin_panel`. |
+| 2579 | <code>        .order_by('-created_at')[:8]</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `admin_panel`. |
+| 2580 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_panel`. |
+| 2581 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `admin_panel`. |
+| 2582 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_panel`. |
+| 2583 | <code>        'clinic/admin_panel.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_panel`. |
+| 2584 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_panel`. |
+| 2585 | <code>            'stats': stats,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_panel`. |
+| 2586 | <code>            'users': users,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_panel`. |
+| 2587 | <code>            'doctors': (</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_panel`. |
+| 2588 | <code>                Doctor.objects.select_related('user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `admin_panel`. |
+| 2589 | <code>                .annotate(total=Count('appointments'))</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_panel`. |
+| 2590 | <code>                .order_by('user__last_name', 'user__first_name')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `admin_panel`. |
+| 2591 | <code>            ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_panel`. |
+| 2592 | <code>            'appointments': appointments,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_panel`. |
+| 2593 | <code>            'audit_events': AuditLog.objects.select_related('actor')[:12],</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `admin_panel`. |
+| 2594 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_panel`. |
+| 2595 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_panel`. |
+| 2598 | <code>@admin_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 2599 | <code>def admin_telegram_broadcast(request):</code> | Проверяет адресата и отправляет ручное Telegram-сообщение всем активным связям или одному пользователю. Контекст: `admin_telegram_broadcast`. |
+| 2600 | <code>    connections = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_telegram_broadcast`. |
+| 2601 | <code>        TelegramConnection.objects.filter(is_active=True, user__is_active=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_telegram_broadcast`. |
+| 2602 | <code>        .select_related('user__profile')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `admin_telegram_broadcast`. |
+| 2603 | <code>        .order_by('user__last_name', 'user__first_name', 'user__username')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `admin_telegram_broadcast`. |
+| 2604 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
+| 2605 | <code>    form = AdminTelegramBroadcastForm(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_telegram_broadcast`. |
+| 2606 | <code>        request.POST or None,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2607 | <code>        connections=connections,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_telegram_broadcast`. |
+| 2608 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
+| 2610 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `admin_telegram_broadcast`. |
+| 2611 | <code>        audience = form.cleaned_data['audience']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `admin_telegram_broadcast`. |
+| 2612 | <code>        recipient = form.cleaned_data['recipient']</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `admin_telegram_broadcast`. |
+| 2613 | <code>        selected_connections = connections</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_telegram_broadcast`. |
+| 2614 | <code>        recipient_label = 'усім підключеним користувачам'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_telegram_broadcast`. |
+| 2615 | <code>        if audience == AdminTelegramBroadcastForm.AUDIENCE_SINGLE:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_telegram_broadcast`. |
+| 2616 | <code>            selected_connections = connections.filter(pk=recipient.pk)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_telegram_broadcast`. |
+| 2617 | <code>            recipient_user = recipient.user</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_telegram_broadcast`. |
+| 2618 | <code>            recipient_label = recipient_user.get_full_name().strip() or recipient_user.username</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_telegram_broadcast`. |
+| 2620 | <code>        selected_connections = list(selected_connections)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_telegram_broadcast`. |
+| 2621 | <code>        if not selected_connections:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_telegram_broadcast`. |
+| 2622 | <code>            messages.warning(request, 'Немає активних користувачів із підключеним Telegram.')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2623 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `admin_telegram_broadcast`. |
+| 2624 | <code>            try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `admin_telegram_broadcast`. |
+| 2625 | <code>                sent_count, failures = send_admin_broadcast(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_telegram_broadcast`. |
+| 2626 | <code>                    selected_connections,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2627 | <code>                    form.cleaned_data['message'],</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `admin_telegram_broadcast`. |
+| 2628 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
+| 2629 | <code>            except TelegramError as error:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `admin_telegram_broadcast`. |
+| 2630 | <code>                form.add_error(None, str(error))</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2631 | <code>            else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `admin_telegram_broadcast`. |
+| 2632 | <code>                write_audit_log(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2633 | <code>                    request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2634 | <code>                    'Надіслано Telegram-повідомлення',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2635 | <code>                    request.user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2636 | <code>                    (</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
+| 2637 | <code>                        f'Адресат: {recipient_label}. Успішно: {sent_count}. '</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2638 | <code>                        f'Помилок: {len(failures)}. '</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2639 | <code>                        f'Текст: {form.cleaned_data["message"][:180]}'</code> | Читает уже проверенное и преобразованное значение формы, а не сырую строку POST. Контекст: `admin_telegram_broadcast`. |
+| 2640 | <code>                    ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
+| 2641 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
+| 2642 | <code>                if sent_count:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_telegram_broadcast`. |
+| 2643 | <code>                    messages.success(</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_telegram_broadcast`. |
+| 2644 | <code>                        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2645 | <code>                        f'Telegram-повідомлення надіслано: {sent_count}.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2646 | <code>                    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
+| 2647 | <code>                if failures:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_telegram_broadcast`. |
+| 2648 | <code>                    messages.warning(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2649 | <code>                        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2650 | <code>                        f'Не вдалося доставити повідомлення: {len(failures)}.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2651 | <code>                    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
+| 2652 | <code>                return redirect('admin_telegram_broadcast')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_telegram_broadcast`. |
+| 2654 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `admin_telegram_broadcast`. |
+| 2655 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2656 | <code>        'clinic/admin_telegram_broadcast.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2657 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
+| 2658 | <code>            'form': form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2659 | <code>            'connected_count': connections.count(),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_telegram_broadcast`. |
+| 2660 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
+| 2661 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_telegram_broadcast`. |
+| 2664 | <code>@admin_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 2665 | <code>def admin_content(request):</code> | Обрабатывает все действия редактора главной страницы и оформления. Контекст: `admin_content`. |
+| 2666 | <code>    branding, _ = ClinicSettings.objects.get_or_create(pk=1)</code> | Находит существующую запись или создает ее, не заставляя вызывающий код делать две отдельные операции. Контекст: `admin_content`. |
+| 2667 | <code>    hero_id = request.GET.get('hero')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2668 | <code>    news_id = request.GET.get('news')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2669 | <code>    gallery_id = request.GET.get('gallery')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2670 | <code>    hero_instance = HomeHeroSlide.objects.filter(pk=hero_id).first() if hero_id else None</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
+| 2671 | <code>    news_instance = NewsPost.objects.filter(pk=news_id).first() if news_id else None</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
+| 2672 | <code>    gallery_instance = GalleryImage.objects.filter(pk=gallery_id).first() if gallery_id else None</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
+| 2674 | <code>    settings_form = ClinicSettingsForm(instance=branding, prefix='settings')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2675 | <code>    hero_form = HomeHeroSlideForm(instance=hero_instance, prefix='hero')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2676 | <code>    news_form = NewsPostForm(instance=news_instance, prefix='news')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2677 | <code>    gallery_form = GalleryImageForm(instance=gallery_instance, prefix='gallery')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2679 | <code>    if request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
+| 2680 | <code>        action = request.POST.get('action')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2681 | <code>        if action == 'save_settings':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
+| 2682 | <code>            settings_form = ClinicSettingsForm(request.POST, request.FILES, instance=branding, prefix='settings')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2683 | <code>            if settings_form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `admin_content`. |
+| 2684 | <code>                saved_branding = settings_form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_content`. |
+| 2685 | <code>                write_audit_log(request, 'Оновлено оформлення сайту', saved_branding)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2686 | <code>                messages.success(request, 'Оформлення клініки збережено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_content`. |
+| 2687 | <code>                return redirect(f"{reverse('admin_content')}#branding")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_content`. |
+| 2688 | <code>        elif action == 'save_hero':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
+| 2689 | <code>            hero_instance = HomeHeroSlide.objects.filter(pk=request.POST.get('hero_id')).first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
+| 2690 | <code>            hero_form = HomeHeroSlideForm(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2691 | <code>                request.POST,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2692 | <code>                request.FILES,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2693 | <code>                instance=hero_instance,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2694 | <code>                prefix='hero',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2695 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_content`. |
+| 2696 | <code>            if hero_form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `admin_content`. |
+| 2697 | <code>                slide = hero_form.save(commit=False)</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_content`. |
+| 2698 | <code>                if not slide.pk:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
+| 2699 | <code>                    slide.sort_order = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2700 | <code>                        HomeHeroSlide.objects.aggregate(last_order=Max('sort_order'))['last_order'] or 0</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2701 | <code>                    ) + 1</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2702 | <code>                slide.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_content`. |
+| 2703 | <code>                write_audit_log(request, 'Збережено фото верхнього слайдера', slide)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2704 | <code>                messages.success(request, 'Фотографію верхнього слайдера збережено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_content`. |
+| 2705 | <code>                return redirect(f"{reverse('admin_content')}#hero-slides")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_content`. |
+| 2706 | <code>        elif action == 'toggle_hero':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
+| 2707 | <code>            slide = get_object_or_404(HomeHeroSlide, pk=request.POST.get('hero_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `admin_content`. |
+| 2708 | <code>            slide.is_active = not slide.is_active</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2709 | <code>            slide.save(update_fields=['is_active'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_content`. |
+| 2710 | <code>            write_audit_log(request, 'Змінено видимість фото слайдера', slide)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2711 | <code>            state = 'показується' if slide.is_active else 'прихована'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2712 | <code>            messages.success(request, f'Фотографія тепер {state} на головній сторінці.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_content`. |
+| 2713 | <code>            return redirect(f"{reverse('admin_content')}#hero-slides")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_content`. |
+| 2714 | <code>        elif action == 'move_hero':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
+| 2715 | <code>            slide = get_object_or_404(HomeHeroSlide, pk=request.POST.get('hero_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `admin_content`. |
+| 2716 | <code>            direction = request.POST.get('direction')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2717 | <code>            with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `admin_content`. |
+| 2718 | <code>                ordered_slides = list(HomeHeroSlide.objects.select_for_update().order_by('sort_order', 'id'))</code> | Блокирует выбранную строку до конца транзакции и защищает от одновременного изменения. Контекст: `admin_content`. |
+| 2719 | <code>                for position, ordered_slide in enumerate(ordered_slides, start=1):</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `admin_content`. |
+| 2720 | <code>                    if ordered_slide.sort_order != position:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
+| 2721 | <code>                        ordered_slide.sort_order = position</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2722 | <code>                        ordered_slide.save(update_fields=['sort_order'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_content`. |
+| 2723 | <code>                current_index = next(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2724 | <code>                    (index for index, ordered_slide in enumerate(ordered_slides) if ordered_slide.pk == slide.pk),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2725 | <code>                    None,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2726 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_content`. |
+| 2727 | <code>                offset = -1 if direction == 'up' else 1</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2728 | <code>                target_index = current_index + offset if current_index is not None else -1</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2729 | <code>                if current_index is not None and 0 &lt;= target_index &lt; len(ordered_slides):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
+| 2730 | <code>                    neighbour = ordered_slides[target_index]</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2731 | <code>                    slide.sort_order, neighbour.sort_order = neighbour.sort_order, slide.sort_order</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2732 | <code>                    slide.save(update_fields=['sort_order'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_content`. |
+| 2733 | <code>                    neighbour.save(update_fields=['sort_order'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_content`. |
+| 2734 | <code>                    write_audit_log(request, 'Змінено порядок фото слайдера', slide)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2735 | <code>                    messages.success(request, 'Порядок фотографій змінено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_content`. |
+| 2736 | <code>            return redirect(f"{reverse('admin_content')}#hero-slides")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_content`. |
+| 2737 | <code>        elif action == 'delete_hero':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
+| 2738 | <code>            slide = get_object_or_404(HomeHeroSlide, pk=request.POST.get('hero_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `admin_content`. |
+| 2739 | <code>            write_audit_log(request, 'Видалено фото слайдера', slide)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2740 | <code>            slide.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `admin_content`. |
+| 2741 | <code>            messages.success(request, 'Фотографію верхнього слайдера видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_content`. |
+| 2742 | <code>            return redirect(f"{reverse('admin_content')}#hero-slides")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_content`. |
+| 2743 | <code>        elif action == 'save_news':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
+| 2744 | <code>            news_instance = NewsPost.objects.filter(pk=request.POST.get('news_id')).first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
+| 2745 | <code>            news_form = NewsPostForm(request.POST, request.FILES, instance=news_instance, prefix='news')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2746 | <code>            if news_form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `admin_content`. |
+| 2747 | <code>                post = news_form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_content`. |
+| 2748 | <code>                write_audit_log(request, 'Збережено новину клініки', post)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2749 | <code>                messages.success(request, 'Новину збережено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_content`. |
+| 2750 | <code>                return redirect(f"{reverse('admin_content')}#news")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_content`. |
+| 2751 | <code>        elif action == 'delete_news':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
+| 2752 | <code>            post = get_object_or_404(NewsPost, pk=request.POST.get('news_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `admin_content`. |
+| 2753 | <code>            write_audit_log(request, 'Видалено новину', post)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2754 | <code>            post.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `admin_content`. |
+| 2755 | <code>            messages.success(request, 'Новину видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_content`. |
+| 2756 | <code>            return redirect(f"{reverse('admin_content')}#news")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_content`. |
+| 2757 | <code>        elif action == 'save_gallery':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
+| 2758 | <code>            gallery_instance = GalleryImage.objects.filter(pk=request.POST.get('gallery_id')).first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
+| 2759 | <code>            gallery_form = GalleryImageForm(</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2760 | <code>                request.POST,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2761 | <code>                request.FILES,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2762 | <code>                instance=gallery_instance,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2763 | <code>                prefix='gallery',</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2764 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_content`. |
+| 2765 | <code>            if gallery_form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `admin_content`. |
+| 2766 | <code>                gallery_item = gallery_form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_content`. |
+| 2767 | <code>                write_audit_log(request, 'Збережено фото галереї', gallery_item)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2768 | <code>                messages.success(request, 'Фотографію збережено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_content`. |
+| 2769 | <code>                return redirect(f"{reverse('admin_content')}#gallery")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_content`. |
+| 2770 | <code>        elif action == 'delete_gallery':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_content`. |
+| 2771 | <code>            gallery_item = get_object_or_404(GalleryImage, pk=request.POST.get('gallery_id'))</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `admin_content`. |
+| 2772 | <code>            write_audit_log(request, 'Видалено фото галереї', gallery_item)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2773 | <code>            gallery_item.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `admin_content`. |
+| 2774 | <code>            messages.success(request, 'Фотографію видалено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_content`. |
+| 2775 | <code>            return redirect(f"{reverse('admin_content')}#gallery")</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_content`. |
+| 2777 | <code>    hero_slides = HomeHeroSlide.objects.all()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2778 | <code>    posts = NewsPost.objects.select_related('doctor__user').all()</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `admin_content`. |
+| 2779 | <code>    gallery_images = GalleryImage.objects.all()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_content`. |
+| 2780 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `admin_content`. |
+| 2781 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2782 | <code>        'clinic/admin_content.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2783 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_content`. |
+| 2784 | <code>            'settings_form': settings_form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2785 | <code>            'hero_form': hero_form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2786 | <code>            'news_form': news_form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2787 | <code>            'gallery_form': gallery_form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2788 | <code>            'hero_editing': hero_instance,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2789 | <code>            'news_editing': news_instance,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2790 | <code>            'gallery_editing': gallery_instance,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2791 | <code>            'hero_slides': hero_slides,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2792 | <code>            'posts': posts,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2793 | <code>            'gallery_images': gallery_images,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2794 | <code>            'content_stats': {</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_content`. |
+| 2795 | <code>                'hero': hero_slides.filter(is_active=True).count(),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
+| 2796 | <code>                'clinic_news': posts.filter(doctor__isnull=True, is_published=True).count(),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
+| 2797 | <code>                'doctor_news': posts.filter(doctor__isnull=False, is_published=True).count(),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
+| 2798 | <code>                'gallery': gallery_images.filter(is_published=True).count(),</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `admin_content`. |
+| 2799 | <code>            },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_content`. |
+| 2800 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_content`. |
+| 2801 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_content`. |
+| 2804 | <code>@admin_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 2805 | <code>def admin_add_doctor(request):</code> | Создает связанный аккаунт, роль и профиль врача. Контекст: `admin_add_doctor`. |
+| 2806 | <code>    form = AdminDoctorCreateForm(request.POST or None, request.FILES or None)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_add_doctor`. |
+| 2807 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `admin_add_doctor`. |
+| 2808 | <code>        user = form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_add_doctor`. |
+| 2809 | <code>        write_audit_log(request, 'Додано лікаря', user.doctor_profile)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_add_doctor`. |
+| 2810 | <code>        messages.success(request, f'Лікаря додано. Логін для входу: {user.username}')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_add_doctor`. |
+| 2811 | <code>        return redirect('admin_panel')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_add_doctor`. |
+| 2812 | <code>    return render(request, 'clinic/admin_add_doctor.html', {'form': form})</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `admin_add_doctor`. |
+| 2815 | <code>@admin_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 2816 | <code>def admin_edit_user(request, user_id):</code> | Редактирует пользователя и повторно защищает уникальность телефона. Контекст: `admin_edit_user`. |
+| 2817 | <code>    edited_user = get_object_or_404(User, pk=user_id)</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `admin_edit_user`. |
+| 2818 | <code>    form = AdminUserEditForm(request.POST or None, user=edited_user)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_edit_user`. |
+| 2819 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `admin_edit_user`. |
+| 2820 | <code>        try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `admin_edit_user`. |
+| 2821 | <code>            with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `admin_edit_user`. |
+| 2822 | <code>                form.save()</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_edit_user`. |
+| 2823 | <code>                write_audit_log(request, 'Оновлено користувача', edited_user)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_edit_user`. |
+| 2824 | <code>        except IntegrityError:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `admin_edit_user`. |
+| 2825 | <code>            form.add_error('phone', 'Цей номер телефону вже прив’язаний до іншого пацієнта.')</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_edit_user`. |
+| 2826 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `admin_edit_user`. |
+| 2827 | <code>            messages.success(request, 'Дані користувача оновлено.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_edit_user`. |
+| 2828 | <code>            return redirect('admin_panel')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_edit_user`. |
+| 2829 | <code>    return render(</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `admin_edit_user`. |
+| 2830 | <code>        request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_edit_user`. |
+| 2831 | <code>        'clinic/admin_edit_user.html',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_edit_user`. |
+| 2832 | <code>        {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_edit_user`. |
+| 2833 | <code>            'form': form,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_edit_user`. |
+| 2834 | <code>            'edited_user': edited_user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_edit_user`. |
+| 2835 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_edit_user`. |
+| 2836 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_edit_user`. |
+| 2839 | <code>@admin_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 2840 | <code>def admin_toggle_user(request, user_id):</code> | Архивирует или восстанавливает аккаунт без удаления медицинской истории. Контекст: `admin_toggle_user`. |
+| 2841 | <code>    edited_user = get_object_or_404(User, pk=user_id)</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `admin_toggle_user`. |
+| 2842 | <code>    if request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_toggle_user`. |
+| 2843 | <code>        if edited_user == request.user:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_toggle_user`. |
+| 2844 | <code>            messages.error(request, 'Не можна архівувати самого себе.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `admin_toggle_user`. |
+| 2845 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `admin_toggle_user`. |
+| 2846 | <code>            edited_user.is_active = not edited_user.is_active</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_toggle_user`. |
+| 2847 | <code>            edited_user.save(update_fields=['is_active'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_toggle_user`. |
+| 2848 | <code>            action = 'Відновлено акаунт' if edited_user.is_active else 'Архівовано акаунт'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_toggle_user`. |
+| 2849 | <code>            write_audit_log(request, action, edited_user)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_toggle_user`. |
+| 2850 | <code>            message = 'Акаунт відновлено.' if edited_user.is_active else 'Акаунт перенесено до архіву.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_toggle_user`. |
+| 2851 | <code>            messages.success(request, message)</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_toggle_user`. |
+| 2852 | <code>    return redirect('admin_panel')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_toggle_user`. |
+| 2855 | <code>@admin_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 2856 | <code>def admin_delete_user(request, user_id):</code> | Окончательно удаляет только предварительно архивированного пациента. Контекст: `admin_delete_user`. |
+| 2857 | <code>    edited_user = get_object_or_404(User, pk=user_id)</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `admin_delete_user`. |
+| 2858 | <code>    if request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_delete_user`. |
+| 2859 | <code>        if edited_user == request.user:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_delete_user`. |
+| 2860 | <code>            messages.error(request, 'Не можна видалити власний акаунт.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `admin_delete_user`. |
+| 2861 | <code>        elif not hasattr(edited_user, 'profile') or edited_user.profile.role != Profile.ROLE_PATIENT:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_delete_user`. |
+| 2862 | <code>            messages.error(request, 'Назавжди видаляти можна лише профілі пацієнтів.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `admin_delete_user`. |
+| 2863 | <code>        elif edited_user.is_active:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_delete_user`. |
+| 2864 | <code>            messages.error(request, 'Спочатку перенесіть профіль пацієнта до архіву.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `admin_delete_user`. |
+| 2865 | <code>        else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `admin_delete_user`. |
+| 2866 | <code>            profile_photo = edited_user.profile.photo</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `admin_delete_user`. |
+| 2867 | <code>            write_audit_log(request, 'Назавжди видалено профіль пацієнта', edited_user)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_delete_user`. |
+| 2868 | <code>            edited_user.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `admin_delete_user`. |
+| 2869 | <code>            if profile_photo and profile_photo.name:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_delete_user`. |
+| 2870 | <code>                profile_photo.storage.delete(profile_photo.name)</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `admin_delete_user`. |
+| 2871 | <code>            messages.success(</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_delete_user`. |
+| 2872 | <code>                request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_delete_user`. |
+| 2873 | <code>                'Профіль пацієнта видалено назавжди. Історію прийомів і медичні записи збережено.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_delete_user`. |
+| 2874 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_delete_user`. |
+| 2875 | <code>    return redirect('admin_panel')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_delete_user`. |
+| 2878 | <code>@admin_required</code> | Декоратор выполняет проверку доступа до запуска самой функции. |
+| 2879 | <code>def admin_cancel_appointment(request, appointment_id):</code> | Отменяет будущую запись от имени администратора. Контекст: `admin_cancel_appointment`. |
+| 2880 | <code>    appointment = get_object_or_404(Appointment, pk=appointment_id)</code> | Ищет объект с дополнительными ограничениями и возвращает 404 вместо доступа к чужим данным. Контекст: `admin_cancel_appointment`. |
+| 2881 | <code>    if request.method == 'POST' and appointment.can_cancel:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_cancel_appointment`. |
+| 2882 | <code>        appointment.status = Appointment.STATUS_CANCELED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `admin_cancel_appointment`. |
+| 2883 | <code>        appointment.save(update_fields=['status'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `admin_cancel_appointment`. |
+| 2884 | <code>        ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_cancel_appointment`. |
+| 2885 | <code>        write_audit_log(request, 'Скасовано запис адміністратором', appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_cancel_appointment`. |
+| 2886 | <code>        notify_patient_status(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_cancel_appointment`. |
+| 2887 | <code>            appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_cancel_appointment`. |
+| 2888 | <code>            'admin_canceled',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_cancel_appointment`. |
+| 2889 | <code>            'Адміністратор скасував прийом',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `admin_cancel_appointment`. |
+| 2890 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `admin_cancel_appointment`. |
+| 2891 | <code>        messages.success(request, 'Запис скасовано адміністратором.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `admin_cancel_appointment`. |
+| 2892 | <code>    elif request.method == 'POST':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `admin_cancel_appointment`. |
+| 2893 | <code>        messages.error(request, 'Цей запис уже не можна скасувати.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `admin_cancel_appointment`. |
+| 2894 | <code>    return redirect('admin_panel')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `admin_cancel_appointment`. |
 
 ## Файл `clinic/context_processors.py`
 

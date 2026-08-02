@@ -17,6 +17,7 @@ urlpatterns = [
     path('admin-login/', views.login_view, {'role': 'administration'}, name='admin_login'),
     path('logout/', views.logout_view, name='logout'),
     path('telegram/connect/', views.telegram_connect, name='telegram_connect'),
+    path('telegram/reconnect/', views.telegram_reconnect, name='telegram_reconnect'),
     path('telegram/disconnect/', views.telegram_disconnect, name='telegram_disconnect'),
     path('telegram/webhook/', views.telegram_webhook, name='telegram_webhook'),
     path('forgot-password/', views.forgot_password, name='forgot_password'),

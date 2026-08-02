@@ -157,7 +157,7 @@ class ClinicModelTests(TestCase):
     def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
         response = self.client.get(reverse('home'))
 
-        self.assertContains(response, 'clinic/site.css?v=20260802-5')
+        self.assertContains(response, 'clinic/site.css?v=20260802-6')
         self.assertContains(response, 'clinic/mobile.css?v=20260802-3')
         self.assertContains(response, 'Нікополь, вул. Шевченка, 200')
         self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
@@ -671,6 +671,50 @@ class ClinicModelTests(TestCase):
         self.assertContains(dashboard, 'Приєднайте Telegram-бота')
         self.assertEqual(connect.status_code, 302)
         self.assertTrue(connect.url.startswith('https://t.me/myclinic_ua_bot?start='))
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+    )
+    def test_connected_patient_sees_status_and_can_start_telegram_reconnect(self):
+        old_connection = TelegramConnection.objects.create(
+            user=self.patient,
+            chat_id=10003,
+            username='old_patient_tg',
+        )
+        self.client.login(username=self.patient.username, password='pass12345')
+
+        dashboard = self.client.get(reverse('patient_dashboard'))
+        reconnect_get = self.client.get(reverse('telegram_reconnect'))
+        reconnect = self.client.post(reverse('telegram_reconnect'))
+
+        self.assertContains(dashboard, 'Бот прив’язаний')
+        self.assertContains(dashboard, 'Переприв’язати бота')
+        self.assertContains(dashboard, reverse('telegram_reconnect'))
+        self.assertEqual(reconnect_get.status_code, 405)
+        self.assertEqual(reconnect.status_code, 302)
+        self.assertTrue(reconnect.url.startswith('https://t.me/myclinic_ua_bot?start='))
+        self.assertFalse(TelegramConnection.objects.filter(pk=old_connection.pk).exists())
+        self.assertEqual(
+            TelegramLinkToken.objects.filter(user=self.patient, used_at__isnull=True).count(),
+            1,
+        )
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+    )
+    def test_failed_telegram_reconnect_keeps_old_connection(self):
+        old_connection = TelegramConnection.objects.create(
+            user=self.patient,
+            chat_id=10004,
+        )
+        self.client.login(username=self.patient.username, password='pass12345')
+
+        response = self.client.post(reverse('telegram_reconnect'))
+
+        self.assertRedirects(response, reverse('patient_dashboard'))
+        self.assertTrue(TelegramConnection.objects.filter(pk=old_connection.pk).exists())
 
     @override_settings(
         TELEGRAM_BOT_TOKEN='test-token',

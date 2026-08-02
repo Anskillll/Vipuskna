@@ -7597,6 +7597,66 @@ body:not(.public-home-page) .message.is-dismissing {
   color: #77531f;
 }
 
+.patient-telegram-status-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.patient-telegram-status-row form {
+  margin: 0;
+}
+
+.patient-telegram-connected {
+  align-items: center;
+  background: #e4f7ec;
+  border: 1px solid #9ed8b5;
+  border-radius: 999px;
+  color: #126a3d;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 5px;
+  min-height: 30px;
+  padding: 5px 10px;
+}
+
+.patient-telegram-connected > span {
+  align-items: center;
+  background: #17965a;
+  border-radius: 50%;
+  color: #fff;
+  display: inline-flex;
+  font-size: 10px;
+  height: 17px;
+  justify-content: center;
+  width: 17px;
+}
+
+body:not(.public-home-page) button.patient-telegram-reconnect {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #7aa79a;
+  border-radius: 0;
+  box-shadow: none;
+  color: #285c50;
+  font-size: 12px;
+  font-weight: 700;
+  min-height: 28px;
+  padding: 2px 3px;
+}
+
+body:not(.public-home-page) button.patient-telegram-reconnect:hover,
+body:not(.public-home-page) button.patient-telegram-reconnect:focus-visible {
+  background: transparent;
+  border-color: #0c8f80;
+  box-shadow: none;
+  color: #08695f;
+  transform: none;
+}
+
 .patient-profile-actions {
   display: grid;
   grid-template-columns: minmax(170px, 1fr);

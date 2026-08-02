@@ -108,6 +108,15 @@
               <span class="patient-fact-missing">Телефон не вказано</span>
             {% endif %}
           </div>
+          {% if telegram_connected %}
+            <div class="patient-telegram-status-row">
+              <span class="patient-telegram-connected"><span aria-hidden="true">✓</span> Бот прив’язаний</span>
+              <form method="post" action="{% url 'telegram_reconnect' %}">
+                {% csrf_token %}
+                <button class="patient-telegram-reconnect" type="submit">Переприв’язати бота</button>
+              </form>
+            </div>
+          {% endif %}
         </div>
 
         <div class="patient-profile-actions">

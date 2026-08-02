@@ -136,6 +136,39 @@ def telegram_connect(request):
 
 @login_required
 @require_POST
+def telegram_reconnect(request):
+    role = user_role(request.user)
+    if request.user.is_staff or role not in {Profile.ROLE_PATIENT, Profile.ROLE_DOCTOR}:
+        messages.error(request, 'Переприв’язування Telegram доступне пацієнтам і лікарям.')
+        return redirect_by_role(request.user)
+
+    if role == Profile.ROLE_PATIENT and not SocialAccount.objects.filter(
+        user=request.user,
+        provider='google',
+    ).exists():
+        messages.error(request, 'Спочатку увійдіть через Google, а потім підключіть Telegram.')
+        return redirect('home')
+
+    try:
+        with transaction.atomic():
+            link = create_link_url(request.user)
+            old_connection = TelegramConnection.objects.filter(user=request.user).first()
+            if old_connection is not None:
+                write_audit_log(
+                    request,
+                    'Розпочато переприв’язування Telegram',
+                    old_connection,
+                )
+                old_connection.delete()
+    except TelegramError as error:
+        messages.error(request, str(error))
+        return redirect_by_role(request.user)
+
+    return redirect(link)
+
+
+@login_required
+@require_POST
 def telegram_disconnect(request):
     disconnected = TelegramConnection.objects.filter(user=request.user).update(is_active=False)
     if disconnected:
