@@ -924,6 +924,38 @@ class ClinicModelTests(TestCase):
     @override_settings(
         TELEGRAM_BOT_TOKEN='test-token',
         TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+    )
+    @patch('clinic.telegram.TelegramConnection.objects.filter')
+    def test_telegram_button_answers_when_database_is_temporarily_unavailable(
+        self,
+        connection_filter,
+    ):
+        connection_filter.side_effect = DatabaseError('database unavailable')
+        client = Mock()
+        update = {
+            'callback_query': {
+                'id': 'database-error-callback',
+                'data': 'doctor_request:approve:123',
+                'from': {'id': 44004},
+                'message': {
+                    'message_id': 94,
+                    'chat': {'id': 44004, 'type': 'private'},
+                },
+            },
+        }
+
+        self.assertFalse(process_update(update, client=client))
+
+        client.answer_callback_query.assert_called_once_with(
+            'database-error-callback',
+            'База даних тимчасово недоступна. Спробуйте ще раз.',
+            show_alert=True,
+        )
+        client.edit_message_reply_markup.assert_not_called()
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
         SITE_BASE_URL='http://testserver',
     )
     def test_day_before_reminder_is_sent_only_to_patient_after_18(self):

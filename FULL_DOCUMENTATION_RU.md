@@ -329,11 +329,12 @@
 2. Telegram присылает `callback_query` с идентификатором действия и заявки.
 3. Бот находит активную связь по приватному `chat_id`.
 4. Запрос к заявке дополнительно ограничивается аккаунтом этого врача.
-5. Строка заявки блокируется через `select_for_update()` внутри транзакции.
+5. Строка заявки блокируется через `select_for_update(of=('self',))` внутри транзакции; nullable-связи пациента и услуги PostgreSQL не блокирует.
 6. При принятии повторяются проверки прошлого времени, графика, занятости врача и пациента.
 7. При отклонении заявка получает статус `rejected`, при принятии — `approved`.
 8. Решение сохраняется в `AuditLog`, а пациент получает обычное уведомление.
 9. Telegram убирает кнопки решения и оставляет ссылку на подробности сайта.
+10. Ошибка базы перехватывается и превращается в быстрый callback-ответ вместо бесконечной загрузки кнопки.
 7. Ошибка сохраняется как failed, но основной прием не отменяется из-за временной сети.
 8. Успех сохраняет sent и точное время отправки.
 
@@ -9101,7 +9102,7 @@
 
 ## Файл `clinic/telegram.py`
 
-- Всего физических строк в файле: 615.
+- Всего физических строк в файле: 626.
 - Тип файла: `.py`.
 - Роль файла объясняется в первой части документации; ниже приведены структурные досье и построчный атлас.
 
@@ -9172,7 +9173,7 @@
 
 #### Функция `_process_doctor_request_callback`
 
-- Расположение: `clinic/telegram.py:185`, заканчивается около строки 341.
+- Расположение: `clinic/telegram.py:185`, заканчивается около строки 352.
 - Параметры или родители: `callback_query, client`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -9181,7 +9182,7 @@
 
 #### Функция `process_update`
 
-- Расположение: `clinic/telegram.py:344`, заканчивается около строки 436.
+- Расположение: `clinic/telegram.py:355`, заканчивается около строки 447.
 - Параметры или родители: `update, client`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -9190,7 +9191,7 @@
 
 #### Функция `_site_url`
 
-- Расположение: `clinic/telegram.py:439`, заканчивается около строки 440.
+- Расположение: `clinic/telegram.py:450`, заканчивается около строки 451.
 - Параметры или родители: `route_name, args`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -9199,7 +9200,7 @@
 
 #### Функция `_appointment_lines`
 
-- Расположение: `clinic/telegram.py:443`, заканчивается около строки 451.
+- Расположение: `clinic/telegram.py:454`, заканчивается около строки 462.
 - Параметры или родители: `appointment`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -9208,7 +9209,7 @@
 
 #### Функция `_deliver`
 
-- Расположение: `clinic/telegram.py:454`, заканчивается около строки 492.
+- Расположение: `clinic/telegram.py:465`, заканчивается около строки 503.
 - Параметры или родители: `recipient, appointment, kind, event_key, text, url, actions`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -9217,7 +9218,7 @@
 
 #### Функция `notify_doctor_new_request`
 
-- Расположение: `clinic/telegram.py:495`, заканчивается около строки 529.
+- Расположение: `clinic/telegram.py:506`, заканчивается около строки 540.
 - Параметры или родители: `appointment, event`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -9226,7 +9227,7 @@
 
 #### Функция `notify_patient_status`
 
-- Расположение: `clinic/telegram.py:532`, заканчивается около строки 553.
+- Расположение: `clinic/telegram.py:543`, заканчивается около строки 564.
 - Параметры или родители: `appointment, event, heading`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -9235,7 +9236,7 @@
 
 #### Функция `notify_doctor_patient_action`
 
-- Расположение: `clinic/telegram.py:556`, заканчивается около строки 575.
+- Расположение: `clinic/telegram.py:567`, заканчивается около строки 586.
 - Параметры или родители: `appointment, event, heading`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -9244,7 +9245,7 @@
 
 #### Функция `send_tomorrow_reminders`
 
-- Расположение: `clinic/telegram.py:578`, заканчивается около строки 615.
+- Расположение: `clinic/telegram.py:589`, заканчивается около строки 626.
 - Параметры или родители: `now, force`.
 - Назначение: Выполняет локальную операцию, названную в идентификаторе функции.
 - Декораторы: нет.
@@ -9343,7 +9344,7 @@
 | 5 | <code>from urllib.parse import quote</code> | Подключает внешний модуль или объект, чтобы использовать его ниже без повторной реализации. |
 | 7 | <code>import requests</code> | Подключает внешний модуль или объект, чтобы использовать его ниже без повторной реализации. |
 | 8 | <code>from django.conf import settings</code> | Подключает внешний модуль или объект, чтобы использовать его ниже без повторной реализации. |
-| 9 | <code>from django.db import IntegrityError, transaction</code> | Подключает внешний модуль или объект, чтобы использовать его ниже без повторной реализации. |
+| 9 | <code>from django.db import DatabaseError, IntegrityError, transaction</code> | Подключает внешний модуль или объект, чтобы использовать его ниже без повторной реализации. |
 | 10 | <code>from django.urls import reverse</code> | Подключает внешний модуль или объект, чтобы использовать его ниже без повторной реализации. |
 | 11 | <code>from django.utils import timezone</code> | Подключает внешний модуль или объект, чтобы использовать его ниже без повторной реализации. |
 | 13 | <code>from .models import (</code> | Подключает внешний модуль или объект, чтобы использовать его ниже без повторной реализации. |
@@ -9512,373 +9513,384 @@
 | 209 | <code>                show_alert=True,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
 | 210 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
 | 211 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_process_doctor_request_callback`. |
-| 213 | <code>    connection = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 214 | <code>        TelegramConnection.objects.filter(chat_id=chat_id, is_active=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `_process_doctor_request_callback`. |
-| 215 | <code>        .select_related('user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `_process_doctor_request_callback`. |
-| 216 | <code>        .first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 217 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
-| 218 | <code>    if connection is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
-| 219 | <code>        client.answer_callback_query(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 220 | <code>            callback_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 221 | <code>            'Спочатку підключіть Telegram у своєму кабінеті.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 222 | <code>            show_alert=True,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 223 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
-| 224 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_process_doctor_request_callback`. |
-| 226 | <code>    action = parts[1]</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 227 | <code>    appointment_id = int(parts[2])</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 228 | <code>    notification = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 229 | <code>    response_text = ''</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 230 | <code>    appointment = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 231 | <code>    remove_actions = False</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 233 | <code>    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `_process_doctor_request_callback`. |
-| 234 | <code>        with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `_process_doctor_request_callback`. |
-| 235 | <code>            appointment = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 236 | <code>                Appointment.objects.select_for_update()</code> | Блокирует выбранную строку до конца транзакции и защищает от одновременного изменения. Контекст: `_process_doctor_request_callback`. |
-| 237 | <code>                .select_related('doctor__user', 'patient', 'service')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `_process_doctor_request_callback`. |
-| 238 | <code>                .filter(pk=appointment_id, doctor__user=connection.user)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `_process_doctor_request_callback`. |
-| 239 | <code>                .first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 240 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
-| 241 | <code>            if appointment is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
-| 242 | <code>                response_text = 'Ця заявка не належить вашому профілю лікаря.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 243 | <code>            elif appointment.status != Appointment.STATUS_PENDING:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
-| 244 | <code>                response_text = 'Цю заявку вже опрацьовано.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 245 | <code>                remove_actions = True</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 246 | <code>            elif action == 'reject':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
-| 247 | <code>                from .views import ensure_patient_card_from_appointment</code> | Подключает внешний модуль или объект, чтобы использовать его ниже без повторной реализации. Контекст: `_process_doctor_request_callback`. |
-| 249 | <code>                appointment.status = Appointment.STATUS_REJECTED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `_process_doctor_request_callback`. |
-| 250 | <code>                appointment.save(update_fields=['status'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `_process_doctor_request_callback`. |
-| 251 | <code>                ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 252 | <code>                _audit_telegram_decision(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 253 | <code>                    connection.user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 254 | <code>                    'Відхилено заявку лікарем у Telegram',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 255 | <code>                    appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 256 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
-| 257 | <code>                notification = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 258 | <code>                    'rejected',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 259 | <code>                    'Лікар відхилив заявку на прийом',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 260 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
-| 261 | <code>                response_text = 'Заявку відхилено.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 262 | <code>                remove_actions = True</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 263 | <code>            else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `_process_doctor_request_callback`. |
-| 264 | <code>                from .views import (</code> | Подключает внешний модуль или объект, чтобы использовать его ниже без повторной реализации. Контекст: `_process_doctor_request_callback`. |
-| 265 | <code>                    appointment_conflicts,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 266 | <code>                    ensure_patient_card_from_appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 267 | <code>                    is_past_appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 268 | <code>                    patient_appointment_conflicts,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 269 | <code>                    schedule_for_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 270 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
-| 272 | <code>                schedule = schedule_for_date(appointment.doctor, appointment.date)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 273 | <code>                if schedule is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
-| 274 | <code>                    response_text = 'Для цього дня більше немає робочого графіка.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 275 | <code>                else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `_process_doctor_request_callback`. |
-| 276 | <code>                    duration_minutes = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 277 | <code>                        appointment.duration_minutes_exact</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 278 | <code>                        or appointment.duration_slots * schedule.slot_minutes</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 279 | <code>                    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
-| 280 | <code>                    duration_slots = ceil(duration_minutes / schedule.slot_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 281 | <code>                    if is_past_appointment(appointment.date, appointment.time):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
-| 282 | <code>                        response_text = 'Не можна підтвердити заявку на минулий час.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 283 | <code>                    elif appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
-| 284 | <code>                        appointment.doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 285 | <code>                        appointment.date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 286 | <code>                        appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 287 | <code>                        duration_slots=duration_slots,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 288 | <code>                        duration_minutes=duration_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 289 | <code>                        exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 290 | <code>                    ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 291 | <code>                        response_text = 'Цей час уже зайнятий. Перевірте заявку на сайті.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 292 | <code>                    elif patient_appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
-| 293 | <code>                        appointment.patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 213 | <code>    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `_process_doctor_request_callback`. |
+| 214 | <code>        connection = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 215 | <code>            TelegramConnection.objects.filter(chat_id=chat_id, is_active=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `_process_doctor_request_callback`. |
+| 216 | <code>            .select_related('user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `_process_doctor_request_callback`. |
+| 217 | <code>            .first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 218 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
+| 219 | <code>    except DatabaseError:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `_process_doctor_request_callback`. |
+| 220 | <code>        client.answer_callback_query(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 221 | <code>            callback_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 222 | <code>            'База даних тимчасово недоступна. Спробуйте ще раз.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 223 | <code>            show_alert=True,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 224 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
+| 225 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_process_doctor_request_callback`. |
+| 226 | <code>    if connection is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
+| 227 | <code>        client.answer_callback_query(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 228 | <code>            callback_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 229 | <code>            'Спочатку підключіть Telegram у своєму кабінеті.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 230 | <code>            show_alert=True,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 231 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
+| 232 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_process_doctor_request_callback`. |
+| 234 | <code>    action = parts[1]</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 235 | <code>    appointment_id = int(parts[2])</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 236 | <code>    notification = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 237 | <code>    response_text = ''</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 238 | <code>    appointment = None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 239 | <code>    remove_actions = False</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 241 | <code>    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `_process_doctor_request_callback`. |
+| 242 | <code>        with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `_process_doctor_request_callback`. |
+| 243 | <code>            appointment = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 244 | <code>                # PostgreSQL cannot lock nullable patient/service outer joins.</code> | Комментарий разработчика поясняет назначение следующего фрагмента. Контекст: `_process_doctor_request_callback`. |
+| 245 | <code>                Appointment.objects.select_for_update(of=('self',))</code> | Блокирует выбранную строку до конца транзакции и защищает от одновременного изменения. Контекст: `_process_doctor_request_callback`. |
+| 246 | <code>                .select_related('doctor__user', 'patient', 'service')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `_process_doctor_request_callback`. |
+| 247 | <code>                .filter(pk=appointment_id, doctor__user=connection.user)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `_process_doctor_request_callback`. |
+| 248 | <code>                .first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 249 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
+| 250 | <code>            if appointment is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
+| 251 | <code>                response_text = 'Ця заявка не належить вашому профілю лікаря.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 252 | <code>            elif appointment.status != Appointment.STATUS_PENDING:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
+| 253 | <code>                response_text = 'Цю заявку вже опрацьовано.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 254 | <code>                remove_actions = True</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 255 | <code>            elif action == 'reject':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
+| 256 | <code>                from .views import ensure_patient_card_from_appointment</code> | Подключает внешний модуль или объект, чтобы использовать его ниже без повторной реализации. Контекст: `_process_doctor_request_callback`. |
+| 258 | <code>                appointment.status = Appointment.STATUS_REJECTED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `_process_doctor_request_callback`. |
+| 259 | <code>                appointment.save(update_fields=['status'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `_process_doctor_request_callback`. |
+| 260 | <code>                ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 261 | <code>                _audit_telegram_decision(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 262 | <code>                    connection.user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 263 | <code>                    'Відхилено заявку лікарем у Telegram',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 264 | <code>                    appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 265 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
+| 266 | <code>                notification = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 267 | <code>                    'rejected',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 268 | <code>                    'Лікар відхилив заявку на прийом',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 269 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
+| 270 | <code>                response_text = 'Заявку відхилено.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 271 | <code>                remove_actions = True</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 272 | <code>            else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `_process_doctor_request_callback`. |
+| 273 | <code>                from .views import (</code> | Подключает внешний модуль или объект, чтобы использовать его ниже без повторной реализации. Контекст: `_process_doctor_request_callback`. |
+| 274 | <code>                    appointment_conflicts,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 275 | <code>                    ensure_patient_card_from_appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 276 | <code>                    is_past_appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 277 | <code>                    patient_appointment_conflicts,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 278 | <code>                    schedule_for_date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 279 | <code>                )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
+| 281 | <code>                schedule = schedule_for_date(appointment.doctor, appointment.date)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 282 | <code>                if schedule is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
+| 283 | <code>                    response_text = 'Для цього дня більше немає робочого графіка.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 284 | <code>                else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `_process_doctor_request_callback`. |
+| 285 | <code>                    duration_minutes = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 286 | <code>                        appointment.duration_minutes_exact</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 287 | <code>                        or appointment.duration_slots * schedule.slot_minutes</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 288 | <code>                    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
+| 289 | <code>                    duration_slots = ceil(duration_minutes / schedule.slot_minutes)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 290 | <code>                    if is_past_appointment(appointment.date, appointment.time):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
+| 291 | <code>                        response_text = 'Не можна підтвердити заявку на минулий час.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 292 | <code>                    elif appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
+| 293 | <code>                        appointment.doctor,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
 | 294 | <code>                        appointment.date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
 | 295 | <code>                        appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 296 | <code>                        duration_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 297 | <code>                        patient_phone=appointment.patient_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 296 | <code>                        duration_slots=duration_slots,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 297 | <code>                        duration_minutes=duration_minutes,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
 | 298 | <code>                        exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
 | 299 | <code>                    ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 300 | <code>                        response_text = 'Пацієнт уже має інший запис на цей час.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 301 | <code>                    else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `_process_doctor_request_callback`. |
-| 302 | <code>                        appointment.duration_slots = duration_slots</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `_process_doctor_request_callback`. |
-| 303 | <code>                        appointment.duration_minutes_exact = duration_minutes</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `_process_doctor_request_callback`. |
-| 304 | <code>                        appointment.status = Appointment.STATUS_APPROVED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `_process_doctor_request_callback`. |
-| 305 | <code>                        appointment.approved_at = timezone.now()</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `_process_doctor_request_callback`. |
-| 306 | <code>                        appointment.save(update_fields=[</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `_process_doctor_request_callback`. |
-| 307 | <code>                            'duration_slots',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 308 | <code>                            'duration_minutes_exact',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 309 | <code>                            'status',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 310 | <code>                            'approved_at',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 311 | <code>                        ])</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 312 | <code>                        ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 313 | <code>                        _audit_telegram_decision(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 314 | <code>                            connection.user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 315 | <code>                            'Підтверджено заявку лікарем у Telegram',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 316 | <code>                            appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 317 | <code>                        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
-| 318 | <code>                        notification = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 319 | <code>                            'approved',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 320 | <code>                            'Лікар підтвердив вашу заявку',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 321 | <code>                        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
-| 322 | <code>                        response_text = 'Заявку підтверджено.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 323 | <code>                        remove_actions = True</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 324 | <code>    except IntegrityError:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `_process_doctor_request_callback`. |
-| 325 | <code>        response_text = 'Цей час щойно зайняли. Перевірте заявку на сайті.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 327 | <code>    succeeded = notification is not None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 328 | <code>    client.answer_callback_query(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 329 | <code>        callback_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 330 | <code>        response_text,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 331 | <code>        show_alert=not succeeded,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
-| 332 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
-| 333 | <code>    if appointment is not None and message_id and remove_actions:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
-| 334 | <code>        client.edit_message_reply_markup(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 335 | <code>            chat_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 336 | <code>            message_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 337 | <code>            _site_only_markup(appointment),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 338 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
-| 339 | <code>    if notification is not None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
-| 340 | <code>        notify_patient_status(appointment, *notification)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
-| 341 | <code>    return succeeded</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_process_doctor_request_callback`. |
-| 344 | <code>def process_update(update, client=None):</code> | Объявляет функцию `process_update` и перечисляет принимаемые параметры. Контекст: `process_update`. |
-| 345 | <code>    client = client or TelegramBotClient()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
-| 346 | <code>    callback_query = update.get('callback_query') or {}</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
-| 347 | <code>    if callback_query:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
-| 348 | <code>        return _process_doctor_request_callback(callback_query, client)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `process_update`. |
-| 350 | <code>    message = update.get('message') or {}</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
-| 351 | <code>    chat = message.get('chat') or {}</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
-| 352 | <code>    sender = message.get('from') or {}</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
-| 353 | <code>    text = (message.get('text') or '').strip()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
-| 354 | <code>    chat_id = chat.get('id')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
-| 355 | <code>    if not chat_id or chat.get('type') != 'private':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
-| 356 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `process_update`. |
-| 358 | <code>    if text == '/stop':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
-| 359 | <code>        updated = TelegramConnection.objects.filter(chat_id=chat_id).update(is_active=False)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `process_update`. |
-| 360 | <code>        reply = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
-| 361 | <code>            'Сповіщення вимкнено. Підключити їх знову можна у своєму кабінеті на сайті.'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 362 | <code>            if updated</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
-| 363 | <code>            else 'Цей Telegram не підключений до MedClinic.'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 364 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
-| 365 | <code>        client.send_message(chat_id, reply)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 366 | <code>        return bool(updated)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `process_update`. |
-| 368 | <code>    if text == '/start':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
-| 369 | <code>        connection = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
-| 370 | <code>            TelegramConnection.objects.filter(chat_id=chat_id, is_active=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `process_update`. |
-| 371 | <code>            .select_related('user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `process_update`. |
-| 372 | <code>            .first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 373 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
-| 374 | <code>        if connection is not None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
-| 375 | <code>            client.send_message(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 376 | <code>                chat_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 377 | <code>                '&lt;b&gt;Ви вже зареєстровані в MedClinic.&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 378 | <code>                'Telegram-сповіщення про записи та нагадування увімкнені.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 379 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
-| 380 | <code>            return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `process_update`. |
-| 382 | <code>    if text in {'/help', '/start'}:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
-| 383 | <code>        client.send_message(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 384 | <code>            chat_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 385 | <code>            'Щоб підключити сповіщення, відкрийте свій кабінет MedClinic та натисніть '</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 386 | <code>            '«Приєднати Telegram-бота».',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 387 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
-| 388 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `process_update`. |
-| 390 | <code>    if not text.startswith('/start '):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
-| 391 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `process_update`. |
-| 393 | <code>    token_value = text.split(maxsplit=1)[1].strip()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
-| 394 | <code>    with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `process_update`. |
-| 395 | <code>        link_token = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
-| 396 | <code>            TelegramLinkToken.objects.select_for_update()</code> | Блокирует выбранную строку до конца транзакции и защищает от одновременного изменения. Контекст: `process_update`. |
-| 397 | <code>            .select_related('user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `process_update`. |
-| 398 | <code>            .filter(token=token_value, used_at__isnull=True, expires_at__gt=timezone.now())</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `process_update`. |
-| 399 | <code>            .first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 400 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
-| 401 | <code>        if link_token is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
-| 402 | <code>            client.send_message(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 403 | <code>                chat_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 404 | <code>                'Посилання вже використане або застаріло. Створіть нове у своєму кабінеті.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 405 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
-| 406 | <code>            return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `process_update`. |
-| 408 | <code>        occupied = TelegramConnection.objects.filter(chat_id=chat_id).exclude(user=link_token.user).first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `process_update`. |
-| 409 | <code>        if occupied and occupied.is_active:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
-| 410 | <code>            client.send_message(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 411 | <code>                chat_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 412 | <code>                'Цей Telegram уже підключений до іншого профілю MedClinic. '</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 413 | <code>                'Спочатку надішліть боту команду /stop.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 414 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
-| 415 | <code>            return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `process_update`. |
-| 416 | <code>        if occupied:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
-| 417 | <code>            occupied.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `process_update`. |
-| 419 | <code>        TelegramConnection.objects.update_or_create(</code> | Находит существующую запись или создает ее, не заставляя вызывающий код делать две отдельные операции. Контекст: `process_update`. |
-| 420 | <code>            user=link_token.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
-| 421 | <code>            defaults={</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
-| 422 | <code>                'chat_id': chat_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 423 | <code>                'username': sender.get('username', ''),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 424 | <code>                'first_name': sender.get('first_name', ''),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 425 | <code>                'is_active': True,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 426 | <code>            },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
-| 427 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
-| 428 | <code>        link_token.used_at = timezone.now()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
-| 429 | <code>        link_token.save(update_fields=['used_at'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `process_update`. |
-| 431 | <code>    client.send_message(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 432 | <code>        chat_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 433 | <code>        '&lt;b&gt;Telegram успішно підключено до MedClinic.&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 434 | <code>        'Тепер сюди надходитимуть повідомлення про записи та нагадування.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
-| 435 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
-| 436 | <code>    return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `process_update`. |
-| 439 | <code>def _site_url(route_name, args=None):</code> | Объявляет функцию `_site_url` и перечисляет принимаемые параметры. Контекст: `_site_url`. |
-| 440 | <code>    return f'{settings.SITE_BASE_URL}{reverse(route_name, args=args)}'</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_site_url`. |
-| 443 | <code>def _appointment_lines(appointment):</code> | Объявляет функцию `_appointment_lines` и перечисляет принимаемые параметры. Контекст: `_appointment_lines`. |
-| 444 | <code>    service_name = appointment.service.name if appointment.service else 'Прийом лікаря'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_appointment_lines`. |
-| 445 | <code>    location = ', '.join(part for part in (appointment.city, appointment.address) if part)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_appointment_lines`. |
-| 446 | <code>    return (</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_appointment_lines`. |
-| 447 | <code>        f'Послуга: &lt;b&gt;{html.escape(service_name)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_appointment_lines`. |
-| 448 | <code>        f'Дата: &lt;b&gt;{appointment.date:%d.%m.%Y}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_appointment_lines`. |
-| 449 | <code>        f'Час: &lt;b&gt;{appointment.time:%H:%M}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_appointment_lines`. |
-| 450 | <code>        f'Місце: {html.escape(location or "Не вказано")}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_appointment_lines`. |
-| 451 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_appointment_lines`. |
-| 454 | <code>def _deliver(recipient, appointment, kind, event_key, text, url=None, actions=None):</code> | Объявляет функцию `_deliver` и перечисляет принимаемые параметры. Контекст: `_deliver`. |
-| 455 | <code>    if not telegram_is_configured() or recipient is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_deliver`. |
-| 456 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_deliver`. |
-| 458 | <code>    connection = TelegramConnection.objects.filter(user=recipient, is_active=True).first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `_deliver`. |
-| 459 | <code>    if connection is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_deliver`. |
-| 460 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_deliver`. |
-| 462 | <code>    notification, _ = TelegramNotification.objects.get_or_create(</code> | Находит существующую запись или создает ее, не заставляя вызывающий код делать две отдельные операции. Контекст: `_deliver`. |
-| 463 | <code>        event_key=event_key,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
-| 464 | <code>        defaults={</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
-| 465 | <code>            'appointment': appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_deliver`. |
-| 466 | <code>            'recipient': recipient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_deliver`. |
-| 467 | <code>            'kind': kind,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_deliver`. |
-| 468 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_deliver`. |
-| 469 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_deliver`. |
-| 470 | <code>    if notification.status == TelegramNotification.STATUS_SENT:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_deliver`. |
+| 300 | <code>                        response_text = 'Цей час уже зайнятий. Перевірте заявку на сайті.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 301 | <code>                    elif patient_appointment_conflicts(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
+| 302 | <code>                        appointment.patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 303 | <code>                        appointment.date,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 304 | <code>                        appointment.time,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 305 | <code>                        duration_minutes,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 306 | <code>                        patient_phone=appointment.patient_phone,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 307 | <code>                        exclude_id=appointment.id,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 308 | <code>                    ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 309 | <code>                        response_text = 'Пацієнт уже має інший запис на цей час.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 310 | <code>                    else:</code> | Начинает альтернативную ветку, когда предыдущие условия не выполнились. Контекст: `_process_doctor_request_callback`. |
+| 311 | <code>                        appointment.duration_slots = duration_slots</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `_process_doctor_request_callback`. |
+| 312 | <code>                        appointment.duration_minutes_exact = duration_minutes</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `_process_doctor_request_callback`. |
+| 313 | <code>                        appointment.status = Appointment.STATUS_APPROVED</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `_process_doctor_request_callback`. |
+| 314 | <code>                        appointment.approved_at = timezone.now()</code> | Изменяет конкретное свойство объекта перед проверкой или сохранением. Контекст: `_process_doctor_request_callback`. |
+| 315 | <code>                        appointment.save(update_fields=[</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `_process_doctor_request_callback`. |
+| 316 | <code>                            'duration_slots',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 317 | <code>                            'duration_minutes_exact',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 318 | <code>                            'status',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 319 | <code>                            'approved_at',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 320 | <code>                        ])</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 321 | <code>                        ensure_patient_card_from_appointment(appointment)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 322 | <code>                        _audit_telegram_decision(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 323 | <code>                            connection.user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 324 | <code>                            'Підтверджено заявку лікарем у Telegram',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 325 | <code>                            appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 326 | <code>                        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
+| 327 | <code>                        notification = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 328 | <code>                            'approved',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 329 | <code>                            'Лікар підтвердив вашу заявку',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 330 | <code>                        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
+| 331 | <code>                        response_text = 'Заявку підтверджено.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 332 | <code>                        remove_actions = True</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 333 | <code>    except IntegrityError:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `_process_doctor_request_callback`. |
+| 334 | <code>        response_text = 'Цей час щойно зайняли. Перевірте заявку на сайті.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 335 | <code>    except DatabaseError:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `_process_doctor_request_callback`. |
+| 336 | <code>        response_text = 'База даних тимчасово недоступна. Спробуйте ще раз.'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 338 | <code>    succeeded = notification is not None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 339 | <code>    client.answer_callback_query(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 340 | <code>        callback_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 341 | <code>        response_text,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 342 | <code>        show_alert=not succeeded,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_process_doctor_request_callback`. |
+| 343 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
+| 344 | <code>    if appointment is not None and message_id and remove_actions:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
+| 345 | <code>        client.edit_message_reply_markup(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 346 | <code>            chat_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 347 | <code>            message_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 348 | <code>            _site_only_markup(appointment),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 349 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_process_doctor_request_callback`. |
+| 350 | <code>    if notification is not None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_process_doctor_request_callback`. |
+| 351 | <code>        notify_patient_status(appointment, *notification)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_process_doctor_request_callback`. |
+| 352 | <code>    return succeeded</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_process_doctor_request_callback`. |
+| 355 | <code>def process_update(update, client=None):</code> | Объявляет функцию `process_update` и перечисляет принимаемые параметры. Контекст: `process_update`. |
+| 356 | <code>    client = client or TelegramBotClient()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
+| 357 | <code>    callback_query = update.get('callback_query') or {}</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
+| 358 | <code>    if callback_query:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
+| 359 | <code>        return _process_doctor_request_callback(callback_query, client)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `process_update`. |
+| 361 | <code>    message = update.get('message') or {}</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
+| 362 | <code>    chat = message.get('chat') or {}</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
+| 363 | <code>    sender = message.get('from') or {}</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
+| 364 | <code>    text = (message.get('text') or '').strip()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
+| 365 | <code>    chat_id = chat.get('id')</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
+| 366 | <code>    if not chat_id or chat.get('type') != 'private':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
+| 367 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `process_update`. |
+| 369 | <code>    if text == '/stop':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
+| 370 | <code>        updated = TelegramConnection.objects.filter(chat_id=chat_id).update(is_active=False)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `process_update`. |
+| 371 | <code>        reply = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
+| 372 | <code>            'Сповіщення вимкнено. Підключити їх знову можна у своєму кабінеті на сайті.'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 373 | <code>            if updated</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
+| 374 | <code>            else 'Цей Telegram не підключений до MedClinic.'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 375 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
+| 376 | <code>        client.send_message(chat_id, reply)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 377 | <code>        return bool(updated)</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `process_update`. |
+| 379 | <code>    if text == '/start':</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
+| 380 | <code>        connection = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
+| 381 | <code>            TelegramConnection.objects.filter(chat_id=chat_id, is_active=True)</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `process_update`. |
+| 382 | <code>            .select_related('user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `process_update`. |
+| 383 | <code>            .first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 384 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
+| 385 | <code>        if connection is not None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
+| 386 | <code>            client.send_message(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 387 | <code>                chat_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 388 | <code>                '&lt;b&gt;Ви вже зареєстровані в MedClinic.&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 389 | <code>                'Telegram-сповіщення про записи та нагадування увімкнені.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 390 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
+| 391 | <code>            return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `process_update`. |
+| 393 | <code>    if text in {'/help', '/start'}:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
+| 394 | <code>        client.send_message(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 395 | <code>            chat_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 396 | <code>            'Щоб підключити сповіщення, відкрийте свій кабінет MedClinic та натисніть '</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 397 | <code>            '«Приєднати Telegram-бота».',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 398 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
+| 399 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `process_update`. |
+| 401 | <code>    if not text.startswith('/start '):</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
+| 402 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `process_update`. |
+| 404 | <code>    token_value = text.split(maxsplit=1)[1].strip()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
+| 405 | <code>    with transaction.atomic():</code> | Открывает транзакцию: при ошибке все изменения внутри откатываются вместе. Контекст: `process_update`. |
+| 406 | <code>        link_token = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
+| 407 | <code>            TelegramLinkToken.objects.select_for_update()</code> | Блокирует выбранную строку до конца транзакции и защищает от одновременного изменения. Контекст: `process_update`. |
+| 408 | <code>            .select_related('user')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `process_update`. |
+| 409 | <code>            .filter(token=token_value, used_at__isnull=True, expires_at__gt=timezone.now())</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `process_update`. |
+| 410 | <code>            .first()</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 411 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
+| 412 | <code>        if link_token is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
+| 413 | <code>            client.send_message(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 414 | <code>                chat_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 415 | <code>                'Посилання вже використане або застаріло. Створіть нове у своєму кабінеті.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 416 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
+| 417 | <code>            return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `process_update`. |
+| 419 | <code>        occupied = TelegramConnection.objects.filter(chat_id=chat_id).exclude(user=link_token.user).first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `process_update`. |
+| 420 | <code>        if occupied and occupied.is_active:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
+| 421 | <code>            client.send_message(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 422 | <code>                chat_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 423 | <code>                'Цей Telegram уже підключений до іншого профілю MedClinic. '</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 424 | <code>                'Спочатку надішліть боту команду /stop.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 425 | <code>            )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
+| 426 | <code>            return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `process_update`. |
+| 427 | <code>        if occupied:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `process_update`. |
+| 428 | <code>            occupied.delete()</code> | Удаляет выбранную строку и применяет настроенные правила связей и сигналы файлов. Контекст: `process_update`. |
+| 430 | <code>        TelegramConnection.objects.update_or_create(</code> | Находит существующую запись или создает ее, не заставляя вызывающий код делать две отдельные операции. Контекст: `process_update`. |
+| 431 | <code>            user=link_token.user,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
+| 432 | <code>            defaults={</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
+| 433 | <code>                'chat_id': chat_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 434 | <code>                'username': sender.get('username', ''),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 435 | <code>                'first_name': sender.get('first_name', ''),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 436 | <code>                'is_active': True,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 437 | <code>            },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
+| 438 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
+| 439 | <code>        link_token.used_at = timezone.now()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `process_update`. |
+| 440 | <code>        link_token.save(update_fields=['used_at'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `process_update`. |
+| 442 | <code>    client.send_message(</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 443 | <code>        chat_id,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 444 | <code>        '&lt;b&gt;Telegram успішно підключено до MedClinic.&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 445 | <code>        'Тепер сюди надходитимуть повідомлення про записи та нагадування.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `process_update`. |
+| 446 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `process_update`. |
+| 447 | <code>    return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `process_update`. |
+| 450 | <code>def _site_url(route_name, args=None):</code> | Объявляет функцию `_site_url` и перечисляет принимаемые параметры. Контекст: `_site_url`. |
+| 451 | <code>    return f'{settings.SITE_BASE_URL}{reverse(route_name, args=args)}'</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_site_url`. |
+| 454 | <code>def _appointment_lines(appointment):</code> | Объявляет функцию `_appointment_lines` и перечисляет принимаемые параметры. Контекст: `_appointment_lines`. |
+| 455 | <code>    service_name = appointment.service.name if appointment.service else 'Прийом лікаря'</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_appointment_lines`. |
+| 456 | <code>    location = ', '.join(part for part in (appointment.city, appointment.address) if part)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_appointment_lines`. |
+| 457 | <code>    return (</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_appointment_lines`. |
+| 458 | <code>        f'Послуга: &lt;b&gt;{html.escape(service_name)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_appointment_lines`. |
+| 459 | <code>        f'Дата: &lt;b&gt;{appointment.date:%d.%m.%Y}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_appointment_lines`. |
+| 460 | <code>        f'Час: &lt;b&gt;{appointment.time:%H:%M}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_appointment_lines`. |
+| 461 | <code>        f'Місце: {html.escape(location or "Не вказано")}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_appointment_lines`. |
+| 462 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_appointment_lines`. |
+| 465 | <code>def _deliver(recipient, appointment, kind, event_key, text, url=None, actions=None):</code> | Объявляет функцию `_deliver` и перечисляет принимаемые параметры. Контекст: `_deliver`. |
+| 466 | <code>    if not telegram_is_configured() or recipient is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_deliver`. |
+| 467 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_deliver`. |
+| 469 | <code>    connection = TelegramConnection.objects.filter(user=recipient, is_active=True).first()</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `_deliver`. |
+| 470 | <code>    if connection is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_deliver`. |
 | 471 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_deliver`. |
-| 473 | <code>    keyboard = []</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
-| 474 | <code>    if actions:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_deliver`. |
-| 475 | <code>        keyboard.append(actions)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_deliver`. |
-| 476 | <code>    if url:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_deliver`. |
-| 477 | <code>        keyboard.append([{'text': 'Деталі на сайті', 'url': url}])</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_deliver`. |
-| 478 | <code>    reply_markup = {'inline_keyboard': keyboard} if keyboard else None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
-| 480 | <code>    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `_deliver`. |
-| 481 | <code>        TelegramBotClient().send_message(connection.chat_id, text, reply_markup=reply_markup)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
-| 482 | <code>    except (requests.RequestException, ValueError, TelegramError) as error:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `_deliver`. |
-| 483 | <code>        notification.status = TelegramNotification.STATUS_FAILED</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
-| 484 | <code>        notification.error = str(error)[:1000]</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
-| 485 | <code>        notification.save(update_fields=['status', 'error'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `_deliver`. |
-| 486 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_deliver`. |
-| 488 | <code>    notification.status = TelegramNotification.STATUS_SENT</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
-| 489 | <code>    notification.error = ''</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
-| 490 | <code>    notification.sent_at = timezone.now()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
-| 491 | <code>    notification.save(update_fields=['status', 'error', 'sent_at'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `_deliver`. |
-| 492 | <code>    return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_deliver`. |
-| 495 | <code>def notify_doctor_new_request(appointment, event='created'):</code> | Объявляет функцию `notify_doctor_new_request` и перечисляет принимаемые параметры. Контекст: `notify_doctor_new_request`. |
-| 496 | <code>    patient_name = html.escape(appointment.patient_name)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `notify_doctor_new_request`. |
-| 497 | <code>    owner_line = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `notify_doctor_new_request`. |
-| 498 | <code>        f'Заявку створив: &lt;b&gt;{html.escape(appointment.booking_owner_name)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
-| 499 | <code>        if appointment.booked_for_other</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `notify_doctor_new_request`. |
-| 500 | <code>        else ''</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
-| 501 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
-| 502 | <code>    text = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `notify_doctor_new_request`. |
-| 503 | <code>        '&lt;b&gt;Нова заявка на прийом&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
-| 504 | <code>        f'Пацієнт: &lt;b&gt;{patient_name}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
-| 505 | <code>        f'{owner_line}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
-| 506 | <code>        f'{_appointment_lines(appointment)}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
-| 507 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
-| 508 | <code>    return _deliver(</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `notify_doctor_new_request`. |
-| 509 | <code>        appointment.doctor.user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
-| 510 | <code>        appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
-| 511 | <code>        'new_request',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
-| 512 | <code>        f'new_request:{appointment.pk}:{event}',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
-| 513 | <code>        text,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
-| 514 | <code>        _site_url('doctor_appointment_detail', [appointment.pk]),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
-| 515 | <code>        actions=[</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `notify_doctor_new_request`. |
-| 516 | <code>            {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
-| 517 | <code>                'text': '✅ Прийняти',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
-| 518 | <code>                'callback_data': (</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
-| 519 | <code>                    f'{DOCTOR_REQUEST_CALLBACK_PREFIX}:approve:{appointment.pk}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
-| 520 | <code>                ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
-| 521 | <code>            },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
-| 522 | <code>            {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
-| 523 | <code>                'text': '❌ Відхилити',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
-| 524 | <code>                'callback_data': (</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
-| 525 | <code>                    f'{DOCTOR_REQUEST_CALLBACK_PREFIX}:reject:{appointment.pk}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
-| 526 | <code>                ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
-| 527 | <code>            },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
-| 528 | <code>        ],</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
-| 529 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
-| 532 | <code>def notify_patient_status(appointment, event, heading):</code> | Объявляет функцию `notify_patient_status` и перечисляет принимаемые параметры. Контекст: `notify_patient_status`. |
-| 533 | <code>    if appointment.patient_id is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `notify_patient_status`. |
-| 534 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `notify_patient_status`. |
-| 535 | <code>    visitor_line = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `notify_patient_status`. |
-| 536 | <code>        f'Записано для: &lt;b&gt;{html.escape(appointment.patient_name)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
-| 537 | <code>        if appointment.booked_for_other</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `notify_patient_status`. |
-| 538 | <code>        else ''</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
-| 539 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_patient_status`. |
-| 540 | <code>    text = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `notify_patient_status`. |
-| 541 | <code>        f'&lt;b&gt;{html.escape(heading)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
-| 542 | <code>        f'Лікар: &lt;b&gt;{html.escape(appointment.doctor.full_name)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
-| 543 | <code>        f'{visitor_line}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
-| 544 | <code>        f'{_appointment_lines(appointment)}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
-| 545 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_patient_status`. |
-| 546 | <code>    return _deliver(</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `notify_patient_status`. |
-| 547 | <code>        appointment.patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
-| 548 | <code>        appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
-| 549 | <code>        event,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
-| 550 | <code>        f'patient_status:{appointment.pk}:{event}',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
-| 551 | <code>        text,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
-| 552 | <code>        _site_url('patient_appointment_detail', [appointment.pk]),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
-| 553 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_patient_status`. |
-| 556 | <code>def notify_doctor_patient_action(appointment, event, heading):</code> | Объявляет функцию `notify_doctor_patient_action` и перечисляет принимаемые параметры. Контекст: `notify_doctor_patient_action`. |
-| 557 | <code>    owner_line = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `notify_doctor_patient_action`. |
-| 558 | <code>        f'Заявку створив: &lt;b&gt;{html.escape(appointment.booking_owner_name)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
-| 559 | <code>        if appointment.booked_for_other</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `notify_doctor_patient_action`. |
-| 560 | <code>        else ''</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
-| 561 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_patient_action`. |
-| 562 | <code>    text = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `notify_doctor_patient_action`. |
-| 563 | <code>        f'&lt;b&gt;{html.escape(heading)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
-| 564 | <code>        f'Пацієнт: &lt;b&gt;{html.escape(appointment.patient_name)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
-| 565 | <code>        f'{owner_line}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
-| 566 | <code>        f'{_appointment_lines(appointment)}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
-| 567 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_patient_action`. |
-| 568 | <code>    return _deliver(</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `notify_doctor_patient_action`. |
-| 569 | <code>        appointment.doctor.user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
-| 570 | <code>        appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
-| 571 | <code>        event,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
-| 572 | <code>        f'doctor_action:{appointment.pk}:{event}',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
-| 573 | <code>        text,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
-| 574 | <code>        _site_url('doctor_appointment_detail', [appointment.pk]),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
-| 575 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_patient_action`. |
-| 578 | <code>def send_tomorrow_reminders(now=None, force=False):</code> | Объявляет функцию `send_tomorrow_reminders` и перечисляет принимаемые параметры. Контекст: `send_tomorrow_reminders`. |
-| 579 | <code>    now = timezone.localtime(now or timezone.now())</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
-| 580 | <code>    if not force and now.time() &lt; REMINDER_SEND_FROM:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `send_tomorrow_reminders`. |
-| 581 | <code>        return 0</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `send_tomorrow_reminders`. |
-| 583 | <code>    tomorrow = now.date() + timedelta(days=1)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
-| 584 | <code>    appointments = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
-| 585 | <code>        Appointment.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `send_tomorrow_reminders`. |
-| 586 | <code>            date=tomorrow,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
-| 587 | <code>            status=Appointment.STATUS_APPROVED,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
-| 588 | <code>            patient__isnull=False,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
-| 589 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `send_tomorrow_reminders`. |
-| 590 | <code>        .select_related('patient', 'doctor__user', 'service')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `send_tomorrow_reminders`. |
-| 591 | <code>        .order_by('time')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `send_tomorrow_reminders`. |
-| 592 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `send_tomorrow_reminders`. |
-| 593 | <code>    sent = 0</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
-| 594 | <code>    for appointment in appointments:</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `send_tomorrow_reminders`. |
-| 595 | <code>        visitor_line = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
-| 596 | <code>            f'Записано для: &lt;b&gt;{html.escape(appointment.patient_name)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
-| 597 | <code>            if appointment.booked_for_other</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `send_tomorrow_reminders`. |
-| 598 | <code>            else ''</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
-| 599 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `send_tomorrow_reminders`. |
-| 600 | <code>        text = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
-| 601 | <code>            '&lt;b&gt;Нагадування про прийом завтра&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
-| 602 | <code>            f'Лікар: &lt;b&gt;{html.escape(appointment.doctor.full_name)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
-| 603 | <code>            f'{visitor_line}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
-| 604 | <code>            f'{_appointment_lines(appointment)}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
-| 605 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `send_tomorrow_reminders`. |
-| 606 | <code>        if _deliver(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `send_tomorrow_reminders`. |
-| 607 | <code>            appointment.patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
-| 608 | <code>            appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
-| 609 | <code>            'day_before_reminder',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
-| 610 | <code>            f'reminder:{appointment.pk}:{appointment.date.isoformat()}',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
-| 611 | <code>            text,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
-| 612 | <code>            _site_url('patient_appointment_detail', [appointment.pk]),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
-| 613 | <code>        ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
-| 614 | <code>            sent += 1</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
-| 615 | <code>    return sent</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `send_tomorrow_reminders`. |
+| 473 | <code>    notification, _ = TelegramNotification.objects.get_or_create(</code> | Находит существующую запись или создает ее, не заставляя вызывающий код делать две отдельные операции. Контекст: `_deliver`. |
+| 474 | <code>        event_key=event_key,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
+| 475 | <code>        defaults={</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
+| 476 | <code>            'appointment': appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_deliver`. |
+| 477 | <code>            'recipient': recipient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_deliver`. |
+| 478 | <code>            'kind': kind,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_deliver`. |
+| 479 | <code>        },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_deliver`. |
+| 480 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `_deliver`. |
+| 481 | <code>    if notification.status == TelegramNotification.STATUS_SENT:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_deliver`. |
+| 482 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_deliver`. |
+| 484 | <code>    keyboard = []</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
+| 485 | <code>    if actions:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_deliver`. |
+| 486 | <code>        keyboard.append(actions)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_deliver`. |
+| 487 | <code>    if url:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `_deliver`. |
+| 488 | <code>        keyboard.append([{'text': 'Деталі на сайті', 'url': url}])</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `_deliver`. |
+| 489 | <code>    reply_markup = {'inline_keyboard': keyboard} if keyboard else None</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
+| 491 | <code>    try:</code> | Начинает участок, где ожидаемая ошибка будет обработана, а не обрушит запрос. Контекст: `_deliver`. |
+| 492 | <code>        TelegramBotClient().send_message(connection.chat_id, text, reply_markup=reply_markup)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
+| 493 | <code>    except (requests.RequestException, ValueError, TelegramError) as error:</code> | Обрабатывает указанный тип ошибки и переводит его в контролируемое поведение. Контекст: `_deliver`. |
+| 494 | <code>        notification.status = TelegramNotification.STATUS_FAILED</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
+| 495 | <code>        notification.error = str(error)[:1000]</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
+| 496 | <code>        notification.save(update_fields=['status', 'error'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `_deliver`. |
+| 497 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_deliver`. |
+| 499 | <code>    notification.status = TelegramNotification.STATUS_SENT</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
+| 500 | <code>    notification.error = ''</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
+| 501 | <code>    notification.sent_at = timezone.now()</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `_deliver`. |
+| 502 | <code>    notification.save(update_fields=['status', 'error', 'sent_at'])</code> | Сохраняет текущее состояние объекта в базе; `update_fields` может ограничить изменяемые колонки. Контекст: `_deliver`. |
+| 503 | <code>    return True</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `_deliver`. |
+| 506 | <code>def notify_doctor_new_request(appointment, event='created'):</code> | Объявляет функцию `notify_doctor_new_request` и перечисляет принимаемые параметры. Контекст: `notify_doctor_new_request`. |
+| 507 | <code>    patient_name = html.escape(appointment.patient_name)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `notify_doctor_new_request`. |
+| 508 | <code>    owner_line = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `notify_doctor_new_request`. |
+| 509 | <code>        f'Заявку створив: &lt;b&gt;{html.escape(appointment.booking_owner_name)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
+| 510 | <code>        if appointment.booked_for_other</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `notify_doctor_new_request`. |
+| 511 | <code>        else ''</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
+| 512 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
+| 513 | <code>    text = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `notify_doctor_new_request`. |
+| 514 | <code>        '&lt;b&gt;Нова заявка на прийом&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
+| 515 | <code>        f'Пацієнт: &lt;b&gt;{patient_name}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
+| 516 | <code>        f'{owner_line}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
+| 517 | <code>        f'{_appointment_lines(appointment)}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
+| 518 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
+| 519 | <code>    return _deliver(</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `notify_doctor_new_request`. |
+| 520 | <code>        appointment.doctor.user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
+| 521 | <code>        appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
+| 522 | <code>        'new_request',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
+| 523 | <code>        f'new_request:{appointment.pk}:{event}',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
+| 524 | <code>        text,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
+| 525 | <code>        _site_url('doctor_appointment_detail', [appointment.pk]),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
+| 526 | <code>        actions=[</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `notify_doctor_new_request`. |
+| 527 | <code>            {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
+| 528 | <code>                'text': '✅ Прийняти',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
+| 529 | <code>                'callback_data': (</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
+| 530 | <code>                    f'{DOCTOR_REQUEST_CALLBACK_PREFIX}:approve:{appointment.pk}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
+| 531 | <code>                ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
+| 532 | <code>            },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
+| 533 | <code>            {</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
+| 534 | <code>                'text': '❌ Відхилити',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
+| 535 | <code>                'callback_data': (</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
+| 536 | <code>                    f'{DOCTOR_REQUEST_CALLBACK_PREFIX}:reject:{appointment.pk}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_new_request`. |
+| 537 | <code>                ),</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
+| 538 | <code>            },</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
+| 539 | <code>        ],</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
+| 540 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_new_request`. |
+| 543 | <code>def notify_patient_status(appointment, event, heading):</code> | Объявляет функцию `notify_patient_status` и перечисляет принимаемые параметры. Контекст: `notify_patient_status`. |
+| 544 | <code>    if appointment.patient_id is None:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `notify_patient_status`. |
+| 545 | <code>        return False</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `notify_patient_status`. |
+| 546 | <code>    visitor_line = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `notify_patient_status`. |
+| 547 | <code>        f'Записано для: &lt;b&gt;{html.escape(appointment.patient_name)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
+| 548 | <code>        if appointment.booked_for_other</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `notify_patient_status`. |
+| 549 | <code>        else ''</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
+| 550 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_patient_status`. |
+| 551 | <code>    text = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `notify_patient_status`. |
+| 552 | <code>        f'&lt;b&gt;{html.escape(heading)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
+| 553 | <code>        f'Лікар: &lt;b&gt;{html.escape(appointment.doctor.full_name)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
+| 554 | <code>        f'{visitor_line}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
+| 555 | <code>        f'{_appointment_lines(appointment)}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
+| 556 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_patient_status`. |
+| 557 | <code>    return _deliver(</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `notify_patient_status`. |
+| 558 | <code>        appointment.patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
+| 559 | <code>        appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
+| 560 | <code>        event,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
+| 561 | <code>        f'patient_status:{appointment.pk}:{event}',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
+| 562 | <code>        text,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
+| 563 | <code>        _site_url('patient_appointment_detail', [appointment.pk]),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_patient_status`. |
+| 564 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_patient_status`. |
+| 567 | <code>def notify_doctor_patient_action(appointment, event, heading):</code> | Объявляет функцию `notify_doctor_patient_action` и перечисляет принимаемые параметры. Контекст: `notify_doctor_patient_action`. |
+| 568 | <code>    owner_line = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `notify_doctor_patient_action`. |
+| 569 | <code>        f'Заявку створив: &lt;b&gt;{html.escape(appointment.booking_owner_name)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
+| 570 | <code>        if appointment.booked_for_other</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `notify_doctor_patient_action`. |
+| 571 | <code>        else ''</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
+| 572 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_patient_action`. |
+| 573 | <code>    text = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `notify_doctor_patient_action`. |
+| 574 | <code>        f'&lt;b&gt;{html.escape(heading)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
+| 575 | <code>        f'Пацієнт: &lt;b&gt;{html.escape(appointment.patient_name)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
+| 576 | <code>        f'{owner_line}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
+| 577 | <code>        f'{_appointment_lines(appointment)}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
+| 578 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_patient_action`. |
+| 579 | <code>    return _deliver(</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `notify_doctor_patient_action`. |
+| 580 | <code>        appointment.doctor.user,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
+| 581 | <code>        appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
+| 582 | <code>        event,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
+| 583 | <code>        f'doctor_action:{appointment.pk}:{event}',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
+| 584 | <code>        text,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
+| 585 | <code>        _site_url('doctor_appointment_detail', [appointment.pk]),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `notify_doctor_patient_action`. |
+| 586 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `notify_doctor_patient_action`. |
+| 589 | <code>def send_tomorrow_reminders(now=None, force=False):</code> | Объявляет функцию `send_tomorrow_reminders` и перечисляет принимаемые параметры. Контекст: `send_tomorrow_reminders`. |
+| 590 | <code>    now = timezone.localtime(now or timezone.now())</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
+| 591 | <code>    if not force and now.time() &lt; REMINDER_SEND_FROM:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `send_tomorrow_reminders`. |
+| 592 | <code>        return 0</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `send_tomorrow_reminders`. |
+| 594 | <code>    tomorrow = now.date() + timedelta(days=1)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
+| 595 | <code>    appointments = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
+| 596 | <code>        Appointment.objects.filter(</code> | Добавляет условие отбора к ORM-запросу; неподходящие строки базы не попадут в результат. Контекст: `send_tomorrow_reminders`. |
+| 597 | <code>            date=tomorrow,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
+| 598 | <code>            status=Appointment.STATUS_APPROVED,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
+| 599 | <code>            patient__isnull=False,</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
+| 600 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `send_tomorrow_reminders`. |
+| 601 | <code>        .select_related('patient', 'doctor__user', 'service')</code> | Просит ORM получить связанную одиночную запись тем же SQL-запросом, уменьшая число обращений к базе. Контекст: `send_tomorrow_reminders`. |
+| 602 | <code>        .order_by('time')</code> | Задает предсказуемый порядок строк, который затем видит пользователь. Контекст: `send_tomorrow_reminders`. |
+| 603 | <code>    )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `send_tomorrow_reminders`. |
+| 604 | <code>    sent = 0</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
+| 605 | <code>    for appointment in appointments:</code> | Начинает цикл и повторяет вложенные действия для каждого элемента коллекции. Контекст: `send_tomorrow_reminders`. |
+| 606 | <code>        visitor_line = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
+| 607 | <code>            f'Записано для: &lt;b&gt;{html.escape(appointment.patient_name)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
+| 608 | <code>            if appointment.booked_for_other</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `send_tomorrow_reminders`. |
+| 609 | <code>            else ''</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
+| 610 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `send_tomorrow_reminders`. |
+| 611 | <code>        text = (</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
+| 612 | <code>            '&lt;b&gt;Нагадування про прийом завтра&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
+| 613 | <code>            f'Лікар: &lt;b&gt;{html.escape(appointment.doctor.full_name)}&lt;/b&gt;\n'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
+| 614 | <code>            f'{visitor_line}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
+| 615 | <code>            f'{_appointment_lines(appointment)}'</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
+| 616 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `send_tomorrow_reminders`. |
+| 617 | <code>        if _deliver(</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `send_tomorrow_reminders`. |
+| 618 | <code>            appointment.patient,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
+| 619 | <code>            appointment,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
+| 620 | <code>            'day_before_reminder',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
+| 621 | <code>            f'reminder:{appointment.pk}:{appointment.date.isoformat()}',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
+| 622 | <code>            text,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
+| 623 | <code>            _site_url('patient_appointment_detail', [appointment.pk]),</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
+| 624 | <code>        ):</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `send_tomorrow_reminders`. |
+| 625 | <code>            sent += 1</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `send_tomorrow_reminders`. |
+| 626 | <code>    return sent</code> | Завершает функцию и возвращает результат вызывающему коду. Контекст: `send_tomorrow_reminders`. |
 
 ## Файл `clinic/admin.py`
 

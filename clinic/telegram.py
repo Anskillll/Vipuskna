@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 import requests
 from django.conf import settings
-from django.db import IntegrityError, transaction
+from django.db import DatabaseError, IntegrityError, transaction
 from django.urls import reverse
 from django.utils import timezone
 
@@ -210,11 +210,19 @@ def _process_doctor_request_callback(callback_query, client):
             )
         return False
 
-    connection = (
-        TelegramConnection.objects.filter(chat_id=chat_id, is_active=True)
-        .select_related('user')
-        .first()
-    )
+    try:
+        connection = (
+            TelegramConnection.objects.filter(chat_id=chat_id, is_active=True)
+            .select_related('user')
+            .first()
+        )
+    except DatabaseError:
+        client.answer_callback_query(
+            callback_id,
+            'База даних тимчасово недоступна. Спробуйте ще раз.',
+            show_alert=True,
+        )
+        return False
     if connection is None:
         client.answer_callback_query(
             callback_id,
@@ -233,7 +241,8 @@ def _process_doctor_request_callback(callback_query, client):
     try:
         with transaction.atomic():
             appointment = (
-                Appointment.objects.select_for_update()
+                # PostgreSQL cannot lock nullable patient/service outer joins.
+                Appointment.objects.select_for_update(of=('self',))
                 .select_related('doctor__user', 'patient', 'service')
                 .filter(pk=appointment_id, doctor__user=connection.user)
                 .first()
@@ -323,6 +332,8 @@ def _process_doctor_request_callback(callback_query, client):
                         remove_actions = True
     except IntegrityError:
         response_text = 'Цей час щойно зайняли. Перевірте заявку на сайті.'
+    except DatabaseError:
+        response_text = 'База даних тимчасово недоступна. Спробуйте ще раз.'
 
     succeeded = notification is not None
     client.answer_callback_query(
