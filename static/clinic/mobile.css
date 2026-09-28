@@ -151,6 +151,24 @@
     font-size: 13px;
   }
 
+  body:not(.public-home-page) .service-manager-list {
+    gap: 10px;
+    padding-bottom: 13px;
+  }
+
+  body:not(.public-home-page) .service-manager-item {
+    padding: 16px 14px;
+  }
+
+  body:not(.public-home-page) .workplace-list {
+    gap: 10px;
+  }
+
+  body:not(.public-home-page) .workplace-row,
+  body:not(.public-home-page) .content-list li {
+    padding: 12px;
+  }
+
   body:not(.public-home-page) .card,
   body:not(.public-home-page) .doctor-panel,
   body:not(.public-home-page) .action-group,
