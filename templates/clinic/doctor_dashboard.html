@@ -3,12 +3,7 @@
 {% block title %}Кабінет лікаря - MedClinic{% endblock %}
 
 {% block content %}
-  <nav class="page-tabs">
-    <a class="page-tab active" href="{% url 'doctor_dashboard' %}">Огляд</a>
-    <a class="page-tab" href="{% url 'doctor_requests' %}">Мої заявки</a>
-    <a class="page-tab" href="{% url 'doctor_appointments' %}">Прийоми</a>
-    <a class="page-tab" href="{% url 'doctor_patient_cards' %}">Пацієнти</a>
-  </nav>
+  {% include 'clinic/_doctor_dashboard_tabs.html' with doctor_tab='overview' %}
 
   <section class="card doctor-dashboard-profile">
     <div class="doctor-profile-hero">

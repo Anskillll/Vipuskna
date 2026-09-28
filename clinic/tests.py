@@ -157,8 +157,8 @@ class ClinicModelTests(TestCase):
     def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
         response = self.client.get(reverse('home'))
 
-        self.assertContains(response, 'clinic/site.css?v=20260802-6')
-        self.assertContains(response, 'clinic/mobile.css?v=20260802-3')
+        self.assertContains(response, 'clinic/site.css?v=20260928-1')
+        self.assertContains(response, 'clinic/mobile.css?v=20260928-1')
         self.assertContains(response, 'Нікополь, вул. Шевченка, 200')
         self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
         self.assertContains(response, 'https://www.google.com/maps/search/?api=1&amp;query=')
@@ -3334,6 +3334,41 @@ class ClinicModelTests(TestCase):
         self.assertNotContains(dashboard_response, 'action-board')
         self.assertNotContains(dashboard_response, 'Швидкий доступ')
         self.assertNotContains(dashboard_response, 'Найближчі прийоми')
+
+    def test_doctor_main_sections_share_consistent_navigation(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        pages = (
+            ('doctor_dashboard', 'Огляд'),
+            ('doctor_requests', 'Мої заявки'),
+            ('doctor_appointments', 'Прийоми'),
+            ('doctor_patient_cards', 'Пацієнти'),
+        )
+
+        for url_name, active_label in pages:
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name))
+
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, 'class="page-tabs doctor-tabs"')
+                self.assertContains(
+                    response,
+                    f'aria-current="page" href="{reverse(url_name)}">{active_label}</a>',
+                )
+                self.assertNotContains(response, '>Графік</a>')
+
+        page_titles = (
+            ('doctor_requests', 'Мої заявки'),
+            ('doctor_appointments', 'Заявки та прийоми'),
+            ('doctor_patient_cards', 'Картки пацієнтів'),
+        )
+        for url_name, page_title in page_titles:
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name))
+                self.assertNotContains(
+                    response,
+                    f'<h1 class="page-title">{page_title}</h1>',
+                )
 
     def test_patient_can_upload_profile_photo(self):
         self.client.login(username='patient@test.local', password='pass12345')

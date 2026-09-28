@@ -1,0 +1,6 @@
+<nav class="page-tabs doctor-tabs" aria-label="Розділи кабінету лікаря">
+  <a class="page-tab{% if doctor_tab == 'overview' %} active{% endif %}"{% if doctor_tab == 'overview' %} aria-current="page"{% endif %} href="{% url 'doctor_dashboard' %}">Огляд</a>
+  <a class="page-tab{% if doctor_tab == 'requests' %} active{% endif %}"{% if doctor_tab == 'requests' %} aria-current="page"{% endif %} href="{% url 'doctor_requests' %}">Мої заявки</a>
+  <a class="page-tab{% if doctor_tab == 'appointments' %} active{% endif %}"{% if doctor_tab == 'appointments' %} aria-current="page"{% endif %} href="{% url 'doctor_appointments' %}">Прийоми</a>
+  <a class="page-tab{% if doctor_tab == 'patients' %} active{% endif %}"{% if doctor_tab == 'patients' %} aria-current="page"{% endif %} href="{% url 'doctor_patient_cards' %}">Пацієнти</a>
+</nav>

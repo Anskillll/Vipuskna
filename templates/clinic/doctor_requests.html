@@ -3,20 +3,7 @@
 {% block title %}Мої заявки - MedClinic{% endblock %}
 
 {% block content %}
-  <section class="page-head">
-    <div>
-      <h1 class="page-title">Мої заявки</h1>
-      <p class="page-subtitle">Нові звернення пацієнтів, які очікують вашого рішення.</p>
-    </div>
-  </section>
-
-  <nav class="page-tabs">
-    <a class="page-tab" href="{% url 'doctor_dashboard' %}">Огляд</a>
-    <a class="page-tab active" href="{% url 'doctor_requests' %}">Мої заявки</a>
-    <a class="page-tab" href="{% url 'doctor_appointments' %}">Прийоми</a>
-    <a class="page-tab" href="{% url 'doctor_patient_cards' %}">Пацієнти</a>
-    <a class="page-tab" href="{% url 'doctor_schedule' %}">Графік</a>
-  </nav>
+  {% include 'clinic/_doctor_dashboard_tabs.html' with doctor_tab='requests' %}
 
   <div data-live-filter data-page-size="10">
     {% if appointments %}

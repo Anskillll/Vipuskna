@@ -3,20 +3,7 @@
 {% block title %}Картки пацієнтів - MedClinic{% endblock %}
 
 {% block content %}
-  <section class="page-head">
-    <div>
-      <h1 class="page-title">Картки пацієнтів</h1>
-      <p class="page-subtitle">Швидкий доступ до історії відвідувань і нотаток.</p>
-    </div>
-  </section>
-
-  <nav class="page-tabs">
-    <a class="page-tab" href="{% url 'doctor_dashboard' %}">Огляд</a>
-    <a class="page-tab" href="{% url 'doctor_requests' %}">Мої заявки</a>
-    <a class="page-tab" href="{% url 'doctor_appointments' %}">Прийоми</a>
-    <a class="page-tab active" href="{% url 'doctor_patient_cards' %}">Пацієнти</a>
-    <a class="page-tab" href="{% url 'doctor_schedule' %}">Графік</a>
-  </nav>
+  {% include 'clinic/_doctor_dashboard_tabs.html' with doctor_tab='patients' %}
 
   <section class="card section-card" data-live-filter>
     <div class="live-filter-bar">

@@ -8346,6 +8346,43 @@ body:not(.public-home-page) .page-tab.active {
   font-weight: 800;
 }
 
+body:not(.public-home-page) .doctor-tabs {
+  gap: 10px;
+  margin-bottom: 28px;
+  padding-bottom: 12px;
+}
+
+body:not(.public-home-page) .doctor-tabs .page-tab {
+  min-height: 48px;
+  padding: 0 20px;
+  border: 1px solid #cfdfdb;
+  border-bottom-width: 3px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 5px 14px rgba(20, 61, 56, 0.06);
+  color: #4d625e;
+  font-size: 15px;
+  font-weight: 700;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+body:not(.public-home-page) .doctor-tabs .page-tab:hover {
+  border-color: #74bdb2;
+  border-bottom-color: var(--clinic-teal);
+  background: #f5fbf9;
+  box-shadow: 0 7px 18px rgba(12, 143, 128, 0.11);
+  color: var(--clinic-teal-dark);
+  transform: translateY(-1px);
+}
+
+body:not(.public-home-page) .doctor-tabs .page-tab.active {
+  border: 1px solid #70c4b7;
+  border-bottom: 3px solid var(--clinic-teal);
+  background: #e8f7f3;
+  box-shadow: 0 7px 18px rgba(12, 143, 128, 0.15);
+  color: var(--clinic-teal-dark);
+}
+
 body:not(.public-home-page) .section-card {
   border-top: 3px solid #a8d8cf;
 }

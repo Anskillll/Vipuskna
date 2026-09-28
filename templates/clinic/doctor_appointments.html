@@ -4,20 +4,7 @@
 {% block title %}Заявки та прийоми - MedClinic{% endblock %}
 
 {% block content %}
-  <section class="page-head">
-    <div>
-      <h1 class="page-title">Заявки та прийоми</h1>
-      <p class="page-subtitle">Записи згруповані за днями та впорядковані за часом.</p>
-    </div>
-  </section>
-
-  <nav class="page-tabs">
-    <a class="page-tab" href="{% url 'doctor_dashboard' %}">Огляд</a>
-    <a class="page-tab" href="{% url 'doctor_requests' %}">Мої заявки</a>
-    <a class="page-tab active" href="{% url 'doctor_appointments' %}">Прийоми</a>
-    <a class="page-tab" href="{% url 'doctor_patient_cards' %}">Пацієнти</a>
-    <a class="page-tab" href="{% url 'doctor_schedule' %}">Графік</a>
-  </nav>
+  {% include 'clinic/_doctor_dashboard_tabs.html' with doctor_tab='appointments' %}
 
   <div data-live-filter data-live-filter-no-pagination>
     <div class="card section-card live-filter-bar">
