@@ -157,8 +157,8 @@ class ClinicModelTests(TestCase):
     def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
         response = self.client.get(reverse('home'))
 
-        self.assertContains(response, 'clinic/site.css?v=20260928-2')
-        self.assertContains(response, 'clinic/mobile.css?v=20260928-2')
+        self.assertContains(response, 'clinic/site.css?v=20260928-3')
+        self.assertContains(response, 'clinic/mobile.css?v=20260928-3')
         self.assertContains(response, 'Нікополь, вул. Шевченка, 200')
         self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
         self.assertContains(response, 'https://www.google.com/maps/search/?api=1&amp;query=')
@@ -3322,6 +3322,9 @@ class ClinicModelTests(TestCase):
         self.assertContains(dashboard_response, about_text)
         self.assertContains(dashboard_response, self.doctor.specialization)
         self.assertContains(dashboard_response, 'doctor-profile-photo')
+        self.assertContains(dashboard_response, 'doctor-profile-metrics')
+        self.assertContains(dashboard_response, 'doctor-dashboard-grid')
+        self.assertContains(dashboard_response, 'Переглянути як пацієнт')
         self.assertContains(dashboard_response, 'Записати пацієнта')
         self.assertContains(dashboard_response, 'Редагувати профіль')
         self.assertContains(dashboard_response, 'Редагувати графік')

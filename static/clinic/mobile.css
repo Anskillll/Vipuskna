@@ -1000,3 +1000,180 @@
     width: calc(100% - 20px);
   }
 }
+
+@media (max-width: 720px) {
+  body:not(.public-home-page) .doctor-profile-overview,
+  body:not(.public-home-page) .doctor-dashboard-card {
+    padding: 14px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-overview .doctor-profile-hero {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-overview .doctor-profile-photo {
+    width: 64px;
+    height: 64px;
+    border-radius: 9px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-overview .doctor-profile-photo-placeholder {
+    font-size: 22px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-overview .doctor-profile-label {
+    margin-bottom: 3px;
+    font-size: 9px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-overview .doctor-profile-identity h1 {
+    margin-top: 0;
+    font-size: 22px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-overview .doctor-profile-specialization {
+    margin-top: 4px;
+    font-size: 12px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-overview .doctor-profile-phone {
+    margin-top: 3px;
+    font-size: 11px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-overview .doctor-profile-identity .chip-row {
+    margin-top: 7px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-overview .chip {
+    min-height: 22px;
+    padding: 2px 7px;
+    font-size: 9px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-overview .doctor-profile-actions {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    margin-top: 2px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-overview .doctor-profile-actions .btn {
+    min-height: 36px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-preview-link {
+    grid-column: 1 / -1;
+    min-height: 25px;
+    font-size: 10px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-metrics {
+    margin-top: 14px;
+    padding: 10px 6px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-metric {
+    grid-template-columns: 1fr;
+    gap: 3px;
+    padding: 0 7px;
+    text-align: center;
+  }
+
+  body:not(.public-home-page) .doctor-profile-metric strong {
+    font-size: 20px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-metric span {
+    font-size: 9px;
+    line-height: 1.25;
+  }
+
+  body:not(.public-home-page) .doctor-profile-overview .doctor-profile-about {
+    margin-top: 12px;
+    padding: 11px 12px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-overview .doctor-profile-about p {
+    font-size: 12px;
+  }
+
+  body:not(.public-home-page) .doctor-dashboard-grid,
+  body:not(.public-home-page) .doctor-dashboard-news-card {
+    margin-top: 10px;
+  }
+
+  body:not(.public-home-page) .doctor-dashboard-grid {
+    gap: 10px;
+  }
+
+  body:not(.public-home-page) .doctor-dashboard-card-head {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 11px;
+  }
+
+  body:not(.public-home-page) .doctor-dashboard-card-title h2 {
+    font-size: 19px;
+  }
+
+  body:not(.public-home-page) .doctor-dashboard-card-title p {
+    margin-top: 4px;
+    font-size: 11px;
+  }
+
+  body:not(.public-home-page) .doctor-dashboard-card-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  body:not(.public-home-page) .doctor-dashboard-services-card .doctor-dashboard-card-actions,
+  body:not(.public-home-page) .doctor-dashboard-news-card .doctor-dashboard-card-actions {
+    grid-template-columns: 1fr;
+  }
+
+  body:not(.public-home-page) .doctor-dashboard-card-actions .btn {
+    width: 100%;
+    white-space: normal;
+  }
+
+  body:not(.public-home-page) .doctor-dashboard-list,
+  body:not(.public-home-page) .doctor-news-preview {
+    margin-top: 13px;
+  }
+
+  body:not(.public-home-page) .doctor-dashboard-list > li {
+    align-items: flex-start;
+    gap: 9px;
+    padding: 10px;
+  }
+
+  body:not(.public-home-page) .doctor-dashboard-row-copy .maps-location-link {
+    font-size: 10px;
+  }
+
+  body:not(.public-home-page) .doctor-dashboard-row-value {
+    font-size: 11px;
+  }
+
+  body:not(.public-home-page) .doctor-news-preview {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  body:not(.public-home-page) .doctor-news-preview > li {
+    min-height: 0;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  body:not(.public-home-page) .doctor-profile-overview .doctor-profile-actions,
+  body:not(.public-home-page) .doctor-dashboard-card-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

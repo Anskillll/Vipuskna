@@ -9432,3 +9432,408 @@ body:not(.public-home-page) .nav a.nav-active:hover {
     width: 100%;
   }
 }
+
+/* Doctor overview experiment: compact profile header and task-focused cards. */
+body:not(.public-home-page) .doctor-profile-overview {
+  min-height: 0;
+  padding: 28px;
+  overflow: hidden;
+}
+
+body:not(.public-home-page) .doctor-profile-overview .doctor-profile-hero {
+  grid-template-columns: 126px minmax(0, 1fr) 190px;
+  gap: 24px;
+}
+
+body:not(.public-home-page) .doctor-profile-overview .doctor-profile-photo {
+  width: 126px;
+  height: 126px;
+  border: 1px solid #c8dbd6;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #e8f5f2, #d9ebe7);
+  box-shadow: 0 12px 26px rgba(30, 79, 70, 0.12);
+}
+
+body:not(.public-home-page) .doctor-profile-overview .doctor-profile-photo-placeholder {
+  color: var(--clinic-teal-dark);
+  font-size: 36px;
+}
+
+body:not(.public-home-page) .doctor-profile-overview .doctor-profile-label {
+  margin-bottom: 7px;
+  letter-spacing: 0.08em;
+}
+
+body:not(.public-home-page) .doctor-profile-overview .doctor-profile-identity h1 {
+  font-size: 36px;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
+body:not(.public-home-page) .doctor-profile-overview .doctor-profile-specialization {
+  margin-top: 7px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+body:not(.public-home-page) .doctor-profile-overview .doctor-profile-phone {
+  display: inline-block;
+  margin-top: 5px;
+  color: #526b66;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+body:not(.public-home-page) .doctor-profile-overview .doctor-profile-phone:hover {
+  color: var(--clinic-teal-dark);
+}
+
+body:not(.public-home-page) .doctor-profile-overview .doctor-profile-identity .chip-row {
+  gap: 6px;
+  margin-top: 11px;
+}
+
+body:not(.public-home-page) .doctor-profile-overview .chip {
+  min-height: 26px;
+  padding: 3px 9px;
+  font-size: 11px;
+}
+
+body:not(.public-home-page) .doctor-profile-overview .doctor-profile-actions {
+  align-self: center;
+  gap: 9px;
+  min-width: 190px;
+}
+
+body:not(.public-home-page) .doctor-profile-overview .doctor-profile-actions .btn {
+  min-height: 40px;
+}
+
+body:not(.public-home-page) .doctor-profile-preview-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 30px;
+  color: #42635d;
+  font-size: 12px;
+  font-weight: 750;
+  text-align: center;
+}
+
+body:not(.public-home-page) .doctor-profile-preview-link:hover {
+  color: var(--clinic-teal-dark);
+}
+
+body:not(.public-home-page) .doctor-profile-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 24px;
+  padding: 15px 18px;
+  border: 1px solid #d7e5e1;
+  border-radius: 10px;
+  background: #f6faf9;
+}
+
+body:not(.public-home-page) .doctor-profile-metric {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  padding: 2px 18px;
+}
+
+body:not(.public-home-page) .doctor-profile-metric + .doctor-profile-metric {
+  border-left: 1px solid #d5e2df;
+}
+
+body:not(.public-home-page) .doctor-profile-metric strong {
+  color: var(--clinic-teal-dark);
+  font-size: 24px;
+  line-height: 1;
+}
+
+body:not(.public-home-page) .doctor-profile-metric span {
+  color: #62746f;
+  font-size: 12px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+body:not(.public-home-page) .doctor-profile-overview .doctor-profile-about {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid #d8e6e2;
+  border-left: 4px solid var(--clinic-blue);
+  border-radius: 7px;
+  background: #f3f8fa;
+}
+
+body:not(.public-home-page) .doctor-profile-overview .doctor-profile-about > span {
+  margin-bottom: 5px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+body:not(.public-home-page) .doctor-profile-overview .doctor-profile-about p {
+  max-width: none;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+body:not(.public-home-page) .doctor-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(340px, 0.82fr);
+  align-items: start;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+body:not(.public-home-page) .doctor-dashboard-card {
+  min-width: 0;
+  padding: 24px;
+  border-top: 4px solid var(--clinic-teal);
+}
+
+body:not(.public-home-page) .doctor-dashboard-services-card {
+  border-top-color: var(--clinic-blue);
+}
+
+body:not(.public-home-page) .doctor-dashboard-news-card {
+  margin-top: 18px;
+  border-top-color: var(--clinic-amber);
+}
+
+body:not(.public-home-page) .doctor-dashboard-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+body:not(.public-home-page) .doctor-dashboard-card-title {
+  min-width: 0;
+}
+
+body:not(.public-home-page) .doctor-dashboard-card-title > span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--clinic-teal-dark);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+body:not(.public-home-page) .doctor-dashboard-services-card .doctor-dashboard-card-title > span {
+  color: #2d6f9f;
+}
+
+body:not(.public-home-page) .doctor-dashboard-news-card .doctor-dashboard-card-title > span {
+  color: #a26110;
+}
+
+body:not(.public-home-page) .doctor-dashboard-card-title h2 {
+  margin: 0;
+  color: var(--clinic-ink);
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+body:not(.public-home-page) .doctor-dashboard-card-title p {
+  margin: 6px 0 0;
+  color: #6a7a76;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+body:not(.public-home-page) .doctor-dashboard-card-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+body:not(.public-home-page) .doctor-dashboard-card-actions .doctor-profile-edit-button {
+  min-height: 36px;
+  padding: 0 11px;
+  font-size: 11px;
+}
+
+body:not(.public-home-page) .doctor-dashboard-list,
+body:not(.public-home-page) .doctor-news-preview {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+body:not(.public-home-page) .doctor-dashboard-list > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  padding: 11px 13px;
+  border: 1px solid #dce6e3;
+  border-radius: 7px;
+  background: #fbfdfc;
+}
+
+body:not(.public-home-page) .doctor-dashboard-row-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+body:not(.public-home-page) .doctor-dashboard-row-copy > strong,
+body:not(.public-home-page) .doctor-services-preview > li > strong {
+  color: #1e3934;
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+body:not(.public-home-page) .doctor-dashboard-row-copy .maps-location-link {
+  color: #687a76;
+  font-size: 11px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+body:not(.public-home-page) .doctor-dashboard-row-note {
+  color: #87938f;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+body:not(.public-home-page) .doctor-dashboard-row-value {
+  flex: 0 0 auto;
+  color: var(--clinic-teal-dark);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+body:not(.public-home-page) .doctor-dashboard-row-value.is-muted {
+  color: #81908c;
+}
+
+body:not(.public-home-page) .doctor-services-preview > li {
+  min-height: 44px;
+}
+
+body:not(.public-home-page) .doctor-dashboard-list > .doctor-dashboard-list-empty {
+  display: block;
+  color: #758681;
+  font-size: 13px;
+  text-align: center;
+}
+
+body:not(.public-home-page) .doctor-dashboard-list > .doctor-dashboard-list-more {
+  border-style: dashed;
+  background: #f3f8f7;
+  color: #657772;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+body:not(.public-home-page) .doctor-dashboard-list-more a {
+  color: var(--clinic-teal-dark);
+  font-weight: 800;
+}
+
+body:not(.public-home-page) .doctor-news-preview {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+body:not(.public-home-page) .doctor-news-preview > li {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  min-width: 0;
+  min-height: 132px;
+  padding: 15px;
+  border: 1px solid #e2e6dc;
+  border-radius: 8px;
+  background: #fffdf8;
+}
+
+body:not(.public-home-page) .doctor-news-preview-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+body:not(.public-home-page) .doctor-news-preview time {
+  color: #75817e;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+body:not(.public-home-page) .doctor-news-state {
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: #e3f3ed;
+  color: #176457;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+body:not(.public-home-page) .doctor-news-state.is-hidden {
+  background: #f0f2f1;
+  color: #6d7a76;
+}
+
+body:not(.public-home-page) .doctor-news-preview > li > strong {
+  color: #243d38;
+  font-size: 15px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+body:not(.public-home-page) .doctor-news-preview > li > p {
+  margin: 0;
+  color: #687773;
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+body:not(.public-home-page) .doctor-news-preview > .doctor-dashboard-list-empty {
+  grid-column: 1 / -1;
+  min-height: 0;
+  color: #758681;
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 1050px) {
+  body:not(.public-home-page) .doctor-profile-overview .doctor-profile-hero {
+    grid-template-columns: 112px minmax(0, 1fr);
+  }
+
+  body:not(.public-home-page) .doctor-profile-overview .doctor-profile-photo {
+    width: 112px;
+    height: 112px;
+  }
+
+  body:not(.public-home-page) .doctor-profile-overview .doctor-profile-actions {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body:not(.public-home-page) .doctor-profile-preview-link {
+    grid-column: 1 / -1;
+  }
+
+  body:not(.public-home-page) .doctor-dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
