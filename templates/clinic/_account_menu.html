@@ -1,0 +1,52 @@
+{% if user.is_authenticated %}
+  <details class="account-menu">
+    <summary class="account-menu-toggle" aria-label="Меню профілю">
+      <span class="account-avatar" aria-hidden="true">
+        {% if not user.is_staff and user.profile.role == 'doctor' and user.doctor_profile.photo_src %}
+          <img src="{{ user.doctor_profile.photo_src }}" alt="">
+        {% elif not user.is_staff and user.profile.photo %}
+          <img src="{{ user.profile.photo.url }}" alt="">
+        {% else %}
+          <span>{{ user.first_name|default:user.username|first|upper }}</span>
+        {% endif %}
+      </span>
+      <span class="account-menu-caret" aria-hidden="true"></span>
+    </summary>
+    <div class="account-menu-panel">
+      <div class="account-menu-heading">
+        {% if user.is_staff %}
+          <strong>Профіль адміністратора</strong>
+          <span>Адміністратор</span>
+        {% elif user.profile.role == 'doctor' %}
+          <strong>Профіль лікаря</strong>
+          <span>Лікар</span>
+        {% else %}
+          <strong>Мій профіль</strong>
+          <span>Пацієнт</span>
+        {% endif %}
+      </div>
+      {% if user.is_staff %}
+        <a href="{% url 'admin_panel' %}">Панель адміністратора</a>
+      {% elif user.profile.role == 'doctor' %}
+        <a href="{% url 'doctor_edit_profile' %}">Змінити профіль</a>
+        <a href="{% url 'doctor_change_password' %}">Змінити пароль</a>
+      {% else %}
+        <a href="{% url 'patient_edit_profile' %}">Змінити профіль</a>
+        {% if user.has_usable_password %}
+          <a href="{% url 'patient_change_password' %}">Змінити пароль</a>
+        {% endif %}
+      {% endif %}
+      {% if telegram_enabled and not user.is_staff %}
+        {% if telegram_connected %}
+          <form method="post" action="{% url 'telegram_reconnect' %}">
+            {% csrf_token %}
+            <button type="submit">Переприв’язати бота</button>
+          </form>
+        {% elif telegram_show_connect %}
+          <a href="{% url 'telegram_connect' %}">Під’єднати Telegram-бота</a>
+        {% endif %}
+      {% endif %}
+      <a class="account-menu-logout" href="{% url 'logout' %}">Вийти з акаунта</a>
+    </div>
+  </details>
+{% endif %}

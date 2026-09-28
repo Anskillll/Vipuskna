@@ -31,6 +31,7 @@ from .models import (
     MedicalService,
     MedicalServiceImage,
     NewsPost,
+    PasswordRecoveryRequest,
     PatientRecordEntry,
     PatientRecordImage,
     PatientRecordVideo,
@@ -161,6 +162,8 @@ class ClinicModelTests(TestCase):
         self.assertIn('grid-column: 2;', refinement_css)
         self.assertIn('.booking-for-other .field-checkbox > .checkbox-label', refinement_css)
         self.assertIn('input[type="checkbox"]:focus {', refinement_css)
+        self.assertIn('justify-content: space-between;', refinement_css)
+        self.assertIn('.booking-for-other .field-checkbox > .checkbox-label > input[type="checkbox"]', refinement_css)
 
     def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
         response = self.client.get(reverse('home'))
@@ -670,6 +673,41 @@ class ClinicModelTests(TestCase):
         self.assertIn('Ви вже зареєстровані', message)
         self.assertIn('сповіщення', message)
 
+    @override_settings(TELEGRAM_WEBHOOK_SECRET='webhook-test-secret')
+    @patch('clinic.views.process_update')
+    def test_telegram_webhook_checks_method_secret_and_json(self, process_update_mock):
+        webhook = reverse('telegram_webhook')
+
+        self.assertEqual(self.client.get(webhook).status_code, 405)
+        self.assertEqual(self.client.post(webhook, data='{}', content_type='application/json').status_code, 403)
+        invalid_json = self.client.post(
+            webhook,
+            data='{',
+            content_type='application/json',
+            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN='webhook-test-secret',
+        )
+        self.assertEqual(invalid_json.status_code, 400)
+
+        response = self.client.post(
+            webhook,
+            data='{"update_id": 7}',
+            content_type='application/json',
+            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN='webhook-test-secret',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'ok': True})
+        process_update_mock.assert_called_once_with({'update_id': 7})
+
+    @override_settings(TELEGRAM_WEBHOOK_SECRET='')
+    def test_telegram_webhook_is_unavailable_without_configured_secret(self):
+        response = self.client.post(
+            reverse('telegram_webhook'),
+            data='{}',
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 503)
+
     @override_settings(
         TELEGRAM_BOT_TOKEN='test-token',
         TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
@@ -697,9 +735,17 @@ class ClinicModelTests(TestCase):
         self.client.login(username=self.patient.username, password='pass12345')
 
         dashboard = self.client.get(reverse('patient_dashboard'))
+        home = self.client.get(reverse('home'))
         reconnect_get = self.client.get(reverse('telegram_reconnect'))
         reconnect = self.client.post(reverse('telegram_reconnect'))
 
+        self.assertContains(dashboard, 'Меню профілю')
+        self.assertContains(dashboard, reverse('patient_edit_profile'))
+        self.assertContains(dashboard, reverse('patient_change_password'))
+        self.assertContains(dashboard, reverse('telegram_reconnect'))
+        self.assertContains(home, 'Меню профілю')
+        self.assertContains(home, 'Переприв’язати бота')
+        self.assertContains(home, reverse('logout'))
         self.assertContains(dashboard, 'Бот прив’язаний')
         self.assertContains(dashboard, 'Переприв’язати бота')
         self.assertContains(dashboard, reverse('telegram_reconnect'))
@@ -4897,6 +4943,46 @@ class ClinicModelTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Вхід для адміністрації')
         self.assertContains(response, 'логін і пароль лікаря або адміністратора')
+        self.assertContains(response, reverse('forgot_password'))
+
+    def test_doctor_account_menu_links_profile_and_password(self):
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.get(reverse('doctor_dashboard'))
+
+        self.assertContains(response, 'Меню профілю')
+        self.assertContains(response, reverse('doctor_edit_profile'))
+        self.assertContains(response, reverse('doctor_change_password'))
+        self.assertContains(response, reverse('logout'))
+
+    def test_password_recovery_requests_are_rate_limited_and_admin_managed(self):
+        recovery_url = reverse('forgot_password')
+        self.client.post(recovery_url, data={'email': 'Patient@Test.Local'})
+        self.client.post(recovery_url, data={'email': 'patient@test.local'})
+
+        self.assertEqual(PasswordRecoveryRequest.objects.count(), 1)
+        recovery_request = PasswordRecoveryRequest.objects.get()
+
+        self.client.login(username=self.patient.username, password='pass12345')
+        forbidden = self.client.get(reverse('admin_password_recovery_requests'))
+        self.assertRedirects(forbidden, reverse('administration_login'))
+
+        self.client.logout()
+        admin_user = User.objects.create_superuser(
+            username='recovery-admin', email='recovery-admin@test.local', password='pass12345'
+        )
+        self.client.login(username=admin_user.username, password='pass12345')
+        inbox = self.client.get(reverse('admin_password_recovery_requests'))
+        self.assertContains(inbox, 'patient@test.local')
+        self.assertContains(inbox, 'Позначити обробленим')
+
+        processed = self.client.post(
+            reverse('admin_password_recovery_requests'),
+            data={'request_id': recovery_request.pk},
+        )
+        self.assertRedirects(processed, reverse('admin_password_recovery_requests'))
+        self.assertFalse(PasswordRecoveryRequest.objects.exists())
+        self.assertTrue(AuditLog.objects.filter(actor=admin_user).exists())
 
     def test_shared_administration_login_detects_doctor(self):
         response = self.client.post(

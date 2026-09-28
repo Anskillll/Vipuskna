@@ -15,6 +15,7 @@ from .models import (
     MedicalServiceImage,
     MedicalServiceVideo,
     NewsPost,
+    PasswordRecoveryRequest,
     PatientRecordEntry,
     PatientRecordImage,
     PatientRecordVideo,
@@ -29,6 +30,16 @@ from .models import (
 admin.site.site_header = 'Адміністрування MedClinic'
 admin.site.site_title = 'Адміністрування MedClinic'
 admin.site.index_title = 'Керування клінікою'
+
+
+@admin.register(PasswordRecoveryRequest)
+class PasswordRecoveryRequestAdmin(admin.ModelAdmin):
+    list_display = ('email', 'created_at')
+    search_fields = ('email',)
+    readonly_fields = ('email', 'created_at')
+
+    def has_add_permission(self, request):
+        return False
 
 
 class MedicalServiceInline(admin.TabularInline):

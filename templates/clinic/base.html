@@ -15,7 +15,7 @@
   {% endif %}
   <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260928-7">
   <link rel="stylesheet" href="{% static 'clinic/mobile.css' %}?v=20260928-7">
-  <link rel="stylesheet" href="{% static 'clinic/refinement.css' %}?v=20260928-6">
+  <link rel="stylesheet" href="{% static 'clinic/refinement.css' %}?v=20260929-1">
   <script src="{% static 'clinic/live_filter.js' %}?v=20260928-1" defer></script>
   <script src="{% static 'clinic/flash_messages.js' %}?v=20260719-1" defer></script>
 </head>
@@ -42,7 +42,7 @@
             <a{% if '/patient/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'patient_dashboard' %}">Мій кабінет</a>
             <a{% if '/booking/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'booking' %}">Записатися</a>
           {% endif %}
-          <a href="{% url 'logout' %}">Вийти</a>
+          {% include 'clinic/_account_menu.html' %}
         {% elif request.session.patient_claim_phone %}
           <a{% if '/doctors/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'doctors' %}">Лікарі</a>
           <a{% if '/patient/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'pending_patient_dashboard' %}">Мій кабінет</a>

@@ -23,5 +23,8 @@
         <a class="btn secondary" href="{% url 'home' %}">Назад</a>
       </div>
     </form>
+    {% if role == 'administration' %}
+      <a class="login-recovery-link" href="{% url 'forgot_password' %}">Забули пароль?</a>
+    {% endif %}
   </div>
 {% endblock %}

@@ -67,15 +67,13 @@
             <a href="{% url 'administration_login' %}">Вхід для адміністрації</a>
           {% elif user.is_staff %}
             <a href="{% url 'admin_panel' %}">Панель адміністратора</a>
-            <a href="{% url 'logout' %}">Вийти</a>
           {% elif user.profile.role == 'doctor' %}
             <a href="{% url 'doctor_dashboard' %}">Кабінет лікаря</a>
-            <a href="{% url 'logout' %}">Вийти</a>
           {% else %}
             <a href="{% url 'patient_dashboard' %}">Мій кабінет</a>
-            <a href="{% url 'logout' %}">Вийти</a>
           {% endif %}
         </div>
+        {% include 'clinic/_account_menu.html' %}
       </nav>
 
       {% if telegram_show_connect %}

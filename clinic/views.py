@@ -65,6 +65,7 @@ from .models import (
     MedicalServiceImage,
     MedicalServiceVideo,
     NewsPost,
+    PasswordRecoveryRequest,
     PatientRecordEntry,
     PatientRecordImage,
     PatientRecordVideo,
@@ -999,12 +1000,35 @@ def logout_view(request):
 def forgot_password(request):
     form = EmailForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
+        email = form.cleaned_data['email'].strip().casefold()
+        recent_request_exists = PasswordRecoveryRequest.objects.filter(
+            email__iexact=email,
+            created_at__gte=timezone.now() - timedelta(hours=1),
+        ).exists()
+        if not recent_request_exists:
+            PasswordRecoveryRequest.objects.create(email=email)
         messages.success(
             request,
             'Якщо така пошта є в системі, адміністратор допоможе відновити доступ.',
         )
         return redirect('home')
     return render(request, 'clinic/forgot_password.html', {'form': form})
+
+
+@admin_required
+def admin_password_recovery_requests(request):
+    if request.method == 'POST':
+        recovery_request = get_object_or_404(PasswordRecoveryRequest, pk=request.POST.get('request_id'))
+        write_audit_log(request, 'Оброблено запит на відновлення доступу', request.user)
+        recovery_request.delete()
+        messages.success(request, 'Запит позначено обробленим.')
+        return redirect('admin_password_recovery_requests')
+
+    return render(
+        request,
+        'clinic/admin_password_recovery_requests.html',
+        {'recovery_requests': PasswordRecoveryRequest.objects.all()},
+    )
 
 
 def claim_patient(request):
@@ -2755,6 +2779,7 @@ def admin_panel(request):
         'doctors': Doctor.objects.filter(user__is_active=True).count(),
         'appointments': Appointment.objects.count(),
         'pending': Appointment.objects.filter(status=Appointment.STATUS_PENDING).count(),
+        'recovery_requests': PasswordRecoveryRequest.objects.count(),
     }
     users = User.objects.select_related('profile').order_by('last_name', 'first_name', 'username')
     appointments = (
