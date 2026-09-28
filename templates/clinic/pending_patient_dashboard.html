@@ -24,7 +24,7 @@
       </a>
     </aside>
 
-    <section id="overview" class="card patient-dashboard-profile pending-patient-profile">
+    <section id="overview" class="card patient-dashboard-profile patient-profile-overview pending-patient-profile">
       <div class="patient-profile-hero">
         <div class="patient-dashboard-photo patient-dashboard-photo-placeholder" aria-hidden="true">
           {{ pending_identity.initials }}
@@ -35,7 +35,7 @@
           <h1>{{ pending_identity.full_name }}</h1>
           <div class="patient-profile-facts">
             <span class="patient-fact-missing">Вік не вказано</span>
-            <span>{{ pending_phone }}</span>
+            <a class="patient-profile-phone" href="tel:{{ pending_phone }}">{{ pending_phone }}</a>
           </div>
         </div>
 

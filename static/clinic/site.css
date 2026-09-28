@@ -9837,3 +9837,368 @@ body:not(.public-home-page) .doctor-news-preview > .doctor-dashboard-list-empty 
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Shared profile system: public doctor, patient cabinets and medical card. */
+body:not(.public-home-page) .profile-back-row {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  margin-bottom: 12px;
+}
+
+body:not(.public-home-page) .profile-back-row .back-link {
+  margin: 0;
+}
+
+body:not(.public-home-page) .doctor-public-overview {
+  border-top-color: var(--clinic-teal);
+}
+
+body:not(.public-home-page) .doctor-public-grid {
+  grid-template-columns: minmax(300px, 0.76fr) minmax(430px, 1.24fr);
+}
+
+body:not(.public-home-page) .doctor-public-schedule-card {
+  border-top-color: var(--clinic-teal);
+}
+
+body:not(.public-home-page) .doctor-public-services-card {
+  border-top-color: var(--clinic-blue);
+}
+
+body:not(.public-home-page) .doctor-public-service-filter {
+  margin-top: 18px;
+  padding: 12px;
+  border: 1px solid #d7e3e7;
+  border-radius: 8px;
+  background: #f6fafb;
+}
+
+body:not(.public-home-page) .doctor-public-service-list {
+  margin-top: 10px;
+}
+
+body:not(.public-home-page) .doctor-public-service-list > li {
+  align-items: center;
+}
+
+body:not(.public-home-page) .doctor-public-service-list > li > strong {
+  min-width: 0;
+  color: #1e3934;
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+body:not(.public-home-page) .doctor-public-service-list .doctor-service-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+body:not(.public-home-page) .doctor-public-service-list .doctor-details-link {
+  min-height: 28px;
+  padding: 0 9px;
+  border-color: #bfd9e6;
+  background: #eef7fb;
+  color: #2b6f96;
+  font-size: 10px;
+}
+
+body:not(.public-home-page) .doctor-public-news-card {
+  overflow: hidden;
+}
+
+body:not(.public-home-page) .doctor-public-news-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+body:not(.public-home-page) .doctor-public-news-grid .news-card {
+  border-color: #e2e6dc;
+  border-radius: 8px;
+  background: #fffdf8;
+  box-shadow: none;
+}
+
+body:not(.public-home-page) .doctor-public-news-grid .news-card img {
+  height: 150px;
+}
+
+body:not(.public-home-page) .doctor-public-news-grid .news-card-body {
+  padding: 15px;
+}
+
+body:not(.public-home-page) .doctor-public-news-grid .news-card-body h3 {
+  margin: 6px 0;
+  font-size: 17px;
+}
+
+body:not(.public-home-page) .doctor-public-news-grid .news-card-body p {
+  margin: 0;
+  color: #687773;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+body:not(.public-home-page) .patient-dashboard {
+  gap: 22px;
+}
+
+body:not(.public-home-page) .patient-profile-overview {
+  padding: 26px;
+  border-top: 4px solid var(--clinic-teal);
+  border-radius: 9px;
+  box-shadow: 0 14px 32px rgba(30, 72, 64, 0.09);
+}
+
+body:not(.public-home-page) .patient-profile-overview .patient-profile-hero {
+  grid-template-columns: 96px minmax(0, 1fr) 190px;
+  gap: 22px;
+}
+
+body:not(.public-home-page) .patient-profile-overview .patient-dashboard-photo {
+  width: 96px;
+  height: 96px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #e8f5f2, #d9ebe7);
+  box-shadow: 0 10px 24px rgba(30, 79, 70, 0.11);
+}
+
+body:not(.public-home-page) .patient-profile-overview .patient-dashboard-photo-placeholder {
+  font-size: 27px;
+}
+
+body:not(.public-home-page) .patient-profile-overview .patient-profile-label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+body:not(.public-home-page) .patient-profile-overview .patient-profile-identity h1 {
+  margin: 5px 0 9px;
+  font-size: 32px;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
+body:not(.public-home-page) .patient-profile-overview .patient-profile-facts {
+  gap: 6px;
+}
+
+body:not(.public-home-page) .patient-profile-overview .patient-profile-facts span,
+body:not(.public-home-page) .patient-profile-overview .patient-profile-phone {
+  display: inline-flex;
+  align-items: center;
+  min-height: 27px;
+  padding: 4px 9px;
+  border: 1px solid #c7d8d3;
+  border-radius: 999px;
+  background: #edf5f3;
+  color: #244b44;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+body:not(.public-home-page) .patient-profile-overview .patient-profile-phone:hover {
+  border-color: #79b9aa;
+  background: #e4f2ef;
+  color: var(--clinic-teal-dark);
+}
+
+body:not(.public-home-page) .patient-profile-overview .patient-profile-facts .patient-fact-missing {
+  border-color: #dec99e;
+  background: #fff8e8;
+  color: #77531f;
+}
+
+body:not(.public-home-page) .patient-profile-overview .patient-profile-actions {
+  gap: 8px;
+  min-width: 190px;
+}
+
+body:not(.public-home-page) .patient-profile-overview .patient-profile-actions .btn,
+body:not(.public-home-page) .patient-profile-overview .patient-profile-actions .patient-booking-button {
+  min-height: 40px;
+  font-size: 12px;
+}
+
+body:not(.public-home-page) .patient-profile-overview .patient-password-link {
+  min-height: 28px;
+  padding: 4px 6px;
+  font-size: 11px;
+}
+
+body:not(.public-home-page) .pending-patient-sections {
+  gap: 18px;
+}
+
+body:not(.public-home-page) .pending-patient-sections .patient-dashboard-section {
+  border-top: 4px solid var(--clinic-teal);
+  box-shadow: 0 12px 28px rgba(29, 65, 58, 0.07);
+}
+
+body:not(.public-home-page) .pending-patient-sections #approved {
+  border-top-color: var(--clinic-blue);
+}
+
+body:not(.public-home-page) .pending-patient-sections #records {
+  border-top-color: var(--clinic-amber);
+}
+
+body:not(.public-home-page) .pending-patient-sections #history {
+  border-top-color: #7d8b88;
+}
+
+body:not(.public-home-page) .medical-profile-grid {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.95fr) minmax(360px, 1.05fr);
+  align-items: start;
+  gap: 18px;
+}
+
+body:not(.public-home-page) .medical-profile-overview,
+body:not(.public-home-page) .medical-notes-card {
+  min-width: 0;
+  padding: 24px;
+}
+
+body:not(.public-home-page) .medical-profile-overview {
+  border-top: 4px solid var(--clinic-teal);
+}
+
+body:not(.public-home-page) .medical-notes-card {
+  border-top: 4px solid var(--clinic-blue);
+}
+
+body:not(.public-home-page) .medical-profile-hero {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+}
+
+body:not(.public-home-page) .medical-profile-hero .patient-profile-photo {
+  display: grid;
+  width: 82px;
+  height: 82px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #e8f5f2, #d9ebe7);
+  box-shadow: 0 9px 22px rgba(30, 79, 70, 0.11);
+  object-fit: cover;
+}
+
+body:not(.public-home-page) .medical-profile-photo-placeholder {
+  place-items: center;
+  color: var(--clinic-teal-dark);
+  font-size: 25px;
+  font-weight: 800;
+}
+
+body:not(.public-home-page) .medical-profile-identity h1 {
+  margin: 5px 0 6px;
+  color: var(--clinic-ink);
+  font-size: 28px;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+body:not(.public-home-page) .medical-profile-phone {
+  color: #526b66;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+body:not(.public-home-page) .medical-profile-phone:hover {
+  color: var(--clinic-teal-dark);
+}
+
+body:not(.public-home-page) .medical-profile-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+body:not(.public-home-page) .medical-profile-facts li {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #dce6e3;
+  border-radius: 7px;
+  background: #f8fbfa;
+}
+
+body:not(.public-home-page) .medical-profile-facts li span {
+  color: #758681;
+  font-size: 10px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+body:not(.public-home-page) .medical-profile-facts li strong {
+  color: #1e3934;
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+body:not(.public-home-page) .medical-profile-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+body:not(.public-home-page) .medical-profile-actions .btn {
+  min-height: 36px;
+  font-size: 11px;
+}
+
+body:not(.public-home-page) .medical-notes-card .doctor-dashboard-card-title {
+  margin-bottom: 18px;
+}
+
+body:not(.public-home-page) .medical-notes-card form {
+  margin: 0;
+}
+
+body:not(.public-home-page) .medical-notes-card form > button {
+  width: 100%;
+  margin-top: 6px;
+}
+
+@media (max-width: 1050px) {
+  body:not(.public-home-page) .doctor-public-grid,
+  body:not(.public-home-page) .medical-profile-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body:not(.public-home-page) .doctor-public-news-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body:not(.public-home-page) .patient-profile-overview .patient-profile-hero {
+    grid-template-columns: 88px minmax(0, 1fr);
+  }
+
+  body:not(.public-home-page) .patient-profile-overview .patient-dashboard-photo {
+    width: 88px;
+    height: 88px;
+  }
+
+  body:not(.public-home-page) .patient-profile-overview .patient-profile-actions {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+  }
+
+  body:not(.public-home-page) .patient-profile-overview .patient-password-link {
+    grid-column: 1 / -1;
+  }
+}

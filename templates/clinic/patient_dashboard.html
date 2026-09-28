@@ -83,7 +83,7 @@
       </aside>
     {% endif %}
 
-    <section id="overview" class="card patient-dashboard-profile">
+    <section id="overview" class="card patient-dashboard-profile patient-profile-overview">
       <div class="patient-profile-hero">
         {% if user.profile.photo %}
           <img class="patient-dashboard-photo" src="{{ user.profile.photo.url }}" alt="Фото {{ user.get_full_name }}">
@@ -103,7 +103,7 @@
               <span class="patient-fact-missing">Вік не вказано</span>
             {% endif %}
             {% if user.profile.phone %}
-              <span>{{ user.profile.phone }}</span>
+              <a class="patient-profile-phone" href="tel:{{ user.profile.phone }}">{{ user.profile.phone }}</a>
             {% else %}
               <span class="patient-fact-missing">Телефон не вказано</span>
             {% endif %}

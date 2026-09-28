@@ -3,81 +3,114 @@
 {% block title %}{{ doctor.full_name }} - MedClinic{% endblock %}
 
 {% block content %}
-  <section class="page-head">
-    <div>
+  {% with schedules=doctor.schedules.all services=doctor.services.all %}
+    <div class="profile-back-row">
       <a class="back-link" href="{% url 'doctors' %}">← Повернутися до списку лікарів</a>
-      <h1 class="page-title">Профіль лікаря</h1>
     </div>
-  </section>
 
-  <section class="card doctor-detail-profile">
-    <div class="doctor-profile-hero">
-      {% if doctor.photo_src %}
-        <img class="doctor-profile-photo" src="{{ doctor.photo_src }}" alt="{{ doctor.full_name }}">
-      {% else %}
-        <div class="doctor-profile-photo doctor-profile-photo-placeholder">{{ doctor.user.first_name|first }}{{ doctor.user.last_name|first }}</div>
-      {% endif %}
+    <section class="card doctor-detail-profile doctor-profile-overview doctor-public-overview">
+      <div class="doctor-profile-hero">
+        {% if doctor.photo_src %}
+          <img class="doctor-profile-photo" src="{{ doctor.photo_src }}" alt="{{ doctor.full_name }}">
+        {% else %}
+          <div class="doctor-profile-photo doctor-profile-photo-placeholder">{{ doctor.user.first_name|first }}{{ doctor.user.last_name|first }}</div>
+        {% endif %}
 
-      <div class="doctor-profile-identity">
-        <h1>{{ doctor.full_name }}</h1>
-        <p class="doctor-profile-specialization">{{ doctor.specialization }}</p>
-        <p class="doctor-profile-phone">{{ doctor.phone }}</p>
-        <div class="chip-row">
-          {% for city in doctor.cities %}
-            <span class="chip">{{ city }}</span>
-          {% empty %}
-            <span class="chip chip-muted">Міста роботи ще не вказані</span>
-          {% endfor %}
+        <div class="doctor-profile-identity">
+          <span class="doctor-profile-label">Профіль лікаря</span>
+          <h1>{{ doctor.full_name }}</h1>
+          <p class="doctor-profile-specialization">{{ doctor.specialization }}</p>
+          {% if doctor.phone %}<a class="doctor-profile-phone" href="tel:{{ doctor.phone }}">{{ doctor.phone }}</a>{% endif %}
+          <div class="chip-row">
+            {% for city in doctor.cities %}
+              <span class="chip">{{ city }}</span>
+            {% empty %}
+              <span class="chip chip-muted">Міста роботи ще не вказані</span>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% if user.is_authenticated and user.profile.role == 'patient' %}
+          <div class="doctor-profile-actions">
+            <a class="btn" href="{% url 'booking' %}?doctor={{ doctor.id }}">Записатися на прийом</a>
+          </div>
+        {% elif not user.is_authenticated %}
+          <div class="doctor-profile-actions">
+            <a class="btn" href="{% url 'google_login' %}">Увійти для запису</a>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="doctor-profile-metrics" aria-label="Інформація про профіль лікаря">
+        <div class="doctor-profile-metric">
+          <strong>{{ schedules|length }}</strong>
+          <span>днів у графіку</span>
+        </div>
+        <div class="doctor-profile-metric">
+          <strong>{{ services|length }}</strong>
+          <span>послуг</span>
+        </div>
+        <div class="doctor-profile-metric">
+          <strong>{{ doctor_news|length }}</strong>
+          <span>публікацій</span>
         </div>
       </div>
 
-      <div class="doctor-profile-actions">
-        {% if user.is_authenticated and user.profile.role == 'patient' %}
-          <a class="btn" href="{% url 'booking' %}?doctor={{ doctor.id }}">Записатися на прийом</a>
-        {% elif not user.is_authenticated %}
-          <a class="btn" href="{% url 'google_login' %}">Увійти для запису</a>
-        {% endif %}
+      <div class="doctor-profile-about">
+        <span>Про лікаря</span>
+        <p>{{ doctor.description|default:'Лікар ще не додав інформацію про себе.' }}</p>
       </div>
-    </div>
+    </section>
 
-    <div class="doctor-profile-about">
-      <span>Про лікаря</span>
-      <p>{{ doctor.description|default:'Лікар ще не додав інформацію про себе.' }}</p>
-    </div>
-
-    <div class="doctor-profile-sections">
-      <section class="doctor-profile-section">
-        <h2>Графік роботи</h2>
-        <ul class="simple-list">
-          {% for schedule in doctor.schedules.all %}
+    <div class="doctor-dashboard-grid doctor-public-grid">
+      <section class="card doctor-dashboard-card doctor-public-schedule-card">
+        <div class="doctor-dashboard-card-head">
+          <div class="doctor-dashboard-card-title">
+            <span>Час і місце</span>
+            <h2>Графік роботи</h2>
+            <p>Оберіть зручний день та місце прийому.</p>
+          </div>
+        </div>
+        <ul class="doctor-dashboard-list">
+          {% for schedule in schedules %}
             <li>
-              <span>
-                {{ schedule.get_weekday_display }} ·
-                <a class="maps-location-link" href="{{ schedule.google_maps_url }}" target="_blank" rel="noopener noreferrer">
-                  {% if schedule.workplace %}
-                    {{ schedule.workplace.selection_label }}
-                  {% else %}
-                    {{ schedule.city }}{% if schedule.address %}, {{ schedule.address }}{% endif %}
-                  {% endif %}
-                </a>
-              </span>
-              <strong>
+              <div class="doctor-dashboard-row-copy">
+                <strong>{{ schedule.get_weekday_display }}</strong>
                 {% if schedule.is_working %}
-                  {{ schedule.start_time|time:'H:i' }}-{{ schedule.end_time|time:'H:i' }}
+                  <a class="maps-location-link" href="{{ schedule.google_maps_url }}" target="_blank" rel="noopener noreferrer">
+                    {% if schedule.workplace %}
+                      {{ schedule.workplace.selection_label }}
+                    {% else %}
+                      {{ schedule.city }}{% if schedule.address %}, {{ schedule.address }}{% endif %}
+                    {% endif %}
+                  </a>
+                {% else %}
+                  <span class="doctor-dashboard-row-note">Прийом не ведеться</span>
+                {% endif %}
+              </div>
+              <span class="doctor-dashboard-row-value{% if not schedule.is_working %} is-muted{% endif %}">
+                {% if schedule.is_working %}
+                  {{ schedule.start_time|time:'H:i' }}–{{ schedule.end_time|time:'H:i' }}
                 {% else %}
                   Вихідний
                 {% endif %}
-              </strong>
+              </span>
             </li>
           {% empty %}
-            <li><span>Графік ще не заповнений</span><strong></strong></li>
+            <li class="doctor-dashboard-list-empty">Графік ще не заповнений</li>
           {% endfor %}
         </ul>
       </section>
 
-      <section class="doctor-profile-section" data-live-filter data-live-filter-no-pagination>
-        <h2>Послуги та ціни</h2>
-        <div class="live-filter-bar doctor-service-filter">
+      <section class="card doctor-dashboard-card doctor-dashboard-services-card doctor-public-services-card" data-live-filter data-live-filter-no-pagination>
+        <div class="doctor-dashboard-card-head">
+          <div class="doctor-dashboard-card-title">
+            <span>Напрями роботи</span>
+            <h2>Послуги та ціни</h2>
+            <p>Знайдіть потрібну послугу за назвою.</p>
+          </div>
+        </div>
+        <div class="live-filter-bar doctor-service-filter doctor-public-service-filter">
           <div class="live-filter-field">
             <label for="patient-service-search">Фільтр послуг</label>
             <div class="live-filter-input-row">
@@ -99,19 +132,19 @@
           </div>
           <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
         </div>
-        <ul class="simple-list doctor-service-list">
-          {% for service in doctor.services.all %}
+        <ul class="doctor-dashboard-list doctor-public-service-list">
+          {% for service in services %}
             <li data-live-filter-item data-filter-extra="{{ service.name|escape }} {{ service.description|escape }}">
-              <span>{{ service.name }}</span>
+              <strong>{{ service.name }}</strong>
               <span class="doctor-service-actions">
                 {% if service.approximate_price is not None %}
-                  <strong>Орієнтовно {{ service.approximate_price }} грн</strong>
+                  <span class="doctor-dashboard-row-value">≈ {{ service.approximate_price }} грн</span>
                 {% endif %}
                 <a class="doctor-details-link" href="{% url 'service_detail' doctor.id service.id %}">Детальніше</a>
               </span>
             </li>
           {% empty %}
-            <li><span>Послуги ще не додані</span><strong></strong></li>
+            <li class="doctor-dashboard-list-empty">Послуги ще не додані</li>
           {% endfor %}
         </ul>
         <div class="empty live-filter-empty" data-live-filter-empty hidden>
@@ -121,11 +154,17 @@
     </div>
 
     {% if doctor_news %}
-      <section class="doctor-detail-news">
-        <h2>Новини лікаря</h2>
-        <div class="news-grid">
+      <section class="card doctor-dashboard-card doctor-dashboard-news-card doctor-public-news-card">
+        <div class="doctor-dashboard-card-head">
+          <div class="doctor-dashboard-card-title">
+            <span>Корисні матеріали</span>
+            <h2>Новини лікаря</h2>
+            <p>Останні дописи, рекомендації та оновлення.</p>
+          </div>
+        </div>
+        <div class="news-grid doctor-public-news-grid">
           {% for post in doctor_news %}
-            <article class="news-card">
+            <article class="news-card{% if post.image %} has-image{% endif %}">
               {% if post.image %}<img src="{{ post.image.url }}" alt="{{ post.title }}">{% endif %}
               <div class="news-card-body">
                 <span class="news-meta">{{ post.created_at|date:'d.m.Y' }}</span>
@@ -137,5 +176,5 @@
         </div>
       </section>
     {% endif %}
-  </section>
+  {% endwith %}
 {% endblock %}

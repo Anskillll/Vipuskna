@@ -1177,3 +1177,170 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Compact profile layouts shared by every account-facing profile. */
+@media (max-width: 720px) {
+  body:not(.public-home-page) .profile-back-row {
+    min-height: 28px;
+    margin-bottom: 8px;
+  }
+
+  body:not(.public-home-page) .doctor-public-service-filter {
+    margin-top: 13px;
+    padding: 10px;
+  }
+
+  body:not(.public-home-page) .doctor-public-service-list > li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  body:not(.public-home-page) .doctor-public-service-list .doctor-service-actions {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  body:not(.public-home-page) .doctor-public-news-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    margin-top: 13px;
+  }
+
+  body:not(.public-home-page) .doctor-public-news-grid .news-card.has-image {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+  }
+
+  body:not(.public-home-page) .doctor-public-news-grid .news-card img {
+    width: 92px;
+    height: 100%;
+    min-height: 118px;
+  }
+
+  body:not(.public-home-page) .doctor-public-news-grid .news-card-body {
+    padding: 12px;
+  }
+
+  body:not(.public-home-page) .patient-dashboard {
+    gap: 18px;
+  }
+
+  body:not(.public-home-page) .patient-profile-overview {
+    padding: 14px;
+  }
+
+  body:not(.public-home-page) .patient-profile-overview .patient-profile-hero {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  body:not(.public-home-page) .patient-profile-overview .patient-dashboard-photo {
+    width: 64px;
+    height: 64px;
+    border-radius: 9px;
+  }
+
+  body:not(.public-home-page) .patient-profile-overview .patient-dashboard-photo-placeholder {
+    font-size: 20px;
+  }
+
+  body:not(.public-home-page) .patient-profile-overview .patient-profile-label {
+    font-size: 9px;
+  }
+
+  body:not(.public-home-page) .patient-profile-overview .patient-profile-identity h1 {
+    margin: 3px 0 6px;
+    font-size: 22px;
+  }
+
+  body:not(.public-home-page) .patient-profile-overview .patient-profile-facts {
+    align-items: flex-start;
+    flex-direction: row;
+  }
+
+  body:not(.public-home-page) .patient-profile-overview .patient-profile-facts span,
+  body:not(.public-home-page) .patient-profile-overview .patient-profile-phone {
+    min-height: 23px;
+    padding: 3px 7px;
+    font-size: 9px;
+  }
+
+  body:not(.public-home-page) .patient-profile-overview .patient-telegram-status-row {
+    margin-top: 8px;
+  }
+
+  body:not(.public-home-page) .patient-profile-overview .patient-profile-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    margin-top: 2px;
+  }
+
+  body:not(.public-home-page) .patient-profile-overview .patient-profile-actions .btn,
+  body:not(.public-home-page) .patient-profile-overview .patient-profile-actions .patient-booking-button {
+    min-height: 36px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  body:not(.public-home-page) .patient-profile-overview .patient-password-link {
+    min-height: 24px;
+    font-size: 10px;
+  }
+
+  body:not(.public-home-page) .pending-patient-sections .patient-dashboard-section {
+    padding: 14px;
+  }
+
+  body:not(.public-home-page) .medical-profile-grid {
+    gap: 10px;
+  }
+
+  body:not(.public-home-page) .medical-profile-overview,
+  body:not(.public-home-page) .medical-notes-card {
+    padding: 14px;
+  }
+
+  body:not(.public-home-page) .medical-profile-hero {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  body:not(.public-home-page) .medical-profile-hero .patient-profile-photo {
+    width: 64px;
+    height: 64px;
+    border-radius: 9px;
+  }
+
+  body:not(.public-home-page) .medical-profile-identity h1 {
+    margin: 3px 0 4px;
+    font-size: 22px;
+  }
+
+  body:not(.public-home-page) .medical-profile-phone {
+    font-size: 11px;
+  }
+
+  body:not(.public-home-page) .medical-profile-facts {
+    gap: 6px;
+    margin-top: 13px;
+  }
+
+  body:not(.public-home-page) .medical-profile-facts li {
+    padding: 8px 9px;
+  }
+}
+
+@media (max-width: 420px) {
+  body:not(.public-home-page) .patient-profile-overview .patient-profile-actions,
+  body:not(.public-home-page) .medical-profile-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body:not(.public-home-page) .doctor-public-news-grid .news-card.has-image {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+
+  body:not(.public-home-page) .doctor-public-news-grid .news-card img {
+    width: 76px;
+  }
+}

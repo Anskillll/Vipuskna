@@ -3,17 +3,24 @@
 {% block title %}Картка пацієнта - MedClinic{% endblock %}
 
 {% block content %}
-  <a class="back-link" href="{% url 'doctor_patient_cards' %}">← Повернутися до пацієнтів</a>
-  <div class="grid grid-2">
-    <section class="card">
-      <div class="patient-card-heading">
+  <div class="profile-back-row">
+    <a class="back-link" href="{% url 'doctor_patient_cards' %}">← Повернутися до пацієнтів</a>
+  </div>
+  <div class="medical-profile-grid">
+    <section class="card medical-profile-overview">
+      <div class="medical-profile-hero">
         {% if card.patient and card.patient.profile.photo %}
           <img class="patient-profile-photo" src="{{ card.patient.profile.photo.url }}" alt="Фото {{ card.full_name }}">
+        {% else %}
+          <span class="patient-profile-photo medical-profile-photo-placeholder" aria-hidden="true">{{ card.full_name|first }}</span>
         {% endif %}
-        <h1 class="page-title">{{ card.full_name }}</h1>
+        <div class="medical-profile-identity">
+          <span class="patient-profile-label">Картка пацієнта</span>
+          <h1>{{ card.full_name }}</h1>
+          <a class="medical-profile-phone" href="tel:{{ card.patient_phone }}">{{ card.patient_phone }}</a>
+        </div>
       </div>
-      <ul class="simple-list">
-        <li><span>Телефон</span><strong>{{ card.patient_phone }}</strong></li>
+      <ul class="medical-profile-facts">
         <li>
           <span>Вік</span>
           <strong>{% if card.patient and card.patient.profile.age %}{{ card.patient.profile.age }} років{% else %}Не вказано{% endif %}</strong>
@@ -23,13 +30,17 @@
         <li><span>Наступний візит</span><strong>{% if next_visit %}{{ next_visit.date|date:'d.m.Y' }} {{ next_visit.time|time:'H:i' }}{% else %}Немає{% endif %}</strong></li>
         <li><span>Завершених прийомів</span><strong>{{ completed_visits }}</strong></li>
       </ul>
-      <div class="actions">
+      <div class="medical-profile-actions">
         <a class="btn secondary" href="{% url 'doctor_patient_cards' %}">До списку карток</a>
       </div>
     </section>
 
-    <section class="card">
-      <h2 class="section-title">Нотатки лікаря</h2>
+    <section class="card medical-notes-card">
+      <div class="doctor-dashboard-card-title">
+        <span>Внутрішня інформація</span>
+        <h2>Нотатки лікаря</h2>
+        <p>Ці нотатки доступні лише вам.</p>
+      </div>
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="action" value="update_card">
