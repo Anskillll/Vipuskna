@@ -3017,6 +3017,9 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'data-home-login-modal')
         self.assertContains(response, 'class="home-google-login"')
         self.assertContains(response, 'Увійти через Google')
+        self.assertContains(response, 'Впевнена усмішка починається тут')
+        self.assertContains(response, 'Обрати лікаря')
+        self.assertContains(response, 'Уже є кабінет? Увійти')
         self.assertContains(
             response,
             f'action="{reverse("claim_patient")}"',
@@ -3050,7 +3053,7 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Новини клініки')
         self.assertNotContains(response, 'Увійти через Google')
         self.assertContains(response, 'Записатися на прийом')
-        self.assertContains(response, 'Переглянути лікарів')
+        self.assertContains(response, 'Обрати лікаря')
 
     def test_guest_can_start_claiming_doctor_created_record_by_phone(self):
         phone = '+380501234567'
@@ -3108,7 +3111,7 @@ class ClinicModelTests(TestCase):
         response = self.client.get(reverse('home'))
 
         self.assertContains(response, 'Перейти до кабінету')
-        self.assertContains(response, 'Переглянути лікарів')
+        self.assertContains(response, 'Обрати лікаря')
         self.assertNotContains(response, 'Реєстрація за номером телефону')
 
     def test_pending_patient_booking_returns_to_temporary_cabinet(self):
