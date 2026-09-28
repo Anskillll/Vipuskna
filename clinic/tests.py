@@ -3017,9 +3017,11 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'data-home-login-modal')
         self.assertContains(response, 'class="home-google-login"')
         self.assertContains(response, 'Увійти через Google')
-        self.assertContains(response, 'Впевнена усмішка починається тут')
+        self.assertContains(response, 'class="home-hero-wordmark"')
+        self.assertContains(response, '<h1 class="home-hero-wordmark">MedClinic</h1>')
+        self.assertNotContains(response, 'Впевнена усмішка починається тут')
         self.assertContains(response, 'Обрати лікаря')
-        self.assertContains(response, 'Уже є кабінет? Увійти')
+        self.assertContains(response, 'data-home-login-open aria-haspopup="dialog">Увійти')
         self.assertContains(
             response,
             f'action="{reverse("claim_patient")}"',

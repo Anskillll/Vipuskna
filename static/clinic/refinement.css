@@ -223,63 +223,71 @@ body:not(.public-home-page) .service-manager-item.editing {
 .home-login-dialog { border: 1px solid #d9e5de; border-radius: 24px; background: #fffefa; }
 .public-home-page .home-empty-state { border-radius: 18px; border: 1px dashed #c9d9d0; background: #ffffff70; }
 
-/* Give the clinic name room in the header and let the hero sell the next step. */
+/* Center the brand on the photo; keep only the two patient actions. */
+.public-home-page .home-hero-brand > span { display: none; }
 .public-home-page .home-hero-copy {
-  left: max(32px, calc((100% - 1160px) / 2));
-  max-width: 760px;
-  top: 49%;
-  transform: translateY(-42%);
-}
-.public-home-page .home-hero-copy .home-section-kicker {
-  display: inline-flex;
+  left: 50%;
+  right: auto;
+  display: flex;
+  width: min(calc(100% - 40px), 1000px);
+  max-width: 1000px;
+  flex-direction: column;
   align-items: center;
-  gap: 9px;
-  margin-bottom: 20px;
-  padding: 9px 13px;
-  border: 1px solid #ffffff52;
-  border-radius: 999px;
-  background: #102b2770;
-  color: #f2f7ed;
-  font-size: 11px;
-  letter-spacing: .11em;
-  line-height: 1;
-  text-shadow: 0 1px 10px #102b2770;
+  text-align: center;
+  isolation: isolate;
+  top: 47%;
+  transform: translate(-50%, -50%);
 }
-.public-home-page .home-hero-copy .home-section-kicker::before {
-  width: 7px;
-  height: 7px;
+.public-home-page .home-hero-copy::before {
+  position: absolute;
+  z-index: -1;
+  inset: -100px -12% -70px;
   border-radius: 50%;
-  background: #b9dfc5;
-  box-shadow: 0 0 0 4px #b9dfc52b;
+  background: radial-gradient(ellipse, #c6efda35 0%, #d9bb8c20 35%, transparent 70%);
   content: "";
+  filter: blur(18px);
+  pointer-events: none;
 }
-.public-home-page .home-hero-copy h1 {
-  max-width: 760px;
-  font-size: clamp(50px, 6vw, 76px);
-  font-weight: 700;
-  letter-spacing: -.055em;
-  line-height: 1.02;
-  text-wrap: balance;
-  text-shadow: 0 3px 26px #102b2766;
+.public-home-page .home-hero-copy .home-hero-wordmark {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  margin: 0;
+  background: linear-gradient(108deg, #fff3dc 4%, #fff 45%, #c5f1d8 88%, #e9d5b1 100%);
+  background-clip: text;
+  color: transparent;
+  font-family: "DM Serif Display", Georgia, serif;
+  font-size: clamp(42px, 11.5vw, 124px);
+  font-weight: 400;
+  letter-spacing: -.035em;
+  line-height: 1;
+  text-shadow: 0 5px 38px #061c1a72;
+  white-space: nowrap;
+  -webkit-background-clip: text;
 }
-.public-home-page .home-hero-copy > p {
-  max-width: 540px;
-  margin-top: 20px;
-  color: #f5f7f2;
-  font-size: 18px;
-  line-height: 1.6;
-  text-shadow: 0 2px 18px #102b2775;
+.public-home-page .home-hero-copy .home-hero-wordmark::after {
+  position: absolute;
+  left: 50%;
+  bottom: -25px;
+  width: clamp(100px, 18vw, 205px);
+  height: 20px;
+  border-bottom: 2px solid #d8f2dfd9;
+  border-radius: 0 0 50% 50%;
+  content: "";
+  filter: drop-shadow(0 3px 10px #c6efda75);
+  transform: translateX(-50%);
 }
 .public-home-page .home-hero-actions {
-  gap: 12px 14px;
-  margin-top: 28px;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 52px;
 }
 .public-home-page .home-hero-actions .home-hero-primary-action,
 .public-home-page .home-hero-actions .home-hero-secondary-action {
-  min-height: 58px;
-  padding: 0 22px;
+  min-height: 54px;
+  padding: 0 20px;
   border-radius: 15px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   text-shadow: none;
   transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
@@ -290,22 +298,22 @@ body:not(.public-home-page) .service-manager-item.editing {
   box-shadow: 0 12px 32px #071d1b45;
   color: #174943;
 }
+.public-home-page .home-hero-actions .home-hero-secondary-action {
+  border-color: #ffffffa6;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+.public-home-page .home-hero-actions .home-hero-primary-action > span,
+.public-home-page .home-hero-actions .home-hero-secondary-action > span {
+  width: 27px;
+  height: 27px;
+  border-color: #ffffff85;
+}
 .public-home-page .home-hero-actions .home-hero-primary-action > span {
-  width: 28px;
-  height: 28px;
   border-color: #d3e4d9;
   background: #edf4eb;
   color: #175d55;
-}
-.public-home-page .home-hero-actions .home-hero-secondary-action {
-  border-color: #ffffff75;
-  background: #102b2752;
-  color: #fff;
-  cursor: pointer;
-  backdrop-filter: blur(8px);
-}
-.public-home-page .home-hero-actions .home-hero-secondary-action > span {
-  border-color: #ffffff66;
 }
 .public-home-page .home-hero-actions .home-hero-primary-action:hover,
 .public-home-page .home-hero-actions .home-hero-primary-action:focus-visible {
@@ -318,7 +326,7 @@ body:not(.public-home-page) .service-manager-item.editing {
 .public-home-page .home-hero-actions .home-hero-secondary-action:hover,
 .public-home-page .home-hero-actions .home-hero-secondary-action:focus-visible {
   border-color: #fff;
-  background: #ffffff24;
+  background: #ffffff1c;
   box-shadow: 0 10px 28px #071d1b3d;
   color: #fff;
   transform: translateY(-2px);
@@ -327,57 +335,23 @@ body:not(.public-home-page) .service-manager-item.editing {
   outline: 3px solid #c6e9cf;
   outline-offset: 4px;
 }
-
 @media (max-width: 620px) {
-  .public-home-page .home-hero-copy {
-    left: 18px;
-    right: 18px;
-    top: 43%;
-    width: auto;
-    transform: translateY(-36%);
-  }
-  .public-home-page .home-hero-copy .home-section-kicker {
-    margin-bottom: 15px;
-    padding: 8px 11px;
-    font-size: 9px;
-    letter-spacing: .09em;
-  }
-  .public-home-page .home-hero-copy h1 {
-    max-width: 500px;
-    font-size: clamp(38px, 10vw, 54px);
-    line-height: 1.04;
-  }
-  .public-home-page .home-hero-copy > p {
-    max-width: 400px;
-    margin-top: 14px;
-    font-size: 15px;
-    line-height: 1.5;
-  }
-  .public-home-page .home-hero-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 7px;
-    width: min(100%, 340px);
-    margin-top: 20px;
-  }
-  .public-home-page .home-hero-actions .home-hero-primary-action {
-    width: 100%;
-    min-height: 54px;
-    justify-content: space-between;
-    padding: 0 16px;
-    font-size: 14px;
-  }
+  .public-home-page .home-hero-copy { top: 47%; }
+  .public-home-page .home-hero-copy .home-hero-wordmark { font-size: clamp(42px, 12vw, 74px); }
+  .public-home-page .home-hero-copy .home-hero-wordmark::after { bottom: -20px; height: 15px; }
+  .public-home-page .home-hero-actions { gap: 8px; margin-top: 44px; }
+  .public-home-page .home-hero-actions .home-hero-primary-action,
   .public-home-page .home-hero-actions .home-hero-secondary-action {
-    width: auto;
-    min-height: 40px;
-    padding: 0 4px;
-    border-color: transparent;
-    background: transparent;
-    box-shadow: none;
+    min-height: 50px;
+    gap: 8px;
+    padding: 0 13px;
     font-size: 12px;
-    backdrop-filter: none;
+    white-space: nowrap;
   }
+  .public-home-page .home-hero-actions :is(.home-hero-primary-action, .home-hero-secondary-action) > span { width: 23px; height: 23px; }
+}
+@media (max-width: 350px) {
+  .public-home-page .home-hero-actions { flex-direction: column; }
 }
 
 /* A shallow 3D drum: the current frame remains bright and fully visible. */

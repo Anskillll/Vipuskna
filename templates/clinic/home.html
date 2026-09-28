@@ -55,7 +55,7 @@
       {% endif %}
 
       <nav class="home-hero-nav" aria-label="Головна навігація">
-        <a class="home-hero-brand" href="{% url 'home' %}">
+        <a class="home-hero-brand" href="{% url 'home' %}" aria-label="{{ clinic_branding.clinic_name }}">
           {% if clinic_branding.logo %}
             <img src="{{ clinic_branding.logo.url }}" alt="">
           {% endif %}
@@ -91,17 +91,15 @@
       {% endif %}
 
       <div class="home-hero-copy">
-        <span class="home-section-kicker">Стоматологія у Дніпрі та Нікополі</span>
-        <h1>Впевнена усмішка починається тут</h1>
-        <p>Оберіть свого лікаря та зручний час для візиту — онлайн, у кілька кроків.</p>
+        <h1 class="home-hero-wordmark">{{ clinic_branding.clinic_name }}</h1>
         <div class="home-hero-actions">
           {% if not user.is_authenticated %}
             {% if request.session.patient_claim_phone %}
               <a class="home-hero-primary-action" href="{% url 'pending_patient_dashboard' %}">Перейти до кабінету <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
               <a class="home-hero-secondary-action" href="{% url 'doctors' %}">Обрати лікаря <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
             {% else %}
-              <a class="home-hero-primary-action" href="{% url 'doctors' %}">Обрати лікаря <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
-              <button class="home-login-trigger home-hero-secondary-action" type="button" data-home-login-open aria-haspopup="dialog">Уже є кабінет? Увійти <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></button>
+              <button class="home-login-trigger home-hero-primary-action" type="button" data-home-login-open aria-haspopup="dialog">Увійти <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></button>
+              <a class="home-hero-secondary-action" href="{% url 'doctors' %}">Обрати лікаря <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
             {% endif %}
           {% elif user.is_staff %}
             <a class="home-hero-primary-action" href="{% url 'admin_panel' %}">Перейти до панелі адміністратора <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
