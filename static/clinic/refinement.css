@@ -22,11 +22,21 @@ svg.ui-icon {
   pointer-events: none;
 }
 .field-checkbox > .checkbox-label {
-  flex-direction: row-reverse;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20px;
+  align-items: center;
+  column-gap: 14px;
   width: 100%;
   min-height: 44px;
-  justify-content: space-between;
-  gap: 14px;
+}
+.field-checkbox > .checkbox-label > span {
+  grid-column: 1;
+  grid-row: 1;
+}
+.field-checkbox > .checkbox-label > input[type="checkbox"] {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
 }
 input[type="checkbox"]:focus {
   outline: none;

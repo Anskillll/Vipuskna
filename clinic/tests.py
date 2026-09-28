@@ -157,7 +157,8 @@ class ClinicModelTests(TestCase):
         refinement_css = (
             Path(settings.BASE_DIR) / 'static' / 'clinic' / 'refinement.css'
         ).read_text(encoding='utf-8')
-        self.assertIn('flex-direction: row-reverse;', refinement_css)
+        self.assertIn('grid-template-columns: minmax(0, 1fr) 20px;', refinement_css)
+        self.assertIn('grid-column: 2;', refinement_css)
         self.assertIn('input[type="checkbox"]:focus {', refinement_css)
 
     def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
