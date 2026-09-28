@@ -21,6 +21,20 @@ svg.ui-icon {
   vertical-align: middle;
   pointer-events: none;
 }
+.field-checkbox > .checkbox-label {
+  flex-direction: row-reverse;
+  width: 100%;
+  min-height: 44px;
+  justify-content: space-between;
+  gap: 14px;
+}
+input[type="checkbox"]:focus {
+  outline: none;
+}
+input[type="checkbox"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(23, 125, 120, .2);
+}
 :is(.home-login-close, .home-gallery-arrow, .home-slider-controls > button,
     .live-filter-clear, .current-records-close, .content-icon-button,
     .appointment-week-arrow, .working-date-nav) {

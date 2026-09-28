@@ -154,12 +154,18 @@ class ClinicModelTests(TestCase):
         self.assertIn('--clinic-red:', css)
         self.assertIn('.status.pending', css)
         self.assertIn('.status.approved', css)
+        refinement_css = (
+            Path(settings.BASE_DIR) / 'static' / 'clinic' / 'refinement.css'
+        ).read_text(encoding='utf-8')
+        self.assertIn('flex-direction: row-reverse;', refinement_css)
+        self.assertIn('input[type="checkbox"]:focus {', refinement_css)
 
     def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
         response = self.client.get(reverse('home'))
 
         self.assertContains(response, 'clinic/site.css?v=')
         self.assertContains(response, 'clinic/mobile.css?v=')
+        self.assertContains(response, 'clinic/refinement.css?v=')
         self.assertContains(response, 'Нікополь, вул. Шевченка, 200')
         self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
         self.assertContains(response, 'https://www.google.com/maps/search/?api=1&amp;query=')
