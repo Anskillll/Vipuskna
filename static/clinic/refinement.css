@@ -29,6 +29,12 @@ svg.ui-icon {
   width: 100%;
   min-height: 44px;
 }
+/* Keep the appointment checkbox at the far edge of its full-width callout. */
+.booking-for-other .field-checkbox > .checkbox-label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20px;
+  width: 100%;
+}
 .field-checkbox > .checkbox-label > span {
   grid-column: 1;
   grid-row: 1;
