@@ -5,7 +5,7 @@
 {% block content %}
   {% with schedules=doctor.schedules.all services=doctor.services.all %}
     <div class="profile-back-row">
-      <a class="back-link" href="{% url 'doctors' %}">← Повернутися до списку лікарів</a>
+      <a class="back-link" href="{% url 'doctors' %}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до списку лікарів</a>
     </div>
 
     <section class="card doctor-detail-profile doctor-profile-overview doctor-public-overview">
@@ -127,7 +127,7 @@
                 aria-label="Очистити фільтр послуг"
                 title="Очистити фільтр"
                 data-live-filter-clear
-              >×</button>
+              >{% include 'clinic/_icon.html' with name='close' %}</button>
             </div>
           </div>
           <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>

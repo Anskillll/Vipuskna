@@ -32,7 +32,7 @@
         aria-label="Попередній місяць"
         title="Попередній місяць"
         data-working-date-prev
-      >←</button>
+      >{% include 'clinic/_icon.html' with name='left' %}</button>
       <strong data-working-date-month></strong>
       <button
         class="working-date-nav"
@@ -40,7 +40,7 @@
         aria-label="Наступний місяць"
         title="Наступний місяць"
         data-working-date-next
-      >→</button>
+      >{% include 'clinic/_icon.html' with name='right' %}</button>
     </div>
     <div class="working-date-weekdays" aria-hidden="true">
       <span>Пн</span>

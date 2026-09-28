@@ -53,7 +53,7 @@
               type="submit"
               aria-label="Відхилити та скасувати запис"
               title="Відхилити та скасувати запис"
-            >×</button>
+            >{% include 'clinic/_icon.html' with name='close' %}</button>
           </form>
         </div>
       </aside>
@@ -67,7 +67,7 @@
           <p>Перевірте ім’я та прізвище, додайте свій вік і фотографію.</p>
         </div>
         <a class="btn profile-completion-link" href="{% url 'patient_edit_profile' %}">
-          Редагувати профіль <span aria-hidden="true">→</span>
+          Редагувати профіль <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span>
         </a>
       </aside>
     {% endif %}

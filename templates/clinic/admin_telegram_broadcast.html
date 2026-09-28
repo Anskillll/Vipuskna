@@ -5,7 +5,7 @@
 {% block body_class %}admin-broadcast-page{% endblock %}
 
 {% block content %}
-  <a class="back-link" href="{% url 'admin_panel' %}">← Повернутися до панелі адміністратора</a>
+  <a class="back-link" href="{% url 'admin_panel' %}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до панелі адміністратора</a>
 
   <div class="admin-broadcast-shell">
     <section class="page-head admin-page-head">

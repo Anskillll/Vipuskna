@@ -25,7 +25,7 @@
             aria-label="Очистити фільтр"
             data-live-filter-clear
             disabled
-          ><span aria-hidden="true">×</span></button>
+          ><span aria-hidden="true">{% include 'clinic/_icon.html' with name='close' %}</span></button>
         </div>
       </div>
       <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
@@ -39,7 +39,7 @@
             href="{% url 'doctor_appointments' %}?week={{ previous_week_start|date:'Y-m-d' }}"
             title="Попередній тиждень"
             aria-label="Показати попередній тиждень"
-          ><span aria-hidden="true">←</span></a>
+          ><span aria-hidden="true">{% include 'clinic/_icon.html' with name='left' %}</span></a>
           <div class="appointment-week-heading">
             <div>
               <span class="appointment-week-kicker{% if is_current_week %} is-current{% endif %}">{% if is_current_week %}Поточний тиждень{% else %}Тижневий розклад{% endif %}</span>
@@ -52,7 +52,7 @@
             href="{% url 'doctor_appointments' %}?week={{ next_week_start|date:'Y-m-d' }}"
             title="Наступний тиждень"
             aria-label="Показати наступний тиждень"
-          ><span aria-hidden="true">→</span></a>
+          ><span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
         </header>
 
         <div class="appointments-by-day">

@@ -3,7 +3,7 @@
 {% block title %}Профіль лікаря - MedClinic{% endblock %}
 
 {% block content %}
-  <a class="back-link" href="{% url 'doctor_dashboard' %}">← Повернутися до кабінету лікаря</a>
+  <a class="back-link" href="{% url 'doctor_dashboard' %}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до кабінету лікаря</a>
   <div class="card standalone-form-card">
     <h1 class="page-title">Редагувати профіль лікаря</h1>
     <form method="post" enctype="multipart/form-data">

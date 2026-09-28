@@ -1,0 +1,299 @@
+/* OrthoSmile: porcelain surfaces, sea-glass accents and a curved smile motif. */
+:root {
+  --clinic-teal: #177d78;
+  --clinic-teal-dark: #115752;
+  --clinic-ink: #193d3b;
+  --clinic-blue: #3e727f;
+  --clinic-violet: #536f75;
+  --clinic-amber: #9a671e;
+  --primary: #177d78;
+  --primary-dark: #115752;
+  --line: #dbe6e2;
+}
+
+/* SVG geometry stays centered regardless of font or platform. */
+svg.ui-icon {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  flex: 0 0 20px;
+  vertical-align: middle;
+  pointer-events: none;
+}
+:is(.home-login-close, .home-gallery-arrow, .home-slider-controls > button,
+    .live-filter-clear, .current-records-close, .content-icon-button,
+    .appointment-week-arrow, .working-date-nav) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.back-link { display: inline-flex; align-items: center; gap: 7px; }
+.home-hero-actions span[aria-hidden], .home-login-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.live-pagination .pagination-arrow::before {
+  content: "";
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-top: 1.8px solid currentColor;
+  border-right: 1.8px solid currentColor;
+  transform: rotate(45deg);
+}
+.live-pagination .pagination-arrow-prev::before { transform: rotate(-135deg); }
+.maps-location-link::after,
+.home-hero-locations .maps-location-link::after {
+  display: inline-block;
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-top: 1.5px solid currentColor;
+  border-right: 1.5px solid currentColor;
+  background: linear-gradient(135deg, transparent 44%, currentColor 45% 56%, transparent 57%);
+}
+
+body:not(.public-home-page) {
+  --primary: var(--clinic-teal);
+  --primary-dark: var(--clinic-teal-dark);
+  --surface: #fffefa;
+  --surface-muted: #f0f5f2;
+  --shadow: 0 12px 38px rgba(25, 61, 59, .055);
+  background-color: #f6f7f1;
+  background-image: radial-gradient(ellipse at 90% 0%, #dcece5 0, transparent 45%),
+    linear-gradient(150deg, #f8f8f2, #f0f5f2);
+  color: var(--clinic-ink);
+}
+body:not(.public-home-page).has-site-background {
+  background-image: linear-gradient(145deg, rgba(248, 248, 242, .94), rgba(235, 244, 239, .95)), var(--site-bg);
+}
+body:not(.public-home-page) .topbar {
+  background: rgba(255, 254, 250, .94);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 4px 24px rgba(25, 61, 59, .035);
+}
+body:not(.public-home-page) .page-head > div:first-child { padding-left: 0; }
+body:not(.public-home-page) .page-head > div:first-child::before { display: none; }
+body:not(.public-home-page) :is(.section-title, .section-mini-head h2)::after {
+  width: 38px;
+  height: 10px;
+  margin-top: 6px;
+  border-bottom: 2px solid #86b9ad;
+  border-radius: 0 0 50% 50%;
+  background: none;
+}
+body:not(.public-home-page) :is(.card, .section-card, .doctor-panel, .overview-card,
+    .doctor-dashboard-profile, .patient-dashboard-profile, .doctor-dashboard-card,
+    .service-manager-item, .workplace-row, .admin-stat, .admin-command-bar,
+    .action-group, .content-admin-row, .content-list li, .table-wrap) {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background-color: #fffefa;
+  box-shadow: var(--shadow);
+}
+body:not(.public-home-page) :is(.service-manager-item, .doctor-panel, .overview-card):nth-child(n) {
+  border-color: var(--line);
+  border-width: 1px;
+}
+body:not(.public-home-page) :is(.service-manager-item:last-child, .workplace-row:last-child) {
+  border-bottom: 1px solid var(--line);
+}
+body:not(.public-home-page) :is(.admin-stat, .overview-card) {
+  background-image: radial-gradient(ellipse at 100% 0%, #e4f1e9, transparent 72%);
+}
+body:not(.public-home-page) :is(.admin-stat, .overview-card):nth-child(n) strong,
+body:not(.public-home-page) .overview-card:nth-child(n) .overview-value {
+  color: var(--clinic-teal-dark);
+}
+body:not(.public-home-page) :is(.live-filter-bar, .doctor-profile-about,
+    .booking-final, .appointment-photo-section, .record-entry-editor,
+    .appointment-decision-panel, .appointment-reschedule-panel,
+    .reschedule-waiting-panel, .patient-reschedule-decision) {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #f0f6f2;
+}
+body:not(.public-home-page) .doctor-profile-overview .doctor-profile-about {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #f0f6f2;
+}
+.telegram-connect-banner { border-radius: 18px; }
+body:not(.public-home-page) :is(.page-tabs, .doctor-tabs) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px;
+  margin-bottom: 24px;
+  border: 1px solid #dce7e0;
+  border-radius: 20px;
+  background: #eaf1eb;
+}
+body:not(.public-home-page) :is(.page-tabs, .doctor-tabs) .page-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 10px 17px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: transparent;
+  box-shadow: none;
+  color: #4b6762;
+  font-weight: 600;
+}
+body:not(.public-home-page) :is(.page-tabs, .doctor-tabs) .page-tab:hover {
+  background: #fffefa;
+  color: var(--clinic-teal-dark);
+  transform: none;
+}
+body:not(.public-home-page) :is(.page-tabs, .doctor-tabs) .page-tab.active {
+  border: 1px solid #195f58;
+  background: #195f58;
+  box-shadow: 0 4px 12px #195f581a;
+  color: #fff;
+}
+body:not(.public-home-page) .page-tabs .page-tab.active::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: #b9e2cb;
+}
+body:not(.public-home-page) :is(.btn, button):not(.working-date-day):not(.time-pill) {
+  border-radius: 12px;
+}
+body:not(.public-home-page) :is(.btn, button) { box-shadow: none; }
+body:not(.public-home-page) :is(input:not([type="checkbox"]), select, textarea) {
+  border-radius: 12px;
+  border-color: #cfdfd7;
+}
+body:not(.public-home-page) thead { background: #eaf2ec; }
+body:not(.public-home-page) th { color: #345b54; }
+body:not(.public-home-page) .service-manager-item.editing {
+  border-color: #83b5a6;
+  background: #f0f8f2;
+}
+
+.public-home-page .home-clinic-news { background: #f8f8f2; }
+.public-home-page .home-doctor-news { background: #edf4ef; }
+.public-home-page .home-doctors-section { background: #fffefa; }
+.public-home-page :is(.home-news-card, .home-doctor-news-item, .home-doctor-card) {
+  border: 1px solid #dbe6df;
+  border-radius: 22px;
+  overflow: hidden;
+  background: #fffefa;
+}
+.public-home-page .home-section-kicker { color: #39796f; }
+.public-home-page .home-hero-copy .home-section-kicker { color: #d4eee3; }
+.home-login-dialog { border: 1px solid #d9e5de; border-radius: 24px; background: #fffefa; }
+.public-home-page .home-empty-state { border-radius: 18px; border: 1px dashed #c9d9d0; background: #ffffff70; }
+
+/* A shallow 3D drum: the current frame remains bright and fully visible. */
+.public-home-page .home-gallery-section {
+  padding-bottom: 80px;
+  background: radial-gradient(ellipse at 50% 58%, #d0e6db, transparent 65%), #eef3eb;
+}
+.home-gallery-slider { max-width: 1440px; padding: 0 24px; touch-action: pan-y; }
+.home-gallery-stage { height: clamp(320px, 42vw, 590px); perspective: 1400px; }
+.home-gallery-slide {
+  inset: 18px 20%;
+  padding: 0;
+  visibility: visible;
+  opacity: 0;
+  transform: translateX(0) translateZ(-280px) scale(.72);
+  transition: transform 700ms cubic-bezier(.22,.75,.25,1), opacity 650ms ease, filter 650ms ease;
+  filter: brightness(.75) saturate(.65);
+  z-index: 0;
+}
+.home-gallery-slide img {
+  width: 100%;
+  height: 100%;
+  border: 6px solid #fffefa;
+  border-radius: 24px;
+  background: #e6ede6;
+  box-shadow: 0 24px 44px #193d3b26;
+  object-fit: contain;
+}
+.home-gallery-slide[data-position="-1"] {
+  opacity: .65;
+  transform: translateX(-64%) translateZ(-180px) rotateY(25deg) scale(.86);
+  z-index: 1;
+}
+.home-gallery-slide[data-position="1"] {
+  opacity: .65;
+  transform: translateX(64%) translateZ(-180px) rotateY(-25deg) scale(.86);
+  z-index: 1;
+}
+.home-gallery-slide.is-active {
+  opacity: 1;
+  filter: none;
+  transform: translateX(0) translateZ(0) rotateY(0);
+  z-index: 2;
+}
+.home-gallery-slide figcaption {
+  max-width: calc(100% - 36px);
+  padding: 10px 18px;
+  border: 1px solid #ffffff80;
+  border-radius: 30px;
+  background: #173f38e8;
+  box-shadow: none;
+  color: white;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+.home-gallery-slide.is-active figcaption { opacity: 1; }
+.home-gallery-arrow { z-index: 3; width: 48px; height: 48px; min-height: 48px; }
+.home-gallery-arrow-prev { left: 8px; }
+.home-gallery-arrow-next { right: 8px; }
+.home-gallery-dots { gap: 2px; padding-top: 16px; }
+.home-gallery-dots button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  background: transparent;
+  border-radius: 50%;
+}
+.home-gallery-dots button::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #9db8ab;
+}
+.home-gallery-dots button:is(:hover, .is-active) { background: #d5e7dc; transform: none; }
+.home-gallery-dots button.is-active::before { background: #195f58; }
+.home-gallery-toolbar { display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 8px; color: #41685f; font-size: 12px; }
+.home-gallery-toolbar > span { font-variant-numeric: tabular-nums; letter-spacing: .15em; }
+.home-gallery-toolbar button {
+  min-height: 40px;
+  padding: 7px 15px;
+  border: 1px solid #bdd3c6;
+  border-radius: 30px;
+  background: transparent;
+  color: #315e52;
+  box-shadow: none;
+  font-size: 12px;
+}
+.home-gallery-toolbar button:hover { background: #fffefa; color: #195f58; box-shadow: none; transform: none; }
+@media (max-width: 680px) {
+  .home-gallery-slider { padding: 0 8px; }
+  .home-gallery-stage { height: clamp(250px, 70vw, 350px); }
+  .home-gallery-slide { inset: 18px 15%; padding: 0; }
+  .home-gallery-slide img { border-width: 4px; border-radius: 18px; }
+  .home-gallery-arrow { width: 40px; height: 40px; min-height: 40px; }
+  .home-gallery-arrow-prev { left: 3px; }
+  .home-gallery-arrow-next { right: 3px; }
+  .home-gallery-slide figcaption { bottom: 12px; font-size: 12px; padding: 7px 12px; }
+  body:not(.public-home-page) :is(.page-tabs, .doctor-tabs) .page-tab { padding: 9px 12px; font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-gallery-slide, .home-gallery-slide figcaption { transition: none; }
+}

@@ -97,19 +97,19 @@
         <div class="home-hero-actions">
           {% if not user.is_authenticated %}
             {% if request.session.patient_claim_phone %}
-              <a href="{% url 'pending_patient_dashboard' %}">Перейти до кабінету <span aria-hidden="true">→</span></a>
-              <a href="{% url 'doctors' %}">Переглянути лікарів <span aria-hidden="true">→</span></a>
+              <a href="{% url 'pending_patient_dashboard' %}">Перейти до кабінету <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
+              <a href="{% url 'doctors' %}">Переглянути лікарів <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
             {% else %}
-              <button class="home-login-trigger" type="button" data-home-login-open aria-haspopup="dialog">Вхід <span aria-hidden="true">→</span></button>
-              <a href="{% url 'doctors' %}">Переглянути лікарів <span aria-hidden="true">→</span></a>
+              <button class="home-login-trigger" type="button" data-home-login-open aria-haspopup="dialog">Вхід <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></button>
+              <a href="{% url 'doctors' %}">Переглянути лікарів <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
             {% endif %}
           {% elif user.is_staff %}
-            <a href="{% url 'admin_panel' %}">Перейти до панелі адміністратора <span aria-hidden="true">→</span></a>
+            <a href="{% url 'admin_panel' %}">Перейти до панелі адміністратора <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
           {% elif user.profile.role == 'doctor' %}
-            <a href="{% url 'doctor_dashboard' %}">Перейти до кабінету лікаря <span aria-hidden="true">→</span></a>
+            <a href="{% url 'doctor_dashboard' %}">Перейти до кабінету лікаря <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
           {% else %}
-            <a href="{% url 'booking' %}">Записатися на прийом <span aria-hidden="true">→</span></a>
-            <a href="{% url 'doctors' %}">Переглянути лікарів <span aria-hidden="true">→</span></a>
+            <a href="{% url 'booking' %}">Записатися на прийом <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
+            <a href="{% url 'doctors' %}">Переглянути лікарів <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
           {% endif %}
         </div>
       </div>
@@ -129,14 +129,14 @@
       </div>
 
       <div class="home-slider-controls" data-home-slider-controls>
-        <button type="button" data-home-slide-prev aria-label="Попереднє фото">←</button>
+        <button type="button" data-home-slide-prev aria-label="Попереднє фото">{% include 'clinic/_icon.html' with name='left' %}</button>
         <div class="home-slider-dots" data-home-slider-dots></div>
-        <button type="button" data-home-slide-next aria-label="Наступне фото">→</button>
+        <button type="button" data-home-slide-next aria-label="Наступне фото">{% include 'clinic/_icon.html' with name='right' %}</button>
       </div>
 
       <a class="home-scroll-cue" href="#clinic-news">
         <span>Новини клініки</span>
-        <span aria-hidden="true">↓</span>
+        <span aria-hidden="true">{% include 'clinic/_icon.html' with name='down' %}</span>
       </a>
     </section>
 
@@ -216,7 +216,7 @@
       </div>
 
       {% if gallery_images %}
-        <div class="home-gallery-slider" data-home-gallery-slider>
+        <div class="home-gallery-slider" data-home-gallery-slider tabindex="0" role="region" aria-roledescription="карусель" aria-label="Фотографії клініки">
           <div class="home-gallery-stage">
             {% for item in gallery_images %}
               <figure
@@ -235,18 +235,19 @@
                 type="button"
                 data-home-gallery-prev
                 aria-label="Попереднє фото"
-              >←</button>
+              >{% include 'clinic/_icon.html' with name='left' %}</button>
               <button
                 class="home-gallery-arrow home-gallery-arrow-next"
                 type="button"
                 data-home-gallery-next
                 aria-label="Наступне фото"
-              >→</button>
+              >{% include 'clinic/_icon.html' with name='right' %}</button>
             {% endif %}
           </div>
 
           {% if gallery_images|length > 1 %}
             <div class="home-gallery-dots" data-home-gallery-dots aria-label="Вибір фотографії"></div>
+            <div class="home-gallery-toolbar"><span data-home-gallery-count aria-live="polite"></span><button type="button" data-home-gallery-play aria-pressed="false">Автоперегляд</button></div>
           {% endif %}
         </div>
       {% else %}
@@ -263,7 +264,7 @@
             <span class="home-section-kicker">Команда</span>
             <h2>Наші провідні лікарі</h2>
           </div>
-          <a class="home-section-link" href="{% url 'doctors' %}">Усі лікарі <span aria-hidden="true">→</span></a>
+          <a class="home-section-link" href="{% url 'doctors' %}">Усі лікарі <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
         </header>
 
         <div class="home-doctors-grid">
@@ -297,7 +298,7 @@
     >
       <button class="home-login-backdrop" type="button" data-home-login-close tabindex="-1" aria-label="Закрити вікно входу"></button>
       <section class="home-login-dialog" role="dialog" aria-modal="true" aria-labelledby="home-login-title" tabindex="-1">
-        <button class="home-login-close" type="button" data-home-login-close aria-label="Закрити вікно входу">×</button>
+        <button class="home-login-close" type="button" data-home-login-close aria-label="Закрити вікно входу">{% include 'clinic/_icon.html' with name='close' %}</button>
 
         <header class="home-login-heading">
           <span>Особистий кабінет</span>
@@ -316,7 +317,7 @@
             <small>Швидкий та захищений спосіб</small>
             <strong>Увійти через Google</strong>
           </span>
-          <span class="home-login-arrow" aria-hidden="true">→</span>
+          <span class="home-login-arrow" aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span>
         </a>
 
         <div class="home-login-divider"><span>або</span></div>
@@ -350,7 +351,7 @@
           </div>
         {% else %}
           <div class="home-phone-registration">
-            <span class="home-phone-registration-icon" aria-hidden="true">＋</span>
+            <span class="home-phone-registration-icon" aria-hidden="true">{% include 'clinic/_icon.html' with name='plus' %}</span>
             <div>
               <strong>Вхід або реєстрація за номером</strong>
               <p>Для наявного кабінету вхід потрібно підтвердити у прив’язаному Telegram-боті.</p>
@@ -360,7 +361,7 @@
           <form class="home-phone-form" method="post" action="{% url 'claim_patient' %}">
             {% csrf_token %}
             {% include 'clinic/_form_fields.html' with form=claim_form %}
-            <button type="submit">Продовжити <span aria-hidden="true">→</span></button>
+            <button type="submit">Продовжити <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></button>
           </form>
 
           <p class="home-login-privacy">Якщо акаунта ще немає, ми створимо його та знайдемо ваші записи за номером.</p>
@@ -369,5 +370,5 @@
     </div>
   {% endif %}
 
-  <script src="{% static 'clinic/home.js' %}?v=20260928-3" defer></script>
+  <script src="{% static 'clinic/home.js' %}?v=refined-20260928-3" defer></script>
 {% endblock %}

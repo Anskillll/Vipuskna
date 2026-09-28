@@ -13,9 +13,10 @@
   {% else %}
     <link rel="icon" href="data:,">
   {% endif %}
-  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260928-6">
-  <link rel="stylesheet" href="{% static 'clinic/mobile.css' %}?v=20260928-6">
-  <script src="{% static 'clinic/live_filter.js' %}?v=20260802-2" defer></script>
+  <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260928-7">
+  <link rel="stylesheet" href="{% static 'clinic/mobile.css' %}?v=20260928-7">
+  <link rel="stylesheet" href="{% static 'clinic/refinement.css' %}?v=20260928-1">
+  <script src="{% static 'clinic/live_filter.js' %}?v=20260928-1" defer></script>
   <script src="{% static 'clinic/flash_messages.js' %}?v=20260719-1" defer></script>
 </head>
 <body class="{% if clinic_branding.home_background %}has-site-background {% endif %}{% block body_class %}{% endblock %}"{% if clinic_branding.home_background %} style="--site-bg: url('{{ clinic_branding.home_background.url }}');"{% endif %}>
@@ -25,7 +26,7 @@
         {% if clinic_branding.logo %}
           <img class="brand-logo" src="{{ clinic_branding.logo.url }}" alt="{{ clinic_branding.clinic_name }}">
         {% else %}
-          <span class="brand-mark">+</span>
+          <span class="brand-mark">{% include 'clinic/_icon.html' with name='plus' %}</span>
         {% endif %}
         <span>{{ clinic_branding.clinic_name }}</span>
       </a>

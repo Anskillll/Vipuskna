@@ -6,9 +6,9 @@
   <section class="page-head appointment-detail-head">
     <div>
       {% if appointment.status == 'pending' %}
-        <a class="back-link" href="{% url 'doctor_requests' %}">← Повернутися до моїх заявок</a>
+        <a class="back-link" href="{% url 'doctor_requests' %}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до моїх заявок</a>
       {% else %}
-        <a class="back-link" href="{% url 'doctor_appointments' %}?week={{ appointment.date|date:'Y-m-d' }}">← Повернутися до прийомів</a>
+        <a class="back-link" href="{% url 'doctor_appointments' %}?week={{ appointment.date|date:'Y-m-d' }}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до прийомів</a>
       {% endif %}
       <h1 class="page-title">Заявка {{ appointment.patient_name }}</h1>
       <p class="page-subtitle">Повна інформація для лікаря</p>

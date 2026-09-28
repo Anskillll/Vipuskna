@@ -6,9 +6,9 @@
   <section class="page-head">
     <div>
       {% if booking_return_url %}
-        <a class="back-link" href="{{ booking_return_url }}">← Повернутися до заявки</a>
+        <a class="back-link" href="{{ booking_return_url }}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до заявки</a>
       {% else %}
-        <a class="back-link" href="{% url 'doctor_detail' doctor.id %}">← Повернутися до профілю лікаря</a>
+        <a class="back-link" href="{% url 'doctor_detail' doctor.id %}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до профілю лікаря</a>
       {% endif %}
       <h1 class="page-title">{{ service.name }}</h1>
       <p class="page-subtitle">Детальна інформація про послугу</p>

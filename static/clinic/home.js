@@ -97,16 +97,25 @@
     const galleryDotsRoot = gallery.querySelector('[data-home-gallery-dots]');
     const galleryPreviousButton = gallery.querySelector('[data-home-gallery-prev]');
     const galleryNextButton = gallery.querySelector('[data-home-gallery-next]');
+    const galleryPlayButton = gallery.querySelector('[data-home-gallery-play]');
+    const galleryCount = gallery.querySelector('[data-home-gallery-count]');
     let activeGallerySlide = 0;
     let galleryTimer = null;
+    let galleryPlaying = !reducedMotion;
+    let galleryHovered = false;
 
     const showGallerySlide = (index) => {
+      if (!gallerySlides.length) return;
       activeGallerySlide = (index + gallerySlides.length) % gallerySlides.length;
       gallerySlides.forEach((slide, slideIndex) => {
         const isActive = slideIndex === activeGallerySlide;
+        let offset = (slideIndex - activeGallerySlide + gallerySlides.length) % gallerySlides.length;
+        if (offset > gallerySlides.length / 2) offset -= gallerySlides.length;
+        slide.dataset.position = String(Math.max(-2, Math.min(2, offset)));
         slide.classList.toggle('is-active', isActive);
         slide.setAttribute('aria-hidden', String(!isActive));
       });
+      if (galleryCount) galleryCount.textContent = `${String(activeGallerySlide + 1).padStart(2, '0')} / ${String(gallerySlides.length).padStart(2, '0')}`;
       if (galleryDotsRoot) {
         Array.from(galleryDotsRoot.children).forEach((dot, dotIndex) => {
           const isActive = dotIndex === activeGallerySlide;
@@ -125,7 +134,11 @@
 
     const startGallerySlider = () => {
       stopGallerySlider();
-      if (reducedMotion || gallerySlides.length < 2 || document.hidden) {
+      if (galleryPlayButton) {
+        galleryPlayButton.textContent = galleryPlaying ? 'Призупинити' : 'Автоперегляд';
+        galleryPlayButton.setAttribute('aria-pressed', String(galleryPlaying));
+      }
+      if (!galleryPlaying || galleryHovered || gallery.contains(document.activeElement) || gallerySlides.length < 2 || document.hidden) {
         return;
       }
       galleryTimer = window.setInterval(
@@ -155,10 +168,36 @@
       showGallerySlide(activeGallerySlide + 1);
       startGallerySlider();
     });
-    gallery.addEventListener('mouseenter', stopGallerySlider);
-    gallery.addEventListener('mouseleave', startGallerySlider);
+    gallery.addEventListener('mouseenter', () => { galleryHovered = true; stopGallerySlider(); });
+    gallery.addEventListener('mouseleave', () => { galleryHovered = false; startGallerySlider(); });
     gallery.addEventListener('focusin', stopGallerySlider);
-    gallery.addEventListener('focusout', startGallerySlider);
+    gallery.addEventListener('focusout', () => window.setTimeout(startGallerySlider, 0));
+    galleryPlayButton?.addEventListener('click', () => {
+      galleryPlaying = !galleryPlaying;
+      startGallerySlider();
+    });
+    gallery.addEventListener('keydown', (event) => {
+      if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+      event.preventDefault();
+      showGallerySlide(activeGallerySlide + (event.key === 'ArrowLeft' ? -1 : 1));
+    });
+    let swipeStart = null;
+    gallery.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse' || event.target.closest('button')) return;
+      swipeStart = { x: event.clientX, y: event.clientY };
+      stopGallerySlider();
+    });
+    gallery.addEventListener('pointerup', (event) => {
+      if (!swipeStart) return;
+      const dx = event.clientX - swipeStart.x;
+      const dy = event.clientY - swipeStart.y;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+        showGallerySlide(activeGallerySlide + (dx < 0 ? 1 : -1));
+      }
+      swipeStart = null;
+      startGallerySlider();
+    });
+    gallery.addEventListener('pointercancel', () => { swipeStart = null; startGallerySlider(); });
     document.addEventListener('visibilitychange', startGallerySlider);
 
     showGallerySlide(0);

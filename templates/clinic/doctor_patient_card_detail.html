@@ -4,7 +4,7 @@
 
 {% block content %}
   <div class="profile-back-row">
-    <a class="back-link" href="{% url 'doctor_patient_cards' %}">← Повернутися до пацієнтів</a>
+    <a class="back-link" href="{% url 'doctor_patient_cards' %}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до пацієнтів</a>
   </div>
   <div class="medical-profile-grid">
     <section class="card medical-profile-overview">

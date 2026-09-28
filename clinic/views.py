@@ -1085,7 +1085,7 @@ def patient_phone_login_status(request):
         authenticated_user = None
         with transaction.atomic():
             locked_challenge = (
-                TelegramLoginChallenge.objects.select_for_update()
+                TelegramLoginChallenge.objects.select_for_update(of=('self', 'user'))
                 .select_related('user__profile')
                 .get(pk=challenge.pk)
             )

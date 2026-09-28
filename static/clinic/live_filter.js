@@ -76,6 +76,11 @@
       const button = document.createElement('button');
       button.type = 'button';
       button.textContent = label;
+      if (label === '‹' || label === '›') {
+        button.textContent = '';
+        button.classList.add('pagination-arrow');
+        if (label === '‹') button.classList.add('pagination-arrow-prev');
+      }
       button.dataset.liveFilterPage = String(page);
       button.setAttribute('aria-label', options.ariaLabel || `Сторінка ${page}`);
       button.disabled = Boolean(options.disabled);

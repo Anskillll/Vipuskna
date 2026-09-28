@@ -961,7 +961,7 @@ button.warning:hover {
 .doctor-description {
   margin-top: 18px;
   padding: 14px 16px;
-  border-left: 4px solid #60a5fa;
+  border-left: 1px solid var(--line);
   border-radius: 0 8px 8px 0;
   background: rgba(239, 246, 255, 0.78);
 }
@@ -1052,7 +1052,7 @@ button.warning:hover {
 .doctor-profile-about {
   margin-top: 30px;
   padding: 20px 22px;
-  border-left: 4px solid #60a5fa;
+  border-left: 1px solid var(--line);
   border-radius: 0 8px 8px 0;
   background: rgba(239, 246, 255, 0.78);
 }
@@ -1718,7 +1718,7 @@ button:disabled {
   margin: 18px 0;
   padding: 22px;
   border: 1px solid #bfdbfe;
-  border-left: 4px solid var(--primary);
+  border-left: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(239, 246, 255, 0.72);
 }
@@ -2007,7 +2007,7 @@ button:disabled {
   flex: 1;
   max-width: 920px;
   padding-left: 22px;
-  border-left: 4px solid var(--primary);
+  border-left: 1px solid var(--line);
 }
 
 .service-detail-description.service-detail-description-primary h2 {
@@ -2147,7 +2147,7 @@ th {
 
 .appointment-booking-context {
   background: rgba(185, 111, 22, 0.08);
-  border-left: 3px solid var(--clinic-amber, #b96f16);
+  border-left: 1px solid var(--line);
   display: grid;
   gap: 4px;
   margin-bottom: 20px;
@@ -2216,7 +2216,7 @@ th {
 
 .appointment-summary-row.appointment-kind-pending {
   background: #fff9e9;
-  border-left: 4px solid #d99b16;
+  border-left: 1px solid var(--line);
   padding-left: 14px;
 }
 
@@ -2227,13 +2227,13 @@ th {
 
 .appointment-summary-row.appointment-kind-approved {
   background: #eefaf2;
-  border-left: 4px solid #18a957;
+  border-left: 1px solid var(--line);
   padding-left: 14px;
 }
 
 .appointment-summary-row.appointment-kind-reschedule_proposed {
   background: #fff8df;
-  border-left: 4px solid #f0a500;
+  border-left: 1px solid var(--line);
   padding-left: 14px;
 }
 
@@ -2249,7 +2249,7 @@ th {
 
 .appointment-summary-row.appointment-kind-completed {
   background: #f3f6fa;
-  border-left: 4px solid #718096;
+  border-left: 1px solid var(--line);
   padding-left: 14px;
 }
 
@@ -2261,7 +2261,7 @@ th {
 .appointment-summary-row.appointment-kind-canceled,
 .appointment-summary-row.appointment-kind-rejected {
   background: #fff2f2;
-  border-left: 4px solid #dc4242;
+  border-left: 1px solid var(--line);
   padding-left: 14px;
 }
 
@@ -2928,7 +2928,7 @@ body:not(.public-home-page) button.reschedule-icon-action.reject:hover {
   gap: 16px;
   margin-bottom: 18px;
   padding: 14px 16px;
-  border-left: 4px solid #22c55e;
+  border-left: 1px solid var(--line);
   background: #f0fdf4;
   color: #166534;
 }
@@ -2982,7 +2982,7 @@ body:not(.public-home-page) button.reschedule-icon-action.reject:hover {
 .record-recommendations {
   margin-top: 16px;
   padding: 14px 16px;
-  border-left: 4px solid #3b82f6;
+  border-left: 1px solid var(--line);
   background: #eff6ff;
 }
 
@@ -3648,13 +3648,12 @@ body:not(.public-home-page) button.reschedule-icon-action.reject:hover {
   min-height: 104px;
   padding: 10px;
   border: 1px solid var(--content-line);
-  border-left: 4px solid var(--content-teal);
+  border-left: 1px solid var(--line);
   border-radius: 7px;
   background: #fff;
 }
 
 .hero-admin-item.is-hidden {
-  border-left-color: #94a3b8;
   background: #f8fafc;
 }
 
@@ -4308,7 +4307,7 @@ button.compact {
   align-items: center;
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(148, 163, 184, 0.28);
-  border-left: 4px solid #2563eb;
+  border-left: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
   display: flex;
@@ -4344,7 +4343,7 @@ button.compact {
 .admin-stat {
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(148, 163, 184, 0.28);
-  border-left: 4px solid #2563eb;
+  border-left: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
   display: grid;
@@ -4372,16 +4371,13 @@ button.compact {
 }
 
 .admin-stat-doctors {
-  border-left-color: #7c3aed;
 }
 
 .admin-stat-appointments {
-  border-left-color: #0f9f8f;
 }
 
 .admin-stat-pending {
   background: #fffbed;
-  border-left-color: #e7a400;
 }
 
 .admin-dashboard .section-card {
@@ -4525,7 +4521,7 @@ button.compact {
 
 .admin-broadcast-count {
   align-items: end;
-  border-left: 3px solid var(--clinic-teal);
+  border-left: 1px solid var(--line);
   display: grid;
   gap: 2px;
   min-width: 170px;
@@ -4552,7 +4548,7 @@ button.compact {
 }
 
 .admin-broadcast-form {
-  border-left: 4px solid var(--clinic-teal);
+  border-left: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
   gap: 22px;
@@ -4640,7 +4636,7 @@ button.compact {
 .admin-broadcast-note {
   background: rgba(255, 251, 235, 0.94);
   border: 1px solid #ecd89b;
-  border-left: 4px solid var(--clinic-amber);
+  border-left: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
   padding: 22px;
@@ -4933,7 +4929,7 @@ button.compact {
 
 .current-visit-banner {
   border: 1px solid #31a878;
-  border-left: 6px solid #159a63;
+  border-left: 1px solid var(--line);
   border-radius: 8px;
   background: #dffbea;
   box-shadow: 0 14px 34px rgba(21, 154, 99, 0.16);
@@ -6301,7 +6297,6 @@ body:not(.public-home-page) .doctor-profile-specialization {
 
 body:not(.public-home-page) .doctor-profile-about,
 body:not(.public-home-page) .doctor-description {
-  border-left-color: #187f73;
   background: #eef5f3;
 }
 
@@ -6338,7 +6333,7 @@ body:not(.public-home-page) .content-list li {
 body:not(.public-home-page) .profile-completion-alert,
 body:not(.public-home-page) .patient-reschedule-alert {
   border: 1px solid #d8b77f;
-  border-left: 4px solid #b8874f;
+  border-left: 1px solid var(--line);
   border-radius: 6px;
   background: #fff9ef;
   box-shadow: none;
@@ -6347,7 +6342,7 @@ body:not(.public-home-page) .patient-reschedule-alert {
 
 body:not(.public-home-page) .current-visit-banner {
   border: 1px solid #31a878;
-  border-left: 6px solid #159a63;
+  border-left: 1px solid var(--line);
   border-radius: 8px;
   background: #dffbea;
   box-shadow: 0 14px 34px rgba(21, 154, 99, 0.16);
@@ -6454,7 +6449,7 @@ body:not(.public-home-page) .current-records-close:hover {
 .current-record-item {
   padding: 18px;
   border: 1px solid #dce3df;
-  border-left: 4px solid #208c78;
+  border-left: 1px solid var(--line);
   border-radius: 6px;
   background: #fbfcfc;
 }
@@ -6738,7 +6733,7 @@ body:not(.public-home-page) .appointment-day-rest span {
 }
 
 body:not(.public-home-page) .appointment-day-empty-working {
-  border-left: 3px solid #179684;
+  border-left: 1px solid var(--line);
   background: #eff9f6;
 }
 
@@ -6820,33 +6815,28 @@ body:not(.public-home-page) .appointment-day-toggle:hover {
 }
 
 body:not(.public-home-page) .appointment-summary-row {
-  border-left-width: 3px;
+  border-left-width: 1px;
   background: #fff;
 }
 
 body:not(.public-home-page) .appointment-summary-row.appointment-kind-pending {
-  border-left-color: #d39010;
   background: #fff1c9;
 }
 
 body:not(.public-home-page) .appointment-summary-row.appointment-kind-approved {
-  border-left-color: #0b8a68;
   background: #e1f5ea;
 }
 
 body:not(.public-home-page) .appointment-summary-row.appointment-kind-reschedule_proposed {
-  border-left-color: #d08300;
   background: #ffe9ad;
 }
 
 body:not(.public-home-page) .appointment-summary-row.appointment-kind-completed {
-  border-left-color: #607b85;
   background: #e8eef2;
 }
 
 body:not(.public-home-page) .appointment-summary-row.appointment-kind-canceled,
 body:not(.public-home-page) .appointment-summary-row.appointment-kind-rejected {
-  border-left-color: #cf3f3f;
   background: #ffe1e1;
 }
 
@@ -6946,7 +6936,7 @@ body:not(.public-home-page) .slot-split-option {
   min-height: 48px;
   padding: 6px 10px;
   border: 1px solid #d48a2e;
-  border-left: 4px solid #bd6811;
+  border-left: 1px solid var(--line);
   border-radius: 4px;
   background: #fff4df;
   color: #6f3a06;
@@ -6974,7 +6964,7 @@ body:not(.public-home-page) .split-slot-notice {
   margin: 14px 0 18px;
   padding: 14px 16px;
   border: 1px solid #e0a04b;
-  border-left: 4px solid #bd6811;
+  border-left: 1px solid var(--line);
   border-radius: 6px;
   background: #fff5e3;
   color: #663607;
@@ -7049,7 +7039,7 @@ body:not(.public-home-page) .content-admin-summary {
 }
 
 body:not(.public-home-page) .admin-command-bar {
-  border-left: 4px solid #187f73;
+  border-left: 1px solid var(--line);
 }
 
 body:not(.public-home-page) .admin-eyebrow,
@@ -7114,7 +7104,6 @@ body:not(.public-home-page) .content-admin-note {
 
 body:not(.public-home-page) .hero-admin-item {
   border-color: #dce3df;
-  border-left-color: #187f73;
 }
 
 body:not(.public-home-page) .appointment-filter-name {
@@ -7407,7 +7396,7 @@ body:not(.public-home-page) .message {
   max-height: 150px;
   padding: 14px 16px;
   border: 1px solid #43625c;
-  border-left: 5px solid #5aa994;
+  border-left: 1px solid var(--line);
   border-radius: 8px;
   background: #20332f;
   color: #f2faf7;
@@ -7419,7 +7408,6 @@ body:not(.public-home-page) .message {
 .public-home-page .message.success,
 body:not(.public-home-page) .message.success {
   border-color: #3c7568;
-  border-left-color: #63c2a8;
   background: #173b34;
   color: #effcf8;
 }
@@ -7428,7 +7416,6 @@ body:not(.public-home-page) .message.success {
 .public-home-page .message.error,
 body:not(.public-home-page) .message.error {
   border-color: #865057;
-  border-left-color: #df737d;
   background: #45272b;
   color: #fff4f5;
 }
@@ -7437,7 +7424,6 @@ body:not(.public-home-page) .message.error {
 .public-home-page .message.warning,
 body:not(.public-home-page) .message.warning {
   border-color: #806538;
-  border-left-color: #e2ae4e;
   background: #40341f;
   color: #fff8e8;
 }
@@ -7446,7 +7432,6 @@ body:not(.public-home-page) .message.warning {
 .public-home-page .message.info,
 body:not(.public-home-page) .message.info {
   border-color: #496a7d;
-  border-left-color: #69a9c9;
   background: #243740;
   color: #eff9ff;
 }
@@ -7521,7 +7506,7 @@ body:not(.public-home-page) .message.is-dismissing {
 
 .patient-phone-alert {
   border: 1px solid #d7b369;
-  border-left: 4px solid #a87424;
+  border-left: 1px solid var(--line);
   border-radius: 6px;
   background: #fff8e9;
   color: #60471d;
@@ -7737,20 +7722,18 @@ body:not(.public-home-page) button.patient-telegram-reconnect:focus-visible {
 .patient-appointment-card {
   overflow: hidden;
   border: 1px solid #d5e0dd;
-  border-left: 4px solid #c19232;
+  border-left: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.97);
   box-shadow: 0 12px 28px rgba(35, 69, 62, 0.08);
 }
 
 .patient-appointment-card-approved {
-  border-left-color: #238a70;
 }
 
 .patient-appointment-card-featured {
   position: relative;
   border-color: #18a892;
-  border-left-color: #0e806f;
   background: linear-gradient(100deg, #e1fff8 0%, #f2fffc 48%, #ffffff 100%);
   box-shadow:
     0 0 0 3px rgba(31, 190, 164, 0.12),
@@ -7782,16 +7765,13 @@ body:not(.public-home-page) button.patient-telegram-reconnect:focus-visible {
 }
 
 .patient-appointment-card-completed {
-  border-left-color: #73827f;
 }
 
 .patient-appointment-card-canceled,
 .patient-appointment-card-rejected {
-  border-left-color: #a74b51;
 }
 
 .patient-appointment-card-reschedule_proposed {
-  border-left-color: #b67827;
 }
 
 .patient-appointment-card-head {
@@ -8418,7 +8398,7 @@ body:not(.public-home-page) .section-mini-head h2::after {
 body:not(.public-home-page) .live-filter-bar {
   min-width: 0;
   padding: 15px 16px;
-  border-left: 4px solid var(--clinic-blue);
+  border-left: 1px solid var(--line);
   border-radius: 0 5px 5px 0;
   background: #f2f8fc;
 }
@@ -8630,7 +8610,6 @@ body:not(.public-home-page) .patient-dashboard-profile {
 }
 
 body:not(.public-home-page) .doctor-profile-about {
-  border-left-color: var(--clinic-blue);
   background: #eef6fb;
 }
 
@@ -8638,7 +8617,7 @@ body:not(.public-home-page) .service-manager-item {
   min-width: 0;
   padding: 22px 20px;
   border: 1px solid #dce3df;
-  border-left: 4px solid var(--clinic-teal);
+  border-left: 1px solid var(--line);
   border-radius: 7px;
   box-shadow: 0 5px 14px rgba(20, 61, 56, 0.05);
 }
@@ -8679,11 +8658,9 @@ body:not(.public-home-page) .service-manager-actions {
 }
 
 body:not(.public-home-page) .service-manager-item:nth-child(3n + 2) {
-  border-left-color: var(--clinic-blue);
 }
 
 body:not(.public-home-page) .service-manager-item:nth-child(3n + 3) {
-  border-left-color: var(--clinic-amber);
 }
 
 body:not(.public-home-page) .service-manager-item.editing {
@@ -8692,13 +8669,12 @@ body:not(.public-home-page) .service-manager-item.editing {
 }
 
 body:not(.public-home-page) .service-manager-create {
-  border-left-color: var(--clinic-violet);
 }
 
 body:not(.public-home-page) .workplace-row {
   padding: 16px;
   border: 1px solid #dce3df;
-  border-left: 4px solid var(--clinic-blue);
+  border-left: 1px solid var(--line);
   border-radius: 7px;
   background: #fff;
 }
@@ -8772,24 +8748,19 @@ body:not(.public-home-page) .patient-reschedule-decision {
 }
 
 body:not(.public-home-page) .admin-command-bar {
-  border-left-color: var(--clinic-violet);
   background: #f8f5ff;
 }
 
 body:not(.public-home-page) .admin-stat-patients {
-  border-left-color: var(--clinic-blue);
 }
 
 body:not(.public-home-page) .admin-stat-doctors {
-  border-left-color: var(--clinic-violet);
 }
 
 body:not(.public-home-page) .admin-stat-appointments {
-  border-left-color: var(--clinic-teal);
 }
 
 body:not(.public-home-page) .admin-stat-pending {
-  border-left-color: var(--clinic-amber);
   background: #fff9e9;
 }
 
@@ -9087,7 +9058,7 @@ textarea:focus-visible {
 
 .pending-google-alert {
   border: 1px solid #e5a553;
-  border-left: 5px solid #c66a12;
+  border-left: 1px solid var(--line);
   border-radius: 7px;
   background: #fff2de;
   color: #5b320b;
@@ -9156,7 +9127,7 @@ textarea:focus-visible {
   margin: 0 0 22px;
   padding: 18px 20px;
   border: 1px solid #77bfb4;
-  border-left: 5px solid #087f70;
+  border-left: 1px solid var(--line);
   border-radius: 7px;
   background: rgba(238, 251, 248, 0.97);
   box-shadow: 0 12px 28px rgba(9, 76, 67, 0.12);
@@ -9236,7 +9207,7 @@ textarea:focus-visible {
   gap: 5px;
   padding: 18px 20px;
   border: 1px solid #e4b45c;
-  border-left: 5px solid #c98213;
+  border-left: 1px solid var(--line);
   border-radius: 6px;
   background: #fff5df;
   color: #70480d;
@@ -9549,7 +9520,7 @@ body:not(.public-home-page) .doctor-profile-overview .doctor-profile-about {
   margin-top: 18px;
   padding: 14px 16px;
   border: 1px solid #d8e6e2;
-  border-left: 4px solid var(--clinic-blue);
+  border-left: 1px solid var(--line);
   border-radius: 7px;
   background: #f3f8fa;
 }

@@ -45,7 +45,7 @@
               aria-label="Очистити фільтр послуг"
               title="Очистити фільтр"
               data-live-filter-clear
-            >×</button>
+            >{% include 'clinic/_icon.html' with name='close' %}</button>
           </div>
         </div>
         <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
@@ -140,7 +140,7 @@
                     aria-label="Підняти послугу вище"
                     title="Підняти вище"
                     {% if forloop.first %}disabled{% endif %}
-                  >↑</button>
+                  >{% include 'clinic/_icon.html' with name='up' %}</button>
                 </form>
                 <form method="post">
                   {% csrf_token %}
@@ -152,7 +152,7 @@
                     aria-label="Опустити послугу нижче"
                     title="Опустити нижче"
                     {% if forloop.last %}disabled{% endif %}
-                  >↓</button>
+                  >{% include 'clinic/_icon.html' with name='down' %}</button>
                 </form>
               </div>
               <form method="post">

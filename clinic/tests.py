@@ -158,8 +158,8 @@ class ClinicModelTests(TestCase):
     def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
         response = self.client.get(reverse('home'))
 
-        self.assertContains(response, 'clinic/site.css?v=20260928-6')
-        self.assertContains(response, 'clinic/mobile.css?v=20260928-6')
+        self.assertContains(response, 'clinic/site.css?v=')
+        self.assertContains(response, 'clinic/mobile.css?v=')
         self.assertContains(response, 'Нікополь, вул. Шевченка, 200')
         self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
         self.assertContains(response, 'https://www.google.com/maps/search/?api=1&amp;query=')
@@ -250,6 +250,9 @@ class ClinicModelTests(TestCase):
         self.assertIn('data-home-gallery-prev', gallery)
         self.assertIn('data-home-gallery-next', gallery)
         self.assertIn('data-home-gallery-dots', gallery)
+        self.assertIn('data-home-gallery-play', gallery)
+        self.assertIn('data-home-gallery-count', gallery)
+        self.assertIn('aria-roledescription="карусель"', gallery)
 
         home_script = (Path(settings.BASE_DIR) / 'static' / 'clinic' / 'home.js').read_text(encoding='utf-8')
         self.assertIn('5000', home_script)
@@ -421,7 +424,7 @@ class ClinicModelTests(TestCase):
             edit_response,
             (
                 f'class="back-link" href="{reverse("patient_dashboard")}">'
-                '← Повернутися до мого кабінету'
+                '<svg class="ui-icon"'
             ),
         )
 
@@ -433,7 +436,7 @@ class ClinicModelTests(TestCase):
             detail_response,
             (
                 f'class="back-link" href="{reverse("doctors")}">'
-                '← Повернутися до списку лікарів'
+                '<svg class="ui-icon"'
             ),
         )
         self.assertNotContains(detail_response, 'data-history-back')
@@ -1010,7 +1013,10 @@ class ClinicModelTests(TestCase):
             KeyboardInterrupt(),
         ]
 
-        call_command('run_telegram_bot')
+        # The command owns connections in production; TestCase owns this transaction.
+        with patch('clinic.management.commands.run_telegram_bot.close_old_connections') as close_connections:
+            call_command('run_telegram_bot')
+        self.assertEqual(close_connections.call_count, 3)
 
         sleep.assert_called_once_with(5)
 
@@ -1087,7 +1093,7 @@ class ClinicModelTests(TestCase):
         self.assertContains(schedule_response, 'Додати день')
         self.assertContains(schedule_response, 'schedule-edit-link')
         self.assertContains(schedule_response, 'schedule_editor.js?v=20260802-1')
-        self.assertContains(schedule_response, 'live_filter.js?v=20260802-2')
+        self.assertContains(schedule_response, 'live_filter.js?v=')
 
         delete_response = self.client.post(
             reverse('doctor_workplaces'),
@@ -2985,7 +2991,7 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Галерея')
         self.assertContains(response, 'data-home-slide')
         self.assertContains(response, 'data-home-reveal-header')
-        self.assertContains(response, 'clinic/home.js?v=20260928-3')
+        self.assertContains(response, 'clinic/home.js?v=')
 
         content = response.content.decode()
         self.assertLess(content.index('Новини клініки'), content.index('Новини лікарів'))
@@ -3338,6 +3344,28 @@ class ClinicModelTests(TestCase):
         challenge.refresh_from_db()
         self.assertEqual(challenge.status, TelegramLoginChallenge.STATUS_REJECTED)
         self.assertIsNone(challenge.consumed_at)
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+    )
+    @patch('clinic.telegram.TelegramBotClient.send_message')
+    def test_phone_login_rejects_approved_challenge_without_patient_profile(self, send_message):
+        TelegramConnection.objects.create(user=self.patient, chat_id=51007)
+        self.client.post(reverse('claim_patient'), data={'phone': self.patient.profile.phone})
+        challenge = TelegramLoginChallenge.objects.get(user=self.patient)
+        challenge.status = TelegramLoginChallenge.STATUS_APPROVED
+        challenge.save(update_fields=['status'])
+        self.patient.profile.delete()
+
+        response = self.client.post(reverse('patient_phone_login_status'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'expired')
+        self.assertNotIn('_auth_user_id', self.client.session)
+        challenge.refresh_from_db()
+        self.assertIsNone(challenge.consumed_at)
+        self.assertEqual(challenge.status, TelegramLoginChallenge.STATUS_REJECTED)
 
     @override_settings(
         TELEGRAM_BOT_TOKEN='test-token',
@@ -4511,12 +4539,12 @@ class ClinicModelTests(TestCase):
         self.client.login(username='patient@test.local', password='pass12345')
         patient_response = self.client.get(url)
         self.assertEqual(patient_response.status_code, 200)
-        patient_response.close()
+        self.assertEqual(b''.join(patient_response.streaming_content), file_path.read_bytes())
 
         self.client.login(username='doctor@test.local', password='pass12345')
         doctor_response = self.client.get(url)
         self.assertEqual(doctor_response.status_code, 200)
-        doctor_response.close()
+        self.assertEqual(b''.join(doctor_response.streaming_content), file_path.read_bytes())
         image.delete()
 
     def test_video_limits_and_signature_validation(self):

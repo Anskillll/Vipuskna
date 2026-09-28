@@ -5,7 +5,7 @@
 {% block content %}
   <section class="page-head appointment-detail-head">
     <div>
-      <a class="back-link" href="{% url 'patient_dashboard' %}">← Повернутися до мого кабінету</a>
+      <a class="back-link" href="{% url 'patient_dashboard' %}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до мого кабінету</a>
       <h1 class="page-title">Запис до {{ appointment.doctor.full_name }}</h1>
       <p class="page-subtitle">Перевірте інформацію про прийом</p>
     </div>
@@ -24,7 +24,7 @@
           <span>Було</span>
           <strong>{{ appointment.previous_date|date:'d.m.Y' }}, {{ appointment.previous_time|time:'H:i' }}</strong>
         </article>
-        <span class="reschedule-arrow" aria-hidden="true">→</span>
+        <span class="reschedule-arrow" aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span>
         <article class="reschedule-time new">
           <span>Запропоновано</span>
           <strong>{{ appointment.date|date:'d.m.Y' }}, {{ appointment.time|time:'H:i' }}</strong>
@@ -49,7 +49,7 @@
             type="submit"
             aria-label="Відхилити та скасувати запис"
             title="Відхилити та скасувати запис"
-          >×</button>
+          >{% include 'clinic/_icon.html' with name='close' %}</button>
         </form>
       </div>
     </section>

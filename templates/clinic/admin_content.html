@@ -98,14 +98,14 @@
                   <input type="hidden" name="action" value="move_hero">
                   <input type="hidden" name="hero_id" value="{{ slide.id }}">
                   <input type="hidden" name="direction" value="up">
-                  <button class="content-icon-button" type="submit" title="Перемістити вище" aria-label="Перемістити фотографію вище" {% if forloop.first %}disabled{% endif %}>↑</button>
+                  <button class="content-icon-button" type="submit" title="Перемістити вище" aria-label="Перемістити фотографію вище" {% if forloop.first %}disabled{% endif %}>{% include 'clinic/_icon.html' with name='up' %}</button>
                 </form>
                 <form method="post">
                   {% csrf_token %}
                   <input type="hidden" name="action" value="move_hero">
                   <input type="hidden" name="hero_id" value="{{ slide.id }}">
                   <input type="hidden" name="direction" value="down">
-                  <button class="content-icon-button" type="submit" title="Перемістити нижче" aria-label="Перемістити фотографію нижче" {% if forloop.last %}disabled{% endif %}>↓</button>
+                  <button class="content-icon-button" type="submit" title="Перемістити нижче" aria-label="Перемістити фотографію нижче" {% if forloop.last %}disabled{% endif %}>{% include 'clinic/_icon.html' with name='down' %}</button>
                 </form>
                 <a class="btn secondary compact" href="{% url 'admin_content' %}?hero={{ slide.id }}#hero-slides">Редагувати</a>
                 <form method="post">

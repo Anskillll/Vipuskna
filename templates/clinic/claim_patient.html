@@ -12,7 +12,7 @@
         {% include 'clinic/_form_fields.html' %}
         <button type="submit">Продовжити</button>
       </form>
-      <a class="back-link" href="{% url 'home' %}">← Повернутися на головну</a>
+      <a class="back-link" href="{% url 'home' %}">{% include 'clinic/_icon.html' with name='left' %} Повернутися на головну</a>
     </section>
   </div>
 {% endblock %}

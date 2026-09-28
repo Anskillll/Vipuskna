@@ -3,7 +3,7 @@
 {% block title %}Редагувати профіль - MedClinic{% endblock %}
 
 {% block content %}
-  <a class="back-link" href="{% url 'patient_dashboard' %}">← Повернутися до мого кабінету</a>
+  <a class="back-link" href="{% url 'patient_dashboard' %}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до мого кабінету</a>
   <div class="card standalone-form-card">
     <h1 class="page-title">Редагувати профіль</h1>
     {% if user.profile.photo %}
