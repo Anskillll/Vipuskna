@@ -9509,22 +9509,6 @@ body:not(.public-home-page) .doctor-profile-overview .doctor-profile-actions .bt
   min-height: 40px;
 }
 
-body:not(.public-home-page) .doctor-profile-preview-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  min-height: 30px;
-  color: #42635d;
-  font-size: 12px;
-  font-weight: 750;
-  text-align: center;
-}
-
-body:not(.public-home-page) .doctor-profile-preview-link:hover {
-  color: var(--clinic-teal-dark);
-}
-
 body:not(.public-home-page) .doctor-profile-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -9827,10 +9811,6 @@ body:not(.public-home-page) .doctor-news-preview > .doctor-dashboard-list-empty 
   body:not(.public-home-page) .doctor-profile-overview .doctor-profile-actions {
     grid-column: 1 / -1;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  body:not(.public-home-page) .doctor-profile-preview-link {
-    grid-column: 1 / -1;
   }
 
   body:not(.public-home-page) .doctor-dashboard-grid {

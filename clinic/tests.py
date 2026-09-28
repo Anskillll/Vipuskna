@@ -3324,7 +3324,7 @@ class ClinicModelTests(TestCase):
         self.assertContains(dashboard_response, 'doctor-profile-photo')
         self.assertContains(dashboard_response, 'doctor-profile-metrics')
         self.assertContains(dashboard_response, 'doctor-dashboard-grid')
-        self.assertContains(dashboard_response, 'Переглянути як пацієнт')
+        self.assertNotContains(dashboard_response, 'Переглянути як пацієнт')
         self.assertContains(dashboard_response, 'Записати пацієнта')
         self.assertContains(dashboard_response, 'Редагувати профіль')
         self.assertContains(dashboard_response, 'Редагувати графік')
