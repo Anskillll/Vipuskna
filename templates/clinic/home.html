@@ -302,7 +302,7 @@
         <header class="home-login-heading">
           <span>Особистий кабінет</span>
           <h2 id="home-login-title">Вхід для пацієнта</h2>
-          <p>Увійдіть через Google або створіть кабінет за номером телефону.</p>
+          <p>Увійдіть через Google або за номером телефону з підтвердженням у Telegram.</p>
         </header>
 
         <a class="home-google-login" href="{{ patient_google_login_url }}">
@@ -321,24 +321,53 @@
 
         <div class="home-login-divider"><span>або</span></div>
 
-        <div class="home-phone-registration">
-          <span class="home-phone-registration-icon" aria-hidden="true">＋</span>
-          <div>
-            <strong>Реєстрація за номером телефону</strong>
-            <p>Вкажіть номер, який повідомляли лікарю, або створіть новий кабінет.</p>
+        {% if phone_login_challenge %}
+          <div
+            class="home-phone-login-waiting"
+            data-phone-login-waiting
+            data-status-url="{% url 'patient_phone_login_status' %}"
+          >
+            <span class="home-phone-login-telegram" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M20.7 3.4 2.9 10.3c-1.2.5-1.2 1.1-.2 1.4l4.6 1.4 1.7 5.3c.2.6.1.8.8.8.5 0 .8-.2 1-.4l2.2-2.1 4.7 3.5c.9.5 1.5.3 1.7-.8l3-14.2c.3-1.4-.5-2-1.7-1.8ZM8 12.8l10.6-6.7c.5-.3 1-.1.6.2l-8.8 8-.3 3.2L8 12.8Z"/>
+              </svg>
+            </span>
+            <div class="home-phone-login-waiting-copy">
+              <strong>Підтвердьте вхід у Telegram</strong>
+              <p>Ми надіслали повідомлення прив’язаному боту. Натисніть у ньому «Підтвердити вхід».</p>
+            </div>
+            <div class="home-phone-login-status" data-phone-login-status role="status" aria-live="polite">
+              <span class="home-phone-login-spinner" data-phone-login-spinner aria-hidden="true"></span>
+              <span data-phone-login-message>Очікуємо підтвердження…</span>
+            </div>
+            <a class="home-phone-login-retry" href="{% url 'home' %}" data-phone-login-retry hidden>
+              Ввести номер ще раз
+            </a>
+            <form method="post" action="{% url 'patient_phone_login_cancel' %}">
+              {% csrf_token %}
+              <button class="home-phone-login-cancel" type="submit">Скасувати запит</button>
+            </form>
           </div>
-        </div>
+        {% else %}
+          <div class="home-phone-registration">
+            <span class="home-phone-registration-icon" aria-hidden="true">＋</span>
+            <div>
+              <strong>Вхід або реєстрація за номером</strong>
+              <p>Для наявного кабінету вхід потрібно підтвердити у прив’язаному Telegram-боті.</p>
+            </div>
+          </div>
 
-        <form class="home-phone-form" method="post" action="{% url 'claim_patient' %}">
-          {% csrf_token %}
-          {% include 'clinic/_form_fields.html' with form=claim_form %}
-          <button type="submit">Продовжити <span aria-hidden="true">→</span></button>
-        </form>
+          <form class="home-phone-form" method="post" action="{% url 'claim_patient' %}">
+            {% csrf_token %}
+            {% include 'clinic/_form_fields.html' with form=claim_form %}
+            <button type="submit">Продовжити <span aria-hidden="true">→</span></button>
+          </form>
 
-        <p class="home-login-privacy">Ми використаємо номер лише для пошуку ваших записів і зв’язку з клінікою.</p>
+          <p class="home-login-privacy">Якщо акаунта ще немає, ми створимо його та знайдемо ваші записи за номером.</p>
+        {% endif %}
       </section>
     </div>
   {% endif %}
 
-  <script src="{% static 'clinic/home.js' %}?v=20260928-2" defer></script>
+  <script src="{% static 'clinic/home.js' %}?v=20260928-3" defer></script>
 {% endblock %}

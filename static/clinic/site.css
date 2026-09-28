@@ -10482,6 +10482,133 @@ body:not(.public-home-page) .medical-notes-card form > button {
   line-height: 1.45;
 }
 
+.home-phone-login-waiting {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 13px 14px;
+  padding: 18px;
+  border: 1px solid #c8e2dc;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #f7fcfb, #edf8f5);
+}
+
+.home-phone-login-telegram {
+  display: grid;
+  grid-row: 1 / span 2;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #27a7e7;
+  box-shadow: 0 9px 18px rgba(39, 167, 231, 0.22);
+}
+
+.home-phone-login-telegram svg {
+  width: 27px;
+  height: 27px;
+  fill: #fff;
+}
+
+.home-phone-login-waiting-copy strong {
+  display: block;
+  color: #153b34;
+  font-size: 15px;
+}
+
+.home-phone-login-waiting-copy p {
+  margin: 4px 0 0;
+  color: #617a74;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.home-phone-login-status {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 9px;
+  min-height: 40px;
+  padding: 9px 11px;
+  border: 1px solid #b9d9d2;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.84);
+  color: #25665c;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.home-phone-login-status.is-error {
+  border-color: #edc9c9;
+  background: #fff8f8;
+  color: #a63d45;
+}
+
+.home-phone-login-status.is-approved {
+  border-color: #a8d8c8;
+  background: #effaf6;
+  color: #087458;
+}
+
+.home-phone-login-spinner {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #b8d7d0;
+  border-top-color: #0d9488;
+  border-radius: 50%;
+  animation: home-phone-login-spin 800ms linear infinite;
+}
+
+.home-phone-login-spinner[hidden] {
+  display: none;
+}
+
+.home-phone-login-retry {
+  grid-column: 1 / -1;
+  justify-self: start;
+  color: #08786d;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.home-phone-login-retry:hover,
+.home-phone-login-retry:focus-visible {
+  color: #075f58;
+  text-decoration: underline;
+}
+
+.home-phone-login-waiting form {
+  grid-column: 1 / -1;
+}
+
+.home-phone-login-cancel {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #b6cbc6;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: none;
+  color: #45645e;
+  font-size: 12px;
+}
+
+.home-phone-login-cancel:hover,
+.home-phone-login-cancel:focus-visible {
+  border-color: #83aaa1;
+  background: #f6faf9;
+  box-shadow: none;
+  color: #174f46;
+  filter: none;
+  transform: none;
+}
+
+@keyframes home-phone-login-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .home-phone-form {
   display: grid;
   gap: 12px;

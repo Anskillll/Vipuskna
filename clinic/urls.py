@@ -22,6 +22,16 @@ urlpatterns = [
     path('telegram/webhook/', views.telegram_webhook, name='telegram_webhook'),
     path('forgot-password/', views.forgot_password, name='forgot_password'),
     path('patient/claim/', views.claim_patient, name='claim_patient'),
+    path(
+        'patient/phone-login/status/',
+        views.patient_phone_login_status,
+        name='patient_phone_login_status',
+    ),
+    path(
+        'patient/phone-login/cancel/',
+        views.patient_phone_login_cancel,
+        name='patient_phone_login_cancel',
+    ),
     path('patient/pending/', views.pending_patient_dashboard, name='pending_patient_dashboard'),
     path('patient/claim/complete/', views.claim_patient_complete, name='claim_patient_complete'),
     path('doctors/', views.doctors_list, name='doctors'),

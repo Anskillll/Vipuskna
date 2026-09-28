@@ -239,6 +239,97 @@
       document.body.classList.add('home-login-open');
       window.requestAnimationFrame(() => loginDialog.focus({ preventScroll: true }));
     }
+
+    const phoneLoginWaiting = loginModal.querySelector('[data-phone-login-waiting]');
+    if (phoneLoginWaiting) {
+      const statusElement = phoneLoginWaiting.querySelector('[data-phone-login-status]');
+      const messageElement = phoneLoginWaiting.querySelector('[data-phone-login-message]');
+      const spinnerElement = phoneLoginWaiting.querySelector('[data-phone-login-spinner]');
+      const retryElement = phoneLoginWaiting.querySelector('[data-phone-login-retry]');
+      const csrfElement = phoneLoginWaiting.querySelector('[name="csrfmiddlewaretoken"]');
+      const statusUrl = phoneLoginWaiting.dataset.statusUrl;
+      let phoneLoginTimer = null;
+      let expiresIn = null;
+
+      const formatRemainingTime = (seconds) => {
+        const safeSeconds = Math.max(0, Number(seconds) || 0);
+        const minutes = Math.floor(safeSeconds / 60);
+        const remainder = safeSeconds % 60;
+        return `${minutes}:${String(remainder).padStart(2, '0')}`;
+      };
+
+      const showPhoneLoginResult = (message, state = 'pending') => {
+        statusElement.classList.toggle('is-error', state === 'error');
+        statusElement.classList.toggle('is-approved', state === 'approved');
+        spinnerElement.hidden = state !== 'pending';
+        messageElement.textContent = message;
+      };
+
+      const stopPhoneLoginPolling = () => {
+        if (phoneLoginTimer) {
+          window.clearTimeout(phoneLoginTimer);
+          phoneLoginTimer = null;
+        }
+      };
+
+      const schedulePhoneLoginPoll = (delay = 1800) => {
+        stopPhoneLoginPolling();
+        phoneLoginTimer = window.setTimeout(checkPhoneLoginStatus, delay);
+      };
+
+      const checkPhoneLoginStatus = async () => {
+        try {
+          const response = await window.fetch(statusUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: {
+              'X-CSRFToken': csrfElement?.value || '',
+              'X-Requested-With': 'XMLHttpRequest',
+            },
+          });
+          const data = await response.json();
+          if (data.status === 'approved' && data.redirect_url) {
+            showPhoneLoginResult('Вхід підтверджено. Відкриваємо ваш кабінет…', 'approved');
+            window.setTimeout(() => window.location.assign(data.redirect_url), 350);
+            return;
+          }
+          if (data.status === 'pending') {
+            expiresIn = Number(data.expires_in) || 0;
+            showPhoneLoginResult(
+              `Очікуємо підтвердження у Telegram · ${formatRemainingTime(expiresIn)}`,
+            );
+            schedulePhoneLoginPoll();
+            return;
+          }
+
+          showPhoneLoginResult(
+            data.message || 'Запит більше не діє. Введіть номер телефону ще раз.',
+            'error',
+          );
+          retryElement.hidden = false;
+        } catch (error) {
+          showPhoneLoginResult('Не вдалося перевірити відповідь. Пробуємо ще раз…');
+          schedulePhoneLoginPoll(3500);
+        }
+      };
+
+      const countdownTimer = window.setInterval(() => {
+        if (expiresIn === null || expiresIn <= 0 || spinnerElement.hidden) {
+          return;
+        }
+        expiresIn -= 1;
+        messageElement.textContent = (
+          `Очікуємо підтвердження у Telegram · ${formatRemainingTime(expiresIn)}`
+        );
+      }, 1000);
+
+      window.addEventListener('pagehide', () => {
+        stopPhoneLoginPolling();
+        window.clearInterval(countdownTimer);
+      }, { once: true });
+      schedulePhoneLoginPoll(450);
+    }
   }
 
   const layer = home.querySelector('[data-particle-effect]');

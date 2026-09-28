@@ -1432,6 +1432,23 @@
     font-size: 17px;
   }
 
+  .home-phone-login-waiting {
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 11px;
+    padding: 14px;
+  }
+
+  .home-phone-login-telegram {
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+  }
+
+  .home-phone-login-telegram svg {
+    width: 23px;
+    height: 23px;
+  }
+
   .home-phone-form {
     gap: 9px;
     margin-top: 12px;

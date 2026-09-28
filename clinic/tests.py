@@ -36,6 +36,7 @@ from .models import (
     PatientRecordVideo,
     Profile,
     TelegramConnection,
+    TelegramLoginChallenge,
     TelegramLinkToken,
     TelegramNotification,
     WorkSchedule,
@@ -157,8 +158,8 @@ class ClinicModelTests(TestCase):
     def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
         response = self.client.get(reverse('home'))
 
-        self.assertContains(response, 'clinic/site.css?v=20260928-5')
-        self.assertContains(response, 'clinic/mobile.css?v=20260928-5')
+        self.assertContains(response, 'clinic/site.css?v=20260928-6')
+        self.assertContains(response, 'clinic/mobile.css?v=20260928-6')
         self.assertContains(response, 'Нікополь, вул. Шевченка, 200')
         self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
         self.assertContains(response, 'https://www.google.com/maps/search/?api=1&amp;query=')
@@ -2984,7 +2985,7 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Галерея')
         self.assertContains(response, 'data-home-slide')
         self.assertContains(response, 'data-home-reveal-header')
-        self.assertContains(response, 'clinic/home.js?v=20260928-2')
+        self.assertContains(response, 'clinic/home.js?v=20260928-3')
 
         content = response.content.decode()
         self.assertLess(content.index('Новини клініки'), content.index('Новини лікарів'))
@@ -3138,16 +3139,225 @@ class ClinicModelTests(TestCase):
         self.assertFalse(Appointment.objects.filter(patient=google_user).exists())
         self.assertNotIn('patient_claim_phone', self.client.session)
 
-    def test_phone_registration_rejects_number_of_existing_patient(self):
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+    )
+    def test_phone_login_requires_linked_telegram_bot(self):
         response = self.client.post(
             reverse('claim_patient'),
             data={'phone': self.patient.profile.phone},
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Цей номер уже прив’язаний до кабінету.')
+        self.assertContains(response, 'Telegram-бот не прив’язаний до цього акаунта')
+        self.assertContains(response, 'Увійдіть через Google')
         self.assertContains(response, 'home-login-modal is-open')
         self.assertNotIn('patient_claim_phone', self.client.session)
+        self.assertNotIn('telegram_phone_login', self.client.session)
+        self.assertFalse(TelegramLoginChallenge.objects.exists())
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+    )
+    @patch('clinic.telegram.TelegramBotClient.send_message')
+    def test_existing_patient_phone_sends_telegram_login_confirmation(self, send_message):
+        TelegramConnection.objects.create(user=self.patient, chat_id=51001)
+
+        response = self.client.post(
+            reverse('claim_patient'),
+            data={'phone': self.patient.profile.phone},
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse('home'))
+        self.assertContains(response, 'Підтвердьте вхід у Telegram')
+        self.assertContains(response, 'data-phone-login-waiting')
+        self.assertNotContains(response, f'action="{reverse("claim_patient")}"')
+        challenge = TelegramLoginChallenge.objects.get(user=self.patient)
+        session_payload = self.client.session['telegram_phone_login']
+        self.assertEqual(session_payload['id'], challenge.pk)
+        self.assertEqual(session_payload['token'], challenge.token)
+        self.assertEqual(send_message.call_args.args[0], 51001)
+        reply_markup = send_message.call_args.kwargs['reply_markup']
+        buttons = reply_markup['inline_keyboard'][0]
+        self.assertEqual(
+            buttons[0]['callback_data'],
+            f'patient_login:approve:{challenge.token}',
+        )
+        self.assertEqual(
+            buttons[1]['callback_data'],
+            f'patient_login:reject:{challenge.token}',
+        )
+        self.assertLessEqual(len(buttons[0]['callback_data'].encode()), 64)
+
+    def test_phone_login_cannot_be_approved_from_another_telegram_chat(self):
+        TelegramConnection.objects.create(user=self.patient, chat_id=51002)
+        challenge = TelegramLoginChallenge.objects.create(
+            user=self.patient,
+            token='foreign-chat-test-token',
+            expires_at=timezone.now() + timedelta(minutes=5),
+        )
+        telegram_client = Mock()
+        update = {
+            'callback_query': {
+                'id': 'foreign-login-callback',
+                'data': f'patient_login:approve:{challenge.token}',
+                'from': {'id': 99999},
+                'message': {
+                    'message_id': 101,
+                    'chat': {'id': 99999, 'type': 'private'},
+                },
+            },
+        }
+
+        self.assertFalse(process_update(update, client=telegram_client))
+
+        challenge.refresh_from_db()
+        self.assertEqual(challenge.status, TelegramLoginChallenge.STATUS_PENDING)
+        telegram_client.answer_callback_query.assert_called_once_with(
+            'foreign-login-callback',
+            'Цей запит належить іншому Telegram-акаунту.',
+            show_alert=True,
+        )
+        telegram_client.edit_message_reply_markup.assert_not_called()
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+    )
+    @patch('clinic.telegram.TelegramBotClient.send_message')
+    def test_telegram_approval_logs_patient_in_and_is_one_time(self, send_message):
+        TelegramConnection.objects.create(user=self.patient, chat_id=51003)
+        self.client.post(
+            reverse('claim_patient'),
+            data={'phone': self.patient.profile.phone},
+        )
+        challenge = TelegramLoginChallenge.objects.get(user=self.patient)
+        telegram_client = Mock()
+        update = {
+            'callback_query': {
+                'id': 'approve-login-callback',
+                'data': f'patient_login:approve:{challenge.token}',
+                'from': {'id': 51003},
+                'message': {
+                    'message_id': 102,
+                    'chat': {'id': 51003, 'type': 'private'},
+                },
+            },
+        }
+
+        self.assertTrue(process_update(update, client=telegram_client))
+        response = self.client.post(reverse('patient_phone_login_status'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'approved')
+        self.assertEqual(response.json()['redirect_url'], reverse('patient_dashboard'))
+        self.assertEqual(int(self.client.session['_auth_user_id']), self.patient.pk)
+        self.assertNotIn('telegram_phone_login', self.client.session)
+        challenge.refresh_from_db()
+        self.assertEqual(challenge.status, TelegramLoginChallenge.STATUS_APPROVED)
+        self.assertIsNotNone(challenge.consumed_at)
+        self.assertTrue(
+            AuditLog.objects.filter(
+                actor=self.patient,
+                action='Вхід за номером підтверджено в Telegram',
+            ).exists()
+        )
+
+        second_response = self.client.post(reverse('patient_phone_login_status'))
+        self.assertEqual(second_response.status_code, 404)
+        self.assertEqual(second_response.json()['status'], 'missing')
+        self.assertEqual(
+            AuditLog.objects.filter(
+                actor=self.patient,
+                action='Вхід за номером підтверджено в Telegram',
+            ).count(),
+            1,
+        )
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+    )
+    @patch('clinic.telegram.TelegramBotClient.send_message')
+    def test_telegram_rejection_does_not_log_patient_in(self, send_message):
+        TelegramConnection.objects.create(user=self.patient, chat_id=51005)
+        self.client.post(
+            reverse('claim_patient'),
+            data={'phone': self.patient.profile.phone},
+        )
+        challenge = TelegramLoginChallenge.objects.get(user=self.patient)
+        telegram_client = Mock()
+        update = {
+            'callback_query': {
+                'id': 'reject-login-callback',
+                'data': f'patient_login:reject:{challenge.token}',
+                'from': {'id': 51005},
+                'message': {
+                    'message_id': 103,
+                    'chat': {'id': 51005, 'type': 'private'},
+                },
+            },
+        }
+
+        self.assertTrue(process_update(update, client=telegram_client))
+        response = self.client.post(reverse('patient_phone_login_status'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'rejected')
+        self.assertNotIn('_auth_user_id', self.client.session)
+        self.assertNotIn('telegram_phone_login', self.client.session)
+        challenge.refresh_from_db()
+        self.assertEqual(challenge.status, TelegramLoginChallenge.STATUS_REJECTED)
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+    )
+    @patch('clinic.telegram.TelegramBotClient.send_message')
+    def test_phone_login_stops_if_telegram_is_disconnected_after_approval(self, send_message):
+        connection = TelegramConnection.objects.create(user=self.patient, chat_id=51006)
+        self.client.post(
+            reverse('claim_patient'),
+            data={'phone': self.patient.profile.phone},
+        )
+        challenge = TelegramLoginChallenge.objects.get(user=self.patient)
+        challenge.status = TelegramLoginChallenge.STATUS_APPROVED
+        challenge.resolved_at = timezone.now()
+        challenge.save(update_fields=['status', 'resolved_at'])
+        connection.is_active = False
+        connection.save(update_fields=['is_active'])
+
+        response = self.client.post(reverse('patient_phone_login_status'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'expired')
+        self.assertNotIn('_auth_user_id', self.client.session)
+        challenge.refresh_from_db()
+        self.assertEqual(challenge.status, TelegramLoginChallenge.STATUS_REJECTED)
+        self.assertIsNone(challenge.consumed_at)
+
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_BOT_USERNAME='myclinic_ua_bot',
+    )
+    @patch('clinic.telegram.TelegramBotClient.send_message')
+    def test_patient_can_cancel_phone_login_request(self, send_message):
+        TelegramConnection.objects.create(user=self.patient, chat_id=51004)
+        self.client.post(
+            reverse('claim_patient'),
+            data={'phone': self.patient.profile.phone},
+        )
+        challenge = TelegramLoginChallenge.objects.get(user=self.patient)
+
+        response = self.client.post(reverse('patient_phone_login_cancel'))
+
+        self.assertRedirects(response, reverse('home'))
+        self.assertNotIn('telegram_phone_login', self.client.session)
+        challenge.refresh_from_db()
+        self.assertEqual(challenge.status, TelegramLoginChallenge.STATUS_REJECTED)
 
     def test_guest_booking_requires_google_login(self):
         response = self.client.get(reverse('booking'), follow=True)

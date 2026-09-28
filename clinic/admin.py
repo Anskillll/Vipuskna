@@ -20,6 +20,7 @@ from .models import (
     PatientRecordVideo,
     Profile,
     TelegramConnection,
+    TelegramLoginChallenge,
     TelegramLinkToken,
     TelegramNotification,
     WorkSchedule,
@@ -219,6 +220,25 @@ class TelegramConnectionAdmin(admin.ModelAdmin):
 class TelegramLinkTokenAdmin(admin.ModelAdmin):
     list_display = ('user', 'created_at', 'expires_at', 'used_at')
     readonly_fields = ('user', 'token', 'created_at', 'expires_at', 'used_at')
+
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(TelegramLoginChallenge)
+class TelegramLoginChallengeAdmin(admin.ModelAdmin):
+    list_display = ('user', 'status', 'created_at', 'expires_at', 'consumed_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('user__username', 'user__first_name', 'user__last_name')
+    readonly_fields = (
+        'user',
+        'token',
+        'status',
+        'created_at',
+        'expires_at',
+        'resolved_at',
+        'consumed_at',
+    )
 
     def has_add_permission(self, request):
         return False

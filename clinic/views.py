@@ -70,11 +70,13 @@ from .models import (
     PatientRecordVideo,
     Profile,
     TelegramConnection,
+    TelegramLoginChallenge,
     WorkSchedule,
 )
 from .telegram import (
     TelegramError,
     create_link_url,
+    create_phone_login_challenge,
     notify_doctor_new_request,
     notify_doctor_patient_action,
     notify_patient_status,
@@ -90,6 +92,7 @@ BLOCKING_APPOINTMENT_STATUSES = [
     Appointment.STATUS_RESCHEDULE_PROPOSED,
 ]
 PATIENT_DAILY_BOOKING_LIMIT = 2
+PHONE_LOGIN_SESSION_KEY = 'telegram_phone_login'
 
 UKRAINIAN_WEEKDAYS = (
     'Понеділок',
@@ -853,6 +856,55 @@ def sync_patient_cards_for_doctor(doctor):
         ensure_patient_card_from_appointment(appointment)
 
 
+def patient_user_for_phone(phone):
+    normalized_phone = normalize_phone_number(phone)
+    matches = [
+        profile.user
+        for profile in Profile.objects.filter(
+            role=Profile.ROLE_PATIENT,
+            user__is_active=True,
+        ).select_related('user')
+        if normalize_phone_number(profile.phone) == normalized_phone
+    ]
+    return matches[0] if len(matches) == 1 else None
+
+
+def phone_login_challenge_from_session(request):
+    payload = request.session.get(PHONE_LOGIN_SESSION_KEY)
+    if not isinstance(payload, dict):
+        return None
+    challenge_id = payload.get('id')
+    session_token = payload.get('token', '')
+    if not challenge_id or not session_token:
+        request.session.pop(PHONE_LOGIN_SESSION_KEY, None)
+        return None
+    challenge = (
+        TelegramLoginChallenge.objects.select_related('user__profile')
+        .filter(pk=challenge_id)
+        .first()
+    )
+    if challenge is None or not hmac.compare_digest(challenge.token, str(session_token)):
+        request.session.pop(PHONE_LOGIN_SESSION_KEY, None)
+        return None
+    if challenge.consumed_at is not None:
+        request.session.pop(PHONE_LOGIN_SESSION_KEY, None)
+        return None
+    return challenge
+
+
+def clear_phone_login_challenge(request, reject=False):
+    challenge = phone_login_challenge_from_session(request)
+    request.session.pop(PHONE_LOGIN_SESSION_KEY, None)
+    if reject and challenge is not None and challenge.status in {
+        TelegramLoginChallenge.STATUS_PENDING,
+        TelegramLoginChallenge.STATUS_APPROVED,
+    }:
+        challenge.status = TelegramLoginChallenge.STATUS_REJECTED
+        challenge.resolved_at = timezone.now()
+        challenge.save(update_fields=['status', 'resolved_at'])
+    return challenge
+
+
 def home(request, claim_form=None, open_login_modal=False):
     featured_doctors = (
         Doctor.objects.filter(user__is_active=True)
@@ -862,6 +914,10 @@ def home(request, claim_form=None, open_login_modal=False):
     )
     if claim_form is None:
         claim_form = ClaimPatientForm()
+    phone_login_challenge = None
+    if not request.user.is_authenticated:
+        phone_login_challenge = phone_login_challenge_from_session(request)
+        open_login_modal = open_login_modal or phone_login_challenge is not None
     return render(
         request,
         'clinic/home.html',
@@ -876,6 +932,7 @@ def home(request, claim_form=None, open_login_modal=False):
             'hero_slides': HomeHeroSlide.objects.filter(is_active=True),
             'claim_form': claim_form,
             'open_login_modal': open_login_modal,
+            'phone_login_challenge': phone_login_challenge,
             'patient_google_login_url': (
                 f'{reverse("google_login")}?'
                 f'{urlencode({"next": reverse("claim_patient_complete")})}'
@@ -959,10 +1016,22 @@ def claim_patient(request):
     if request.method == 'POST' and form.is_valid():
         phone = form.cleaned_data['phone']
         exclude_user = request.user if request.user.is_authenticated else None
-        if patient_phone_is_used(phone, exclude_user=exclude_user):
+        existing_patient = patient_user_for_phone(phone)
+        if existing_patient is not None and existing_patient != exclude_user:
+            try:
+                challenge = create_phone_login_challenge(existing_patient)
+            except TelegramError as error:
+                form.add_error('phone', str(error))
+            else:
+                request.session[PHONE_LOGIN_SESSION_KEY] = {
+                    'id': challenge.pk,
+                    'token': challenge.token,
+                }
+                return redirect('home')
+        elif patient_phone_is_used(phone, exclude_user=exclude_user):
             form.add_error(
                 'phone',
-                'Цей номер уже прив’язаний до кабінету. Увійдіть через Google, щоб відкрити його.',
+                'Акаунт із цим номером зараз недоступний. Увійдіть через Google або зверніться до клініки.',
             )
         else:
             complete_url = reverse('claim_patient_complete')
@@ -989,6 +1058,110 @@ def claim_patient(request):
     ):
         return home(request, claim_form=form, open_login_modal=True)
     return render(request, 'clinic/claim_patient.html', {'form': form})
+
+
+@require_POST
+def patient_phone_login_status(request):
+    response_payload = {
+        'status': 'missing',
+        'message': 'Запит на вхід не знайдено. Введіть номер телефону ще раз.',
+    }
+    challenge = phone_login_challenge_from_session(request)
+    if challenge is None:
+        response = JsonResponse(response_payload, status=404)
+        response['Cache-Control'] = 'no-store'
+        return response
+
+    now = timezone.now()
+    if challenge.expires_at <= now and challenge.status in {
+        TelegramLoginChallenge.STATUS_PENDING,
+        TelegramLoginChallenge.STATUS_APPROVED,
+    }:
+        challenge.status = TelegramLoginChallenge.STATUS_EXPIRED
+        challenge.resolved_at = now
+        challenge.save(update_fields=['status', 'resolved_at'])
+
+    if challenge.status == TelegramLoginChallenge.STATUS_APPROVED:
+        authenticated_user = None
+        with transaction.atomic():
+            locked_challenge = (
+                TelegramLoginChallenge.objects.select_for_update()
+                .select_related('user__profile')
+                .get(pk=challenge.pk)
+            )
+            connection_is_active = TelegramConnection.objects.filter(
+                user=locked_challenge.user,
+                is_active=True,
+            ).exists()
+            is_patient = getattr(
+                getattr(locked_challenge.user, 'profile', None),
+                'role',
+                None,
+            ) == Profile.ROLE_PATIENT
+            if (
+                locked_challenge.status == TelegramLoginChallenge.STATUS_APPROVED
+                and locked_challenge.consumed_at is None
+                and locked_challenge.expires_at > now
+                and locked_challenge.user.is_active
+                and is_patient
+                and connection_is_active
+            ):
+                locked_challenge.consumed_at = now
+                locked_challenge.save(update_fields=['consumed_at'])
+                authenticated_user = locked_challenge.user
+
+        if authenticated_user is not None:
+            login(
+                request,
+                authenticated_user,
+                backend='django.contrib.auth.backends.ModelBackend',
+            )
+            request.session.pop(PHONE_LOGIN_SESSION_KEY, None)
+            AuditLog.objects.create(
+                actor=authenticated_user,
+                action='Вхід за номером підтверджено в Telegram',
+                target_type='Користувач',
+                target_id=str(authenticated_user.pk),
+                target_label=authenticated_user.get_full_name() or authenticated_user.username,
+                details='Одноразове підтвердження використано для входу в кабінет пацієнта.',
+            )
+            response_payload = {
+                'status': 'approved',
+                'redirect_url': reverse('patient_dashboard'),
+            }
+        else:
+            clear_phone_login_challenge(request, reject=True)
+            response_payload = {
+                'status': 'expired',
+                'message': 'Підтвердження більше не діє. Створіть новий запит.',
+            }
+    elif challenge.status == TelegramLoginChallenge.STATUS_REJECTED:
+        clear_phone_login_challenge(request)
+        response_payload = {
+            'status': 'rejected',
+            'message': 'Запит відхилено в Telegram. Якщо це були ви, спробуйте ще раз.',
+        }
+    elif challenge.status == TelegramLoginChallenge.STATUS_EXPIRED:
+        clear_phone_login_challenge(request)
+        response_payload = {
+            'status': 'expired',
+            'message': 'Час підтвердження минув. Введіть номер телефону ще раз.',
+        }
+    else:
+        response_payload = {
+            'status': 'pending',
+            'expires_in': max(0, int((challenge.expires_at - now).total_seconds())),
+        }
+
+    response = JsonResponse(response_payload)
+    response['Cache-Control'] = 'no-store'
+    return response
+
+
+@require_POST
+def patient_phone_login_cancel(request):
+    clear_phone_login_challenge(request, reject=True)
+    return redirect('home')
 
 
 def pending_patient_dashboard(request):

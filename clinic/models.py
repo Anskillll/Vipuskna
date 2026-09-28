@@ -855,6 +855,45 @@ class TelegramLinkToken(models.Model):
         return f'{self.user} — {self.expires_at:%d.%m.%Y %H:%M}'
 
 
+class TelegramLoginChallenge(models.Model):
+    STATUS_PENDING = 'pending'
+    STATUS_APPROVED = 'approved'
+    STATUS_REJECTED = 'rejected'
+    STATUS_EXPIRED = 'expired'
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Очікує підтвердження'),
+        (STATUS_APPROVED, 'Підтверджено'),
+        (STATUS_REJECTED, 'Відхилено'),
+        (STATUS_EXPIRED, 'Термін дії минув'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='telegram_login_challenges',
+        verbose_name='Користувач',
+    )
+    token = models.CharField('Одноразовий токен', max_length=64, unique=True)
+    status = models.CharField(
+        'Статус',
+        max_length=12,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+    )
+    expires_at = models.DateTimeField('Діє до')
+    resolved_at = models.DateTimeField('Підтверджено або відхилено', null=True, blank=True)
+    consumed_at = models.DateTimeField('Вхід завершено', null=True, blank=True)
+    created_at = models.DateTimeField('Створено', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Підтвердження входу через Telegram'
+        verbose_name_plural = 'Підтвердження входу через Telegram'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.user} — {self.get_status_display()}'
+
+
 class TelegramNotification(models.Model):
     STATUS_PENDING = 'pending'
     STATUS_SENT = 'sent'

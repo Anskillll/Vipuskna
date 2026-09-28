@@ -14,15 +14,19 @@ from .models import (
     Appointment,
     AuditLog,
     TelegramConnection,
+    TelegramLoginChallenge,
     TelegramLinkToken,
     TelegramNotification,
 )
 
 
 LINK_TOKEN_LIFETIME = timedelta(minutes=10)
+LOGIN_CHALLENGE_LIFETIME = timedelta(minutes=5)
+LOGIN_CHALLENGE_RETRY_DELAY = timedelta(minutes=1)
 REMINDER_SEND_FROM = time(18, 0)
 ADMIN_BROADCAST_MAX_LENGTH = 3500
 DOCTOR_REQUEST_CALLBACK_PREFIX = 'doctor_request'
+PATIENT_LOGIN_CALLBACK_PREFIX = 'patient_login'
 
 
 class TelegramError(Exception):
@@ -160,6 +164,188 @@ def create_link_url(user):
         f'https://t.me/{settings.TELEGRAM_BOT_USERNAME}'
         f'?start={quote(link_token.token)}'
     )
+
+
+def create_phone_login_challenge(user):
+    if not telegram_is_configured():
+        raise TelegramError('Вхід через Telegram зараз недоступний. Спробуйте увійти через Google.')
+
+    now = timezone.now()
+    with transaction.atomic():
+        connection = (
+            TelegramConnection.objects.select_for_update()
+            .filter(user=user, user__is_active=True, is_active=True)
+            .first()
+        )
+        if connection is None:
+            raise TelegramError(
+                'Вхід за номером недоступний: Telegram-бот не прив’язаний до цього акаунта. '
+                'Увійдіть через Google, відкрийте свій кабінет і прив’яжіть бота — після цього '
+                'зможете входити за номером телефону.'
+            )
+
+        recent_challenge = (
+            TelegramLoginChallenge.objects.filter(
+                user=user,
+                status=TelegramLoginChallenge.STATUS_PENDING,
+                expires_at__gt=now,
+            )
+            .order_by('-created_at')
+            .first()
+        )
+        if (
+            recent_challenge is not None
+            and recent_challenge.created_at > now - LOGIN_CHALLENGE_RETRY_DELAY
+        ):
+            raise TelegramError(
+                'Запит на підтвердження вже надсилали. Зачекайте хвилину та перевірте Telegram.'
+            )
+
+        TelegramLoginChallenge.objects.filter(
+            user=user,
+            status__in=[
+                TelegramLoginChallenge.STATUS_PENDING,
+                TelegramLoginChallenge.STATUS_APPROVED,
+            ],
+            consumed_at__isnull=True,
+        ).update(
+            status=TelegramLoginChallenge.STATUS_EXPIRED,
+            resolved_at=now,
+        )
+        challenge = TelegramLoginChallenge.objects.create(
+            user=user,
+            token=secrets.token_urlsafe(18),
+            expires_at=now + LOGIN_CHALLENGE_LIFETIME,
+        )
+
+    requested_at = timezone.localtime(now).strftime('%d.%m.%Y о %H:%M')
+    text = (
+        '<b>Підтвердження входу в MedClinic</b>\n\n'
+        'Надійшов запит на вхід до вашого кабінету за номером телефону.\n'
+        f'Час запиту: <b>{requested_at}</b>\n\n'
+        'Підтверджуйте вхід лише якщо саме ви щойно відкрили сайт клініки.'
+    )
+    reply_markup = {
+        'inline_keyboard': [[
+            {
+                'text': '✅ Підтвердити вхід',
+                'callback_data': (
+                    f'{PATIENT_LOGIN_CALLBACK_PREFIX}:approve:{challenge.token}'
+                ),
+            },
+            {
+                'text': '❌ Це не я',
+                'callback_data': (
+                    f'{PATIENT_LOGIN_CALLBACK_PREFIX}:reject:{challenge.token}'
+                ),
+            },
+        ]],
+    }
+    try:
+        TelegramBotClient().send_message(
+            connection.chat_id,
+            text,
+            reply_markup=reply_markup,
+        )
+    except (requests.RequestException, ValueError, TelegramError) as error:
+        TelegramLoginChallenge.objects.filter(pk=challenge.pk).update(
+            status=TelegramLoginChallenge.STATUS_EXPIRED,
+            resolved_at=timezone.now(),
+        )
+        raise TelegramError(
+            'Не вдалося надіслати підтвердження в Telegram. Спробуйте ще раз пізніше.'
+        ) from error
+
+    return challenge
+
+
+def _process_patient_login_callback(callback_query, client):
+    callback_id = callback_query.get('id', '')
+    data = callback_query.get('data', '')
+    message = callback_query.get('message') or {}
+    chat = message.get('chat') or {}
+    sender = callback_query.get('from') or {}
+    chat_id = chat.get('id')
+    message_id = message.get('message_id')
+    parts = data.split(':')
+
+    if (
+        len(parts) != 3
+        or parts[0] != PATIENT_LOGIN_CALLBACK_PREFIX
+        or parts[1] not in {'approve', 'reject'}
+        or not parts[2]
+        or not callback_id
+        or not chat_id
+        or chat.get('type') != 'private'
+        or sender.get('id') != chat_id
+    ):
+        if callback_id:
+            client.answer_callback_query(
+                callback_id,
+                'Цей запит на вхід не вдалося розпізнати.',
+                show_alert=True,
+            )
+        return False
+
+    now = timezone.now()
+    response_text = ''
+    processed = False
+    remove_actions = False
+    try:
+        with transaction.atomic():
+            challenge = (
+                TelegramLoginChallenge.objects.select_for_update()
+                .select_related('user')
+                .filter(token=parts[2])
+                .first()
+            )
+            if challenge is None:
+                response_text = 'Запит не знайдено або він уже застарів.'
+            elif not TelegramConnection.objects.filter(
+                user=challenge.user,
+                chat_id=chat_id,
+                is_active=True,
+            ).exists():
+                response_text = 'Цей запит належить іншому Telegram-акаунту.'
+            elif challenge.status != TelegramLoginChallenge.STATUS_PENDING:
+                response_text = 'Цей запит на вхід уже опрацьовано.'
+                remove_actions = True
+            elif challenge.expires_at <= now:
+                challenge.status = TelegramLoginChallenge.STATUS_EXPIRED
+                challenge.resolved_at = now
+                challenge.save(update_fields=['status', 'resolved_at'])
+                response_text = 'Час підтвердження минув. Створіть новий запит на сайті.'
+                remove_actions = True
+            else:
+                challenge.status = (
+                    TelegramLoginChallenge.STATUS_APPROVED
+                    if parts[1] == 'approve'
+                    else TelegramLoginChallenge.STATUS_REJECTED
+                )
+                challenge.resolved_at = now
+                challenge.save(update_fields=['status', 'resolved_at'])
+                processed = True
+                remove_actions = True
+                response_text = (
+                    'Вхід підтверджено. Поверніться до браузера.'
+                    if parts[1] == 'approve'
+                    else 'Запит на вхід відхилено.'
+                )
+    except DatabaseError:
+        response_text = 'База даних тимчасово недоступна. Спробуйте ще раз.'
+
+    client.answer_callback_query(
+        callback_id,
+        response_text,
+        show_alert=not processed,
+    )
+    if message_id and remove_actions:
+        client.edit_message_reply_markup(
+            chat_id,
+            message_id,
+            {'inline_keyboard': []},
+        )
+    return processed
 
 
 def _site_only_markup(appointment):
@@ -356,6 +542,9 @@ def process_update(update, client=None):
     client = client or TelegramBotClient()
     callback_query = update.get('callback_query') or {}
     if callback_query:
+        callback_data = callback_query.get('data', '')
+        if callback_data.startswith(f'{PATIENT_LOGIN_CALLBACK_PREFIX}:'):
+            return _process_patient_login_callback(callback_query, client)
         return _process_doctor_request_callback(callback_query, client)
 
     message = update.get('message') or {}
