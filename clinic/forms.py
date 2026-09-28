@@ -58,14 +58,10 @@ class FormStyleMixin:
         for field_name, field in self.fields.items():
             field.widget.attrs.setdefault('class', 'form-input')
             if field_name in {'phone', 'patient_phone'}:
-                field.widget.attrs.update(
-                    {
-                        'inputmode': 'tel',
-                        'autocomplete': 'tel',
-                        'maxlength': '19',
-                        'placeholder': '+380501234567',
-                    }
-                )
+                field.widget.attrs.setdefault('inputmode', 'tel')
+                field.widget.attrs.setdefault('autocomplete', 'tel')
+                field.widget.attrs.setdefault('maxlength', '19')
+                field.widget.attrs.setdefault('placeholder', '+380501234567')
                 if not field.help_text:
                     field.help_text = 'Введіть 0501234567 або +380501234567.'
             if isinstance(field.widget, forms.ClearableFileInput):
@@ -131,6 +127,13 @@ class ClaimPatientForm(FormStyleMixin, forms.Form):
         label='Номер телефону',
         validators=[validate_ukrainian_phone],
         help_text='Введіть свій номер або той самий номер, який ви повідомили лікарю.',
+        widget=forms.TextInput(
+            attrs={
+                'autocomplete': 'tel',
+                'inputmode': 'tel',
+                'placeholder': '+38 (___) ___-__-__',
+            }
+        ),
     )
 
     def clean_phone(self):

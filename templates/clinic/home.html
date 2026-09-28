@@ -100,9 +100,8 @@
               <a href="{% url 'pending_patient_dashboard' %}">Перейти до кабінету <span aria-hidden="true">→</span></a>
               <a href="{% url 'doctors' %}">Переглянути лікарів <span aria-hidden="true">→</span></a>
             {% else %}
-              <a href="{{ patient_google_login_url }}">Увійти через Google <span aria-hidden="true">→</span></a>
+              <button class="home-login-trigger" type="button" data-home-login-open aria-haspopup="dialog">Вхід <span aria-hidden="true">→</span></button>
               <a href="{% url 'doctors' %}">Переглянути лікарів <span aria-hidden="true">→</span></a>
-              <a class="home-hero-minor-link" href="{% url 'claim_patient' %}">Реєстрація за номером телефону</a>
             {% endif %}
           {% elif user.is_staff %}
             <a href="{% url 'admin_panel' %}">Перейти до панелі адміністратора <span aria-hidden="true">→</span></a>
@@ -289,5 +288,57 @@
     </section>
   </div>
 
-  <script src="{% static 'clinic/home.js' %}?v=20260729-1" defer></script>
+  {% if not user.is_authenticated and not request.session.patient_claim_phone %}
+    <div
+      class="home-login-modal{% if open_login_modal %} is-open{% endif %}"
+      data-home-login-modal
+      aria-hidden="{% if open_login_modal %}false{% else %}true{% endif %}"
+      {% if not open_login_modal %}hidden{% endif %}
+    >
+      <button class="home-login-backdrop" type="button" data-home-login-close tabindex="-1" aria-label="Закрити вікно входу"></button>
+      <section class="home-login-dialog" role="dialog" aria-modal="true" aria-labelledby="home-login-title" tabindex="-1">
+        <button class="home-login-close" type="button" data-home-login-close aria-label="Закрити вікно входу">×</button>
+
+        <header class="home-login-heading">
+          <span>Особистий кабінет</span>
+          <h2 id="home-login-title">Вхід для пацієнта</h2>
+          <p>Увійдіть через Google або створіть кабінет за номером телефону.</p>
+        </header>
+
+        <a class="home-google-login" href="{{ patient_google_login_url }}">
+          <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+            <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.7 2.5 30.4 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.8 6.1C12.3 13.6 17.6 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M47.5 24.5c0-1.6-.1-2.8-.4-4.1H24v8.7h13.5c-.3 2.2-1.8 5.6-5.1 7.8l7.6 5.9c4.5-4.2 7.5-10.4 7.5-18.3z"/>
+            <path fill="#FBBC05" d="M10.4 28.6A14.8 14.8 0 0 1 9.6 24c0-1.6.3-3.1.8-4.6l-7.8-6.1A24 24 0 0 0 0 24c0 3.9.9 7.6 2.6 10.7l7.8-6.1z"/>
+            <path fill="#34A853" d="M24 48c6.4 0 11.8-2.1 15.7-5.7l-7.6-5.9c-2 1.4-4.8 2.4-8.1 2.4-6.3 0-11.7-4.2-13.6-10.1l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/>
+          </svg>
+          <span>
+            <small>Швидкий та захищений спосіб</small>
+            <strong>Увійти через Google</strong>
+          </span>
+          <span class="home-login-arrow" aria-hidden="true">→</span>
+        </a>
+
+        <div class="home-login-divider"><span>або</span></div>
+
+        <div class="home-phone-registration">
+          <span class="home-phone-registration-icon" aria-hidden="true">＋</span>
+          <div>
+            <strong>Реєстрація за номером телефону</strong>
+            <p>Вкажіть номер, який повідомляли лікарю, або створіть новий кабінет.</p>
+          </div>
+        </div>
+
+        <form class="home-phone-form" method="post" action="{% url 'claim_patient' %}">
+          {% csrf_token %}
+          {% include 'clinic/_form_fields.html' with form=claim_form %}
+          <button type="submit">Продовжити <span aria-hidden="true">→</span></button>
+        </form>
+
+        <p class="home-login-privacy">Ми використаємо номер лише для пошуку ваших записів і зв’язку з клінікою.</p>
+      </section>
+    </div>
+  {% endif %}
+
+  <script src="{% static 'clinic/home.js' %}?v=20260928-2" defer></script>
 {% endblock %}

@@ -853,13 +853,15 @@ def sync_patient_cards_for_doctor(doctor):
         ensure_patient_card_from_appointment(appointment)
 
 
-def home(request):
+def home(request, claim_form=None, open_login_modal=False):
     featured_doctors = (
         Doctor.objects.filter(user__is_active=True)
         .select_related('user')
         .annotate(home_appointments=Count('appointments'))
         .order_by('-home_appointments', 'user__last_name', 'user__first_name')[:4]
     )
+    if claim_form is None:
+        claim_form = ClaimPatientForm()
     return render(
         request,
         'clinic/home.html',
@@ -872,6 +874,8 @@ def home(request):
             'gallery_images': GalleryImage.objects.filter(is_published=True)[:18],
             'featured_doctors': featured_doctors,
             'hero_slides': HomeHeroSlide.objects.filter(is_active=True),
+            'claim_form': claim_form,
+            'open_login_modal': open_login_modal,
             'patient_google_login_url': (
                 f'{reverse("google_login")}?'
                 f'{urlencode({"next": reverse("claim_patient_complete")})}'
@@ -978,6 +982,12 @@ def claim_patient(request):
             )
             return redirect('pending_patient_dashboard')
 
+    if (
+        request.method == 'POST'
+        and not request.user.is_authenticated
+        and not request.session.get('patient_claim_phone')
+    ):
+        return home(request, claim_form=form, open_login_modal=True)
     return render(request, 'clinic/claim_patient.html', {'form': form})
 
 

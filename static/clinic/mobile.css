@@ -1338,3 +1338,113 @@
     width: 76px;
   }
 }
+
+@media (max-width: 620px) {
+  .public-home-page .home-hero-actions {
+    display: grid;
+    grid-template-columns: minmax(105px, 0.78fr) minmax(0, 1.22fr);
+    align-items: stretch;
+    gap: 9px;
+    width: 100%;
+  }
+
+  .public-home-page .home-hero-actions a,
+  .public-home-page .home-hero-actions button {
+    width: 100%;
+    min-height: 42px;
+    padding: 0 11px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .public-home-page .home-hero-actions .home-login-trigger {
+    min-width: 0;
+    font-size: 12px;
+  }
+
+  .public-home-page .home-hero-actions a > span,
+  .public-home-page .home-hero-actions button > span {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+  }
+
+  .home-login-modal {
+    align-items: center;
+    padding: 12px;
+  }
+
+  .home-login-dialog {
+    max-height: calc(100svh - 24px);
+    padding: 25px 18px 20px;
+    border-radius: 14px;
+  }
+
+  .home-login-close {
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
+  }
+
+  .home-login-heading {
+    padding-right: 28px;
+  }
+
+  .home-login-heading h2 {
+    font-size: 23px;
+  }
+
+  .home-login-heading p {
+    font-size: 12px;
+  }
+
+  .home-google-login {
+    grid-template-columns: 34px minmax(0, 1fr) 27px;
+    min-height: 60px;
+    margin-top: 18px;
+    padding: 9px 11px;
+  }
+
+  .home-google-login svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .home-google-login strong {
+    font-size: 13px;
+  }
+
+  .home-login-divider {
+    margin: 14px 0;
+  }
+
+  .home-phone-registration {
+    grid-template-columns: 31px minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .home-phone-registration-icon {
+    width: 31px;
+    height: 31px;
+    font-size: 17px;
+  }
+
+  .home-phone-form {
+    gap: 9px;
+    margin-top: 12px;
+  }
+
+  .home-phone-form input,
+  .home-phone-form > button {
+    min-height: 43px;
+  }
+}
+
+@media (max-width: 350px) {
+  .public-home-page .home-hero-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

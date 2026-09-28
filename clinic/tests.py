@@ -157,8 +157,8 @@ class ClinicModelTests(TestCase):
     def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
         response = self.client.get(reverse('home'))
 
-        self.assertContains(response, 'clinic/site.css?v=20260928-4')
-        self.assertContains(response, 'clinic/mobile.css?v=20260928-4')
+        self.assertContains(response, 'clinic/site.css?v=20260928-5')
+        self.assertContains(response, 'clinic/mobile.css?v=20260928-5')
         self.assertContains(response, 'Нікополь, вул. Шевченка, 200')
         self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
         self.assertContains(response, 'https://www.google.com/maps/search/?api=1&amp;query=')
@@ -2984,7 +2984,7 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Галерея')
         self.assertContains(response, 'data-home-slide')
         self.assertContains(response, 'data-home-reveal-header')
-        self.assertContains(response, 'clinic/home.js?v=20260729-1')
+        self.assertContains(response, 'clinic/home.js?v=20260928-2')
 
         content = response.content.decode()
         self.assertLess(content.index('Новини клініки'), content.index('Новини лікарів'))
@@ -2993,6 +2993,21 @@ class ClinicModelTests(TestCase):
 
         home_script = (Path(settings.BASE_DIR) / 'static' / 'clinic' / 'home.js').read_text(encoding='utf-8')
         self.assertIn('10000', home_script)
+
+    def test_guest_home_uses_combined_patient_login_modal(self):
+        response = self.client.get(reverse('home'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-home-login-open')
+        self.assertContains(response, 'data-home-login-modal')
+        self.assertContains(response, 'class="home-google-login"')
+        self.assertContains(response, 'Увійти через Google')
+        self.assertContains(
+            response,
+            f'action="{reverse("claim_patient")}"',
+        )
+        self.assertContains(response, 'placeholder="+38 (___) ___-__-__"')
+        self.assertNotContains(response, 'home-hero-minor-link')
 
     def test_long_doctor_service_list_is_moved_to_detail_page(self):
         for index in range(4):
@@ -3131,6 +3146,7 @@ class ClinicModelTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Цей номер уже прив’язаний до кабінету.')
+        self.assertContains(response, 'home-login-modal is-open')
         self.assertNotIn('patient_claim_phone', self.client.session)
 
     def test_guest_booking_requires_google_login(self):

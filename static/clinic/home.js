@@ -165,6 +165,82 @@
     startGallerySlider();
   }
 
+  const loginModal = document.querySelector('[data-home-login-modal]');
+  if (loginModal) {
+    const loginDialog = loginModal.querySelector('.home-login-dialog');
+    const loginOpeners = Array.from(document.querySelectorAll('[data-home-login-open]'));
+    const loginClosers = Array.from(loginModal.querySelectorAll('[data-home-login-close]'));
+    let loginReturnFocus = null;
+    let loginCloseTimer = null;
+
+    const loginFocusableElements = () => Array.from(
+      loginDialog.querySelectorAll(
+        'a[href], button:not([disabled]):not([tabindex="-1"]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])',
+      ),
+    );
+
+    const openLoginModal = (trigger = null) => {
+      if (loginCloseTimer) {
+        window.clearTimeout(loginCloseTimer);
+        loginCloseTimer = null;
+      }
+      loginReturnFocus = trigger || document.activeElement;
+      loginModal.hidden = false;
+      loginModal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('home-login-open');
+      window.requestAnimationFrame(() => {
+        loginModal.classList.add('is-open');
+        loginDialog.focus({ preventScroll: true });
+      });
+    };
+
+    const closeLoginModal = () => {
+      loginModal.classList.remove('is-open');
+      loginModal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('home-login-open');
+      loginCloseTimer = window.setTimeout(() => {
+        loginModal.hidden = true;
+        loginReturnFocus?.focus({ preventScroll: true });
+      }, reducedMotion ? 0 : 210);
+    };
+
+    loginOpeners.forEach((opener) => {
+      opener.addEventListener('click', () => openLoginModal(opener));
+    });
+    loginClosers.forEach((closer) => {
+      closer.addEventListener('click', closeLoginModal);
+    });
+    loginModal.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeLoginModal();
+        return;
+      }
+      if (event.key !== 'Tab') {
+        return;
+      }
+      const focusable = loginFocusableElements();
+      if (!focusable.length) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+
+    if (loginModal.classList.contains('is-open')) {
+      document.body.classList.add('home-login-open');
+      window.requestAnimationFrame(() => loginDialog.focus({ preventScroll: true }));
+    }
+  }
+
   const layer = home.querySelector('[data-particle-effect]');
   if (!layer || reducedMotion) {
     return;
