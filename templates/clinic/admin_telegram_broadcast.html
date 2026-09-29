@@ -6,15 +6,9 @@
 
 {% block content %}
   <div class="admin-broadcast-shell">
-    <section class="page-head admin-page-head">
+    <section class="page-head admin-page-head admin-tabs-head">
       <div>
-        <span class="admin-eyebrow">Telegram-бот</span>
-        <h1 class="page-title">Масове повідомлення</h1>
-        <p class="page-subtitle">Надішліть оголошення всім підключеним користувачам або одній людині.</p>
-      </div>
-      <div class="admin-broadcast-count" aria-label="Кількість доступних адресатів">
-        <strong>{{ connected_count }}</strong>
-        <span>підключено до бота</span>
+        <h1 class="page-title">Telegram-бот</h1>
       </div>
     </section>
 
@@ -25,6 +19,11 @@
       <a class="page-tab active" href="{% url 'admin_telegram_broadcast' %}">Telegram-повідомлення</a>
       <a class="page-tab" href="/admin/">Системні налаштування</a>
     </nav>
+
+    <div class="admin-broadcast-count" aria-label="Кількість доступних адресатів">
+      <strong>{{ connected_count }}</strong>
+      <span>підключено до бота</span>
+    </div>
 
     <section class="admin-broadcast-layout">
       <form class="card admin-broadcast-form" method="post" data-admin-broadcast-form>

@@ -4200,7 +4200,7 @@ class ClinicModelTests(TestCase):
 
         response = self.client.get(reverse('admin_panel'))
 
-        self.assertContains(response, 'Керування клінікою')
+        self.assertContains(response, 'Огляд клініки')
         self.assertNotContains(response, 'href="#users"')
         self.assertNotContains(response, 'Швидкі дії')
         self.assertNotContains(response, 'Що потрібно зробити?')
@@ -4232,11 +4232,11 @@ class ClinicModelTests(TestCase):
             password='pass12345',
         )
         self.client.login(username=admin_user.username, password='pass12345')
-        routes = (
-            'admin_panel',
-            'admin_add_doctor',
-            'admin_content',
-            'admin_telegram_broadcast',
+        route_titles = (
+            ('admin_panel', 'Огляд клініки'),
+            ('admin_add_doctor', 'Новий лікар'),
+            ('admin_content', 'Контент сайту'),
+            ('admin_telegram_broadcast', 'Telegram-бот'),
         )
         expected_labels = (
             'Огляд',
@@ -4246,11 +4246,14 @@ class ClinicModelTests(TestCase):
             'Системні налаштування',
         )
 
-        for route in routes:
+        for route, title in route_titles:
             with self.subTest(route=route):
                 response = self.client.get(reverse(route))
                 self.assertEqual(response.status_code, 200)
                 content = response.content.decode()
+                header = content.split('<nav class="page-tabs admin-tabs"', 1)[0]
+                self.assertIn(f'<h1 class="page-title">{title}</h1>', header)
+                self.assertNotIn('page-subtitle', header)
                 nav = content.split('<nav class="page-tabs admin-tabs"', 1)[1].split('</nav>', 1)[0]
                 positions = [nav.index(label) for label in expected_labels]
                 self.assertEqual(positions, sorted(positions))

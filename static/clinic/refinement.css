@@ -205,6 +205,38 @@ body:not(.public-home-page) .admin-tabs .page-tab::before {
 body:not(.public-home-page) .admin-tabs .page-tab.active::before { background: #b9e2cb; }
 body:not(.public-home-page) .admin-tabs .page-tab,
 body:not(.public-home-page) .admin-tabs .page-tab.active { font-weight: 600; }
+body:not(.public-home-page) .admin-tabs-head {
+  align-items: center;
+  height: 40px;
+  min-height: 40px;
+  margin: 0;
+}
+body:not(.public-home-page) .admin-tabs-head .page-title {
+  font-size: 34px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+body:not(.public-home-page) .content-admin {
+  display: grid;
+  gap: 18px;
+}
+body:not(.public-home-page) .content-admin > .admin-tabs-head,
+body:not(.public-home-page) .content-admin > .admin-tabs { margin: 0; }
+.content-admin-toolbar { display: flex; justify-content: flex-end; }
+.admin-broadcast-shell > .admin-broadcast-count {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 0 0 12px;
+}
+.admin-broadcast-shell > .admin-broadcast-count strong { font-size: 22px; }
+.admin-broadcast-shell > .admin-broadcast-count span { white-space: nowrap; }
+@media (max-width: 720px) {
+  body:not(.public-home-page) .admin-tabs-head { min-height: 32px; height: 32px; }
+  body:not(.public-home-page) .admin-tabs-head .page-title { font-size: 26px; }
+}
 body:not(.public-home-page) :is(.btn, button):not(.working-date-day):not(.time-pill) {
   border-radius: 12px;
 }
