@@ -4582,6 +4582,51 @@ class ClinicModelTests(TestCase):
         self.assertEqual(entry.doctor, self.doctor)
         self.assertEqual(entry.title, 'Первинний огляд')
 
+    def test_doctor_can_rename_patient_locally_without_editing_phone_or_patient_profile(self):
+        card = DoctorPatientCard.objects.create(
+            doctor=self.doctor,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            patient_email='patient@test.local',
+        )
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            date=timezone.localdate(),
+            time=time(9, 0),
+        )
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.post(
+            reverse('doctor_patient_card_detail', args=[card.id]),
+            data={
+                'action': 'update_card',
+                'patient_first_name': 'Нове ім’я',
+                'patient_last_name': 'Нове прізвище',
+                'notes': 'Нотатка лікаря',
+            },
+        )
+
+        self.assertRedirects(response, reverse('doctor_patient_card_detail', args=[card.id]))
+        card.refresh_from_db()
+        appointment.refresh_from_db()
+        self.patient.refresh_from_db()
+        self.assertEqual(card.full_name, 'Нове ім’я Нове прізвище')
+        self.assertEqual(card.patient_phone, '+380501111111')
+        self.assertEqual(appointment.patient_name, 'Нове ім’я Нове прізвище')
+        self.assertEqual(self.patient.first_name, 'Тест')
+        self.assertEqual(self.patient.last_name, 'Пацієнт')
+
+        page = self.client.get(reverse('doctor_patient_card_detail', args=[card.id]))
+        self.assertNotContains(page, 'name="patient_phone"')
+        self.assertNotContains(page, 'Телефон:</label>')
+
     def test_patient_card_history_links_to_each_appointment_detail(self):
         card = DoctorPatientCard.objects.create(
             doctor=self.doctor,

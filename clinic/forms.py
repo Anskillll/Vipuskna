@@ -498,7 +498,6 @@ class DoctorPatientCardForm(FormStyleMixin, forms.ModelForm):
         fields = [
             'patient_first_name',
             'patient_last_name',
-            'patient_phone',
             'notes',
         ]
         widgets = {
@@ -507,7 +506,6 @@ class DoctorPatientCardForm(FormStyleMixin, forms.ModelForm):
         labels = {
             'patient_first_name': "Ім'я",
             'patient_last_name': 'Прізвище',
-            'patient_phone': 'Телефон',
             'notes': 'Нотатки лікаря',
         }
 

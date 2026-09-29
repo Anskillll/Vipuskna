@@ -2445,7 +2445,24 @@ def doctor_patient_card_detail(request, card_id):
     )
 
     if action == 'update_card' and form.is_valid():
+        previous_first_name = card.patient_first_name
+        previous_last_name = card.patient_last_name
         form.save()
+        name_updates = {
+            'patient_first_name': card.patient_first_name,
+            'patient_last_name': card.patient_last_name,
+        }
+        if card.patient_id:
+            doctor.appointments.filter(
+                patient_id=card.patient_id,
+                booked_for_other=False,
+            ).update(**name_updates)
+        else:
+            doctor.appointments.filter(
+                patient_phone=card.patient_phone,
+                patient_first_name=previous_first_name,
+                patient_last_name=previous_last_name,
+            ).update(**name_updates)
         write_audit_log(request, 'Оновлено картку пацієнта', card)
         messages.success(request, 'Картку пацієнта оновлено.')
         return redirect('doctor_patient_card_detail', card_id=card.id)
