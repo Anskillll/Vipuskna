@@ -652,3 +652,31 @@ body:not(.public-home-page) .current-records-dialog .btn.current-record-create:h
   color: #fffefa;
   box-shadow: 0 8px 16px #1157522e;
 }
+
+/* Lift the menu's whole stacking context above banners and floating notices. */
+.topbar:has(.account-menu[open]) { z-index: 1000; }
+.public-home-page .home-hero-nav:has(.account-menu[open]) { z-index: 1000; }
+.account-menu-panel { z-index: 1001; }
+.account-menu-panel > a,
+.account-menu-panel > form > button {
+  transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+.account-menu-panel > a:hover,
+.account-menu-panel > form > button:hover,
+.account-menu-panel > a:focus-visible,
+.account-menu-panel > form > button:focus-visible {
+  background: #e5f3eb;
+  color: #115752;
+  box-shadow: inset 0 0 0 1px #d2e7db;
+}
+.account-menu-panel .account-menu-profile-link:hover,
+.account-menu-panel .account-menu-profile-link:focus-visible {
+  background: #dff2e7;
+  color: #0e6659;
+}
+.account-menu-panel .account-menu-logout:hover,
+.account-menu-panel .account-menu-logout:focus-visible {
+  background: #fff0ee;
+  color: #a8322b;
+  box-shadow: inset 0 0 0 1px #f5d1cc;
+}
