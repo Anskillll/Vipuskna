@@ -708,7 +708,7 @@ body:not(.public-home-page) .current-records-dialog .btn.current-record-create:h
 .account-menu-panel .account-menu-request-link .account-request-count { flex: 0 0 auto; color: #fff; }
 
 .current-visit-banner { position: relative; }
-.current-visit-banner-actions { align-items: center; }
+.current-visit-banner-actions { align-items: center; padding-right: 56px; }
 .current-visit-dismiss {
   position: absolute;
   top: 10px;
