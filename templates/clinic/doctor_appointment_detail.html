@@ -1,4 +1,5 @@
 {% extends 'clinic/base.html' %}
+{% load static %}
 
 {% block title %}Заявка {{ appointment.id }} - MedClinic{% endblock %}
 
@@ -138,12 +139,18 @@
             <p class="section-note">Новий час спочатку надійде пацієнту. Прийом стане підтвердженим після його згоди.</p>
             <form method="post" action="{% url 'doctor_propose_reschedule' appointment.id %}">
               {% csrf_token %}
+              <div class="field">
+                <label for="id_date">{{ reschedule_form.date.label }}</label>
+                {% include 'clinic/_working_date_picker.html' with date_input_id='id_date' %}
+              </div>
               {% for field in reschedule_form %}
-                <div class="field">
-                  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                  {{ field }}
-                  {% if field.help_text %}<div class="field-help">{{ field.help_text }}</div>{% endif %}
-                </div>
+                {% if field.name != 'date' %}
+                  <div class="field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}<div class="field-help">{{ field.help_text }}</div>{% endif %}
+                  </div>
+                {% endif %}
               {% endfor %}
               <button type="submit" class="warning">Надіслати новий час пацієнту</button>
             </form>
@@ -185,4 +192,8 @@
       </section>
     </div>
   </div>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="{% static 'clinic/working_date_picker.js' %}?v=20260802-1" defer></script>
 {% endblock %}

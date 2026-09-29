@@ -1961,6 +1961,7 @@ def doctor_appointment_detail(request, appointment_id):
     active_appointment = active_appointment_for_doctor(doctor)
     patient_card, _ = ensure_patient_card_from_appointment(appointment)
     reschedule_form = AppointmentRescheduleForm(appointment=appointment)
+    working_weekdays = doctor_working_weekdays(doctor)
     return render(
         request,
         'clinic/doctor_appointment_detail.html',
@@ -1972,6 +1973,10 @@ def doctor_appointment_detail(request, appointment_id):
             'patient_card': patient_card,
             'reschedule_form': reschedule_form,
             'show_reschedule_form': request.GET.get('reschedule') == '1',
+            'selected_date': appointment.date,
+            'earliest_booking_date': timezone.localdate(),
+            'working_weekdays': working_weekdays,
+            'working_weekday_labels': working_weekday_labels(working_weekdays),
         },
     )
 
