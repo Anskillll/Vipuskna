@@ -371,6 +371,36 @@
     }
   }
 
+  const adminLoginDialog = document.querySelector('[data-admin-login-dialog]');
+  if (adminLoginDialog) {
+    const openAdminLogin = () => {
+      if (!adminLoginDialog.open) adminLoginDialog.showModal();
+    };
+    const closeAdminLogin = () => {
+      if (adminLoginDialog.open) adminLoginDialog.close();
+    };
+
+    document.querySelectorAll('[data-admin-login-open]').forEach((opener) => {
+      opener.addEventListener('click', (event) => {
+        event.preventDefault();
+        openAdminLogin();
+      });
+    });
+    adminLoginDialog.querySelectorAll('[data-admin-login-close]').forEach((closer) => {
+      closer.addEventListener('click', closeAdminLogin);
+    });
+    adminLoginDialog.addEventListener('click', (event) => {
+      if (event.target === adminLoginDialog) closeAdminLogin();
+    });
+    adminLoginDialog.addEventListener('close', () => {
+      if (window.location.pathname === adminLoginDialog.dataset.adminLoginPath) {
+        window.location.assign(adminLoginDialog.dataset.homePath);
+      }
+    });
+
+    if (adminLoginDialog.dataset.autoOpen === 'true') openAdminLogin();
+  }
+
   const layer = home.querySelector('[data-particle-effect]');
   if (!layer || reducedMotion) {
     return;

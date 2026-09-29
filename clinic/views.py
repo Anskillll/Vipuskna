@@ -906,7 +906,13 @@ def clear_phone_login_challenge(request, reject=False):
     return challenge
 
 
-def home(request, claim_form=None, open_login_modal=False):
+def home(
+    request,
+    claim_form=None,
+    open_login_modal=False,
+    admin_login_form=None,
+    open_admin_login_modal=False,
+):
     featured_doctors = (
         Doctor.objects.filter(user__is_active=True)
         .select_related('user')
@@ -915,6 +921,8 @@ def home(request, claim_form=None, open_login_modal=False):
     )
     if claim_form is None:
         claim_form = ClaimPatientForm()
+    if admin_login_form is None:
+        admin_login_form = UsernameLoginForm()
     phone_login_challenge = None
     if not request.user.is_authenticated:
         phone_login_challenge = phone_login_challenge_from_session(request)
@@ -933,6 +941,8 @@ def home(request, claim_form=None, open_login_modal=False):
             'hero_slides': HomeHeroSlide.objects.filter(is_active=True),
             'claim_form': claim_form,
             'open_login_modal': open_login_modal,
+            'admin_login_form': admin_login_form,
+            'open_admin_login_modal': open_admin_login_modal,
             'phone_login_challenge': phone_login_challenge,
             'patient_google_login_url': (
                 f'{reverse("google_login")}?'
@@ -950,6 +960,8 @@ def login_view(request, role='patient'):
         return redirect('home')
 
     if request.method == 'GET':
+        if role == 'administration':
+            return home(request, open_admin_login_modal=True)
         return render(
             request,
             'clinic/login.html',
@@ -980,6 +992,13 @@ def login_view(request, role='patient'):
                 return redirect_by_role(user)
         else:
             messages.error(request, 'Невірний логін або пароль.')
+
+    if role == 'administration':
+        return home(
+            request,
+            admin_login_form=form,
+            open_admin_login_modal=True,
+        )
 
     return render(
         request,

@@ -64,7 +64,7 @@
         <div class="home-hero-nav-links">
           <a href="{% url 'doctors' %}">Лікарі</a>
           {% if not user.is_authenticated %}
-            <a href="{% url 'administration_login' %}">Вхід для адміністрації</a>
+            <a href="{% url 'administration_login' %}" data-admin-login-open>Вхід для адміністрації</a>
           {% elif user.is_staff %}
             <a href="{% url 'admin_panel' %}">Панель адміністратора</a>
           {% elif user.profile.role == 'doctor' %}
@@ -365,5 +365,29 @@
     </div>
   {% endif %}
 
-  <script src="{% static 'clinic/home.js' %}?v=refined-20260928-3" defer></script>
+  {% if not user.is_authenticated %}
+    <dialog
+      class="home-login-dialog admin-login-dialog"
+      data-admin-login-dialog
+      data-auto-open="{{ open_admin_login_modal|yesno:'true,false' }}"
+      data-admin-login-path="{% url 'administration_login' %}"
+      data-home-path="{% url 'home' %}"
+      aria-labelledby="admin-login-title"
+    >
+      <button class="home-login-close" type="button" data-admin-login-close aria-label="Закрити вікно входу">{% include 'clinic/_icon.html' with name='close' %}</button>
+      <header class="home-login-heading">
+        <span>Для лікарів та адміністраторів</span>
+        <h2 id="admin-login-title">Вхід для адміністрації</h2>
+        <p>Використайте логін і пароль лікаря або адміністратора.</p>
+      </header>
+      <form class="admin-login-form" method="post" action="{% url 'administration_login' %}">
+        {% csrf_token %}
+        {% include 'clinic/_form_fields.html' with form=admin_login_form %}
+        <button class="admin-login-submit" type="submit">Увійти</button>
+      </form>
+      <a class="login-recovery-link" href="{% url 'forgot_password' %}">Забули пароль?</a>
+    </dialog>
+  {% endif %}
+
+  <script src="{% static 'clinic/home.js' %}?v=20260929-1" defer></script>
 {% endblock %}

@@ -221,6 +221,21 @@ body:not(.public-home-page) .service-manager-item.editing {
 .public-home-page .home-section-kicker { color: #39796f; }
 .public-home-page .home-hero-copy .home-section-kicker { color: #d4eee3; }
 .home-login-dialog { border: 1px solid #d9e5de; border-radius: 24px; background: #fffefa; }
+.admin-login-dialog[open] { opacity: 1; transform: none; }
+.admin-login-dialog::backdrop { background: rgba(10, 27, 25, .68); backdrop-filter: blur(7px); }
+.admin-login-form { display: grid; gap: 16px; margin-top: 22px; }
+.admin-login-submit {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #0d756c;
+  border-radius: 12px;
+  background: #177d78;
+  color: #fff;
+  font-weight: 700;
+}
+.admin-login-submit:hover,
+.admin-login-submit:focus-visible { background: #115752; }
+.admin-login-dialog .login-recovery-link { display: inline-block; margin-top: 16px; }
 .public-home-page .home-empty-state { border-radius: 18px; border: 1px dashed #c9d9d0; background: #ffffff70; }
 
 /* Center the brand on the photo; keep only the two patient actions. */

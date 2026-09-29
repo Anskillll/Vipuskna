@@ -5012,6 +5012,10 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Вхід для адміністрації')
         self.assertContains(response, 'логін і пароль лікаря або адміністратора')
         self.assertContains(response, reverse('forgot_password'))
+        self.assertContains(response, 'data-admin-login-dialog')
+        self.assertContains(response, 'data-auto-open="true"')
+        self.assertContains(response, 'data-admin-login-close')
+        self.assertContains(response, 'class="admin-login-form"')
 
     def test_doctor_account_menu_links_profile_and_password(self):
         self.client.login(username='doctor@test.local', password='pass12345')
@@ -5093,4 +5097,6 @@ class ClinicModelTests(TestCase):
         )
 
         self.assertContains(response, 'Цей акаунт не належить лікарю або адміністратору.')
+        self.assertContains(response, 'data-admin-login-dialog')
+        self.assertContains(response, 'data-auto-open="true"')
         self.assertNotIn('_auth_user_id', self.client.session)
