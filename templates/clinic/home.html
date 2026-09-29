@@ -64,7 +64,6 @@
         <div class="home-hero-nav-links">
           <a href="{% url 'doctors' %}">Лікарі</a>
           {% if not user.is_authenticated %}
-            <a href="{% url 'administration_login' %}" data-admin-login-open>Адміністрація</a>
             {% if request.session.patient_claim_phone %}
               <a class="home-hero-signin" href="{{ patient_google_login_url }}">Увійти</a>
             {% else %}
