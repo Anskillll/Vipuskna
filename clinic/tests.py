@@ -2421,6 +2421,7 @@ class ClinicModelTests(TestCase):
         self.assertEqual(rendered_appointments[-1].weekday_name, weekday_names[second_date.weekday()])
         self.assertContains(response, first_date.strftime('%d.%m.%Y'))
         self.assertContains(response, second_date.strftime('%d.%m.%Y'))
+        self.assertContains(response, 'class="appointment-detail-link"', count=3)
         self.assertContains(response, 'Відкрити картку', count=3)
         self.assertContains(response, 'Заявка очікує')
         self.assertContains(response, 'Підтверджений прийом')

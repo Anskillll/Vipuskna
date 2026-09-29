@@ -721,6 +721,31 @@ body:not(.public-home-page) .current-records-dialog .btn.current-record-create:h
 .account-avatar-wrap > .account-request-count { position: absolute; top: -5px; right: -5px; }
 .account-menu-panel .account-menu-request-link { justify-content: space-between; gap: 12px; }
 .account-menu-panel .account-menu-request-link .account-request-count { flex: 0 0 auto; color: #fff; }
+.appointment-row-actions { align-items: center; gap: 16px; }
+.appointment-row-actions .appointment-detail-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 42px;
+  padding: 0 4px;
+  color: #416b64;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.appointment-row-actions .appointment-detail-link:hover,
+.appointment-row-actions .appointment-detail-link:focus-visible {
+  color: var(--clinic-teal-dark);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.appointment-row-actions .appointment-detail-link .ui-icon {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+}
+.appointment-row-actions .btn { border-radius: 11px; }
 
 /* Keep menu controls independent from the navigation link rules on inner pages. */
 .account-menu-panel > form { width: 100%; }

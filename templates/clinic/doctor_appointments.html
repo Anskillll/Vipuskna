@@ -122,7 +122,7 @@
                         </div>
                         <span>{{ appointment.service.name|default:'Послугу не обрано' }}</span>
                         <div class="appointment-row-actions">
-                          <a class="btn secondary" href="{% url 'doctor_appointment_detail' appointment.id %}">Детальніше</a>
+                          <a class="appointment-detail-link" href="{% url 'doctor_appointment_detail' appointment.id %}">Детальніше {% include 'clinic/_icon.html' with name='right' %}</a>
                           {% if appointment.patient_card %}
                             <a class="btn" href="{% url 'doctor_patient_card_detail' appointment.patient_card.id %}">Відкрити картку</a>
                           {% else %}

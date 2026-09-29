@@ -554,16 +554,24 @@
   }
 
   .appointment-row-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
     grid-column: 1 / -1;
     width: 100%;
+    gap: 10px 14px;
+    justify-content: flex-end;
+  }
+
+  .appointment-row-actions .btn {
+    width: auto;
   }
 
   .appointment-row-actions .btn,
+  .appointment-row-actions .appointment-detail-link,
   .appointment-row-actions form,
   .appointment-row-actions button {
-    width: 100%;
+    max-width: 100%;
   }
 
   .appointment-detail-layout,
