@@ -189,8 +189,9 @@
             {% include 'clinic/_form_field.html' with field=reason_form.booked_for_other %}
             <div
               class="booking-for-other-fields"
+              id="booking-for-other-fields"
               data-booking-for-other-fields
-              {% if not reason_form.booked_for_other.value %}hidden{% endif %}
+              aria-hidden="{% if reason_form.booked_for_other.value %}false{% else %}true{% endif %}"
             >
               <p>Вкажіть, хто саме прийде на прийом. Повідомлення про заявку залишаться у вашому кабінеті.</p>
               {% include 'clinic/_form_field.html' with field=reason_form.other_first_name %}
@@ -266,7 +267,9 @@
         const fields = otherBooking.querySelector('[data-booking-for-other-fields]');
         const nameInputs = fields.querySelectorAll('input');
         const updateOtherFields = () => {
-          fields.hidden = !toggle.checked;
+          otherBooking.classList.toggle('is-expanded', toggle.checked);
+          fields.setAttribute('aria-hidden', String(!toggle.checked));
+          toggle.setAttribute('aria-expanded', String(toggle.checked));
           nameInputs.forEach((input) => {
             input.required = toggle.checked;
           });

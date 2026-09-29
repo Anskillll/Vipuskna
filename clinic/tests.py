@@ -1565,6 +1565,10 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'data-booking-auto-submit')
         self.assertContains(response, 'data-doctor-details')
         self.assertContains(response, 'data-booking-draft')
+        self.assertContains(response, 'data-booking-for-other-fields')
+        self.assertContains(response, 'aria-expanded="false"')
+        self.assertContains(response, 'class="booking-for-other-fields"')
+        self.assertContains(response, 'is-expanded')
         self.assertContains(response, 'clinic/booking_return_state.js')
         self.assertContains(
             response,

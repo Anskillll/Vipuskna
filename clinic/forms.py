@@ -241,6 +241,10 @@ class BookingReasonForm(FormStyleMixin, forms.Form):
         label='Записую не себе',
         required=False,
         help_text='Позначте, якщо на прийом прийде інша людина.',
+        widget=forms.CheckboxInput(attrs={
+            'aria-controls': 'booking-for-other-fields',
+            'aria-expanded': 'false',
+        }),
     )
     other_first_name = forms.CharField(
         label="Ім'я людини, яка прийде на прийом",
