@@ -2356,7 +2356,7 @@ class ClinicModelTests(TestCase):
             [own_request.id],
         )
         self.assertEqual(response.context['doctor_pending_requests_count'], 1)
-        self.assertContains(response, 'class="account-request-count"', count=2)
+        self.assertContains(response, 'class="account-request-count"', count=3)
         self.assertContains(response, reverse('doctor_requests'))
         self.assertContains(response, 'Мої заявки')
         self.assertContains(response, 'Власна нова заявка')
