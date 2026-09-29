@@ -1,11 +1,21 @@
 {% extends 'clinic/base.html' %}
+{% load static %}
 
 {% block title %}{{ doctor.full_name }} - MedClinic{% endblock %}
 
 {% block content %}
   {% with schedules=doctor.schedules.all services=doctor.services.all %}
     <div class="profile-back-row">
-      <a class="back-link" href="{% url 'doctors' %}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до списку лікарів</a>
+      {% if booking_return_url %}
+        <a
+          class="back-link"
+          href="{{ booking_return_url }}"
+          data-booking-return
+          data-booking-path="{% url 'booking' %}"
+        >{% include 'clinic/_icon.html' with name='left' %} Повернутися до запису</a>
+      {% else %}
+        <a class="back-link" href="{% url 'doctors' %}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до списку лікарів</a>
+      {% endif %}
     </div>
 
     <section class="card doctor-detail-profile doctor-profile-overview doctor-public-overview">
@@ -177,4 +187,8 @@
       </section>
     {% endif %}
   {% endwith %}
+{% endblock %}
+
+{% block extra_scripts %}
+  {% if booking_return_url %}<script src="{% static 'clinic/booking_return_state.js' %}?v=20260929-1" defer></script>{% endif %}
 {% endblock %}

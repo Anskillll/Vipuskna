@@ -46,7 +46,14 @@
             <h2 class="doctor-name">{{ selected_doctor.full_name }}</h2>
             <div class="doctor-spec-action-row">
               <p class="doctor-spec">{{ selected_doctor.specialization }}</p>
-              <a class="doctor-details-link" href="{% url 'doctor_detail' selected_doctor.id %}">Детальніше</a>
+              <a
+                class="doctor-details-link"
+                href="{% url 'doctor_detail' selected_doctor.id %}?from=booking&amp;date={{ selected_date|date:'Y-m-d' }}{% if selected_time %}&amp;time={{ selected_time|time:'H:i' }}{% endif %}"
+                data-doctor-details
+                data-doctor-url="{% url 'doctor_detail' selected_doctor.id %}"
+                data-booking-date="{{ selected_date|date:'Y-m-d' }}"
+                data-booking-time="{{ selected_time|time:'H:i' }}"
+              >Детальніше</a>
             </div>
           </div>
         </div>
@@ -118,7 +125,7 @@
         {{ selected_date|date:'d.m.Y' }} о {{ selected_time|time:'H:i' }}
       </p>
       {% if has_bookable_services %}
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data" data-booking-draft>
           {% csrf_token %}
           <input type="hidden" name="doctor" value="{{ selected_doctor.id }}">
           <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
@@ -212,6 +219,20 @@
 
       const serviceChoices = document.querySelectorAll('input[name="service"]');
       const detailsLink = document.querySelector('[data-service-details]');
+      const doctorDetailsLink = document.querySelector('[data-doctor-details]');
+      const updateDoctorDetailsLink = () => {
+        if (!doctorDetailsLink) return;
+        const params = new URLSearchParams({
+          from: 'booking',
+          date: doctorDetailsLink.dataset.bookingDate,
+        });
+        if (doctorDetailsLink.dataset.bookingTime) {
+          params.set('time', doctorDetailsLink.dataset.bookingTime);
+        }
+        const selectedService = document.querySelector('input[name="service"]:checked');
+        if (selectedService) params.set('service', selectedService.value);
+        doctorDetailsLink.href = `${doctorDetailsLink.dataset.doctorUrl}?${params.toString()}`;
+      };
       if (serviceChoices.length && detailsLink) {
         const updateDetailsLink = () => {
           const selectedService = document.querySelector('input[name="service"]:checked');
@@ -230,10 +251,14 @@
         };
 
         serviceChoices.forEach((choice) => {
-          choice.addEventListener('change', updateDetailsLink);
+          choice.addEventListener('change', () => {
+            updateDetailsLink();
+            updateDoctorDetailsLink();
+          });
         });
         updateDetailsLink();
       }
+      updateDoctorDetailsLink();
 
       const otherBooking = document.querySelector('[data-booking-for-other]');
       if (otherBooking) {
@@ -255,4 +280,5 @@
 
 {% block extra_scripts %}
   <script src="{% static 'clinic/working_date_picker.js' %}?v=20260802-1" defer></script>
+  <script src="{% static 'clinic/booking_return_state.js' %}?v=20260929-1" defer></script>
 {% endblock %}

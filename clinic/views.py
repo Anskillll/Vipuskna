@@ -1534,12 +1534,42 @@ def doctor_detail(request, doctor_id):
         .prefetch_related('services', 'schedules__workplace'),
         pk=doctor_id,
     )
+    booking_return_url = None
+    if (
+        request.GET.get('from') == 'booking'
+        and request.user.is_authenticated
+        and user_role(request.user) == Profile.ROLE_PATIENT
+    ):
+        booking_params = {'doctor': doctor.id}
+        selected_date = request.GET.get('date', '')
+        selected_time = request.GET.get('time', '')
+        try:
+            datetime.strptime(selected_date, '%Y-%m-%d')
+        except ValueError:
+            pass
+        else:
+            booking_params['date'] = selected_date
+        try:
+            datetime.strptime(selected_time, '%H:%M')
+        except ValueError:
+            pass
+        else:
+            booking_params['time'] = selected_time
+        selected_service = doctor.services.filter(
+            pk=request.GET.get('service'),
+            is_patient_selectable=True,
+        ).first()
+        if selected_service:
+            booking_params['service'] = selected_service.id
+        booking_return_url = f"{reverse('booking')}?{urlencode(booking_params)}"
+
     return render(
         request,
         'clinic/doctor_detail.html',
         {
             'doctor': doctor,
             'doctor_news': doctor.news_posts.filter(is_published=True)[:6],
+            'booking_return_url': booking_return_url,
         },
     )
 

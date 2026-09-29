@@ -1545,16 +1545,50 @@ class ClinicModelTests(TestCase):
     def test_booking_doctor_summary_is_compact(self):
         self.client.login(username='patient@test.local', password='pass12345')
 
-        response = self.client.get(reverse('booking'), {'doctor': self.doctor.id})
+        selected_date = timezone.localdate() + timedelta(days=7)
+        response = self.client.get(
+            reverse('booking'),
+            {'doctor': self.doctor.id, 'date': selected_date.isoformat(), 'time': '09:00'},
+        )
 
         self.assertContains(response, 'data-booking-auto-submit')
+        self.assertContains(response, 'data-doctor-details')
+        self.assertContains(response, 'data-booking-draft')
+        self.assertContains(response, 'clinic/booking_return_state.js')
+        self.assertContains(
+            response,
+            f"{reverse('doctor_detail', args=[self.doctor.id])}?from=booking&amp;date={selected_date:%Y-%m-%d}&amp;time=09:00",
+        )
         self.assertContains(response, 'filterForm.requestSubmit()')
         self.assertNotContains(response, 'Показати час')
         self.assertContains(response, self.doctor.full_name)
         self.assertContains(response, self.doctor.specialization)
         self.assertContains(response, 'Детальніше')
         self.assertNotContains(response, self.doctor.phone)
-        self.assertNotContains(response, self.service.name)
+        doctor_summary = response.content.split(
+            b'<section class="card section-card doctor-summary">', 1
+        )[1].split(b'</section>', 1)[0]
+        self.assertNotIn(self.service.name.encode(), doctor_summary)
+
+    def test_doctor_detail_returns_to_the_booking_selection(self):
+        self.client.login(username='patient@test.local', password='pass12345')
+        selected_date = timezone.localdate() + timedelta(days=7)
+
+        response = self.client.get(
+            reverse('doctor_detail', args=[self.doctor.id]),
+            {
+                'from': 'booking',
+                'date': selected_date.isoformat(),
+                'time': '09:00',
+                'service': self.service.id,
+            },
+        )
+
+        self.assertContains(response, 'Повернутися до запису')
+        self.assertEqual(
+            response.context['booking_return_url'],
+            f"{reverse('booking')}?{urlencode({'doctor': self.doctor.id, 'date': selected_date.isoformat(), 'time': '09:00', 'service': self.service.id})}",
+        )
 
     def test_booking_service_selector_has_details_link(self):
         self.client.login(username='patient@test.local', password='pass12345')
