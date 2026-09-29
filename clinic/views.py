@@ -35,6 +35,7 @@ from .forms import (
     ClaimPatientForm,
     ClinicSettingsForm,
     DoctorPatientBookingForm,
+    GuestBookingForm,
     DoctorPatientCardForm,
     DoctorProfileForm,
     DoctorWorkplaceForm,
@@ -924,7 +925,7 @@ def home(
     phone_login_challenge = None
     if not request.user.is_authenticated:
         phone_login_challenge = phone_login_challenge_from_session(request)
-        open_login_modal = open_login_modal or phone_login_challenge is not None
+        open_login_modal = open_login_modal or phone_login_challenge is not None or request.GET.get('login') == '1'
     return render(
         request,
         'clinic/home.html',
@@ -1601,20 +1602,33 @@ def service_detail(request, doctor_id, service_id):
     )
 
 
-@patient_required
 def booking(request):
+    guest_booking = not request.user.is_authenticated
+    if not guest_booking:
+        if user_role(request.user) != Profile.ROLE_PATIENT:
+            messages.error(request, 'Ця функція доступна лише пацієнтам.')
+            return redirect_by_role(request.user)
+        if not SocialAccount.objects.filter(user=request.user, provider='google').exists():
+            logout(request)
+            messages.error(request, 'Спочатку увійдіть в акаунт Google.')
+            return redirect('home')
     refresh_completed_appointments()
     earliest_booking_date = timezone.localdate() + timedelta(days=1)
-    if not (
-        request.user.first_name.strip()
-        and request.user.last_name.strip()
-        and request.user.profile.age
-    ):
-        messages.error(request, 'Спочатку перевірте ім’я та прізвище і вкажіть свій вік у профілі.')
-        return redirect('patient_edit_profile')
-    if not request.user.profile.phone:
-        messages.error(request, 'Спочатку заповніть телефон у профілі пацієнта.')
-        return redirect('patient_edit_profile')
+    if not guest_booking:
+        if not (
+            request.user.first_name.strip()
+            and request.user.last_name.strip()
+            and request.user.profile.age
+        ):
+            messages.error(request, 'Спочатку перевірте ім’я та прізвище і вкажіть свій вік у профілі.')
+            return redirect('patient_edit_profile')
+        if not request.user.profile.phone:
+            messages.error(request, 'Спочатку заповніть телефон у профілі пацієнта.')
+            return redirect('patient_edit_profile')
+
+    patient = None if guest_booking else request.user
+    patient_phone = '' if guest_booking else request.user.profile.phone
+    form_class = GuestBookingForm if guest_booking else BookingReasonForm
 
     doctors = Doctor.objects.filter(user__is_active=True).select_related('user')
     selected_doctor = get_object_or_404(doctors, pk=request.GET.get('doctor')) if request.GET.get('doctor') else doctors.first()
@@ -1635,22 +1649,25 @@ def booking(request):
         working_weekdays = doctor_working_weekdays(selected_doctor)
         selected_date = parse_date(request.POST.get('date'))
         selected_time = parse_time(request.POST.get('time'))
-        reason_form = BookingReasonForm(request.POST, request.FILES, doctor=selected_doctor)
+        reason_form = form_class(request.POST, request.FILES, doctor=selected_doctor)
+        form_valid = reason_form.is_valid()
+        if guest_booking and form_valid:
+            patient_phone = reason_form.cleaned_data['phone']
         if not selected_date or selected_date < earliest_booking_date:
             messages.error(request, 'Записатися можна лише починаючи із завтрашнього дня.')
             selected_date = earliest_booking_date
             selected_time = None
         else:
             daily_booking_count = patient_daily_appointment_count(
-                request.user,
+                patient,
                 selected_date,
-                request.user.profile.phone,
+                patient_phone,
             )
             schedule, slots = slots_for_doctor(
                 selected_doctor,
                 selected_date,
-                patient=request.user,
-                patient_phone=request.user.profile.phone,
+                patient=patient,
+                patient_phone=patient_phone,
             )
             available_times = [slot['time'] for slot in slots if not slot['busy']]
 
@@ -1665,11 +1682,11 @@ def booking(request):
             elif is_past_appointment(selected_date, selected_time):
                 messages.error(request, 'Цей час уже недоступний.')
             elif selected_time and schedule and patient_appointment_conflicts(
-                request.user,
+                patient,
                 selected_date,
                 selected_time,
                 schedule.slot_minutes,
-                patient_phone=request.user.profile.phone,
+                patient_phone=patient_phone,
             ):
                 messages.error(
                     request,
@@ -1677,7 +1694,7 @@ def booking(request):
                 )
             elif not selected_time or selected_time not in available_times:
                 messages.error(request, 'Цей час уже недоступний.')
-            elif reason_form.is_valid() and schedule:
+            elif form_valid and schedule:
                 duration_slots = 1
                 if appointment_conflicts(selected_doctor, selected_date, selected_time, duration_slots=1):
                     messages.error(request, 'Цей час уже недоступний.')
@@ -1686,31 +1703,39 @@ def booking(request):
                         appointment = None
                         daily_limit_reached_during_save = False
                         with transaction.atomic():
-                            User.objects.select_for_update().get(pk=request.user.pk)
+                            User.objects.select_for_update().get(
+                                pk=selected_doctor.user_id if guest_booking else request.user.pk
+                            )
                             if patient_daily_appointment_count(
-                                request.user,
+                                patient,
                                 selected_date,
-                                request.user.profile.phone,
+                                patient_phone,
                             ) >= PATIENT_DAILY_BOOKING_LIMIT:
                                 daily_limit_reached_during_save = True
                             else:
                                 appointment = Appointment.objects.create(
                                     doctor=selected_doctor,
                                     service=reason_form.cleaned_data['service'],
-                                    patient=request.user,
+                                    patient=patient,
                                     patient_first_name=(
-                                        reason_form.cleaned_data['other_first_name']
-                                        if reason_form.cleaned_data['booked_for_other']
-                                        else request.user.first_name
+                                        reason_form.cleaned_data['first_name']
+                                        if guest_booking else (
+                                            reason_form.cleaned_data['other_first_name']
+                                            if reason_form.cleaned_data['booked_for_other']
+                                            else request.user.first_name
+                                        )
                                     ),
                                     patient_last_name=(
-                                        reason_form.cleaned_data['other_last_name']
-                                        if reason_form.cleaned_data['booked_for_other']
-                                        else request.user.last_name
+                                        reason_form.cleaned_data['last_name']
+                                        if guest_booking else (
+                                            reason_form.cleaned_data['other_last_name']
+                                            if reason_form.cleaned_data['booked_for_other']
+                                            else request.user.last_name
+                                        )
                                     ),
-                                    booked_for_other=reason_form.cleaned_data['booked_for_other'],
-                                    patient_phone=request.user.profile.phone,
-                                    patient_email=request.user.email,
+                                    booked_for_other=False if guest_booking else reason_form.cleaned_data['booked_for_other'],
+                                    patient_phone=patient_phone,
+                                    patient_email='' if guest_booking else request.user.email,
                                     date=selected_date,
                                     time=selected_time,
                                     city=schedule.city,
@@ -1732,8 +1757,12 @@ def booking(request):
                             ensure_patient_card_from_appointment(appointment)
                             write_audit_log(request, 'Створено заявку', appointment)
                             notify_doctor_new_request(appointment)
-                            messages.success(request, 'Заявку відправлено лікарю на підтвердження.')
-                            return redirect('patient_dashboard')
+                            messages.success(
+                                request,
+                                'Заявку відправлено лікарю на підтвердження. Очікуйте дзвінка за вказаним номером.'
+                                if guest_booking else 'Заявку відправлено лікарю на підтвердження.',
+                            )
+                            return redirect('home' if guest_booking else 'patient_dashboard')
                     except IntegrityError:
                         messages.error(request, 'Цей час уже недоступний.')
     else:
@@ -1743,7 +1772,7 @@ def booking(request):
                 pk=request.GET.get('service'),
                 is_patient_selectable=True,
             ).first()
-        reason_form = BookingReasonForm(
+        reason_form = form_class(
             doctor=selected_doctor,
             initial={'service': selected_service} if selected_service else None,
         )
@@ -1752,8 +1781,8 @@ def booking(request):
         slots_for_doctor(
             selected_doctor,
             selected_date,
-            patient=request.user,
-            patient_phone=request.user.profile.phone,
+            patient=patient,
+            patient_phone=patient_phone,
         )
         if selected_doctor
         else (None, [])
@@ -1763,9 +1792,9 @@ def booking(request):
         and selected_doctor.services.filter(is_patient_selectable=True).exists()
     )
     daily_booking_count = patient_daily_appointment_count(
-        request.user,
+        patient,
         selected_date,
-        request.user.profile.phone,
+        patient_phone,
     )
     daily_booking_limit_reached = (
         daily_booking_count >= PATIENT_DAILY_BOOKING_LIMIT
@@ -1783,6 +1812,7 @@ def booking(request):
             'selected_schedule': schedule,
             'slots': slots,
             'reason_form': reason_form,
+            'guest_booking': guest_booking,
             'has_bookable_services': has_bookable_services,
             'daily_booking_count': daily_booking_count,
             'daily_booking_limit': PATIENT_DAILY_BOOKING_LIMIT,

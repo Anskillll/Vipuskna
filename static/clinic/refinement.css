@@ -733,6 +733,34 @@ body:not(.public-home-page) .current-records-dialog .btn.current-record-create:h
   margin-right: 18px;
 }
 
+.public-home-page .home-hero-nav-links .home-hero-signin {
+  min-height: 38px;
+  padding: 8px 18px;
+  border: 1px solid #ffffffa6;
+  border-radius: 999px;
+  background: #102b2766;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+.public-home-page .home-hero-nav-links .home-hero-signin:hover,
+.public-home-page .home-hero-nav-links .home-hero-signin:focus-visible {
+  border-color: #fff;
+  background: #ffffff2e;
+  color: #fff;
+}
+.home-registration-banner ul { display: flex; flex-wrap: wrap; gap: 5px 22px; margin: 8px 0 0; padding-left: 19px; font-size: 13px; }
+.home-registration-banner .telegram-connect-button { font: inherit; font-weight: 800; cursor: pointer; }
+.booking-guest-fields { display: grid; gap: 12px; margin: 18px 0; padding: 20px; border: 1px solid #d5e5dd; border-radius: 16px; background: #f2f8f4; }
+.booking-guest-fields p { margin: 0 0 4px; color: #486965; }
+@media (max-width: 700px) {
+  .home-registration-banner ul { display: grid; gap: 3px; }
+  .public-home-page .home-hero-nav-links .home-hero-signin { min-height: 34px; padding: 7px 12px; font-size: 12px; }
+}
+
 .account-avatar-wrap { position: relative; display: inline-flex; flex: 0 0 auto; }
 .account-request-count {
   display: inline-grid;

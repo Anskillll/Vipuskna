@@ -3205,27 +3205,31 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Новий пацієнт')
         self.assertEqual(self.client.session['patient_claim_phone'], phone)
 
-    def test_pending_patient_home_hides_registration_buttons(self):
+    def test_pending_patient_home_offers_booking_and_account_completion(self):
         session = self.client.session
         session['patient_claim_phone'] = '+380501234577'
         session.save()
 
         response = self.client.get(reverse('home'))
 
-        self.assertContains(response, 'Перейти до кабінету')
+        self.assertContains(response, 'Мій кабінет')
         self.assertContains(response, 'Обрати лікаря')
+        self.assertContains(response, 'Зареєструйтеся, щоб:')
+        self.assertContains(response, 'Записатися на прийом')
         self.assertNotContains(response, 'Реєстрація за номером телефону')
 
-    def test_pending_patient_booking_returns_to_temporary_cabinet(self):
+    def test_pending_patient_can_open_guest_booking(self):
         session = self.client.session
         session['patient_claim_phone'] = '+380501234577'
         session.save()
 
-        response = self.client.get(reverse('booking'), follow=True)
+        response = self.client.get(reverse('booking'), {
+            'date': (timezone.localdate() + timedelta(days=7)).isoformat(),
+            'time': '09:00',
+        })
 
-        self.assertRedirects(response, reverse('pending_patient_dashboard'))
-        self.assertContains(response, 'Спочатку увійдіть в акаунт Google.')
-        self.assertContains(response, 'Профіль пацієнта')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="phone"')
 
     def test_google_login_creates_empty_patient_profile_for_new_phone(self):
         phone = '+380501234578'
@@ -3500,11 +3504,71 @@ class ClinicModelTests(TestCase):
         challenge.refresh_from_db()
         self.assertEqual(challenge.status, TelegramLoginChallenge.STATUS_REJECTED)
 
-    def test_guest_booking_requires_google_login(self):
-        response = self.client.get(reverse('booking'), follow=True)
+    def test_guest_can_book_without_account_and_gets_guest_home(self):
+        home = self.client.get(reverse('home'))
+        self.assertContains(home, 'Зареєструйтеся, щоб:')
+        self.assertContains(home, 'data-home-login-open')
+        self.assertContains(home, 'Записатися на прийом')
 
+        booking_date = timezone.localdate() + timedelta(days=7)
+        page = self.client.get(reverse('booking'), {'doctor': self.doctor.pk, 'date': booking_date.isoformat(), 'time': '09:00'})
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, 'name="first_name"')
+        self.assertContains(page, 'name="last_name"')
+        self.assertContains(page, 'name="phone"')
+
+        response = self.client.post(reverse('booking'), {
+            'doctor': self.doctor.pk,
+            'date': booking_date.isoformat(),
+            'time': '09:00',
+            'service': self.service.pk,
+            'first_name': 'Нова',
+            'last_name': 'Людина',
+            'phone': '050 123 45 67',
+            'reason': 'Консультація',
+        }, follow=True)
         self.assertRedirects(response, reverse('home'))
-        self.assertContains(response, 'Спочатку увійдіть в акаунт Google.')
+        self.assertContains(response, 'Очікуйте дзвінка')
+        appointment = Appointment.objects.get(patient_phone='+380501234567')
+        self.assertIsNone(appointment.patient)
+        self.assertEqual(appointment.patient_name, 'Нова Людина')
+        self.assertEqual(appointment.status, Appointment.STATUS_PENDING)
+
+    def test_guest_booking_validates_contact_and_daily_limit(self):
+        booking_date = timezone.localdate() + timedelta(days=7)
+        data = {
+            'doctor': self.doctor.pk,
+            'date': booking_date.isoformat(),
+            'time': '09:00',
+            'service': self.service.pk,
+            'first_name': 'Нова',
+            'last_name': 'Людина',
+            'phone': 'wrong',
+            'reason': 'Консультація',
+        }
+        invalid = self.client.post(reverse('booking'), data)
+        self.assertEqual(invalid.status_code, 200)
+        self.assertEqual(Appointment.objects.count(), 0)
+
+        data['phone'] = self.patient.profile.phone
+        registered = self.client.post(reverse('booking'), data)
+        self.assertContains(registered, 'Цей номер уже має кабінет')
+        self.assertEqual(Appointment.objects.count(), 0)
+
+        data['phone'] = '+380501234567'
+        for slot in ('09:00', '10:00'):
+            data['time'] = slot
+            self.assertRedirects(self.client.post(reverse('booking'), data), reverse('home'))
+        data['time'] = '09:00'
+        other_doctor_user = User.objects.create_user(username='second-doctor', first_name='Другий', last_name='Лікар')
+        Profile.objects.create(user=other_doctor_user, role=Profile.ROLE_DOCTOR)
+        other_doctor = Doctor.objects.create(user=other_doctor_user, specialization='Терапевт')
+        other_service = MedicalService.objects.create(doctor=other_doctor, name='Консультація')
+        WorkSchedule.objects.create(doctor=other_doctor, weekday=booking_date.weekday(), start_time=time(9, 0), end_time=time(11, 0), slot_minutes=60, city='Дніпро', address='вул. Тестова, 2')
+        data.update({'doctor': other_doctor.pk, 'service': other_service.pk})
+        limited = self.client.post(reverse('booking'), data)
+        self.assertContains(limited, 'не більше 2 заявок')
+        self.assertEqual(Appointment.objects.count(), 2)
 
     def test_local_patient_without_google_cannot_use_patient_cabinet(self):
         local_patient = User.objects.create_user(

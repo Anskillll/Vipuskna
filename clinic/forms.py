@@ -294,6 +294,23 @@ class BookingReasonForm(FormStyleMixin, forms.Form):
         return cleaned_data
 
 
+class GuestBookingForm(BookingReasonForm):
+    first_name = forms.CharField(label="Ім'я", max_length=80)
+    last_name = forms.CharField(label='Прізвище', max_length=80)
+    phone = forms.CharField(label='Телефон', validators=[validate_ukrainian_phone])
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name in ('booked_for_other', 'other_first_name', 'other_last_name'):
+            self.fields.pop(name)
+
+    def clean_phone(self):
+        phone = normalize_phone_number(self.cleaned_data['phone'])
+        if patient_phone_is_used(phone):
+            raise forms.ValidationError('Цей номер уже має кабінет. Увійдіть, щоб записатися.')
+        return phone
+
+
 class PatientChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, user):
         name = user.get_full_name() or user.username

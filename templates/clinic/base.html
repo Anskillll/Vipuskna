@@ -15,7 +15,7 @@
   {% endif %}
   <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260929-10">
   <link rel="stylesheet" href="{% static 'clinic/mobile.css' %}?v=20260929-9">
-  <link rel="stylesheet" href="{% static 'clinic/refinement.css' %}?v=20260929-19">
+  <link rel="stylesheet" href="{% static 'clinic/refinement.css' %}?v=20260929-20">
   <script src="{% static 'clinic/live_filter.js' %}?v=20260928-1" defer></script>
   <script src="{% static 'clinic/flash_messages.js' %}?v=20260719-1" defer></script>
 </head>
@@ -42,13 +42,17 @@
             <a{% if '/booking/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'booking' %}">Записатися</a>
           {% endif %}
           {% include 'clinic/_account_menu.html' %}
-        {% elif request.session.patient_claim_phone %}
-          <a{% if '/doctors/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'doctors' %}">Лікарі</a>
-          <a{% if '/patient/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'pending_patient_dashboard' %}">Мій кабінет</a>
-          <a{% if '/booking/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'booking' %}">Записатися</a>
-          <a href="{% url 'google_login' %}?next={% url 'claim_patient_complete' %}">Увійти через Google</a>
         {% else %}
-          <a{% if request.resolver_match.url_name == 'administration_login' %} class="nav-active" aria-current="page"{% endif %} href="{% url 'administration_login' %}">Вхід для адміністрації</a>
+          <a{% if '/doctors/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'doctors' %}">Лікарі</a>
+          {% if request.session.patient_claim_phone %}
+            <a{% if '/patient/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'pending_patient_dashboard' %}">Мій кабінет</a>
+          {% endif %}
+          <a{% if '/booking/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'booking' %}">Записатися</a>
+          {% if request.session.patient_claim_phone %}
+            <a href="{% url 'google_login' %}?next={% url 'claim_patient_complete' %}">Увійти</a>
+          {% else %}
+            <a href="{% url 'home' %}?login=1">Увійти</a>
+          {% endif %}
         {% endif %}
       </nav>
     </div>

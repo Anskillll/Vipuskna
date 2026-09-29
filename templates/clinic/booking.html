@@ -7,7 +7,7 @@
   <section class="page-head">
     <div>
       <h1 class="page-title">Запис до лікаря</h1>
-      <p class="page-subtitle">Оберіть лікаря, дату та вільний час.</p>
+      <p class="page-subtitle">Оберіть лікаря, дату та вільний час.{% if guest_booking %} Для заявки потрібні лише ім’я, прізвище й телефон.{% endif %}</p>
     </div>
   </section>
 
@@ -185,19 +185,28 @@
               hidden
             >Детальніше про послугу</a>
           </div>
-          <div class="booking-for-other" data-booking-for-other>
-            {% include 'clinic/_form_field.html' with field=reason_form.booked_for_other %}
-            <div
-              class="booking-for-other-fields"
-              id="booking-for-other-fields"
-              data-booking-for-other-fields
-              aria-hidden="{% if reason_form.booked_for_other.value %}false{% else %}true{% endif %}"
-            >
-              <p>Вкажіть, хто саме прийде на прийом. Повідомлення про заявку залишаться у вашому кабінеті.</p>
-              {% include 'clinic/_form_field.html' with field=reason_form.other_first_name %}
-              {% include 'clinic/_form_field.html' with field=reason_form.other_last_name %}
+          {% if guest_booking %}
+            <div class="booking-guest-fields">
+              <p>Залиште контактні дані людини, яка прийде на прийом. Лікар зможе зв’язатися з вами за телефоном.</p>
+              {% include 'clinic/_form_field.html' with field=reason_form.first_name %}
+              {% include 'clinic/_form_field.html' with field=reason_form.last_name %}
+              {% include 'clinic/_form_field.html' with field=reason_form.phone %}
             </div>
-          </div>
+          {% else %}
+            <div class="booking-for-other" data-booking-for-other>
+              {% include 'clinic/_form_field.html' with field=reason_form.booked_for_other %}
+              <div
+                class="booking-for-other-fields"
+                id="booking-for-other-fields"
+                data-booking-for-other-fields
+                aria-hidden="{% if reason_form.booked_for_other.value %}false{% else %}true{% endif %}"
+              >
+                <p>Вкажіть, хто саме прийде на прийом. Повідомлення про заявку залишаться у вашому кабінеті.</p>
+                {% include 'clinic/_form_field.html' with field=reason_form.other_first_name %}
+                {% include 'clinic/_form_field.html' with field=reason_form.other_last_name %}
+              </div>
+            </div>
+          {% endif %}
           {% include 'clinic/_form_field.html' with field=reason_form.reason %}
           {% include 'clinic/_form_field.html' with field=reason_form.photos %}
           {% include 'clinic/_form_field.html' with field=reason_form.videos %}

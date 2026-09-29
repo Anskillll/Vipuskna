@@ -64,7 +64,12 @@
         <div class="home-hero-nav-links">
           <a href="{% url 'doctors' %}">Лікарі</a>
           {% if not user.is_authenticated %}
-            <a href="{% url 'administration_login' %}" data-admin-login-open>Вхід для адміністрації</a>
+            <a href="{% url 'administration_login' %}" data-admin-login-open>Адміністрація</a>
+            {% if request.session.patient_claim_phone %}
+              <a class="home-hero-signin" href="{{ patient_google_login_url }}">Увійти</a>
+            {% else %}
+              <button class="home-hero-signin" type="button" data-home-login-open aria-haspopup="dialog">Увійти</button>
+            {% endif %}
           {% elif user.is_staff %}
             <a href="{% url 'admin_panel' %}">Панель адміністратора</a>
           {% elif user.profile.role == 'doctor' %}
@@ -75,7 +80,26 @@
         {% include 'clinic/_account_menu.html' %}
       </nav>
 
-      {% if telegram_show_connect %}
+      {% if not user.is_authenticated %}
+        <div class="home-telegram-connect-banner">
+          <section class="telegram-connect-banner home-registration-banner" aria-label="Переваги реєстрації">
+            <div class="telegram-connect-copy">
+              <span class="telegram-connect-kicker">Особистий кабінет</span>
+              <strong>Зареєструйтеся, щоб:</strong>
+              <ul>
+                <li>бачити свої заявки та прийоми;</li>
+                <li>керувати записами й профілем;</li>
+                <li>отримувати сповіщення через Telegram-бота.</li>
+              </ul>
+            </div>
+            {% if request.session.patient_claim_phone %}
+              <a class="telegram-connect-button" href="{{ patient_google_login_url }}">Зареєструватися</a>
+            {% else %}
+              <button class="telegram-connect-button" type="button" data-home-login-open aria-haspopup="dialog">Зареєструватися</button>
+            {% endif %}
+          </section>
+        </div>
+      {% elif telegram_show_connect %}
         <div class="home-telegram-connect-banner">
           {% include 'clinic/_telegram_connect_banner.html' %}
         </div>
@@ -91,13 +115,8 @@
         <h1 class="home-hero-wordmark">{{ clinic_branding.clinic_name }}</h1>
         <div class="home-hero-actions">
           {% if not user.is_authenticated %}
-            {% if request.session.patient_claim_phone %}
-              <a class="home-hero-primary-action" href="{% url 'pending_patient_dashboard' %}">Перейти до кабінету <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
-              <a class="home-hero-secondary-action" href="{% url 'doctors' %}">Обрати лікаря <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
-            {% else %}
-              <button class="home-login-trigger home-hero-primary-action" type="button" data-home-login-open aria-haspopup="dialog">Увійти <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></button>
-              <a class="home-hero-secondary-action" href="{% url 'doctors' %}">Обрати лікаря <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
-            {% endif %}
+            <a class="home-hero-primary-action" href="{% url 'booking' %}">Записатися на прийом <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
+            <a class="home-hero-secondary-action" href="{% url 'doctors' %}">Обрати лікаря <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
           {% elif user.is_staff %}
             <a class="home-hero-primary-action" href="{% url 'admin_panel' %}">Перейти до панелі адміністратора <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
           {% elif user.profile.role == 'doctor' %}
