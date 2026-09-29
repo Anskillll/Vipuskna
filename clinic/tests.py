@@ -175,7 +175,7 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
         self.assertContains(response, 'https://www.google.com/maps/search/?api=1&amp;query=')
         self.assertContains(response, 'href="tel:+380509168426" data-home-feedback')
-        self.assertContains(response, 'clinic/home.js?v=20260929-2')
+        self.assertContains(response, 'clinic/home.js?v=20260929-3')
         self.assertContains(response, '+38 (050) 916-84-26')
         self.assertIn('(hover: hover) and (pointer: fine)', home_script)
         self.assertIn("feedbackLink.removeAttribute('href')", home_script)
@@ -265,12 +265,14 @@ class ClinicModelTests(TestCase):
         self.assertIn('data-home-gallery-prev', gallery)
         self.assertIn('data-home-gallery-next', gallery)
         self.assertIn('data-home-gallery-dots', gallery)
-        self.assertIn('data-home-gallery-play', gallery)
+        self.assertNotIn('data-home-gallery-play', gallery)
+        self.assertNotIn('Призупинити', gallery)
         self.assertIn('data-home-gallery-count', gallery)
         self.assertIn('aria-roledescription="карусель"', gallery)
 
         home_script = (Path(settings.BASE_DIR) / 'static' / 'clinic' / 'home.js').read_text(encoding='utf-8')
         self.assertIn('5000', home_script)
+        self.assertNotIn('galleryPlayButton', home_script)
 
     def test_top_navigation_highlights_only_current_section(self):
         self.client.login(username='patient@test.local', password='pass12345')

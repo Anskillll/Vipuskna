@@ -568,17 +568,6 @@ body:not(.public-home-page) .service-manager-item.editing {
 .home-gallery-dots button.is-active::before { background: #195f58; }
 .home-gallery-toolbar { display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 8px; color: #41685f; font-size: 12px; }
 .home-gallery-toolbar > span { font-variant-numeric: tabular-nums; letter-spacing: .15em; }
-.home-gallery-toolbar button {
-  min-height: 40px;
-  padding: 7px 15px;
-  border: 1px solid #bdd3c6;
-  border-radius: 30px;
-  background: transparent;
-  color: #315e52;
-  box-shadow: none;
-  font-size: 12px;
-}
-.home-gallery-toolbar button:hover { background: #fffefa; color: #195f58; box-shadow: none; transform: none; }
 @media (max-width: 680px) {
   .home-gallery-slider { padding: 0 8px; }
   .home-gallery-stage { height: clamp(250px, 70vw, 350px); }

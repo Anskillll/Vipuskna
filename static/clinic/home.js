@@ -116,11 +116,9 @@
     const galleryDotsRoot = gallery.querySelector('[data-home-gallery-dots]');
     const galleryPreviousButton = gallery.querySelector('[data-home-gallery-prev]');
     const galleryNextButton = gallery.querySelector('[data-home-gallery-next]');
-    const galleryPlayButton = gallery.querySelector('[data-home-gallery-play]');
     const galleryCount = gallery.querySelector('[data-home-gallery-count]');
     let activeGallerySlide = 0;
     let galleryTimer = null;
-    let galleryPlaying = !reducedMotion;
     let galleryHovered = false;
 
     const showGallerySlide = (index) => {
@@ -153,11 +151,7 @@
 
     const startGallerySlider = () => {
       stopGallerySlider();
-      if (galleryPlayButton) {
-        galleryPlayButton.textContent = galleryPlaying ? 'Призупинити' : 'Автоперегляд';
-        galleryPlayButton.setAttribute('aria-pressed', String(galleryPlaying));
-      }
-      if (!galleryPlaying || galleryHovered || gallery.contains(document.activeElement) || gallerySlides.length < 2 || document.hidden) {
+      if (reducedMotion || galleryHovered || gallery.contains(document.activeElement) || gallerySlides.length < 2 || document.hidden) {
         return;
       }
       galleryTimer = window.setInterval(
@@ -191,10 +185,6 @@
     gallery.addEventListener('mouseleave', () => { galleryHovered = false; startGallerySlider(); });
     gallery.addEventListener('focusin', stopGallerySlider);
     gallery.addEventListener('focusout', () => window.setTimeout(startGallerySlider, 0));
-    galleryPlayButton?.addEventListener('click', () => {
-      galleryPlaying = !galleryPlaying;
-      startGallerySlider();
-    });
     gallery.addEventListener('keydown', (event) => {
       if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
       event.preventDefault();

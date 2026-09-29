@@ -242,7 +242,7 @@
 
           {% if gallery_images|length > 1 %}
             <div class="home-gallery-dots" data-home-gallery-dots aria-label="Вибір фотографії"></div>
-            <div class="home-gallery-toolbar"><span data-home-gallery-count aria-live="polite"></span><button type="button" data-home-gallery-play aria-pressed="false">Автоперегляд</button></div>
+            <div class="home-gallery-toolbar"><span data-home-gallery-count aria-live="polite"></span></div>
           {% endif %}
         </div>
       {% else %}
@@ -388,5 +388,5 @@
     </dialog>
   {% endif %}
 
-  <script src="{% static 'clinic/home.js' %}?v=20260929-2" defer></script>
+  <script src="{% static 'clinic/home.js' %}?v=20260929-3" defer></script>
 {% endblock %}
