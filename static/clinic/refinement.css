@@ -194,6 +194,17 @@ body:not(.public-home-page) .page-tabs .page-tab.active::before {
   border-radius: 50%;
   background: #b9e2cb;
 }
+body:not(.public-home-page) .admin-tabs .page-tab::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: transparent;
+}
+body:not(.public-home-page) .admin-tabs .page-tab.active::before { background: #b9e2cb; }
+body:not(.public-home-page) .admin-tabs .page-tab,
+body:not(.public-home-page) .admin-tabs .page-tab.active { font-weight: 600; }
 body:not(.public-home-page) :is(.btn, button):not(.working-date-day):not(.time-pill) {
   border-radius: 12px;
 }

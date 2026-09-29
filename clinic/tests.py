@@ -4201,6 +4201,7 @@ class ClinicModelTests(TestCase):
         response = self.client.get(reverse('admin_panel'))
 
         self.assertContains(response, 'Керування клінікою')
+        self.assertNotContains(response, 'href="#users"')
         self.assertNotContains(response, 'Швидкі дії')
         self.assertNotContains(response, 'Що потрібно зробити?')
         self.assertContains(response, 'Знайти користувача')
@@ -4223,6 +4224,36 @@ class ClinicModelTests(TestCase):
                 f'class="account-menu-admin-action" href="{reverse(route)}">{label}</a>',
             )
         self.assertNotContains(response, '<th>Електронна пошта</th>', html=True)
+
+    def test_admin_navigation_order_is_consistent_across_sections(self):
+        admin_user = User.objects.create_superuser(
+            username='admin-navigation@test.local',
+            email='admin-navigation@test.local',
+            password='pass12345',
+        )
+        self.client.login(username=admin_user.username, password='pass12345')
+        routes = (
+            'admin_panel',
+            'admin_add_doctor',
+            'admin_content',
+            'admin_telegram_broadcast',
+        )
+        expected_labels = (
+            'Огляд',
+            'Додати лікаря',
+            'Контент сайту',
+            'Telegram-повідомлення',
+            'Системні налаштування',
+        )
+
+        for route in routes:
+            with self.subTest(route=route):
+                response = self.client.get(reverse(route))
+                self.assertEqual(response.status_code, 200)
+                content = response.content.decode()
+                nav = content.split('<nav class="page-tabs admin-tabs"', 1)[1].split('</nav>', 1)[0]
+                positions = [nav.index(label) for label in expected_labels]
+                self.assertEqual(positions, sorted(positions))
 
     def test_telegram_broadcast_page_requires_admin(self):
         self.client.login(username='patient@test.local', password='pass12345')
