@@ -2350,6 +2350,9 @@ class ClinicModelTests(TestCase):
             [appointment.id for appointment in response.context['appointments']],
             [own_request.id],
         )
+        self.assertEqual(response.context['doctor_pending_requests_count'], 1)
+        self.assertContains(response, 'class="account-request-count"', count=2)
+        self.assertContains(response, reverse('doctor_requests'))
         self.assertContains(response, 'Мої заявки')
         self.assertContains(response, 'Власна нова заявка')
         self.assertContains(response, 'Нова заявка')
@@ -4997,6 +5000,9 @@ class ClinicModelTests(TestCase):
 
         self.assertContains(response, 'Меню профілю')
         self.assertContains(response, self.doctor.full_name)
+        self.assertContains(response, 'Мої заявки')
+        self.assertContains(response, reverse('doctor_requests'))
+        self.assertNotContains(response, 'account-request-count')
         self.assertContains(
             response,
             f'class="account-menu-heading account-menu-profile-link" href="{reverse("doctor_dashboard")}"',

@@ -25,6 +25,7 @@ def doctor_visit_status(request):
         'doctor_visit_appointment': None,
         'doctor_visit_card': None,
         'doctor_visit_entries': PatientRecordEntry.objects.none(),
+        'doctor_pending_requests_count': 0,
     }
     if not request.user.is_authenticated or request.user.is_staff:
         return context
@@ -65,6 +66,9 @@ def doctor_visit_status(request):
 
     context.update(
         {
+            'doctor_pending_requests_count': doctor.appointments.filter(
+                status=Appointment.STATUS_PENDING,
+            ).count(),
             'doctor_visit_show': bool(active_appointment),
             'doctor_visit_appointment': active_appointment,
             'doctor_visit_card': card,

@@ -1,13 +1,18 @@
 {% if user.is_authenticated %}
   <details class="account-menu">
-    <summary class="account-menu-toggle" aria-label="Меню профілю">
-      <span class="account-avatar" aria-hidden="true">
-        {% if not user.is_staff and user.profile.role == 'doctor' and user.doctor_profile.photo_src %}
-          <img src="{{ user.doctor_profile.photo_src }}" alt="">
-        {% elif not user.is_staff and user.profile.photo %}
-          <img src="{{ user.profile.photo.url }}" alt="">
-        {% else %}
-          <span>{{ user.first_name|default:user.username|first|upper }}</span>
+    <summary class="account-menu-toggle" aria-label="Меню профілю{% if not user.is_staff and user.profile.role == 'doctor' and doctor_pending_requests_count %}, нерозглянутих заявок: {{ doctor_pending_requests_count }}{% endif %}">
+      <span class="account-avatar-wrap" aria-hidden="true">
+        <span class="account-avatar">
+          {% if not user.is_staff and user.profile.role == 'doctor' and user.doctor_profile.photo_src %}
+            <img src="{{ user.doctor_profile.photo_src }}" alt="">
+          {% elif not user.is_staff and user.profile.photo %}
+            <img src="{{ user.profile.photo.url }}" alt="">
+          {% else %}
+            <span>{{ user.first_name|default:user.username|first|upper }}</span>
+          {% endif %}
+        </span>
+        {% if not user.is_staff and user.profile.role == 'doctor' and doctor_pending_requests_count %}
+          <span class="account-request-count">{{ doctor_pending_requests_count }}</span>
         {% endif %}
       </span>
       <span class="account-menu-caret" aria-hidden="true"></span>
@@ -32,6 +37,10 @@
       {% if user.is_staff %}
         <a href="{% url 'admin_panel' %}">Панель адміністратора</a>
       {% elif user.profile.role == 'doctor' %}
+        <a class="account-menu-request-link" href="{% url 'doctor_requests' %}">
+          <span>Мої заявки</span>
+          {% if doctor_pending_requests_count %}<span class="account-request-count">{{ doctor_pending_requests_count }}</span>{% endif %}
+        </a>
         <a href="{% url 'doctor_edit_profile' %}">Змінити профіль</a>
         <a href="{% url 'doctor_change_password' %}">Змінити пароль</a>
       {% else %}

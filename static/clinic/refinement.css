@@ -686,6 +686,27 @@ body:not(.public-home-page) .current-records-dialog .btn.current-record-create:h
   margin-right: 18px;
 }
 
+.account-avatar-wrap { position: relative; display: inline-flex; flex: 0 0 auto; }
+.account-request-count {
+  display: inline-grid;
+  min-width: 19px;
+  height: 19px;
+  place-items: center;
+  padding: 0 4px;
+  border: 2px solid #fffefa;
+  border-radius: 999px;
+  background: #d83c42;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 2px 6px #152c2838;
+}
+.account-avatar-wrap > .account-request-count { position: absolute; top: -5px; right: -5px; }
+.account-menu-panel .account-menu-request-link { justify-content: space-between; gap: 12px; }
+.account-menu-panel .account-menu-request-link .account-request-count { flex: 0 0 auto; color: #fff; }
+
 .current-visit-banner { position: relative; }
 .current-visit-banner-actions { align-items: center; }
 .current-visit-dismiss {
