@@ -118,13 +118,6 @@ class UsernameLoginForm(FormStyleMixin, forms.Form):
         )
 
 
-class UsernameRecoveryForm(FormStyleMixin, forms.Form):
-    username = forms.CharField(label='Логін', max_length=150)
-
-    def clean_username(self):
-        return self.cleaned_data['username'].strip()
-
-
 class ClaimPatientForm(FormStyleMixin, forms.Form):
     phone = forms.CharField(
         label='Номер телефону',

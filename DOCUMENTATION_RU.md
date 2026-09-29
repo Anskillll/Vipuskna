@@ -1660,7 +1660,6 @@ sudo -u postgres psql -d medclinic -c 'SELECT 1;'
 | `/telegram/reconnect/` | `telegram_reconnect` | Безопасная замена Telegram-привязки, только POST |
 | `/telegram/disconnect/` | `telegram_disconnect` | Отключение уведомлений, только POST |
 | `/telegram/webhook/` | `telegram_webhook` | Защищенный технический вход событий Telegram |
-| `/forgot-password/` | `forgot_password` | Инструкция восстановления доступа |
 | `/patient/claim/` | `claim_patient` | Ввод номера телефона |
 | `/patient/pending/` | `pending_patient_dashboard` | Временный кабинет до Google |
 | `/patient/claim/complete/` | `claim_patient_complete` | Завершение привязки после Google |

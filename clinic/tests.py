@@ -31,7 +31,6 @@ from .models import (
     MedicalService,
     MedicalServiceImage,
     NewsPost,
-    PasswordRecoveryRequest,
     PatientRecordEntry,
     PatientRecordImage,
     PatientRecordVideo,
@@ -4191,6 +4190,7 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Знайти користувача')
         self.assertContains(response, 'data-page-size="10"')
         self.assertContains(response, 'Нещодавно створені заявки та прийоми.')
+        self.assertNotContains(response, 'Відновлення доступу')
         self.assertContains(response, 'Це ви')
         self.assertContains(response, reverse('admin_edit_user', args=[admin_user.id]))
         self.assertContains(
@@ -4201,7 +4201,6 @@ class ClinicModelTests(TestCase):
             ('admin_add_doctor', 'Створити лікаря'),
             ('admin_telegram_broadcast', 'Написати повідомлення в Telegram'),
             ('admin_content', 'Контент сайту'),
-            ('admin_password_recovery_requests', 'Відновлення доступу'),
         ):
             self.assertContains(
                 response,
@@ -5011,11 +5010,16 @@ class ClinicModelTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Вхід для адміністрації')
         self.assertContains(response, 'логін і пароль лікаря або адміністратора')
-        self.assertContains(response, reverse('forgot_password'))
+        self.assertNotContains(response, 'Забули пароль?')
+        self.assertNotContains(response, 'forgot-password')
         self.assertContains(response, 'data-admin-login-dialog')
         self.assertContains(response, 'data-auto-open="true"')
         self.assertContains(response, 'data-admin-login-close')
         self.assertContains(response, 'class="admin-login-form"')
+
+    def test_password_recovery_pages_are_removed(self):
+        self.assertEqual(self.client.get('/forgot-password/').status_code, 404)
+        self.assertEqual(self.client.get('/panel/password-recovery/').status_code, 404)
 
     def test_doctor_account_menu_links_profile_and_password(self):
         self.client.login(username='doctor@test.local', password='pass12345')
@@ -5035,42 +5039,6 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, reverse('doctor_edit_profile'))
         self.assertContains(response, reverse('doctor_change_password'))
         self.assertContains(response, reverse('logout'))
-
-    def test_password_recovery_requests_are_rate_limited_and_admin_managed(self):
-        recovery_url = reverse('forgot_password')
-        recovery_page = self.client.get(recovery_url)
-        self.assertContains(recovery_page, 'Логін')
-        self.assertContains(recovery_page, 'Вкажіть логін')
-        self.assertNotContains(recovery_page, 'Електронна пошта')
-
-        self.client.post(recovery_url, data={'username': '  Patient.Login  '})
-        self.client.post(recovery_url, data={'username': 'patient.login'})
-
-        self.assertEqual(PasswordRecoveryRequest.objects.count(), 1)
-        recovery_request = PasswordRecoveryRequest.objects.get()
-        self.assertEqual(recovery_request.username, 'Patient.Login')
-
-        self.client.login(username=self.patient.username, password='pass12345')
-        forbidden = self.client.get(reverse('admin_password_recovery_requests'))
-        self.assertRedirects(forbidden, reverse('administration_login'))
-
-        self.client.logout()
-        admin_user = User.objects.create_superuser(
-            username='recovery-admin', email='recovery-admin@test.local', password='pass12345'
-        )
-        self.client.login(username=admin_user.username, password='pass12345')
-        inbox = self.client.get(reverse('admin_password_recovery_requests'))
-        self.assertContains(inbox, 'Patient.Login')
-        self.assertContains(inbox, 'за логіном')
-        self.assertContains(inbox, 'Позначити обробленим')
-
-        processed = self.client.post(
-            reverse('admin_password_recovery_requests'),
-            data={'request_id': recovery_request.pk},
-        )
-        self.assertRedirects(processed, reverse('admin_password_recovery_requests'))
-        self.assertFalse(PasswordRecoveryRequest.objects.exists())
-        self.assertTrue(AuditLog.objects.filter(actor=admin_user).exists())
 
     def test_shared_administration_login_detects_doctor(self):
         response = self.client.post(

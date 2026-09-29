@@ -639,8 +639,6 @@
 | `templates/clinic/doctors.html` | Детальніше | URL `doctor_detail` | Браузер делает GET по адресу; Django URL resolver выбирает связанную view. |
 | `templates/clinic/doctors.html` | Записатися | URL `booking` | Браузер делает GET по адресу; Django URL resolver выбирает связанную view. |
 | `templates/clinic/doctors.html` | Увійти для запису | URL `home` | Браузер делает GET по адресу; Django URL resolver выбирает связанную view. |
-| `templates/clinic/forgot_password.html` | ← Повернутися до входу | URL `administration_login` | Браузер делает GET по адресу; Django URL resolver выбирает связанную view. |
-| `templates/clinic/forgot_password.html` | Надіслати | текущая форма или JavaScript | Браузер отправляет ближайшую форму; view повторно проверяет данные и права. |
 | `templates/clinic/home.html` | динамическая надпись или иконка | URL `home` | Браузер делает GET по адресу; Django URL resolver выбирает связанную view. |
 | `templates/clinic/home.html` | Лікарі | URL `doctors` | Браузер делает GET по адресу; Django URL resolver выбирает связанную view. |
 | `templates/clinic/home.html` | Вхід для адміністрації | URL `administration_login` | Браузер делает GET по адресу; Django URL resolver выбирает связанную view. |
@@ -1043,17 +1041,6 @@
 - Формы: 0; ссылки: 3; кнопки: 0.
 - Django-маршруты: `booking`, `doctor_detail`, `home`.
 - Условия и циклы: 5; выводы значений: 12.
-- Связь с backend: view передает этому шаблону context; формы возвращают POST в view, а URL-теги строят переходы по именам маршрутов.
-
-## Шаблон `templates/clinic/forgot_password.html`
-
-- Физический размер: 18 строк.
-- Родитель: `clinic/base.html`.
-- Переопределяемые блоки: `title`, `content`.
-- Подключаемые фрагменты: `clinic/_form_fields.html`.
-- Формы: 1; ссылки: 1; кнопки: 1.
-- Django-маршруты: `administration_login`.
-- Условия и циклы: 0; выводы значений: 0.
 - Связь с backend: view передает этому шаблону context; формы возвращают POST в view, а URL-теги строят переходы по именам маршрутов.
 
 ## Шаблон `templates/clinic/home.html`
@@ -1550,7 +1537,6 @@
 | 20 | <code>    path('telegram/reconnect/', views.telegram_reconnect, name='telegram_reconnect'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
 | 21 | <code>    path('telegram/disconnect/', views.telegram_disconnect, name='telegram_disconnect'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
 | 22 | <code>    path('telegram/webhook/', views.telegram_webhook, name='telegram_webhook'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
-| 23 | <code>    path('forgot-password/', views.forgot_password, name='forgot_password'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
 | 24 | <code>    path('patient/claim/', views.claim_patient, name='claim_patient'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
 | 25 | <code>    path('patient/pending/', views.pending_patient_dashboard, name='pending_patient_dashboard'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
 | 26 | <code>    path('patient/claim/complete/', views.claim_patient_complete, name='claim_patient_complete'),</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. |
@@ -5515,15 +5501,6 @@
 - Модели в этом фрагменте: прямо не упоминаются.
 - HTML-шаблоны: не возвращает шаблон напрямую.
 
-#### Функция `forgot_password`
-
-- Расположение: `clinic/views.py:938`, заканчивается около строки 946.
-- Параметры или родители: `request`.
-- Назначение: Проверяет форму обращения по восстановлению доступа и показывает безопасный ответ.
-- Декораторы: нет.
-- Модели в этом фрагменте: прямо не упоминаются.
-- HTML-шаблоны: `forgot_password.html`.
-
 #### Функция `claim_patient`
 
 - Расположение: `clinic/views.py:949`, заканчивается около строки 981.
@@ -6727,15 +6704,6 @@
 | 933 | <code>    logout(request)</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `logout_view`. |
 | 934 | <code>    messages.success(request, 'Ви вийшли з акаунта.')</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `logout_view`. |
 | 935 | <code>    return redirect('home')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `logout_view`. |
-| 938 | <code>def forgot_password(request):</code> | Проверяет форму обращения по восстановлению доступа и показывает безопасный ответ. Контекст: `forgot_password`. |
-| 939 | <code>    form = EmailForm(request.POST or None)</code> | Присваивает имя вычисленному значению, чтобы использовать его в следующих строках. Контекст: `forgot_password`. |
-| 940 | <code>    if request.method == 'POST' and form.is_valid():</code> | Запускает все проверки формы и разрешает сохранение только при отсутствии ошибок. Контекст: `forgot_password`. |
-| 941 | <code>        messages.success(</code> | Записывает успешный toast в Django messages для следующего HTML-ответа. Контекст: `forgot_password`. |
-| 942 | <code>            request,</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `forgot_password`. |
-| 943 | <code>            'Якщо така пошта є в системі, адміністратор допоможе відновити доступ.',</code> | Часть текущего Python-выражения: передает параметры, строит значение или продолжает вызов. Контекст: `forgot_password`. |
-| 944 | <code>        )</code> | Закрывает или продолжает многострочную Python-конструкцию. Контекст: `forgot_password`. |
-| 945 | <code>        return redirect('home')</code> | Возвращает HTTP-перенаправление; браузер затем делает новый GET и предотвращает повтор POST. Контекст: `forgot_password`. |
-| 946 | <code>    return render(request, 'clinic/forgot_password.html', {'form': form})</code> | Возвращает HTML, собранный из шаблона и словаря context. Контекст: `forgot_password`. |
 | 949 | <code>def claim_patient(request):</code> | Проверяет введенный телефон и открывает временный кабинет перед Google-входом. Контекст: `claim_patient`. |
 | 950 | <code>    if request.user.is_authenticated and user_role(request.user) != Profile.ROLE_PATIENT:</code> | Начинает условную ветку; вложенный код выполнится только при истинном выражении. Контекст: `claim_patient`. |
 | 951 | <code>        messages.error(request, 'Ця функція доступна лише пацієнтам.')</code> | Записывает понятную ошибку, которую интерфейс покажет пользователю. Контекст: `claim_patient`. |

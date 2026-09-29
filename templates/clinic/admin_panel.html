@@ -17,7 +17,6 @@
       <a class="page-tab" href="{% url 'admin_add_doctor' %}">Додати лікаря</a>
       <a class="page-tab" href="{% url 'admin_content' %}">Контент сайту</a>
       <a class="page-tab" href="{% url 'admin_telegram_broadcast' %}">Telegram-повідомлення</a>
-      <a class="page-tab{% if '/panel/password-recovery/' in request.path %} active{% endif %}" href="{% url 'admin_password_recovery_requests' %}">Відновлення доступу{% if stats.recovery_requests %} ({{ stats.recovery_requests }}){% endif %}</a>
       <a class="page-tab" href="/admin/">Системні налаштування</a>
     </nav>
 

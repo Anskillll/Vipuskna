@@ -39,7 +39,6 @@
         <a class="account-menu-admin-action" href="{% url 'admin_add_doctor' %}">Створити лікаря</a>
         <a class="account-menu-admin-action" href="{% url 'admin_telegram_broadcast' %}">Написати повідомлення в Telegram</a>
         <a class="account-menu-admin-action" href="{% url 'admin_content' %}">Контент сайту</a>
-        <a class="account-menu-admin-action" href="{% url 'admin_password_recovery_requests' %}">Відновлення доступу</a>
       {% elif user.profile.role == 'doctor' %}
         <a class="account-menu-request-link" href="{% url 'doctor_requests' %}">
           <span>Мої заявки</span>

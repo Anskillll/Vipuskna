@@ -812,19 +812,6 @@ class AuditLog(models.Model):
         return f'{self.created_at:%d.%m.%Y %H:%M} — {self.action}'
 
 
-class PasswordRecoveryRequest(models.Model):
-    username = models.CharField('Логін', max_length=254)
-    created_at = models.DateTimeField('Створено', auto_now_add=True)
-
-    class Meta:
-        verbose_name = 'Запит на відновлення доступу'
-        verbose_name_plural = 'Запити на відновлення доступу'
-        ordering = ['created_at']
-
-    def __str__(self):
-        return self.username
-
-
 class TelegramConnection(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
