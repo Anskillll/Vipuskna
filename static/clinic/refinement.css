@@ -426,12 +426,17 @@ body:not(.public-home-page) .service-manager-item.editing {
 .account-menu-heading { display: grid; gap: 3px; padding: 10px 11px 12px; border-bottom: 1px solid #e4ebe6; }
 .account-menu-heading strong { overflow: hidden; font-size: 14px; text-overflow: ellipsis; }
 .account-menu-heading > span { color: #6a8078; font-size: 11px; }
+.account-menu-profile-link { color: #193d3b; text-decoration: none; transition: background 150ms ease, color 150ms ease; }
+.account-menu-profile-link:hover,
+.account-menu-profile-link:focus-visible { border-radius: 10px; background: #edf4ee; color: #115752; }
 .account-menu-panel > a,
 .account-menu-panel > form > button {
   display: flex;
   width: 100%;
   min-height: 42px;
   align-items: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
   padding: 8px 11px;
   border: 0;
   border-radius: 10px;

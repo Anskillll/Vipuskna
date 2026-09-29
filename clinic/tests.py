@@ -295,17 +295,9 @@ class ClinicModelTests(TestCase):
         self.client.login(username='doctor@test.local', password='pass12345')
         doctor_response = self.client.get(reverse('doctor_appointments'))
         self.assertEqual(doctor_response.status_code, 200)
-        self.assertEqual(
-            doctor_response.content.count(b'class="nav-active" aria-current="page"'),
-            1,
-        )
-        self.assertContains(
-            doctor_response,
-            (
-                'class="nav-active" aria-current="page" '
-                f'href="{reverse("doctor_dashboard")}"'
-            ),
-        )
+        doctor_nav = doctor_response.content.split(b'<nav class="nav">', 1)[1].split(b'</nav>', 1)[0]
+        doctor_nav_links = doctor_nav.split(b'<details class="account-menu">', 1)[0]
+        self.assertNotIn(reverse('doctor_dashboard').encode(), doctor_nav_links)
 
         self.client.logout()
         User.objects.create_superuser(
@@ -1487,7 +1479,11 @@ class ClinicModelTests(TestCase):
             self.assertContains(detail_response, service_image.image.url)
             self.assertContains(detail_response, 'Головне про процедуру')
             self.assertNotContains(detail_response, 'Лікар, який надає послугу')
-            self.assertNotContains(detail_response, self.doctor.full_name)
+            detail_without_account_menu = (
+                detail_response.content.split(b'<details class="account-menu">', 1)[0]
+                + detail_response.content.split(b'</details>', 1)[1]
+            )
+            self.assertNotIn(self.doctor.full_name.encode(), detail_without_account_menu)
 
     def test_doctor_cannot_delete_another_doctors_service_photo(self):
         other_user = User.objects.create_user(
@@ -4109,6 +4105,10 @@ class ClinicModelTests(TestCase):
 
         self.assertContains(response, 'Перейти до кабінету лікаря')
         self.assertContains(response, reverse('doctor_dashboard'))
+        self.assertEqual(
+            response.content.count(f'href="{reverse("doctor_dashboard")}"'.encode()),
+            1,
+        )
         self.assertNotContains(response, 'Переглянути лікарів')
 
     def test_admin_home_button_opens_admin_panel(self):
@@ -4951,6 +4951,9 @@ class ClinicModelTests(TestCase):
         response = self.client.get(reverse('doctor_dashboard'))
 
         self.assertContains(response, 'Меню профілю')
+        self.assertContains(response, self.doctor.full_name)
+        self.assertContains(response, 'account-menu-profile-link')
+        self.assertContains(response, reverse('doctor_detail', args=[self.doctor.id]))
         self.assertContains(response, reverse('doctor_edit_profile'))
         self.assertContains(response, reverse('doctor_change_password'))
         self.assertContains(response, reverse('logout'))

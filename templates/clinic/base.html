@@ -15,7 +15,7 @@
   {% endif %}
   <link rel="stylesheet" href="{% static 'clinic/site.css' %}?v=20260928-7">
   <link rel="stylesheet" href="{% static 'clinic/mobile.css' %}?v=20260928-7">
-  <link rel="stylesheet" href="{% static 'clinic/refinement.css' %}?v=20260929-1">
+  <link rel="stylesheet" href="{% static 'clinic/refinement.css' %}?v=20260929-2">
   <script src="{% static 'clinic/live_filter.js' %}?v=20260928-1" defer></script>
   <script src="{% static 'clinic/flash_messages.js' %}?v=20260719-1" defer></script>
 </head>
@@ -36,7 +36,6 @@
           {% if user.is_staff %}
             <a{% if '/panel/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'admin_panel' %}">Панель адміністратора</a>
           {% elif user.profile.role == 'doctor' %}
-            <a{% if '/doctor/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'doctor_dashboard' %}">Кабінет лікаря</a>
           {% else %}
             <a{% if '/doctors/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'doctors' %}">Лікарі</a>
             <a{% if '/patient/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'patient_dashboard' %}">Мій кабінет</a>

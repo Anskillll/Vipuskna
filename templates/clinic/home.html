@@ -68,7 +68,6 @@
           {% elif user.is_staff %}
             <a href="{% url 'admin_panel' %}">Панель адміністратора</a>
           {% elif user.profile.role == 'doctor' %}
-            <a href="{% url 'doctor_dashboard' %}">Кабінет лікаря</a>
           {% else %}
             <a href="{% url 'patient_dashboard' %}">Мій кабінет</a>
           {% endif %}

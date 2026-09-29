@@ -13,18 +13,22 @@
       <span class="account-menu-caret" aria-hidden="true"></span>
     </summary>
     <div class="account-menu-panel">
-      <div class="account-menu-heading">
-        {% if user.is_staff %}
-          <strong>Профіль адміністратора</strong>
-          <span>Адміністратор</span>
-        {% elif user.profile.role == 'doctor' %}
-          <strong>Профіль лікаря</strong>
-          <span>Лікар</span>
-        {% else %}
-          <strong>Мій профіль</strong>
-          <span>Пацієнт</span>
-        {% endif %}
-      </div>
+      {% if not user.is_staff and user.profile.role == 'doctor' %}
+        <a class="account-menu-heading account-menu-profile-link" href="{% url 'doctor_detail' user.doctor_profile.id %}">
+          <strong>{{ user.get_full_name|default:user.username }}</strong>
+          <span>Профіль</span>
+        </a>
+      {% else %}
+        <div class="account-menu-heading">
+          {% if user.is_staff %}
+            <strong>Профіль адміністратора</strong>
+            <span>Адміністратор</span>
+          {% else %}
+            <strong>Мій профіль</strong>
+            <span>Пацієнт</span>
+          {% endif %}
+        </div>
+      {% endif %}
       {% if user.is_staff %}
         <a href="{% url 'admin_panel' %}">Панель адміністратора</a>
       {% elif user.profile.role == 'doctor' %}
