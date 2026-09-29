@@ -680,3 +680,8 @@ body:not(.public-home-page) .current-records-dialog .btn.current-record-create:h
   color: #a8322b;
   box-shadow: inset 0 0 0 1px #f5d1cc;
 }
+
+.home-hero-nav-links {
+  margin-left: auto;
+  margin-right: 18px;
+}
