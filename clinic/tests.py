@@ -164,8 +164,9 @@ class ClinicModelTests(TestCase):
         self.assertIn('justify-content: space-between;', refinement_css)
         self.assertIn('.booking-for-other .field-checkbox > .checkbox-label > input[type="checkbox"]', refinement_css)
 
-    def test_home_page_shows_clinic_addresses_and_clickable_phone(self):
+    def test_home_page_shows_phone_with_device_specific_feedback_action(self):
         response = self.client.get(reverse('home'))
+        home_script = (Path(settings.BASE_DIR) / 'static' / 'clinic' / 'home.js').read_text(encoding='utf-8')
 
         self.assertContains(response, 'clinic/site.css?v=')
         self.assertContains(response, 'clinic/mobile.css?v=')
@@ -173,8 +174,12 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Нікополь, вул. Шевченка, 200')
         self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
         self.assertContains(response, 'https://www.google.com/maps/search/?api=1&amp;query=')
-        self.assertContains(response, 'href="tel:+380509168426"')
+        self.assertContains(response, 'href="tel:+380509168426" data-home-feedback')
+        self.assertContains(response, 'clinic/home.js?v=20260929-2')
         self.assertContains(response, '+38 (050) 916-84-26')
+        self.assertIn('(hover: hover) and (pointer: fine)', home_script)
+        self.assertIn("feedbackLink.removeAttribute('href')", home_script)
+        self.assertIn("feedbackLink.setAttribute('href', phoneHref)", home_script)
 
     def test_appointment_locations_open_in_google_maps(self):
         workplace_query = parse_qs(urlparse(self.workplace.google_maps_url).query)

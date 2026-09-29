@@ -4,6 +4,25 @@
     return;
   }
 
+  const feedbackLink = home.querySelector('[data-home-feedback]');
+  if (feedbackLink) {
+    const desktopInput = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const phoneHref = feedbackLink.getAttribute('href');
+    const updateFeedbackLink = () => {
+      if (desktopInput.matches) {
+        feedbackLink.removeAttribute('href');
+        feedbackLink.setAttribute('aria-disabled', 'true');
+        feedbackLink.setAttribute('tabindex', '-1');
+      } else {
+        feedbackLink.setAttribute('href', phoneHref);
+        feedbackLink.removeAttribute('aria-disabled');
+        feedbackLink.removeAttribute('tabindex');
+      }
+    };
+    updateFeedbackLink();
+    desktopInput.addEventListener('change', updateFeedbackLink);
+  }
+
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const hero = home.querySelector('[data-home-hero]');
   const topbar = document.querySelector('[data-home-reveal-header]');
