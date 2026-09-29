@@ -685,3 +685,35 @@ body:not(.public-home-page) .current-records-dialog .btn.current-record-create:h
   margin-left: auto;
   margin-right: 18px;
 }
+
+.current-visit-banner-actions { align-items: center; }
+.current-visit-dismiss {
+  display: grid;
+  width: 38px;
+  min-width: 38px;
+  height: 38px;
+  min-height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #b8d8c5;
+  border-radius: 50%;
+  background: #eff8f2;
+  color: #286350;
+  box-shadow: none;
+  cursor: pointer;
+}
+.current-visit-dismiss:hover,
+.current-visit-dismiss:focus-visible {
+  border-color: #8bbca0;
+  background: #d2efdc;
+  color: #0d4f39;
+  box-shadow: none;
+  transform: none;
+}
+.current-visit-dismiss .ui-icon { width: 17px; height: 17px; min-width: 17px; }
+[data-current-visit-banner][hidden] { display: none; }
+@media (max-width: 720px) {
+  .current-visit-banner-actions { grid-template-columns: minmax(0, 1fr) auto; }
+  .current-visit-dismiss { justify-self: end; }
+}

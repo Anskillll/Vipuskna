@@ -1,4 +1,4 @@
-<section class="current-visit-banner">
+<section class="current-visit-banner" data-current-visit-banner="{{ doctor_visit_appointment.id }}">
   <div>
     <span class="current-visit-label">Прийом триває зараз</span>
     <h2>Зараз працюєте з клієнтом {{ doctor_visit_appointment.patient_name }}</h2>
@@ -19,6 +19,13 @@
     >
       Переглянути записи пацієнта
     </button>
+    <button
+      type="button"
+      class="current-visit-dismiss"
+      data-current-visit-dismiss
+      aria-label="Закрити повідомлення про поточний прийом"
+      title="Закрити повідомлення"
+    >{% include 'clinic/_icon.html' with name='close' %}</button>
   </div>
 </section>
 

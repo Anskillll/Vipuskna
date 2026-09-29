@@ -1541,6 +1541,7 @@ class ClinicModelTests(TestCase):
         self.assertContains(detail_response, self.doctor.description)
         self.assertContains(detail_response, self.service.name)
         self.assertContains(detail_response, 'Графік роботи')
+        self.assertContains(detail_response, 'Повернутися до списку лікарів')
 
     def test_booking_doctor_summary_is_compact(self):
         self.client.login(username='patient@test.local', password='pass12345')
@@ -4138,12 +4139,19 @@ class ClinicModelTests(TestCase):
         response = self.client.get(reverse('home'))
 
         self.assertContains(response, 'Перейти до кабінету лікаря')
-        self.assertContains(response, reverse('doctor_dashboard'))
-        self.assertEqual(
-            response.content.count(f'href="{reverse("doctor_dashboard")}"'.encode()),
-            1,
+        self.assertContains(
+            response,
+            f'class="home-hero-primary-action" href="{reverse("doctor_dashboard")}"',
         )
+        self.assertContains(
+            response,
+            f'class="account-menu-heading account-menu-profile-link" href="{reverse("doctor_dashboard")}"',
+        )
+        self.assertContains(response, 'Кабінет лікаря')
         self.assertNotContains(response, 'Переглянути лікарів')
+
+        dashboard_response = self.client.get(reverse('doctor_dashboard'))
+        self.assertNotContains(dashboard_response, 'Повернутися до списку лікарів')
 
     def test_admin_home_button_opens_admin_panel(self):
         User.objects.create_superuser(
@@ -4510,6 +4518,9 @@ class ClinicModelTests(TestCase):
         self.assertEqual(response.context['doctor_visit_card'], card)
         self.assertQuerySetEqual(response.context['doctor_visit_entries'], [entry])
         self.assertContains(response, 'current-visit-banner')
+        self.assertContains(response, f'data-current-visit-banner="{appointment.id}"')
+        self.assertContains(response, 'data-current-visit-dismiss')
+        self.assertContains(response, 'Закрити повідомлення про поточний прийом')
         self.assertContains(response, 'Прийом триває зараз')
         self.assertContains(response, 'Переглянути записи пацієнта')
         self.assertContains(response, 'Записи про Тест Пацієнт')
@@ -4986,8 +4997,11 @@ class ClinicModelTests(TestCase):
 
         self.assertContains(response, 'Меню профілю')
         self.assertContains(response, self.doctor.full_name)
-        self.assertContains(response, 'account-menu-profile-link')
-        self.assertContains(response, reverse('doctor_detail', args=[self.doctor.id]))
+        self.assertContains(
+            response,
+            f'class="account-menu-heading account-menu-profile-link" href="{reverse("doctor_dashboard")}"',
+        )
+        self.assertNotContains(response, reverse('doctor_detail', args=[self.doctor.id]))
         self.assertContains(response, reverse('doctor_edit_profile'))
         self.assertContains(response, reverse('doctor_change_password'))
         self.assertContains(response, reverse('logout'))

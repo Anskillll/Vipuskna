@@ -14,9 +14,9 @@
     </summary>
     <div class="account-menu-panel">
       {% if not user.is_staff and user.profile.role == 'doctor' %}
-        <a class="account-menu-heading account-menu-profile-link" href="{% url 'doctor_detail' user.doctor_profile.id %}">
+        <a class="account-menu-heading account-menu-profile-link" href="{% url 'doctor_dashboard' %}">
           <strong>{{ user.get_full_name|default:user.username }}</strong>
-          <span>Профіль</span>
+          <span>Кабінет лікаря</span>
         </a>
       {% else %}
         <div class="account-menu-heading">
