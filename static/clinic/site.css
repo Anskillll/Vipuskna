@@ -6573,6 +6573,14 @@ body:not(.public-home-page) .appointment-day-head {
   border-bottom: 1px solid #dce3df;
 }
 
+body:not(.public-home-page) .appointment-day-title {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  min-width: 0;
+}
+
 body:not(.public-home-page) .appointment-day-head-actions {
   align-items: center;
   display: flex;
@@ -6581,22 +6589,29 @@ body:not(.public-home-page) .appointment-day-head-actions {
 
 body:not(.public-home-page) .appointment-day-book-button {
   align-items: center;
-  background: #315d55;
-  border: 1px solid #315d55;
-  border-radius: 5px;
-  color: #fff;
+  background: #edf7f1;
+  border: 1px solid #c4dfd0;
+  border-radius: 999px;
+  color: #176b5e;
   display: inline-flex;
-  font-size: 13px;
+  gap: 5px;
+  font-size: 12px;
   font-weight: 700;
-  min-height: 38px;
-  padding: 7px 13px;
+  min-height: 32px;
+  padding: 5px 11px 5px 8px;
   white-space: nowrap;
 }
 
 body:not(.public-home-page) .appointment-day-book-button:hover {
-  background: #234a43;
-  border-color: #234a43;
-  color: #fff;
+  background: #dff1e7;
+  border-color: #a9d1bc;
+  color: #11574e;
+}
+
+body:not(.public-home-page) .appointment-day-book-button .ui-icon {
+  height: 15px;
+  min-width: 15px;
+  width: 15px;
 }
 
 body:not(.public-home-page) .appointment-day-head h2 {

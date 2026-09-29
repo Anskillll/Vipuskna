@@ -437,6 +437,12 @@
     padding: 11px;
   }
 
+  body:not(.public-home-page) .appointment-day-title {
+    align-items: flex-start;
+    gap: 7px 10px;
+    width: 100%;
+  }
+
   body:not(.public-home-page) .appointment-day-head-actions {
     justify-content: space-between;
     width: 100%;
@@ -444,8 +450,8 @@
 
   body:not(.public-home-page) .appointment-day-book-button {
     font-size: 11px;
-    min-height: 32px;
-    padding: 5px 9px;
+    min-height: 30px;
+    padding: 4px 9px 4px 7px;
   }
 
   body:not(.public-home-page) .appointment-weeks {

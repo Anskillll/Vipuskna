@@ -2541,6 +2541,7 @@ class ClinicModelTests(TestCase):
         )
 
         self.assertContains(response, 'Записати на цей день')
+        self.assertContains(response, 'class="appointment-day-title"')
         self.assertContains(response, 'Записати між ними')
         self.assertContains(response, '>09:10</span>', html=False)
         self.assertContains(

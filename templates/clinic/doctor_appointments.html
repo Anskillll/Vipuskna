@@ -64,7 +64,15 @@
               data-appointment-day
             >
                 <div class="appointment-day-head">
-                  <h2>{{ day.weekday_name }}, {{ day.date|date:'d.m.Y' }}</h2>
+                  <div class="appointment-day-title">
+                    <h2>{{ day.weekday_name }}, {{ day.date|date:'d.m.Y' }}</h2>
+                    {% if day.can_book %}
+                      <a
+                        class="appointment-day-book-button"
+                        href="{% url 'doctor_book_patient' %}?date={{ day.date|date:'Y-m-d' }}"
+                      >{% include 'clinic/_icon.html' with name='plus' %} Записати на цей день</a>
+                    {% endif %}
+                  </div>
                   <div class="appointment-day-head-actions">
                     {% if day.appointments %}
                       <span data-live-filter-group-count data-count-template="{count} запис(ів)">{{ day.appointments|length }} запис(ів)</span>
@@ -73,12 +81,6 @@
                       {% endif %}
                     {% else %}
                       <span>0 записів</span>
-                    {% endif %}
-                    {% if day.can_book %}
-                      <a
-                        class="appointment-day-book-button"
-                        href="{% url 'doctor_book_patient' %}?date={{ day.date|date:'Y-m-d' }}"
-                      >Записати на цей день</a>
                     {% endif %}
                   </div>
                 </div>
