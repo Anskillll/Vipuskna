@@ -5038,11 +5038,17 @@ class ClinicModelTests(TestCase):
 
     def test_password_recovery_requests_are_rate_limited_and_admin_managed(self):
         recovery_url = reverse('forgot_password')
-        self.client.post(recovery_url, data={'email': 'Patient@Test.Local'})
-        self.client.post(recovery_url, data={'email': 'patient@test.local'})
+        recovery_page = self.client.get(recovery_url)
+        self.assertContains(recovery_page, 'Логін')
+        self.assertContains(recovery_page, 'Вкажіть логін')
+        self.assertNotContains(recovery_page, 'Електронна пошта')
+
+        self.client.post(recovery_url, data={'username': '  Patient.Login  '})
+        self.client.post(recovery_url, data={'username': 'patient.login'})
 
         self.assertEqual(PasswordRecoveryRequest.objects.count(), 1)
         recovery_request = PasswordRecoveryRequest.objects.get()
+        self.assertEqual(recovery_request.username, 'Patient.Login')
 
         self.client.login(username=self.patient.username, password='pass12345')
         forbidden = self.client.get(reverse('admin_password_recovery_requests'))
@@ -5054,7 +5060,8 @@ class ClinicModelTests(TestCase):
         )
         self.client.login(username=admin_user.username, password='pass12345')
         inbox = self.client.get(reverse('admin_password_recovery_requests'))
-        self.assertContains(inbox, 'patient@test.local')
+        self.assertContains(inbox, 'Patient.Login')
+        self.assertContains(inbox, 'за логіном')
         self.assertContains(inbox, 'Позначити обробленим')
 
         processed = self.client.post(

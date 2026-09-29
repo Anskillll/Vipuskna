@@ -813,7 +813,7 @@ class AuditLog(models.Model):
 
 
 class PasswordRecoveryRequest(models.Model):
-    email = models.EmailField('Електронна пошта')
+    username = models.CharField('Логін', max_length=254)
     created_at = models.DateTimeField('Створено', auto_now_add=True)
 
     class Meta:
@@ -822,7 +822,7 @@ class PasswordRecoveryRequest(models.Model):
         ordering = ['created_at']
 
     def __str__(self):
-        return self.email
+        return self.username
 
 
 class TelegramConnection(models.Model):

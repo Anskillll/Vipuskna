@@ -118,8 +118,11 @@ class UsernameLoginForm(FormStyleMixin, forms.Form):
         )
 
 
-class EmailForm(FormStyleMixin, forms.Form):
-    email = forms.EmailField(label='Електронна пошта')
+class UsernameRecoveryForm(FormStyleMixin, forms.Form):
+    username = forms.CharField(label='Логін', max_length=150)
+
+    def clean_username(self):
+        return self.cleaned_data['username'].strip()
 
 
 class ClaimPatientForm(FormStyleMixin, forms.Form):

@@ -34,9 +34,9 @@ admin.site.index_title = 'Керування клінікою'
 
 @admin.register(PasswordRecoveryRequest)
 class PasswordRecoveryRequestAdmin(admin.ModelAdmin):
-    list_display = ('email', 'created_at')
-    search_fields = ('email',)
-    readonly_fields = ('email', 'created_at')
+    list_display = ('username', 'created_at')
+    search_fields = ('username',)
+    readonly_fields = ('username', 'created_at')
 
     def has_add_permission(self, request):
         return False

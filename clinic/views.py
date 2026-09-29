@@ -38,7 +38,6 @@ from .forms import (
     DoctorPatientCardForm,
     DoctorProfileForm,
     DoctorWorkplaceForm,
-    EmailForm,
     GalleryImageForm,
     HomeHeroSlideForm,
     NewsPostForm,
@@ -46,6 +45,7 @@ from .forms import (
     PatientProfileForm,
     ServiceForm,
     UsernameLoginForm,
+    UsernameRecoveryForm,
     WorkScheduleForm,
     normalize_phone_number,
     patient_phone_is_used,
@@ -1017,18 +1017,18 @@ def logout_view(request):
 
 
 def forgot_password(request):
-    form = EmailForm(request.POST or None)
+    form = UsernameRecoveryForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
-        email = form.cleaned_data['email'].strip().casefold()
+        username = form.cleaned_data['username']
         recent_request_exists = PasswordRecoveryRequest.objects.filter(
-            email__iexact=email,
+            username__iexact=username,
             created_at__gte=timezone.now() - timedelta(hours=1),
         ).exists()
         if not recent_request_exists:
-            PasswordRecoveryRequest.objects.create(email=email)
+            PasswordRecoveryRequest.objects.create(username=username)
         messages.success(
             request,
-            'Якщо така пошта є в системі, адміністратор допоможе відновити доступ.',
+            'Якщо такий логін є в системі, адміністратор допоможе відновити доступ.',
         )
         return redirect('home')
     return render(request, 'clinic/forgot_password.html', {'form': form})
