@@ -154,6 +154,7 @@ class ClinicModelTests(TestCase):
         self.assertIn('--clinic-red:', css)
         self.assertIn('.status.pending', css)
         self.assertIn('.status.approved', css)
+        self.assertIn('.admin-broadcast-option input:focus-visible', css)
         refinement_css = (
             Path(settings.BASE_DIR) / 'static' / 'clinic' / 'refinement.css'
         ).read_text(encoding='utf-8')
