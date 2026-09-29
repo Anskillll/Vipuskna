@@ -97,12 +97,11 @@
                         <time datetime="{{ appointment.date|date:'Y-m-d' }}T{{ appointment.time|time:'H:i' }}">{{ appointment.time|time:'H:i' }}</time>
                         <div class="appointment-summary-person">
                           <div class="appointment-person-name">
-                            <button
-                              class="appointment-filter-name"
-                              type="button"
-                              title="Показати всі записи цього пацієнта"
-                              data-live-filter-value="{{ appointment.patient_name|escape }}"
-                            >{{ appointment.patient_name }}</button>
+                            {% if appointment.patient_card %}
+                              <a class="appointment-patient-card-link" href="{% url 'doctor_patient_card_detail' appointment.patient_card.id %}">{{ appointment.patient_name }}</a>
+                            {% else %}
+                              <a class="appointment-patient-card-link" href="{% url 'doctor_patient_cards' %}">{{ appointment.patient_name }}</a>
+                            {% endif %}
                             <span>{% if appointment.patient_age %}{{ appointment.patient_age }} років{% else %}Вік не вказано{% endif %}</span>
                           </div>
                           {% if appointment.booked_for_other %}
@@ -125,11 +124,6 @@
                         <span>{{ appointment.service.name|default:'Послугу не обрано' }}</span>
                         <div class="appointment-row-actions">
                           <a class="appointment-detail-link" href="{% url 'doctor_appointment_detail' appointment.id %}">Детальніше {% include 'clinic/_icon.html' with name='right' %}</a>
-                          {% if appointment.patient_card %}
-                            <a class="btn" href="{% url 'doctor_patient_card_detail' appointment.patient_card.id %}">Відкрити картку</a>
-                          {% else %}
-                            <a class="btn" href="{% url 'doctor_patient_cards' %}">Відкрити картку</a>
-                          {% endif %}
                         </div>
                       </article>
                       {% if appointment.split_option %}

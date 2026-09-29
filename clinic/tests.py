@@ -2422,7 +2422,8 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, first_date.strftime('%d.%m.%Y'))
         self.assertContains(response, second_date.strftime('%d.%m.%Y'))
         self.assertContains(response, 'class="appointment-detail-link"', count=3)
-        self.assertContains(response, 'Відкрити картку', count=3)
+        self.assertContains(response, 'class="appointment-patient-card-link"', count=3)
+        self.assertNotContains(response, 'Відкрити картку')
         self.assertContains(response, 'Заявка очікує')
         self.assertContains(response, 'Підтверджений прийом')
         self.assertContains(response, 'appointment-kind-pending')
@@ -3902,7 +3903,7 @@ class ClinicModelTests(TestCase):
         self.assertContains(appointment_response, 'Фільтр заявок і прийомів')
         self.assertContains(appointment_response, 'data-live-filter-group')
         self.assertContains(appointment_response, 'data-live-filter-clear')
-        self.assertContains(appointment_response, f'data-live-filter-value="{appointment.patient_name}"')
+        self.assertContains(appointment_response, 'class="appointment-patient-card-link"')
         self.assertContains(appointment_response, appointment.patient_phone)
         self.assertNotContains(appointment_response, '>Знайти</button>')
 
@@ -4580,6 +4581,39 @@ class ClinicModelTests(TestCase):
         entry = PatientRecordEntry.objects.get(card=card)
         self.assertEqual(entry.doctor, self.doctor)
         self.assertEqual(entry.title, 'Первинний огляд')
+
+    def test_patient_card_history_links_to_each_appointment_detail(self):
+        card = DoctorPatientCard.objects.create(
+            doctor=self.doctor,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            patient_email='patient@test.local',
+        )
+        appointment = Appointment.objects.create(
+            doctor=self.doctor,
+            service=self.service,
+            patient=self.patient,
+            patient_first_name='Тест',
+            patient_last_name='Пацієнт',
+            patient_phone='+380501111111',
+            date=timezone.localdate(),
+            time=time(9, 0),
+            status=Appointment.STATUS_COMPLETED,
+        )
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        response = self.client.get(
+            reverse('doctor_patient_card_detail', args=[card.id]),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Історія записів')
+        self.assertContains(
+            response,
+            f'class="appointment-history-detail" href="{reverse("doctor_appointment_detail", args=[appointment.id])}"',
+        )
 
     def test_patient_record_form_uses_ukrainian_labels(self):
         form = PatientRecordEntryForm()

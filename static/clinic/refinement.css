@@ -745,7 +745,38 @@ body:not(.public-home-page) .current-records-dialog .btn.current-record-create:h
   height: 16px;
   min-width: 16px;
 }
-.appointment-row-actions .btn { border-radius: 11px; }
+.appointment-patient-card-link {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text);
+  font-weight: 800;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.appointment-patient-card-link:hover,
+.appointment-patient-card-link:focus-visible {
+  color: var(--clinic-teal-dark);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.appointment-history-detail {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--clinic-teal-dark);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.appointment-history-detail:hover,
+.appointment-history-detail:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.appointment-history-detail .ui-icon { width: 16px; height: 16px; }
 
 /* Keep menu controls independent from the navigation link rules on inner pages. */
 .account-menu-panel > form { width: 100%; }

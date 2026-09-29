@@ -167,6 +167,7 @@
               <th>Тривалість</th>
               <th>Статус</th>
               <th>Причина</th>
+              <th>Дії</th>
             </tr>
           </thead>
           <tbody>
@@ -178,6 +179,7 @@
                 <td>{{ appointment.duration_minutes }} хв</td>
                 <td><span class="status {{ appointment.status }}">{{ appointment.get_status_display }}</span></td>
                 <td>{{ appointment.reason }}</td>
+                <td><a class="appointment-history-detail" href="{% url 'doctor_appointment_detail' appointment.id %}">Детальніше {% include 'clinic/_icon.html' with name='right' %}</a></td>
               </tr>
             {% endfor %}
           </tbody>
