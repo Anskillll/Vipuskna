@@ -686,8 +686,12 @@ body:not(.public-home-page) .current-records-dialog .btn.current-record-create:h
   margin-right: 18px;
 }
 
+.current-visit-banner { position: relative; }
 .current-visit-banner-actions { align-items: center; }
 .current-visit-dismiss {
+  position: absolute;
+  top: 10px;
+  right: 12px;
   display: grid;
   width: 38px;
   min-width: 38px;
@@ -705,15 +709,14 @@ body:not(.public-home-page) .current-records-dialog .btn.current-record-create:h
 }
 .current-visit-dismiss:hover,
 .current-visit-dismiss:focus-visible {
-  border-color: #8bbca0;
-  background: #d2efdc;
-  color: #0d4f39;
-  box-shadow: none;
+  border-color: #dc4b45;
+  background: #fff0ee;
+  color: #b42318;
+  box-shadow: 0 0 0 3px #dc262626, 0 4px 12px #dc262633;
   transform: none;
 }
 .current-visit-dismiss .ui-icon { width: 17px; height: 17px; min-width: 17px; }
 [data-current-visit-banner][hidden] { display: none; }
 @media (max-width: 720px) {
-  .current-visit-banner-actions { grid-template-columns: minmax(0, 1fr) auto; }
-  .current-visit-dismiss { justify-self: end; }
+  .current-visit-banner-actions { grid-template-columns: minmax(0, 1fr); }
 }
