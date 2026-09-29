@@ -23,16 +23,16 @@
           <strong>{{ user.get_full_name|default:user.username }}</strong>
           <span>Кабінет лікаря</span>
         </a>
-      {% else %}
+      {% elif user.is_staff %}
         <div class="account-menu-heading">
-          {% if user.is_staff %}
-            <strong>Профіль адміністратора</strong>
-            <span>Адміністратор</span>
-          {% else %}
-            <strong>Мій профіль</strong>
-            <span>Пацієнт</span>
-          {% endif %}
+          <strong>Профіль адміністратора</strong>
+          <span>Адміністратор</span>
         </div>
+      {% else %}
+        <a class="account-menu-heading account-menu-profile-link" href="{% url 'patient_dashboard' %}">
+          <strong>{{ user.get_full_name|default:user.username }}</strong>
+          <span>Кабінет пацієнта</span>
+        </a>
       {% endif %}
       {% if user.is_staff %}
         <a href="{% url 'admin_panel' %}">Панель адміністратора</a>

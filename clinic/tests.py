@@ -732,6 +732,12 @@ class ClinicModelTests(TestCase):
         reconnect = self.client.post(reverse('telegram_reconnect'))
 
         self.assertContains(dashboard, 'Меню профілю')
+        self.assertContains(
+            dashboard,
+            f'class="account-menu-heading account-menu-profile-link" href="{reverse("patient_dashboard")}"',
+        )
+        self.assertContains(dashboard, 'Кабінет пацієнта')
+        self.assertContains(dashboard, self.patient.get_full_name())
         self.assertContains(dashboard, reverse('patient_edit_profile'))
         self.assertContains(dashboard, reverse('patient_change_password'))
         self.assertContains(dashboard, reverse('telegram_reconnect'))
