@@ -578,3 +578,77 @@ body:not(.public-home-page) .service-manager-item.editing {
 @media (prefers-reduced-motion: reduce) {
   .home-gallery-slide, .home-gallery-slide figcaption { transition: none; }
 }
+
+/* Patient records dialog follows the porcelain and sea-glass clinic palette. */
+body:not(.public-home-page) dialog.current-records-dialog {
+  border: 1px solid #d8e6df;
+  border-radius: 20px;
+  background: #fffefa;
+  color: var(--clinic-ink);
+  box-shadow: 0 28px 80px #102f2938;
+}
+body:not(.public-home-page) .current-records-dialog-head {
+  border-bottom-color: #e2ebe5;
+}
+body:not(.public-home-page) .current-records-dialog-head h2,
+body:not(.public-home-page) .current-record-item-head h3 {
+  color: var(--clinic-ink);
+}
+body:not(.public-home-page) .current-records-dialog-head p,
+body:not(.public-home-page) .current-record-item-head time {
+  color: #687f77;
+}
+body:not(.public-home-page) .current-records-dialog-head .current-visit-label {
+  color: var(--clinic-teal-dark);
+}
+body:not(.public-home-page) .current-records-dialog .current-records-close {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  flex-basis: 40px;
+  border: 1px solid #d5e5dc;
+  border-radius: 50%;
+  background: #edf5ef;
+  color: var(--clinic-teal-dark);
+  box-shadow: none;
+}
+body:not(.public-home-page) .current-records-dialog .current-records-close:hover {
+  background: #dcece2;
+  color: #0d4e47;
+}
+body:not(.public-home-page) .current-record-item {
+  border: 1px solid #dfe9e3;
+  border-radius: 14px;
+  background: #fcfdfb;
+}
+body:not(.public-home-page) .current-records-dialog .record-kind {
+  background: #e7f3ec;
+  color: #176457;
+}
+body:not(.public-home-page) .current-records-dialog .record-entry-text,
+body:not(.public-home-page) .current-records-dialog .record-recommendations {
+  color: #35564e;
+}
+body:not(.public-home-page) .current-records-dialog-actions {
+  border-top-color: #e2ebe5;
+  background: #f4f8f3;
+}
+body:not(.public-home-page) .current-records-dialog .btn.current-record-create {
+  min-height: 44px;
+  padding: 10px 20px;
+  border: 1px solid var(--clinic-teal);
+  border-radius: 999px;
+  background: var(--clinic-teal);
+  color: #fffefa;
+  box-shadow: 0 5px 12px #177d7824;
+  font-size: 14px;
+  font-weight: 700;
+}
+body:not(.public-home-page) .current-records-dialog .btn.current-record-create:hover {
+  transform: translateY(-1px);
+  border-color: var(--clinic-teal-dark);
+  background: var(--clinic-teal-dark);
+  color: #fffefa;
+  box-shadow: 0 8px 16px #1157522e;
+}
