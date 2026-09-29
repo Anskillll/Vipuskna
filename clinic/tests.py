@@ -4193,6 +4193,20 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Нещодавно створені заявки та прийоми.')
         self.assertContains(response, 'Це ви')
         self.assertContains(response, reverse('admin_edit_user', args=[admin_user.id]))
+        self.assertContains(
+            response,
+            f'class="account-menu-heading account-menu-profile-link" href="{reverse("admin_panel")}"',
+        )
+        for route, label in (
+            ('admin_add_doctor', 'Створити лікаря'),
+            ('admin_telegram_broadcast', 'Написати повідомлення в Telegram'),
+            ('admin_content', 'Контент сайту'),
+            ('admin_password_recovery_requests', 'Відновлення доступу'),
+        ):
+            self.assertContains(
+                response,
+                f'class="account-menu-admin-action" href="{reverse(route)}">{label}</a>',
+            )
         self.assertNotContains(response, '<th>Електронна пошта</th>', html=True)
 
     def test_telegram_broadcast_page_requires_admin(self):

@@ -707,6 +707,58 @@ body:not(.public-home-page) .current-records-dialog .btn.current-record-create:h
 .account-menu-panel .account-menu-request-link { justify-content: space-between; gap: 12px; }
 .account-menu-panel .account-menu-request-link .account-request-count { flex: 0 0 auto; color: #fff; }
 
+/* Keep menu controls independent from the navigation link rules on inner pages. */
+.account-menu-panel > form { width: 100%; }
+body:not(.public-home-page) .nav .account-menu-panel > a:not(.account-menu-heading),
+body:not(.public-home-page) .nav .account-menu-panel > form > button {
+  min-height: 42px;
+  padding: 8px 11px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: none;
+  color: #254d46;
+  transform: none;
+}
+body:not(.public-home-page) .nav .account-menu-panel > a:not(.account-menu-heading):hover,
+body:not(.public-home-page) .nav .account-menu-panel > form > button:hover,
+body:not(.public-home-page) .nav .account-menu-panel > a:not(.account-menu-heading):focus-visible,
+body:not(.public-home-page) .nav .account-menu-panel > form > button:focus-visible {
+  border-color: #d2e7db;
+  background: #e5f3eb;
+  box-shadow: inset 0 0 0 1px #d2e7db;
+  color: #115752;
+  outline: none;
+  transform: none;
+}
+body:not(.public-home-page) .nav .account-menu-panel > a.account-menu-heading {
+  min-height: 0;
+  padding: 10px 11px 12px;
+  border: 0;
+  border-bottom: 1px solid #e4ebe6;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #193d3b;
+  transform: none;
+}
+body:not(.public-home-page) .nav .account-menu-panel > a.account-menu-heading:hover,
+body:not(.public-home-page) .nav .account-menu-panel > a.account-menu-heading:focus-visible {
+  border-radius: 10px;
+  background: #edf4ee;
+  color: #115752;
+  outline: none;
+  box-shadow: none;
+  transform: none;
+}
+body:not(.public-home-page) .nav .account-menu-panel > a.account-menu-logout:hover,
+body:not(.public-home-page) .nav .account-menu-panel > a.account-menu-logout:focus-visible {
+  border-color: #f5d1cc;
+  background: #fff0ee;
+  box-shadow: inset 0 0 0 1px #f5d1cc;
+  color: #a8322b;
+}
+
 .current-visit-banner { position: relative; }
 .current-visit-banner-actions { align-items: center; padding-right: 56px; }
 .current-visit-dismiss {

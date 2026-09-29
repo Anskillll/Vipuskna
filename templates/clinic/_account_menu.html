@@ -24,10 +24,10 @@
           <span>Кабінет лікаря</span>
         </a>
       {% elif user.is_staff %}
-        <div class="account-menu-heading">
-          <strong>Профіль адміністратора</strong>
-          <span>Адміністратор</span>
-        </div>
+        <a class="account-menu-heading account-menu-profile-link" href="{% url 'admin_panel' %}">
+          <strong>{{ user.get_full_name|default:user.username }}</strong>
+          <span>Панель адміністратора</span>
+        </a>
       {% else %}
         <a class="account-menu-heading account-menu-profile-link" href="{% url 'patient_dashboard' %}">
           <strong>{{ user.get_full_name|default:user.username }}</strong>
@@ -35,7 +35,11 @@
         </a>
       {% endif %}
       {% if user.is_staff %}
-        <a href="{% url 'admin_panel' %}">Панель адміністратора</a>
+        <a class="account-menu-admin-action" href="{% url 'admin_panel' %}#users">Користувачі</a>
+        <a class="account-menu-admin-action" href="{% url 'admin_add_doctor' %}">Створити лікаря</a>
+        <a class="account-menu-admin-action" href="{% url 'admin_telegram_broadcast' %}">Написати повідомлення в Telegram</a>
+        <a class="account-menu-admin-action" href="{% url 'admin_content' %}">Контент сайту</a>
+        <a class="account-menu-admin-action" href="{% url 'admin_password_recovery_requests' %}">Відновлення доступу</a>
       {% elif user.profile.role == 'doctor' %}
         <a class="account-menu-request-link" href="{% url 'doctor_requests' %}">
           <span>Мої заявки</span>
@@ -59,7 +63,7 @@
           <a href="{% url 'telegram_connect' %}">Під’єднати Telegram-бота</a>
         {% endif %}
       {% endif %}
-      <a class="account-menu-logout" href="{% url 'logout' %}">Вийти з акаунта</a>
+      <a class="account-menu-logout{% if user.is_staff %} account-menu-admin-action{% endif %}" href="{% url 'logout' %}">Вийти з акаунта</a>
     </div>
   </details>
 {% endif %}
