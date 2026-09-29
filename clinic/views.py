@@ -83,6 +83,7 @@ from .telegram import (
     process_update,
     send_admin_broadcast,
 )
+from .validators import MAX_APPOINTMENT_DURATION_MINUTES
 
 
 BLOCKING_APPOINTMENT_STATUSES = [
@@ -1991,6 +1992,38 @@ def doctor_propose_reschedule(request, appointment_id):
         patient__isnull=False,
         status__in=[Appointment.STATUS_PENDING, Appointment.STATUS_APPROVED],
     )
+    if request.method == 'GET' and 'date' in request.GET:
+        try:
+            selected_date = datetime.strptime(request.GET['date'], '%Y-%m-%d').date()
+            duration_minutes = int(request.GET.get('duration_minutes', appointment.duration_minutes))
+        except (TypeError, ValueError):
+            return JsonResponse({'times': []}, status=400)
+        schedule = schedule_for_date(doctor, selected_date)
+        if selected_date < timezone.localdate() or not schedule or not schedule.is_working:
+            return JsonResponse({'times': [], 'slot_minutes': None})
+        duration_valid = (
+            1 <= duration_minutes <= MAX_APPOINTMENT_DURATION_MINUTES
+            and duration_minutes % schedule.slot_minutes == 0
+        )
+        times = [
+            slot.strftime('%H:%M')
+            for slot in schedule.get_slots()
+            if duration_valid
+            and not is_past_appointment(selected_date, slot)
+            and not appointment_conflicts(
+                doctor, selected_date, slot,
+                duration_minutes=duration_minutes, exclude_id=appointment.id,
+            )
+            and not patient_appointment_conflicts(
+                appointment.patient, selected_date, slot, duration_minutes,
+                patient_phone=appointment.patient_phone, exclude_id=appointment.id,
+            )
+        ]
+        return JsonResponse({
+            'times': times,
+            'slot_minutes': schedule.slot_minutes,
+            'duration_valid': duration_valid,
+        })
     if request.method != 'POST':
         return redirect(
             f'{reverse("doctor_appointment_detail", args=[appointment.id])}?reschedule=1#reschedule'

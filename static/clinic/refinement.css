@@ -758,6 +758,42 @@ body:not(.public-home-page) .current-records-dialog .btn.current-record-create:h
 .home-login-admin-link:hover, .home-login-admin-link:focus-visible { color: #0b7168; }
 .booking-guest-fields { display: grid; gap: 12px; margin: 18px 0; padding: 20px; border: 1px solid #d5e5dd; border-radius: 16px; background: #f2f8f4; }
 .booking-guest-fields p { margin: 0 0 4px; color: #486965; }
+.reschedule-time-picker { position: relative; }
+.reschedule-time-picker.is-enhanced input[type="time"] { display: none; }
+.appointment-reschedule-panel .reschedule-time-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 1px solid #b9cec8;
+  background: #fff;
+  color: #143d37;
+  font-weight: 700;
+  text-align: left;
+}
+.appointment-reschedule-panel .reschedule-time-trigger:hover:not(:disabled),
+.appointment-reschedule-panel .reschedule-time-trigger[aria-expanded="true"] { border-color: var(--clinic-teal); background: #f2fbf8; }
+.appointment-reschedule-panel .reschedule-time-trigger:disabled { opacity: .65; cursor: not-allowed; }
+.reschedule-time-trigger[hidden], .reschedule-time-options[hidden] { display: none; }
+.reschedule-time-options {
+  position: absolute;
+  z-index: 45;
+  top: calc(100% + 6px);
+  left: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 12px;
+  border: 1px solid #b8cec8;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 18px 38px #183d3630;
+}
+.appointment-reschedule-panel .reschedule-time-options .time-pill { min-height: 40px; border-radius: 10px; cursor: pointer; }
 @media (max-width: 700px) {
   .home-registration-banner ul { display: grid; gap: 3px; }
   .public-home-page .home-hero-nav-links .home-hero-signin { min-height: 34px; padding: 7px 12px; font-size: 12px; }
