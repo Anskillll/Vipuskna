@@ -4200,7 +4200,8 @@ class ClinicModelTests(TestCase):
         response = self.client.get(reverse('admin_panel'))
 
         self.assertContains(response, 'Керування клінікою')
-        self.assertContains(response, 'Що потрібно зробити?')
+        self.assertNotContains(response, 'Швидкі дії')
+        self.assertNotContains(response, 'Що потрібно зробити?')
         self.assertContains(response, 'Знайти користувача')
         self.assertContains(response, 'data-page-size="10"')
         self.assertContains(response, 'Нещодавно створені заявки та прийоми.')

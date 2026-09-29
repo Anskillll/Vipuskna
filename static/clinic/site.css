@@ -4303,35 +4303,10 @@ button.compact {
   flex-wrap: wrap;
 }
 
-.admin-command-bar {
-  align-items: center;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  border-left: 1px solid var(--line);
-  border-radius: 8px;
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
-  display: flex;
-  gap: 24px;
-  justify-content: space-between;
-  padding: 18px 20px;
-}
-
-.admin-command-bar h2 {
-  font-size: 20px;
-  margin: 3px 0 0;
-}
-
 .admin-eyebrow {
-  color: #2563eb;
   font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
-}
-
-.admin-command-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
 }
 
 .admin-summary-grid {
@@ -4687,19 +4662,6 @@ button.compact {
 }
 
 @media (max-width: 620px) {
-  .admin-command-bar {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .admin-command-actions {
-    display: grid;
-  }
-
-  .admin-command-actions .btn {
-    width: 100%;
-  }
-
   .admin-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -7043,7 +7005,6 @@ body:not(.public-home-page) .claim-patient-card {
   padding: 38px;
 }
 
-body:not(.public-home-page) .admin-command-bar,
 body:not(.public-home-page) .admin-stat,
 body:not(.public-home-page) .content-admin-section,
 body:not(.public-home-page) .content-admin-summary {
@@ -7053,16 +7014,10 @@ body:not(.public-home-page) .content-admin-summary {
   box-shadow: var(--shadow);
 }
 
-body:not(.public-home-page) .admin-command-bar {
-  border-left: 1px solid var(--line);
-}
-
-body:not(.public-home-page) .admin-eyebrow,
-body:not(.public-home-page) .content-admin-step {
+body:not(.public-home-page) :is(.admin-eyebrow, .content-admin-step) {
   color: #187f73;
 }
 
-body:not(.public-home-page) .admin-command-bar h2,
 body:not(.public-home-page) .content-admin-section-head h2 {
   font-family: "Inter", Arial, Helvetica, sans-serif;
   font-weight: 600;
@@ -8760,10 +8715,6 @@ body:not(.public-home-page) .appointment-reschedule-panel,
 body:not(.public-home-page) .reschedule-waiting-panel,
 body:not(.public-home-page) .patient-reschedule-decision {
   border-top-color: var(--clinic-amber);
-}
-
-body:not(.public-home-page) .admin-command-bar {
-  background: #f8f5ff;
 }
 
 body:not(.public-home-page) .admin-stat-patients {

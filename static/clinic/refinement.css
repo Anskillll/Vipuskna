@@ -117,7 +117,7 @@ body:not(.public-home-page) :is(.section-title, .section-mini-head h2)::after {
 }
 body:not(.public-home-page) :is(.card, .section-card, .doctor-panel, .overview-card,
     .doctor-dashboard-profile, .patient-dashboard-profile, .doctor-dashboard-card,
-    .service-manager-item, .workplace-row, .admin-stat, .admin-command-bar,
+    .service-manager-item, .workplace-row, .admin-stat,
     .action-group, .content-admin-row, .content-list li, .table-wrap) {
   border: 1px solid var(--line);
   border-radius: 20px;

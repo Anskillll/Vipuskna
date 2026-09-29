@@ -654,16 +654,6 @@
   }
 
   /* Admin screens */
-  .admin-command-bar {
-    width: 100%;
-    gap: 13px;
-    padding: 13px;
-  }
-
-  .admin-command-bar h2 {
-    font-size: 19px;
-  }
-
   .admin-summary-grid,
   .content-admin-summary {
     width: 100%;
