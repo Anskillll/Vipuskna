@@ -12,14 +12,13 @@
   <div class="grid grid-2">
     <section class="card">
       <h2 class="section-title">Оберіть дату та час</h2>
-      <form method="get">
+      <form method="get" data-submit-on-date-change>
         {% if source_card %}<input type="hidden" name="card" value="{{ source_card.id }}">{% endif %}
         {% if clinic_manager %}<input type="hidden" name="doctor" value="{{ doctor.id }}">{% endif %}
         <div class="field">
           <label for="date">Дата</label>
           {% include 'clinic/_working_date_picker.html' with date_input_id='date' %}
         </div>
-        <button type="submit">Показати час</button>
       </form>
     </section>
 
@@ -183,5 +182,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-  <script src="{% static 'clinic/working_date_picker.js' %}?v=20260802-1" defer></script>
+  <script src="{% static 'clinic/working_date_picker.js' %}?v=20261001-1" defer></script>
 {% endblock %}

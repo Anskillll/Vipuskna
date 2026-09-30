@@ -24,6 +24,9 @@
 
   const setupPicker = (picker) => {
     const input = picker.querySelector('[data-working-date-input]');
+    input.closest('[data-submit-on-date-change]')?.addEventListener('change', (event) => {
+      if (event.target === input) event.currentTarget.requestSubmit();
+    });
     const trigger = picker.querySelector('[data-working-date-trigger]');
     const visibleValue = picker.querySelector('[data-working-date-value]');
     const popover = picker.querySelector('[data-working-date-popover]');

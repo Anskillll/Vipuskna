@@ -2161,7 +2161,7 @@ class ClinicModelTests(TestCase):
             response,
             f'data-working-weekdays="{self.schedule.weekday}"',
         )
-        self.assertContains(response, 'clinic/working_date_picker.js?v=20260802-1')
+        self.assertContains(response, 'clinic/working_date_picker.js?v=20261001-1')
 
     def test_patient_cannot_book_doctor_day_off(self):
         self.client.login(username='patient@test.local', password='pass12345')
