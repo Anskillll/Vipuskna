@@ -1,10 +1,6 @@
-.clinic-dashboard-page .container { width: min(1760px, calc(100% - 48px)); }
-.clinic-dashboard-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); align-items: start; gap: 24px; }
-.clinic-dashboard-sidebar { min-width: 0; }
-.clinic-sidebar-profile { margin: 0 0 18px; padding: 4px 8px; }
-.clinic-sidebar-profile .page-title { margin: 8px 0 0; font-size: clamp(24px, 2vw, 34px); line-height: 1.12; overflow-wrap: anywhere; }
-.clinic-workspace-head { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
-.clinic-workspace-head .page-title { margin: 8px 0; }
+.clinic-dashboard-layout { display: block; }
+.clinic-dashboard-main { min-width: 0; }
+.clinic-workspace-head { display: flex; align-items: center; justify-content: flex-end; gap: 24px; margin-bottom: 24px; }
 .clinic-workspace-head p { margin-bottom: 0; }
 .clinic-workspace-head > .btn { flex-shrink: 0; }
 .clinic-metrics { display: grid; gap: 10px; padding: 10px; background: #edf5f1; border: 1px solid #d7e7df; border-radius: 20px; }
@@ -33,11 +29,6 @@
 .admin-users-section .live-filter-bar { grid-template-columns: minmax(0, 1fr) minmax(190px, 250px) auto; }
 .admin-user-role-filter select { width: 100%; min-height: 48px; }
 @media (max-width: 900px) {
-  .clinic-dashboard-page .container { width: min(100% - 32px, 1220px); }
-  .clinic-dashboard-layout { grid-template-columns: minmax(0, 1fr); gap: 18px; }
-  .clinic-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .clinic-metrics a { align-items: flex-start; flex-direction: column; gap: 6px; padding: 12px; }
-  .clinic-metrics span { max-width: none; text-align: left; }
 }
 @media (max-width: 720px) {
   .clinic-workspace-head { align-items: stretch; flex-direction: column; }

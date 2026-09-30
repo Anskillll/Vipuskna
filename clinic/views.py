@@ -2990,9 +2990,6 @@ def clinic_dashboard(request):
         'query': query, 'selected_date': selected_date, 'selected_doctor': doctor_id,
         'doctors': Doctor.objects.filter(user__is_active=True).select_related('user'),
         'status_choices': Appointment.STATUS_CHOICES, 'selected_status': status,
-        'today_count': Appointment.objects.filter(date=timezone.localdate(), status=Appointment.STATUS_APPROVED).count(),
-        'patient_count': DoctorPatientCard.objects.count(),
-        'doctor_count': Doctor.objects.filter(user__is_active=True).count(),
         'previous_date': selected_date - timedelta(days=1),
         'next_date': selected_date + timedelta(days=1),
     })
