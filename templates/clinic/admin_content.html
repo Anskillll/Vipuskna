@@ -5,13 +5,12 @@
 
 {% block content %}
   <div class="content-admin">
+    {% if user.is_staff %}{% include 'clinic/_chief_moderator_nav.html' %}{% else %}{% include 'clinic/_clinic_management_nav.html' %}{% endif %}
     <section class="page-head content-admin-head admin-tabs-head">
       <div>
         <h1 class="page-title">Контент сайту</h1>
       </div>
     </section>
-
-    {% if user.is_staff %}{% include 'clinic/_chief_moderator_nav.html' %}{% else %}{% include 'clinic/_clinic_management_nav.html' %}{% endif %}
 
     <div class="content-admin-toolbar">
       <a class="btn secondary" href="{% url 'home' %}" target="_blank" rel="noopener">Переглянути сайт</a>

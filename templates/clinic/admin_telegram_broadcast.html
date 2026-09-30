@@ -6,15 +6,14 @@
 
 {% block content %}
   <div class="admin-broadcast-shell">
+    {% if user.is_staff %}
+    {% include 'clinic/_chief_moderator_nav.html' %}
+    {% else %}{% include 'clinic/_clinic_management_nav.html' %}{% endif %}
     <section class="page-head admin-page-head admin-tabs-head">
       <div>
         <h1 class="page-title">Telegram-бот</h1>
       </div>
     </section>
-
-    {% if user.is_staff %}
-    {% include 'clinic/_chief_moderator_nav.html' %}
-    {% else %}{% include 'clinic/_clinic_management_nav.html' %}{% endif %}
 
     <div class="admin-broadcast-count" aria-label="Кількість доступних адресатів">
       <strong>{{ connected_count }}</strong>

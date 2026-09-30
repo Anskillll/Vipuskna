@@ -4,15 +4,14 @@
 
 {% block content %}
   <div class="admin-dashboard">
+    {% if user.is_staff %}
+    {% include 'clinic/_chief_moderator_nav.html' %}
+    {% else %}{% include 'clinic/_clinic_management_nav.html' %}{% endif %}
     <section class="page-head admin-page-head admin-tabs-head">
       <div>
         <h1 class="page-title">Новий лікар</h1>
       </div>
     </section>
-
-    {% if user.is_staff %}
-    {% include 'clinic/_chief_moderator_nav.html' %}
-    {% else %}{% include 'clinic/_clinic_management_nav.html' %}{% endif %}
 
     <div class="card standalone-form-card">
       <form method="post" enctype="multipart/form-data">

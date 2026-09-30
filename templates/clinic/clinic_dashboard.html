@@ -3,6 +3,7 @@
 {% block title %}Кабінет адміністратора — OrthoSmile{% endblock %}
 {% block content %}
 <div class="clinic-workspace">
+  {% if user.is_staff %}{% include 'clinic/_chief_moderator_nav.html' %}{% else %}{% include 'clinic/_clinic_management_nav.html' %}{% endif %}
   <header class="clinic-workspace-head">
     <div><span class="patient-profile-label">Адміністратор клініки</span><h1 class="page-title">{{ user.get_full_name|default:user.username }}</h1></div>
     <a class="btn" href="{% url 'doctor_book_patient' %}{% if selected_doctor %}?doctor={{ selected_doctor }}{% endif %}">{% include 'clinic/_icon.html' with name='plus' %} Записати пацієнта</a>
@@ -13,7 +14,6 @@
     <a href="{% url 'clinic_dashboard' %}?tab=patients"><strong>{{ patient_count }}</strong><span>карток пацієнтів</span></a>
     <a href="{% url 'clinic_dashboard' %}?tab=doctors"><strong>{{ doctor_count }}</strong><span>лікарів у команді</span></a>
   </div>
-  {% if user.is_staff %}{% include 'clinic/_chief_moderator_nav.html' %}{% else %}{% include 'clinic/_clinic_management_nav.html' %}{% endif %}
   <form method="get" class="card clinic-filters">
     <input type="hidden" name="tab" value="{{ tab }}">
     <div class="field clinic-search"><label for="clinic-search">Пошук</label><div class="clinic-search-control"><input id="clinic-search" name="q" value="{{ query }}" type="search" placeholder="Ім’я, прізвище або телефон" autocomplete="off"><button class="clinic-filter-clear" type="button" aria-label="Очистити фільтр" title="Очистити фільтр" data-clear-clinic-filter>{% include 'clinic/_icon.html' with name='close' %}</button></div></div>

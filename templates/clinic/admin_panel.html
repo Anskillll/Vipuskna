@@ -4,13 +4,12 @@
 
 {% block content %}
   <div class="admin-dashboard">
+    {% include 'clinic/_chief_moderator_nav.html' %}
     <section class="page-head admin-page-head admin-tabs-head">
       <div>
         <h1 class="page-title">Огляд клініки</h1>
       </div>
     </section>
-
-    {% include 'clinic/_chief_moderator_nav.html' %}
 
     <section class="admin-summary-grid" aria-label="Стан клініки">
       <article class="admin-stat admin-stat-patients">
