@@ -86,6 +86,30 @@ class ClinicManagementTests(TestCase):
                 self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Новий адміністратор')
 
+    def test_clinic_admin_can_add_home_news_and_gallery_without_site_settings_access(self):
+        response = self.client.get(reverse('home'))
+        self.assertContains(response, 'Додати новину')
+        self.assertContains(response, 'Додати фото')
+
+        response = self.client.get(reverse('admin_content'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="action" value="save_news"')
+        self.assertContains(response, 'name="action" value="save_gallery"')
+        self.assertNotContains(response, 'Оформлення клініки')
+        self.assertNotContains(response, 'Верхні фотографії')
+
+        response = self.client.post(reverse('admin_content'), {
+            'action': 'save_news', 'news-title': 'Графік роботи',
+            'news-text': 'У суботу клініка працює до 15:00.',
+            'news-doctor': str(self.doctor.pk), 'news-is_published': 'on',
+        })
+        self.assertRedirects(response, f'{reverse("admin_content")}#news')
+        post = existing_tests.NewsPost.objects.get(title='Графік роботи')
+        self.assertEqual(post.doctor_id, self.doctor.pk)
+        self.assertTrue(post.is_published)
+
+        self.assertEqual(self.client.post(reverse('admin_content'), {'action': 'save_settings'}).status_code, 403)
+
     def test_admin_cannot_escalate_or_edit_other_users_or_doctor_settings(self):
         for name, args in [('admin_panel', []), ('admin_content', []), ('admin_add_clinic_admin', []),
                            ('admin_edit_user', [self.chief.id]), ('admin_toggle_user', [self.chief.id]),

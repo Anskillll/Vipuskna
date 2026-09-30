@@ -3129,8 +3129,18 @@ def admin_telegram_broadcast(request):
     )
 
 
-@admin_required
+@clinic_manager_required
 def admin_content(request):
+    is_chief_moderator = request.user.is_staff
+    if not is_chief_moderator:
+        if any(request.GET.get(key) for key in ('hero', 'news', 'gallery')):
+            raise PermissionDenied
+        if request.method == 'POST' and (
+            request.POST.get('action') not in {'save_news', 'save_gallery'}
+            or request.POST.get('news_id')
+            or request.POST.get('gallery_id')
+        ):
+            raise PermissionDenied
     branding, _ = ClinicSettings.objects.get_or_create(pk=1)
     hero_id = request.GET.get('hero')
     news_id = request.GET.get('news')
@@ -3213,7 +3223,7 @@ def admin_content(request):
             news_form = NewsPostForm(request.POST, request.FILES, instance=news_instance, prefix='news')
             if news_form.is_valid():
                 post = news_form.save()
-                write_audit_log(request, 'Збережено новину клініки', post)
+                write_audit_log(request, 'Збережено новину лікаря' if post.doctor_id else 'Збережено новину клініки', post)
                 messages.success(request, 'Новину збережено.')
                 return redirect(f"{reverse('admin_content')}#news")
         elif action == 'delete_news':

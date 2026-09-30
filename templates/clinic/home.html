@@ -163,6 +163,7 @@
           <div>
             <span class="home-section-kicker">У клініці</span>
             <h2>Новини клініки</h2>
+            {% if clinic_manager %}<a class="home-admin-action" href="{% url 'admin_content' %}#news">{% include 'clinic/_icon.html' with name='plus' %} Додати новину</a>{% endif %}
           </div>
           <p>Події, зміни в роботі та важлива інформація для пацієнтів.</p>
         </header>
@@ -192,6 +193,7 @@
           <div>
             <span class="home-section-kicker">Від наших фахівців</span>
             <h2>Новини лікарів</h2>
+            {% if clinic_manager %}<a class="home-admin-action" href="{% url 'admin_content' %}#news">{% include 'clinic/_icon.html' with name='plus' %} Додати новину</a>{% endif %}
           </div>
           <p>Пояснення, рекомендації та професійні спостереження лікарів.</p>
         </header>
@@ -227,6 +229,7 @@
           <div>
             <span class="home-section-kicker">Простір клініки</span>
             <h2 id="home-gallery-title">Галерея</h2>
+            {% if clinic_manager %}<a class="home-admin-action" href="{% url 'admin_content' %}#gallery">{% include 'clinic/_icon.html' with name='plus' %} Додати фото</a>{% endif %}
           </div>
           <p>Кабінети, команда та звичайні моменти нашої роботи.</p>
         </header>

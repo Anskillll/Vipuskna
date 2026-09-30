@@ -5198,6 +5198,23 @@ button.compact {
   margin: 0;
 }
 
+.home-admin-action {
+  align-items: center;
+  border: 1px solid #c9ded6;
+  border-radius: 999px;
+  color: #176c62;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 7px;
+  margin-top: 14px;
+  padding: 8px 13px;
+  text-decoration: none;
+}
+
+.home-admin-action:hover { background: #eaf5f0; border-color: #82b9a8; color: #10544e; }
+.home-admin-action .ui-icon { height: 16px; width: 16px; }
+
 .home-section-head > p {
   color: #5e6b69;
   margin: 0;

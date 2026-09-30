@@ -1180,9 +1180,10 @@ class HomeHeroSlideForm(FormStyleMixin, forms.ModelForm):
 class NewsPostForm(FormStyleMixin, forms.ModelForm):
     class Meta:
         model = NewsPost
-        fields = ['title', 'text', 'image', 'is_published']
+        fields = ['doctor', 'title', 'text', 'image', 'is_published']
         widgets = {'text': forms.Textarea(attrs={'rows': 7})}
         labels = {
+            'doctor': 'Для лікаря (необов’язково)',
             'title': 'Заголовок',
             'text': 'Текст новини',
             'image': 'Зображення',
