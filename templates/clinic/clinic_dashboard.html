@@ -14,11 +14,47 @@
         <div class="field clinic-search"><label for="clinic-search">Пошук</label><div class="live-filter-input-row"><input id="clinic-search" name="q" value="{{ query }}" type="search" placeholder="Ім’я, прізвище або телефон" autocomplete="off"><button class="live-filter-clear" type="button" title="Очистити фільтр" aria-label="Очистити фільтр" data-clear-clinic-filter><span aria-hidden="true">{% include 'clinic/_icon.html' with name='close' %}</span></button></div></div>
         {% if tab != 'doctors' %}<div class="field"><label for="clinic-doctor">Лікар</label><select id="clinic-doctor" name="doctor"><option value="">Усі лікарі</option>{% for doctor in doctors %}<option value="{{ doctor.id }}"{% if selected_doctor == doctor.id|stringformat:'s' %} selected{% endif %}>{{ doctor.full_name }}</option>{% endfor %}</select></div>{% endif %}
         {% if tab == 'schedule' %}
-          <div class="field"><label for="clinic-date">Дата</label><input id="clinic-date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}"></div>
+          <div class="field"><label for="clinic-date">Тиждень</label><input id="clinic-date" type="date" name="week" value="{{ selected_date|date:'Y-m-d' }}"></div>
           <div class="field"><label for="clinic-status">Статус</label><select id="clinic-status" name="status"><option value="">Усі статуси</option>{% for value, label in status_choices %}<option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
         {% endif %}
       </form>
-      <section class="card clinic-results">
+      <section class="{% if tab == 'schedule' %}clinic-schedule-results{% else %}card clinic-results{% endif %}">
+        {% if tab == 'schedule' %}
+        <div class="appointment-weeks" data-live-filter data-live-filter-no-pagination>
+          <section class="appointment-week" data-live-filter-group data-live-filter-keep-empty>
+            <header class="appointment-week-head">
+              <a class="appointment-week-arrow" href="?tab=schedule&week={{ previous_week_start|date:'Y-m-d' }}&doctor={{ selected_doctor }}&q={{ query|urlencode }}&status={{ selected_status }}" title="Попередній тиждень" aria-label="Показати попередній тиждень"><span aria-hidden="true">{% include 'clinic/_icon.html' with name='left' %}</span></a>
+              <div class="appointment-week-heading"><div><span class="appointment-week-kicker{% if is_current_week %} is-current{% endif %}">{% if is_current_week %}Поточний тиждень{% else %}Тижневий розклад{% endif %}</span><h2>Тиждень з {{ appointment_week.start|date:'d.m' }} по {{ appointment_week.end|date:'d.m' }}</h2></div><span data-live-filter-group-count data-count-template="{count} запис(ів)">{{ appointment_week.appointments_count }} запис(ів)</span></div>
+              <a class="appointment-week-arrow" href="?tab=schedule&week={{ next_week_start|date:'Y-m-d' }}&doctor={{ selected_doctor }}&q={{ query|urlencode }}&status={{ selected_status }}" title="Наступний тиждень" aria-label="Показати наступний тиждень"><span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
+            </header>
+            <div class="appointments-by-day">
+              {% for day in appointment_week.days %}
+                <section class="card section-card appointment-day-group{% if day.appointments|length > 5 %} is-collapsible{% endif %}" data-live-filter-group data-live-filter-keep-empty data-appointment-day>
+                  <div class="appointment-day-head">
+                    <div class="appointment-day-title"><h2>{{ day.weekday_name }}, {{ day.date|date:'d.m.Y' }}</h2>
+                      {% if day.can_book %}<div class="appointment-day-book-actions">{% for booking_doctor, schedule in day.working_doctors %}<a class="appointment-day-book-button" href="{% url 'doctor_book_patient' %}?doctor={{ booking_doctor.id }}&date={{ day.date|date:'Y-m-d' }}">{% include 'clinic/_icon.html' with name='plus' %} Записати{% if not selected_doctor %} · {{ booking_doctor.full_name }}{% else %} на цей день{% endif %}</a>{% endfor %}</div>{% endif %}
+                    </div>
+                    <div class="appointment-day-head-actions">{% if day.appointments %}<span data-live-filter-group-count data-count-template="{count} запис(ів)">{{ day.appointments|length }} запис(ів)</span>{% if day.is_outside_schedule %}<span class="appointment-day-outside-label">Поза графіком</span>{% endif %}{% else %}<span>0 записів</span>{% endif %}</div>
+                  </div>
+                  {% if day.appointments %}
+                    <div class="appointment-summary-list">
+                      {% for appointment in day.appointments %}
+                        <article class="appointment-summary-row appointment-kind-{{ appointment.status }}" data-live-filter-item data-filter-extra="{{ appointment.patient_name|escape }} {{ appointment.patient_phone|escape }} {{ appointment.service.name|default:''|escape }} {{ appointment.date|date:'d.m.Y' }} {{ appointment.time|time:'H:i' }} {{ appointment.get_status_display|escape }} {{ appointment.doctor.full_name|escape }}">
+                          <time>{{ appointment.time|time:'H:i' }}</time>
+                          <div class="appointment-summary-person"><div class="appointment-person-name">{% if appointment.patient_card %}<a class="appointment-patient-card-link" href="{% url 'doctor_patient_card_detail' appointment.patient_card.id %}">{{ appointment.patient_name }}</a>{% else %}<span>{{ appointment.patient_name }}</span>{% endif %}<span>{{ appointment.doctor.full_name }}</span></div><span class="appointment-kind-label">{{ appointment.get_status_display }}</span></div>
+                          <span>{{ appointment.service.name|default:'Послугу не обрано' }}</span>
+                          <div class="appointment-row-actions"><a class="appointment-detail-link" href="{% url 'doctor_appointment_detail' appointment.id %}">Детальніше {% include 'clinic/_icon.html' with name='right' %}</a></div>
+                        </article>
+                        {% if appointment.split_option %}<div class="appointment-between-slot"><a href="{% url 'doctor_book_patient' %}?doctor={{ appointment.doctor_id }}&date={{ day.date|date:'Y-m-d' }}&split={{ appointment.id }}"><span>{{ appointment.split_option.time|time:'H:i' }}</span>Записати між ними</a></div>{% endif %}
+                      {% endfor %}
+                    </div>
+                  {% else %}<div class="appointment-day-rest appointment-day-empty-working"><strong>На цей день записів ще немає</strong><span>Оберіть лікаря, щоб записати пацієнта на вільний час.</span></div>{% endif %}
+                </section>
+              {% empty %}<div class="card section-card appointment-week-empty"><strong>На цей тиждень робочих днів немає</strong></div>{% endfor %}
+            </div>
+          </section>
+        </div>
+        {% else %}
         <div class="section-head">
           <div><h2 class="section-title">{% if tab == 'patients' %}Картки пацієнтів{% elif tab == 'doctors' %}Команда клініки{% elif tab == 'requests' %}Заявки на розгляд{% else %}{{ selected_date|date:'d.m.Y' }}{% endif %}</h2><span class="muted">Знайдено: {{ page.paginator.count }}</span></div>
           {% if tab == 'doctors' %}<a class="btn" href="{% url 'admin_add_doctor' %}">Додати лікаря</a>{% endif %}
@@ -49,6 +85,7 @@
           </tbody></table></div>
         {% endif %}
         {% if page.has_other_pages %}<nav class="clinic-pagination" aria-label="Сторінки результатів">{% if page.has_previous %}<a href="?{{ filter_query }}&page={{ page.previous_page_number }}">← Попередня</a>{% endif %}<span>{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a href="?{{ filter_query }}&page={{ page.next_page_number }}">Наступна →</a>{% endif %}</nav>{% endif %}
+        {% endif %}
       </section>
     </div>
   </div>

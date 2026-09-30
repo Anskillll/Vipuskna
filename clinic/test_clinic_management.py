@@ -236,7 +236,7 @@ class ClinicManagementTests(TestCase):
         appointment.refresh_from_db()
         self.assertEqual(appointment.status, Appointment.STATUS_CANCELED)
 
-    def test_records_have_admin_author_and_private_doctor_notes_are_protected(self):
+    def test_only_doctor_can_add_patient_card_entries(self):
         appointment = self.appointment()
         self.client.get(reverse('doctor_appointment_detail', args=[appointment.id]))
         card = DoctorPatientCard.objects.get()
@@ -246,19 +246,31 @@ class ClinicManagementTests(TestCase):
         response = self.client.get(url)
         self.assertNotContains(response, card.notes)
         self.assertEqual(self.client.post(url, {'action': 'update_card', 'notes': 'tampered'}).status_code, 403)
-        response = self.client.post(url, {'action': 'add_entry', 'kind': 'note', 'title': 'Дзвінок', 'details': 'Пацієнт підтвердив візит', 'appointment_id': appointment.id})
+        self.assertNotContains(response, 'Новий запис у картці')
+        self.assertEqual(self.client.post(url, {'action': 'add_entry', 'kind': 'note', 'title': 'Дзвінок', 'details': 'Пацієнт підтвердив візит', 'appointment_id': appointment.id}).status_code, 403)
+        self.assertFalse(PatientRecordEntry.objects.exists())
+        self.client.force_login(self.doctor.user)
+        response = self.client.post(url, {'action': 'add_entry', 'kind': 'note', 'title': 'Огляд', 'details': 'Запис лікаря', 'appointment_id': appointment.id})
         self.assertRedirects(response, url)
         entry = PatientRecordEntry.objects.get()
-        self.assertEqual(entry.created_by, self.manager)
-        self.assertEqual(entry.author_label, self.manager.get_full_name())
+        self.assertEqual(entry.created_by, self.doctor.user)
+        self.assertEqual(entry.author_label, self.doctor.user.get_full_name())
         self.assertEqual(entry.doctor, self.doctor)
         self.assertContains(self.client.get(url), entry.author_label)
-        self.client.post(url, {'action': 'delete_entry', 'entry_id': entry.id})
-        self.assertFalse(PatientRecordEntry.objects.exists())
-        entry = PatientRecordEntry.objects.create(card=card, doctor=self.doctor, title='Лікарський запис', details='Details')
+        self.client.force_login(self.manager)
         self.assertEqual(self.client.post(url, {'action': 'delete_entry', 'entry_id': entry.id}).status_code, 403)
         card.refresh_from_db()
         self.assertEqual(card.notes, 'Приватна нотатка лікаря 927')
+
+    def test_clinic_schedule_matches_doctor_week_and_offers_between_appointment_booking(self):
+        first = self.appointment(time=time(9), status=Appointment.STATUS_APPROVED)
+        self.appointment(time=time(10), status=Appointment.STATUS_APPROVED)
+        response = self.client.get(reverse('clinic_dashboard'), {'week': self.date.isoformat()})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'appointment-weeks')
+        self.assertContains(response, 'Записати між ними')
+        self.assertContains(response, f'doctor={self.doctor.id}&date={self.date.isoformat()}&split={first.id}')
+        self.assertContains(response, 'appointment-day-book-button')
 
     def test_doctor_cannot_use_manager_scope_to_access_other_doctor(self):
         other_user = User.objects.create_user('other-doctor')

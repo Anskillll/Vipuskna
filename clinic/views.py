@@ -2573,7 +2573,9 @@ def doctor_patient_card_detail(request, card_id):
         doctor=doctor,
     )
     action = request.POST.get('action') if request.method == 'POST' else None
-    if is_clinic_manager(request.user) and action == 'update_card':
+    if is_clinic_manager(request.user) and action in {
+        'update_card', 'add_entry', 'delete_entry', 'delete_image', 'delete_video',
+    }:
         raise PermissionDenied
     form = DoctorPatientCardForm(request.POST if action == 'update_card' else None, instance=card)
     entry_form = PatientRecordEntryForm(
@@ -2954,7 +2956,9 @@ def clinic_dashboard(request):
     tab = request.GET.get('tab', 'schedule')
     if tab not in {'schedule', 'requests', 'patients', 'doctors'}:
         tab = 'schedule'
-    selected_date = parse_date(request.GET.get('date'))
+    selected_date = parse_date(request.GET.get('week') or request.GET.get('date')) or timezone.localdate()
+    week_start = selected_date - timedelta(days=selected_date.weekday())
+    week_end = week_start + timedelta(days=6)
     query = request.GET.get('q', '').strip()[:200]
     doctor_id = request.GET.get('doctor', '')
     doctor_id = doctor_id if doctor_id.isdecimal() else ''
@@ -2983,10 +2987,55 @@ def clinic_dashboard(request):
     elif tab == 'doctors':
         rows = doctors
     else:
-        rows = appointments.filter(date=selected_date).order_by('time', 'doctor_id')
+        rows = appointments.filter(date__range=(week_start, week_end)).order_by('date', 'time', 'doctor_id')
         if status in dict(Appointment.STATUS_CHOICES):
             rows = rows.filter(status=status)
-    page = Paginator(rows, 25).get_page(request.GET.get('page'))
+    page = Paginator(rows, 25).get_page(request.GET.get('page')) if tab != 'schedule' else None
+    appointment_week = None
+    if tab == 'schedule':
+        week_appointments = list(rows.select_related('patient__profile'))
+        schedule_doctors = Doctor.objects.filter(user__is_active=True).select_related('user')
+        if doctor_id:
+            schedule_doctors = schedule_doctors.filter(pk=doctor_id)
+        doctors_by_id = {doctor.id: doctor for doctor in schedule_doctors}
+        schedules_by_doctor = {
+            doctor.id: {item.weekday: item for item in doctor.schedules.select_related('workplace')}
+            for doctor in schedule_doctors
+        }
+        by_date = {}
+        for appointment in week_appointments:
+            appointment.patient_card = patient_card_for_appointment(appointment)
+            appointment.weekday_name = UKRAINIAN_WEEKDAYS[appointment.date.weekday()]
+            schedule = schedules_by_doctor.get(appointment.doctor_id, {}).get(appointment.date.weekday())
+            appointment.split_option = split_slot_option(
+                appointment.doctor, appointment.date, appointment.time,
+                schedule=schedule, appointment_id=appointment.pk,
+            )
+            by_date.setdefault(appointment.date, []).append(appointment)
+
+        week_days = []
+        for offset, weekday_name in enumerate(UKRAINIAN_WEEKDAYS):
+            day_date = week_start + timedelta(days=offset)
+            day_schedules = [
+                (doctors_by_id[doctor_id], schedule)
+                for doctor_id, days in schedules_by_doctor.items()
+                if (schedule := days.get(day_date.weekday())) and schedule.is_working
+            ]
+            day_appointments = by_date.get(day_date, [])
+            if not day_schedules and not day_appointments:
+                continue
+            week_days.append({
+                'date': day_date,
+                'weekday_name': weekday_name,
+                'appointments': day_appointments,
+                'working_doctors': day_schedules,
+                'can_book': day_date >= timezone.localdate() and bool(day_schedules),
+                'is_outside_schedule': bool(day_appointments) and not day_schedules,
+            })
+        appointment_week = {
+            'start': week_start, 'end': week_end, 'days': week_days,
+            'appointments_count': len(week_appointments),
+        }
     params = request.GET.copy()
     params.pop('page', None)
     return render(request, 'clinic/clinic_dashboard.html', {
@@ -2996,6 +3045,10 @@ def clinic_dashboard(request):
         'status_choices': Appointment.STATUS_CHOICES, 'selected_status': status,
         'previous_date': selected_date - timedelta(days=1),
         'next_date': selected_date + timedelta(days=1),
+        'appointment_week': appointment_week,
+        'previous_week_start': week_start - timedelta(days=7),
+        'next_week_start': week_start + timedelta(days=7),
+        'is_current_week': week_start == timezone.localdate() - timedelta(days=timezone.localdate().weekday()),
     })
 
 
