@@ -67,6 +67,21 @@ class ClinicManagementTests(TestCase):
         self.client.post(reverse('admin_add_clinic_admin'), data)
         self.assertEqual(User.objects.filter(username__iexact='new-manager').count(), 1)
 
+    def test_chief_moderator_dashboard_renders_with_existing_clinic_data(self):
+        self.client.force_login(self.chief)
+        self.appointment()
+        AuditLog.objects.create(
+            actor=None, action='Попередня дія', target_type='Запис',
+            target_id='1', target_label='Історичний запис',
+        )
+        legacy = User.objects.create_user('legacy-without-profile', password='Irrelevant!9384')
+        self.assertFalse(hasattr(legacy, 'profile'))
+        for page in ('admin_panel', 'admin_content', 'admin_add_clinic_admin'):
+            with self.subTest(page=page):
+                response = self.client.get(reverse(page))
+                self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Новий адміністратор')
+
     def test_admin_cannot_escalate_or_edit_other_users_or_doctor_settings(self):
         for name, args in [('admin_panel', []), ('admin_content', []), ('admin_add_clinic_admin', []),
                            ('admin_edit_user', [self.chief.id]), ('admin_toggle_user', [self.chief.id]),

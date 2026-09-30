@@ -210,7 +210,7 @@
             <div class="admin-list-main">
               <strong>{{ event.action }}</strong>
               <span>
-                {{ event.actor.get_full_name|default:event.actor.username|default:'Система' }}
+                {% if event.actor %}{{ event.actor.get_full_name|default:event.actor.username }}{% else %}Система{% endif %}
                 · {{ event.target_type }}{% if event.target_label %}: {{ event.target_label }}{% endif %}
               </span>
               {% if event.details %}<small>{{ event.details }}</small>{% endif %}
