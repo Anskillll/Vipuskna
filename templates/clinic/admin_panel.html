@@ -32,15 +32,15 @@
     <section id="users" class="card section-card admin-users-section" data-live-filter data-page-size="10">
       <div class="section-head admin-section-head">
         <div>
-          <h2 class="section-title">Адміністратори клініки</h2>
-          <p class="section-note">Облікові записи адміністраторів клініки.</p>
+          <h2 class="section-title">Користувачі сайту</h2>
+          <p class="section-note">Облікові записи пацієнтів, лікарів та адміністраторів клініки.</p>
         </div>
       </div>
       <div class="live-filter-bar">
         <div class="live-filter-field">
-          <label for="admin-user-search">Знайти адміністратора</label>
+          <label for="admin-user-search">Пошук користувачів</label>
           <div class="live-filter-input-row">
-            <input id="admin-user-search" type="search" placeholder="Ім'я, логін, телефон, роль або статус" autocomplete="off" data-live-filter-input>
+            <input id="admin-user-search" type="search" placeholder="Ім'я, логін, телефон або статус" autocomplete="off" data-live-filter-input>
             <button
               class="live-filter-clear"
               type="button"
@@ -49,6 +49,15 @@
               data-live-filter-clear
             >{% include 'clinic/_icon.html' with name='close' %}</button>
           </div>
+        </div>
+        <div class="live-filter-field admin-user-role-filter">
+          <label for="admin-user-role">Роль</label>
+          <select id="admin-user-role" data-live-filter-select>
+            <option value="">Усі користувачі</option>
+            <option value="doctor">Лікарі</option>
+            <option value="clinic_admin">Адміністратори клініки</option>
+            <option value="patient">Пацієнти</option>
+          </select>
         </div>
         <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
       </div>
@@ -65,7 +74,7 @@
           </thead>
           <tbody>
             {% for item in users %}
-              <tr data-live-filter-item data-filter-extra="{{ item.get_full_name|escape }} {{ item.username|escape }} {{ item.profile.phone|escape }} {% if item.is_staff %}головний модератор{% elif item.profile %}{{ item.profile.get_role_display|escape }}{% endif %} {% if item.is_active %}активний{% else %}архівований{% endif %}">
+              <tr data-live-filter-item data-filter-role="{% if item.is_staff %}chief{% elif item.profile %}{{ item.profile.role }}{% else %}other{% endif %}" data-filter-extra="{{ item.get_full_name|escape }} {{ item.username|escape }} {{ item.profile.phone|default:''|escape }} {% if item.is_staff %}головний модератор{% elif item.profile %}{{ item.profile.get_role_display|escape }}{% endif %} {% if item.is_active %}активний{% else %}архівований{% endif %}">
                 <td>
                   <div class="admin-user-identity">
                     <strong>{{ item.get_full_name|default:item.username }}</strong>
@@ -93,7 +102,7 @@
                 </td>
                 <td>
                   <div class="admin-table-actions">
-                    <a class="btn secondary" href="{% url 'admin_edit_user' item.id %}">Редагувати</a>
+                    {% if item.profile and item.profile.role == 'clinic_admin' %}<a class="btn secondary" href="{% url 'admin_edit_user' item.id %}">Редагувати</a>{% endif %}
                     {% if item != user %}
                       <form method="post" action="{% url 'admin_toggle_user' item.id %}" class="compact-form">
                         {% csrf_token %}

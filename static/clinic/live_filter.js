@@ -16,6 +16,7 @@
 
   document.querySelectorAll('[data-live-filter], [data-live-pagination]').forEach((root) => {
     const input = root.querySelector('[data-live-filter-input]');
+    const filterSelect = root.querySelector('[data-live-filter-select]');
     const items = Array.from(root.querySelectorAll('[data-live-filter-item]'));
     const count = root.querySelector('[data-live-filter-count]');
     const empty = root.querySelector('[data-live-filter-empty]');
@@ -144,7 +145,7 @@
         const groupItems = Array.from(group.querySelectorAll('[data-live-filter-item]'));
         const groupVisibleCount = groupItems.filter((item) => !item.hidden).length;
         const keepEmpty = group.hasAttribute('data-live-filter-keep-empty');
-        const hasActiveFilter = Boolean(input && input.value.trim());
+        const hasActiveFilter = Boolean((input && input.value.trim()) || (filterSelect && filterSelect.value));
         group.hidden = groupVisibleCount === 0 && !(keepEmpty && !hasActiveFilter);
         const groupCount = group.querySelector('[data-live-filter-group-count]');
         if (groupCount) {
@@ -154,7 +155,7 @@
       });
 
       if (count) {
-        count.textContent = input && input.value.trim()
+        count.textContent = (input && input.value.trim()) || (filterSelect && filterSelect.value)
           ? `Знайдено: ${matchingItems.length} з ${items.length}`
           : `Усього: ${items.length}`;
       }
@@ -162,7 +163,7 @@
         empty.hidden = matchingItems.length !== 0;
       }
       if (clearButton) {
-        clearButton.disabled = !input.value;
+        clearButton.disabled = !input.value && !(filterSelect && filterSelect.value);
       }
 
       renderPagination(paginationEnabled ? Math.ceil(matchingItems.length / pageSize) : 1);
@@ -174,10 +175,12 @@
 
     const applyFilter = (resetPage = true) => {
       const query = searchableParts(input ? input.value : '');
-      root.classList.toggle('is-filtering', Boolean(query.normalized));
+      const selectedRole = filterSelect ? filterSelect.value : '';
+      root.classList.toggle('is-filtering', Boolean(query.normalized || selectedRole));
       const terms = query.normalized ? query.normalized.split(/\s+/) : [];
-      matchingItems = indexedItems.filter(({ search }) => (
-        terms.every((term) => (
+      matchingItems = indexedItems.filter(({ item, search }) => (
+        (!selectedRole || item.dataset.filterRole === selectedRole)
+        && terms.every((term) => (
           search.normalized.includes(term)
           || search.compact.includes(term.replace(/\s+/g, ''))
         ))
@@ -201,10 +204,14 @@
       if (clearButton) {
         clearButton.addEventListener('click', () => {
           input.value = '';
+          if (filterSelect) filterSelect.value = '';
           applyFilter();
           input.focus();
         });
       }
+    }
+    if (filterSelect) {
+      filterSelect.addEventListener('change', () => applyFilter());
     }
     pagination.addEventListener('click', (event) => {
       const button = event.target.closest('[data-live-filter-page]');

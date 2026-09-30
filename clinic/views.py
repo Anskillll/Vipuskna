@@ -3041,7 +3041,7 @@ def admin_panel(request):
         'doctors': Doctor.objects.filter(user__is_active=True).count(),
         'clinic_admins': Profile.objects.filter(role=Profile.ROLE_CLINIC_ADMIN, user__is_active=True).count(),
     }
-    users = User.objects.filter(profile__role=Profile.ROLE_CLINIC_ADMIN).select_related('profile').order_by('last_name', 'first_name', 'username')
+    users = User.objects.select_related('profile').order_by('last_name', 'first_name', 'username')
     return render(
         request,
         'clinic/admin_panel.html',
