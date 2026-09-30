@@ -3,7 +3,7 @@
 {% block content %}
 <div class="clinic-workspace">
   <header class="clinic-workspace-head">
-    <div><span class="patient-profile-label">Адміністратор клініки</span><h1 class="page-title">Керуємо турботою</h1><p class="muted">{{ user.get_full_name|default:user.username }}, усе для роботи клініки — поруч.</p></div>
+    <div><span class="patient-profile-label">Адміністратор клініки</span><h1 class="page-title">{{ user.get_full_name|default:user.username }}</h1></div>
     <a class="btn" href="{% url 'doctor_book_patient' %}{% if selected_doctor %}?doctor={{ selected_doctor }}{% endif %}">{% include 'clinic/_icon.html' with name='plus' %} Записати пацієнта</a>
   </header>
   <div class="clinic-metrics">

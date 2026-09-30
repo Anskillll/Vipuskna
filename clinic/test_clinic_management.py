@@ -38,7 +38,8 @@ class ClinicManagementTests(TestCase):
             with self.subTest(tab=tab):
                 response = self.client.get(reverse('clinic_dashboard'), {'tab': tab, 'date': self.date.isoformat()})
                 self.assertEqual(response.status_code, 200)
-                self.assertContains(response, 'Керуємо турботою')
+                self.assertContains(response, 'Олена Адміністратор')
+                self.assertNotContains(response, 'Керуємо турботою')
                 self.assertNotContains(response, 'Контент сайту')
         for name in ('home', 'admin_add_doctor', 'admin_telegram_broadcast', 'clinic_admin_profile', 'clinic_admin_password'):
             with self.subTest(page=name):
