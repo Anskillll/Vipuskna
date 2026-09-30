@@ -476,6 +476,8 @@ class ClinicModelTests(TestCase):
 
         self.assertContains(response, 'Адміністрування MedClinic')
         self.assertContains(response, 'Керування клінікою')
+        admin_content = response.content.decode()
+        self.assertLess(admin_content.index('</header>'), admin_content.index('<div class="chief-admin-navigation">'))
         self.assertNotContains(response, 'Администрирование')
 
     def test_doctor_cities_do_not_repeat(self):
