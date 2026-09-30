@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="{% static 'clinic/refinement.css' %}?v=20260930-2">
   <script src="{% static 'clinic/live_filter.js' %}?v=20260928-1" defer></script>
   <script src="{% static 'clinic/flash_messages.js' %}?v=20260719-1" defer></script>
-  {% if clinic_manager %}<link rel="stylesheet" href="{% static 'clinic/management.css' %}?v=20260930-3">{% endif %}
+  {% if clinic_manager %}<link rel="stylesheet" href="{% static 'clinic/management.css' %}?v=20260930-4">{% endif %}
 </head>
 <body class="{% if clinic_branding.home_background %}has-site-background {% endif %}{% block body_class %}{% endblock %}"{% if clinic_branding.home_background %} style="--site-bg: url('{{ clinic_branding.home_background.url }}');"{% endif %}>
   <header class="topbar {% block topbar_class %}{% endblock %}"{% block topbar_attributes %}{% endblock %}>

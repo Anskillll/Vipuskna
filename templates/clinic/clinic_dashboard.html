@@ -1,11 +1,16 @@
 {% extends 'clinic/base.html' %}
 {% load static %}
 {% block title %}Кабінет адміністратора — OrthoSmile{% endblock %}
+{% block body_class %}clinic-dashboard-page{% endblock %}
 {% block content %}
 <div class="clinic-workspace">
   {% if user.is_staff %}{% include 'clinic/_chief_moderator_nav.html' %}{% else %}{% include 'clinic/_clinic_management_nav.html' %}{% endif %}
   <div class="clinic-dashboard-layout">
     <aside class="clinic-dashboard-sidebar" aria-label="Показники клініки">
+      <header class="clinic-sidebar-profile">
+        <span class="patient-profile-label">Адміністратор клініки</span>
+        <h1 class="page-title">{{ user.get_full_name|default:user.username }}</h1>
+      </header>
       <div class="clinic-metrics">
         <a href="{% url 'clinic_dashboard' %}"><strong>{{ today_count }}</strong><span>прийомів сьогодні</span></a>
         <a href="{% url 'clinic_dashboard' %}?tab=requests"><strong>{{ clinic_pending_count }}</strong><span>очікують рішення</span></a>
@@ -15,7 +20,6 @@
     </aside>
     <div class="clinic-dashboard-main">
       <header class="clinic-workspace-head">
-        <div><span class="patient-profile-label">Адміністратор клініки</span><h1 class="page-title">{{ user.get_full_name|default:user.username }}</h1></div>
         <a class="btn" href="{% url 'doctor_book_patient' %}{% if selected_doctor %}?doctor={{ selected_doctor }}{% endif %}">{% include 'clinic/_icon.html' with name='plus' %} Записати пацієнта</a>
       </header>
       <form method="get" class="card clinic-filters">
