@@ -44,6 +44,8 @@ class ClinicManagementTests(TestCase):
                 self.assertIn('clinic-dashboard-page', dashboard_html)
                 self.assertLess(dashboard_html.index('Олена Адміністратор'), dashboard_html.index('class="clinic-metrics"'))
                 self.assertLess(dashboard_html.index('class="clinic-dashboard-sidebar"'), dashboard_html.index('class="clinic-dashboard-main"'))
+                self.assertIn('class="live-filter-clear"', dashboard_html)
+                self.assertNotIn('class="clinic-filter-clear"', dashboard_html)
                 self.assertNotContains(response, '>Знайти</button>')
                 self.assertNotContains(response, 'Скинути</a>')
                 self.assertContains(response, 'data-clear-clinic-filter')
