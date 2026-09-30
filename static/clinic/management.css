@@ -1,13 +1,14 @@
+.clinic-dashboard-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); align-items: start; gap: 24px; }
+.clinic-dashboard-sidebar { min-width: 0; }
 .clinic-workspace-head { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
 .clinic-workspace-head .page-title { margin: 8px 0; }
 .clinic-workspace-head p { margin-bottom: 0; }
 .clinic-workspace-head > .btn { flex-shrink: 0; }
-.clinic-metrics { display: grid; grid-template-columns: repeat(4, 1fr); background: #edf5f1; border: 1px solid #d7e7df; border-radius: 22px; padding: 22px 8px; margin-bottom: 24px; }
-.clinic-metrics a { display: flex; gap: 8px; flex-direction: column; padding: 0 24px; text-decoration: none; color: #174e50; border-right: 1px solid #cbded5; }
-.clinic-metrics a:last-child { border-right: 0; }
+.clinic-metrics { display: grid; gap: 10px; padding: 10px; background: #edf5f1; border: 1px solid #d7e7df; border-radius: 20px; }
+.clinic-metrics a { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; border: 1px solid #e2ece7; border-radius: 13px; background: #fffefa; text-decoration: none; color: #174e50; }
 .clinic-metrics a:hover { color: #008577; }
-.clinic-metrics strong { font-size: 30px; line-height: 1.1; }
-.clinic-metrics span { font-size: 13px; }
+.clinic-metrics strong { font-size: 27px; line-height: 1; }
+.clinic-metrics span { max-width: 112px; font-size: 12px; line-height: 1.35; text-align: right; }
 .clinic-management-tabs { position: sticky; top: 0; z-index: 40; flex-wrap: nowrap; gap: 6px; margin-bottom: 24px; overflow-x: auto; scrollbar-width: thin; }
 .clinic-management-tabs .page-tab { flex: 0 0 auto; white-space: nowrap; }
 .clinic-management-tabs .page-tab { display: inline-flex; gap: 8px; align-items: center; }
@@ -32,10 +33,14 @@
 .clinic-team-member .actions { margin-left: auto; flex-wrap: wrap; }
 .clinic-pagination { display: flex; align-items: center; justify-content: center; gap: 24px; margin-top: 24px; }
 .account-menu-panel { max-height: min(80vh, 650px); overflow-y: auto; }
+@media (max-width: 900px) {
+  .clinic-dashboard-layout { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .clinic-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .clinic-metrics a { align-items: flex-start; flex-direction: column; gap: 6px; padding: 12px; }
+  .clinic-metrics span { max-width: none; text-align: left; }
+}
 @media (max-width: 720px) {
   .clinic-workspace-head { align-items: stretch; flex-direction: column; }
-  .clinic-metrics { grid-template-columns: repeat(2, 1fr); gap: 24px 0; }
-  .clinic-metrics a:nth-child(2) { border: 0; }
   .clinic-team-member { align-items: flex-start; flex-wrap: wrap; }
   .clinic-team-member .actions { margin-left: 0; width: 100%; }
   .clinic-filters .field { flex-basis: 100%; }

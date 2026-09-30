@@ -4,57 +4,62 @@
 {% block content %}
 <div class="clinic-workspace">
   {% if user.is_staff %}{% include 'clinic/_chief_moderator_nav.html' %}{% else %}{% include 'clinic/_clinic_management_nav.html' %}{% endif %}
-  <header class="clinic-workspace-head">
-    <div><span class="patient-profile-label">Адміністратор клініки</span><h1 class="page-title">{{ user.get_full_name|default:user.username }}</h1></div>
-    <a class="btn" href="{% url 'doctor_book_patient' %}{% if selected_doctor %}?doctor={{ selected_doctor }}{% endif %}">{% include 'clinic/_icon.html' with name='plus' %} Записати пацієнта</a>
-  </header>
-  <div class="clinic-metrics">
-    <a href="{% url 'clinic_dashboard' %}"><strong>{{ today_count }}</strong><span>прийомів сьогодні</span></a>
-    <a href="{% url 'clinic_dashboard' %}?tab=requests"><strong>{{ clinic_pending_count }}</strong><span>очікують рішення</span></a>
-    <a href="{% url 'clinic_dashboard' %}?tab=patients"><strong>{{ patient_count }}</strong><span>карток пацієнтів</span></a>
-    <a href="{% url 'clinic_dashboard' %}?tab=doctors"><strong>{{ doctor_count }}</strong><span>лікарів у команді</span></a>
-  </div>
-  <form method="get" class="card clinic-filters">
-    <input type="hidden" name="tab" value="{{ tab }}">
-    <div class="field clinic-search"><label for="clinic-search">Пошук</label><div class="clinic-search-control"><input id="clinic-search" name="q" value="{{ query }}" type="search" placeholder="Ім’я, прізвище або телефон" autocomplete="off"><button class="clinic-filter-clear" type="button" aria-label="Очистити фільтр" title="Очистити фільтр" data-clear-clinic-filter>{% include 'clinic/_icon.html' with name='close' %}</button></div></div>
-    {% if tab != 'doctors' %}<div class="field"><label for="clinic-doctor">Лікар</label><select id="clinic-doctor" name="doctor"><option value="">Усі лікарі</option>{% for doctor in doctors %}<option value="{{ doctor.id }}"{% if selected_doctor == doctor.id|stringformat:'s' %} selected{% endif %}>{{ doctor.full_name }}</option>{% endfor %}</select></div>{% endif %}
-    {% if tab == 'schedule' %}
-      <div class="field"><label for="clinic-date">Дата</label><input id="clinic-date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}"></div>
-      <div class="field"><label for="clinic-status">Статус</label><select id="clinic-status" name="status"><option value="">Усі статуси</option>{% for value, label in status_choices %}<option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
-    {% endif %}
-  </form>
-  <section class="card clinic-results">
-    <div class="section-head">
-      <div><h2 class="section-title">{% if tab == 'patients' %}Картки пацієнтів{% elif tab == 'doctors' %}Команда клініки{% elif tab == 'requests' %}Заявки на розгляд{% else %}{{ selected_date|date:'d.m.Y' }}{% endif %}</h2><span class="muted">Знайдено: {{ page.paginator.count }}</span></div>
-      {% if tab == 'doctors' %}<a class="btn" href="{% url 'admin_add_doctor' %}">Додати лікаря</a>{% endif %}
-      {% if tab == 'schedule' %}<div class="actions"><a class="btn secondary" aria-label="Попередній день" href="?date={{ previous_date|date:'Y-m-d' }}&doctor={{ selected_doctor }}">{% include 'clinic/_icon.html' with name='left' %}</a><a href="{% url 'clinic_dashboard' %}?doctor={{ selected_doctor }}">Сьогодні</a><a class="btn secondary" aria-label="Наступний день" href="?date={{ next_date|date:'Y-m-d' }}&doctor={{ selected_doctor }}">{% include 'clinic/_icon.html' with name='right' %}</a></div>{% endif %}
-    </div>
-    {% if tab == 'doctors' %}
-      <div class="clinic-team">
-      {% for doctor in page %}<article class="clinic-team-member">
-        {% if doctor.photo_src %}<img src="{{ doctor.photo_src }}" alt="{{ doctor.full_name }}">{% endif %}
-        <div><h3>{{ doctor.full_name }}</h3><p class="muted">{{ doctor.specialization }}</p><a href="tel:{{ doctor.phone }}">{{ doctor.phone }}</a></div>
-        <div class="actions"><a class="btn" href="{% url 'doctor_book_patient' %}?doctor={{ doctor.id }}">Записати пацієнта</a><a href="?doctor={{ doctor.id }}">Розклад</a></div>
-      </article>{% empty %}<div class="empty">Лікарів не знайдено. Додайте лікаря, щоб розпочати роботу.</div>{% endfor %}
+  <div class="clinic-dashboard-layout">
+    <aside class="clinic-dashboard-sidebar" aria-label="Показники клініки">
+      <div class="clinic-metrics">
+        <a href="{% url 'clinic_dashboard' %}"><strong>{{ today_count }}</strong><span>прийомів сьогодні</span></a>
+        <a href="{% url 'clinic_dashboard' %}?tab=requests"><strong>{{ clinic_pending_count }}</strong><span>очікують рішення</span></a>
+        <a href="{% url 'clinic_dashboard' %}?tab=patients"><strong>{{ patient_count }}</strong><span>карток пацієнтів</span></a>
+        <a href="{% url 'clinic_dashboard' %}?tab=doctors"><strong>{{ doctor_count }}</strong><span>лікарів у команді</span></a>
       </div>
-    {% elif tab == 'patients' %}
-      <p class="muted">Картки згруповані за відповідальним лікарем. Натисніть ім’я, щоб переглянути історію або додати запис.</p>
-      <div class="table-wrap"><table><thead><tr><th>Пацієнт</th><th>Телефон</th><th>Лікар</th><th>Дії</th></tr></thead><tbody>
-      {% for card in page %}<tr><td><a class="clinic-patient-name" href="{% url 'doctor_patient_card_detail' card.id %}">{{ card.full_name }}</a></td><td><a href="tel:{{ card.patient_phone }}">{{ card.patient_phone }}</a></td><td>{{ card.doctor.full_name }}</td><td><a href="{% url 'doctor_patient_card_detail' card.id %}#new-entry">Додати запис {% include 'clinic/_icon.html' with name='plus' %}</a></td></tr>{% empty %}<tr><td colspan="4" class="empty">Карток не знайдено. Після запису на прийом картка створюється автоматично.</td></tr>{% endfor %}
-      </tbody></table></div>
-    {% else %}
-      <div class="table-wrap"><table><thead><tr><th>Час</th><th>Пацієнт</th><th>Лікар та послуга</th><th>Статус</th><th>Дії</th></tr></thead><tbody>
-      {% for appointment in page %}<tr>
-        <td><strong>{{ appointment.time|time:'H:i' }}</strong><small class="clinic-line">{{ appointment.date|date:'d.m.Y' }} · {{ appointment.duration_minutes }} хв</small></td>
-        <td><a class="clinic-patient-name" href="{% url 'doctor_appointment_detail' appointment.id %}">{{ appointment.patient_name }}</a><a class="clinic-line" href="tel:{{ appointment.patient_phone }}">{{ appointment.patient_phone }}</a></td>
-        <td>{{ appointment.doctor.full_name }}<small class="clinic-line">{{ appointment.service.name|default:'Без послуги' }}</small><small class="clinic-line">{{ appointment.city }}</small></td>
-        <td><span class="status {{ appointment.status }}">{{ appointment.get_status_display }}</span></td>
-        <td><a class="appointment-history-detail" href="{% url 'doctor_appointment_detail' appointment.id %}">{% if tab == 'requests' %}Розглянути{% else %}Детальніше{% endif %} {% include 'clinic/_icon.html' with name='right' %}</a></td>
-      </tr>{% empty %}<tr><td colspan="5" class="empty">{% if tab == 'requests' %}Усі заявки опрацьовано.{% else %}На обрану дату записів не знайдено.{% endif %}</td></tr>{% endfor %}
-      </tbody></table></div>
-    {% endif %}
-    {% if page.has_other_pages %}<nav class="clinic-pagination" aria-label="Сторінки результатів">{% if page.has_previous %}<a href="?{{ filter_query }}&page={{ page.previous_page_number }}">← Попередня</a>{% endif %}<span>{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a href="?{{ filter_query }}&page={{ page.next_page_number }}">Наступна →</a>{% endif %}</nav>{% endif %}
-  </section>
-</div>
+    </aside>
+    <div class="clinic-dashboard-main">
+      <header class="clinic-workspace-head">
+        <div><span class="patient-profile-label">Адміністратор клініки</span><h1 class="page-title">{{ user.get_full_name|default:user.username }}</h1></div>
+        <a class="btn" href="{% url 'doctor_book_patient' %}{% if selected_doctor %}?doctor={{ selected_doctor }}{% endif %}">{% include 'clinic/_icon.html' with name='plus' %} Записати пацієнта</a>
+      </header>
+      <form method="get" class="card clinic-filters">
+        <input type="hidden" name="tab" value="{{ tab }}">
+        <div class="field clinic-search"><label for="clinic-search">Пошук</label><div class="clinic-search-control"><input id="clinic-search" name="q" value="{{ query }}" type="search" placeholder="Ім’я, прізвище або телефон" autocomplete="off"><button class="clinic-filter-clear" type="button" aria-label="Очистити фільтр" title="Очистити фільтр" data-clear-clinic-filter>{% include 'clinic/_icon.html' with name='close' %}</button></div></div>
+        {% if tab != 'doctors' %}<div class="field"><label for="clinic-doctor">Лікар</label><select id="clinic-doctor" name="doctor"><option value="">Усі лікарі</option>{% for doctor in doctors %}<option value="{{ doctor.id }}"{% if selected_doctor == doctor.id|stringformat:'s' %} selected{% endif %}>{{ doctor.full_name }}</option>{% endfor %}</select></div>{% endif %}
+        {% if tab == 'schedule' %}
+          <div class="field"><label for="clinic-date">Дата</label><input id="clinic-date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}"></div>
+          <div class="field"><label for="clinic-status">Статус</label><select id="clinic-status" name="status"><option value="">Усі статуси</option>{% for value, label in status_choices %}<option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+        {% endif %}
+      </form>
+      <section class="card clinic-results">
+        <div class="section-head">
+          <div><h2 class="section-title">{% if tab == 'patients' %}Картки пацієнтів{% elif tab == 'doctors' %}Команда клініки{% elif tab == 'requests' %}Заявки на розгляд{% else %}{{ selected_date|date:'d.m.Y' }}{% endif %}</h2><span class="muted">Знайдено: {{ page.paginator.count }}</span></div>
+          {% if tab == 'doctors' %}<a class="btn" href="{% url 'admin_add_doctor' %}">Додати лікаря</a>{% endif %}
+          {% if tab == 'schedule' %}<div class="actions"><a class="btn secondary" aria-label="Попередній день" href="?date={{ previous_date|date:'Y-m-d' }}&doctor={{ selected_doctor }}">{% include 'clinic/_icon.html' with name='left' %}</a><a href="{% url 'clinic_dashboard' %}?doctor={{ selected_doctor }}">Сьогодні</a><a class="btn secondary" aria-label="Наступний день" href="?date={{ next_date|date:'Y-m-d' }}&doctor={{ selected_doctor }}">{% include 'clinic/_icon.html' with name='right' %}</a></div>{% endif %}
+        </div>
+        {% if tab == 'doctors' %}
+          <div class="clinic-team">
+          {% for doctor in page %}<article class="clinic-team-member">
+            {% if doctor.photo_src %}<img src="{{ doctor.photo_src }}" alt="{{ doctor.full_name }}">{% endif %}
+            <div><h3>{{ doctor.full_name }}</h3><p class="muted">{{ doctor.specialization }}</p><a href="tel:{{ doctor.phone }}">{{ doctor.phone }}</a></div>
+            <div class="actions"><a class="btn" href="{% url 'doctor_book_patient' %}?doctor={{ doctor.id }}">Записати пацієнта</a><a href="?doctor={{ doctor.id }}">Розклад</a></div>
+          </article>{% empty %}<div class="empty">Лікарів не знайдено. Додайте лікаря, щоб розпочати роботу.</div>{% endfor %}
+          </div>
+        {% elif tab == 'patients' %}
+          <p class="muted">Картки згруповані за відповідальним лікарем. Натисніть ім’я, щоб переглянути історію або додати запис.</p>
+          <div class="table-wrap"><table><thead><tr><th>Пацієнт</th><th>Телефон</th><th>Лікар</th><th>Дії</th></tr></thead><tbody>
+          {% for card in page %}<tr><td><a class="clinic-patient-name" href="{% url 'doctor_patient_card_detail' card.id %}">{{ card.full_name }}</a></td><td><a href="tel:{{ card.patient_phone }}">{{ card.patient_phone }}</a></td><td>{{ card.doctor.full_name }}</td><td><a href="{% url 'doctor_patient_card_detail' card.id %}#new-entry">Додати запис {% include 'clinic/_icon.html' with name='plus' %}</a></td></tr>{% empty %}<tr><td colspan="4" class="empty">Карток не знайдено. Після запису на прийом картка створюється автоматично.</td></tr>{% endfor %}
+          </tbody></table></div>
+        {% else %}
+          <div class="table-wrap"><table><thead><tr><th>Час</th><th>Пацієнт</th><th>Лікар та послуга</th><th>Статус</th><th>Дії</th></tr></thead><tbody>
+          {% for appointment in page %}<tr>
+            <td><strong>{{ appointment.time|time:'H:i' }}</strong><small class="clinic-line">{{ appointment.date|date:'d.m.Y' }} · {{ appointment.duration_minutes }} хв</small></td>
+            <td><a class="clinic-patient-name" href="{% url 'doctor_appointment_detail' appointment.id %}">{{ appointment.patient_name }}</a><a class="clinic-line" href="tel:{{ appointment.patient_phone }}">{{ appointment.patient_phone }}</a></td>
+            <td>{{ appointment.doctor.full_name }}<small class="clinic-line">{{ appointment.service.name|default:'Без послуги' }}</small><small class="clinic-line">{{ appointment.city }}</small></td>
+            <td><span class="status {{ appointment.status }}">{{ appointment.get_status_display }}</span></td>
+            <td><a class="appointment-history-detail" href="{% url 'doctor_appointment_detail' appointment.id %}">{% if tab == 'requests' %}Розглянути{% else %}Детальніше{% endif %} {% include 'clinic/_icon.html' with name='right' %}</a></td>
+          </tr>{% empty %}<tr><td colspan="5" class="empty">{% if tab == 'requests' %}Усі заявки опрацьовано.{% else %}На обрану дату записів не знайдено.{% endif %}</td></tr>{% endfor %}
+          </tbody></table></div>
+        {% endif %}
+        {% if page.has_other_pages %}<nav class="clinic-pagination" aria-label="Сторінки результатів">{% if page.has_previous %}<a href="?{{ filter_query }}&page={{ page.previous_page_number }}">← Попередня</a>{% endif %}<span>{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a href="?{{ filter_query }}&page={{ page.next_page_number }}">Наступна →</a>{% endif %}</nav>{% endif %}
+      </section>
+    </div>
+  </div>
 {% endblock %}
 {% block extra_scripts %}<script src="{% static 'clinic/clinic_filters.js' %}?v=20260930-1" defer></script>{% endblock %}
