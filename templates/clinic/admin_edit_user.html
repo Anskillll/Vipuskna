@@ -7,7 +7,7 @@
   <a class="back-link" href="{% url 'admin_panel' %}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до панелі адміністратора</a>
   <div class="card standalone-form-card">
     <h1 class="page-title">Редагувати користувача</h1>
-    <p class="muted">Поточний логін: {{ edited_user.username }}</p>
+    <p class="muted">{{ edited_user.get_full_name|default:edited_user.username }} · {{ edited_user.profile.get_role_display|default:'Без профілю' }}</p>
     <form method="post">
       {% csrf_token %}
       {% include 'clinic/_form_fields.html' %}

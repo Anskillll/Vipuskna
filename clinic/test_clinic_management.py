@@ -147,7 +147,7 @@ class ClinicManagementTests(TestCase):
                            ('doctor_edit_profile', []), ('doctor_services', [])]:
             with self.subTest(route=name):
                 response = self.client.post(reverse(name, args=args), {'is_staff': '1', 'is_active': ''})
-                self.assertIn(response.status_code, (302, 403))
+                self.assertIn(response.status_code, (302, 403, 404))
         self.assertEqual(self.client.get('/admin/').status_code, 302)
         self.chief.refresh_from_db()
         self.assertTrue(self.chief.is_active)

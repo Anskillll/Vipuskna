@@ -74,7 +74,7 @@
           </thead>
           <tbody>
             {% for item in users %}
-              <tr data-live-filter-item data-filter-role="{% if item.is_staff %}chief{% elif item.profile %}{{ item.profile.role }}{% else %}other{% endif %}" data-filter-extra="{{ item.get_full_name|escape }} {{ item.username|escape }} {{ item.profile.phone|default:''|escape }} {% if item.is_staff %}головний модератор{% elif item.profile %}{{ item.profile.get_role_display|escape }}{% endif %} {% if item.is_active %}активний{% else %}архівований{% endif %}">
+              <tr data-live-filter-item data-filter-role="{% if item.is_staff %}chief{% elif item.profile %}{{ item.profile.role }}{% else %}other{% endif %}" data-filter-extra="{{ item.get_full_name|escape }} {{ item.username|escape }} {{ item.profile.phone|default:''|escape }} {% if item.is_staff %}головний модератор{% elif item.profile %}{{ item.profile.get_role_display|escape }}{% endif %} {% if item.is_active %}активний{% else %}заблокований{% endif %}">
                 <td>
                   <div class="admin-user-identity">
                     <strong>{{ item.get_full_name|default:item.username }}</strong>
@@ -97,19 +97,32 @@
                   {% elif item.is_active %}
                     <span class="status completed">Активний</span>
                   {% else %}
-                    <span class="status canceled">В архіві</span>
+                    <span class="status canceled">Заблокований</span>
                   {% endif %}
                 </td>
                 <td>
                   <div class="admin-table-actions">
-                    {% if item.profile and item.profile.role == 'clinic_admin' %}<a class="btn secondary" href="{% url 'admin_edit_user' item.id %}">Редагувати</a>{% endif %}
-                    {% if item != user %}
-                      <form method="post" action="{% url 'admin_toggle_user' item.id %}" class="compact-form">
-                        {% csrf_token %}
-                        <button type="submit" class="{% if item.is_active %}warning{% else %}green{% endif %}">
-                          {% if item.is_active %}Архівувати{% else %}Відновити{% endif %}
-                        </button>
-                      </form>
+                    {% if item == user or not item.is_staff %}
+                      <a class="schedule-edit-link" href="{% url 'admin_edit_user' item.id %}" aria-label="Редагувати {{ item.get_full_name|default:item.username }}" title="Редагувати користувача">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M12 20h9" />
+                          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                        </svg>
+                      </a>
+                      {% if not item.is_staff and item != user %}
+                        <form method="post" action="{% url 'admin_toggle_user' item.id %}" class="compact-form">
+                          {% csrf_token %}
+                          <button type="submit" class="{% if item.is_active %}warning{% else %}green{% endif %}">
+                            {% if item.is_active %}Заблокувати{% else %}Розблокувати{% endif %}
+                          </button>
+                        </form>
+                        {% if not item.is_active %}
+                          <form method="post" action="{% url 'admin_delete_user' item.id %}" class="compact-form">
+                            {% csrf_token %}
+                            <button type="submit" class="danger">Видалити</button>
+                          </form>
+                        {% endif %}
+                      {% endif %}
                     {% endif %}
                   </div>
                 </td>

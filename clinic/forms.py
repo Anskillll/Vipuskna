@@ -1020,23 +1020,25 @@ class AdminUserEditForm(FormStyleMixin, forms.Form):
     last_name = forms.CharField(label='Прізвище', max_length=80)
     email = forms.EmailField(label='Електронна пошта', required=False)
     phone = forms.CharField(label='Телефон', validators=[validate_ukrainian_phone], required=False)
-    is_active = forms.BooleanField(label='Активний акаунт', required=False)
 
     def __init__(self, *args, user=None, **kwargs):
         self.user = user
         initial = kwargs.pop('initial', {})
         if user:
+            doctor = getattr(user, 'doctor_profile', None)
+            profile = getattr(user, 'profile', None)
             initial.update(
                 {
                     'username': user.username,
                     'first_name': user.first_name,
                     'last_name': user.last_name,
                     'email': user.email,
-                    'phone': getattr(getattr(user, 'profile', None), 'phone', ''),
-                    'is_active': user.is_active,
+                    'phone': doctor.phone if doctor else getattr(profile, 'phone', ''),
                 }
             )
         super().__init__(*args, initial=initial, **kwargs)
+        if user and not profile and not doctor:
+            self.fields.pop('phone', None)
 
     def clean_username(self):
         username = self.cleaned_data['username'].strip()
@@ -1065,12 +1067,14 @@ class AdminUserEditForm(FormStyleMixin, forms.Form):
         self.user.first_name = self.cleaned_data['first_name']
         self.user.last_name = self.cleaned_data['last_name']
         self.user.email = self.cleaned_data['email']
-        self.user.is_active = self.cleaned_data['is_active']
         self.user.save()
 
         if hasattr(self.user, 'profile'):
             self.user.profile.phone = self.cleaned_data['phone']
             self.user.profile.save()
+        if hasattr(self.user, 'doctor_profile'):
+            self.user.doctor_profile.phone = self.cleaned_data['phone']
+            self.user.doctor_profile.save(update_fields=['phone'])
         return self.user
 
 

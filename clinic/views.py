@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 import hmac
 import json
+import logging
 from math import ceil
 import mimetypes
 import requests
@@ -16,8 +17,9 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, router, transaction
 from django.db.models import Count, Max, Q
+from django.db.models.deletion import Collector
 from django.http import FileResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -107,6 +109,8 @@ UKRAINIAN_WEEKDAYS = (
     'Субота',
     'Неділя',
 )
+
+logger = logging.getLogger(__name__)
 
 
 def write_audit_log(request, action, target, details=''):
@@ -3288,7 +3292,8 @@ def admin_add_doctor(request):
 
 @admin_required
 def admin_edit_user(request, user_id):
-    edited_user = get_object_or_404(User, pk=user_id, profile__role=Profile.ROLE_CLINIC_ADMIN)
+    editable_users = User.objects.filter(Q(is_staff=False) | Q(pk=request.user.pk))
+    edited_user = get_object_or_404(editable_users, pk=user_id)
     form = AdminUserEditForm(request.POST or None, user=edited_user)
     if request.method == 'POST' and form.is_valid():
         try:
@@ -3311,41 +3316,97 @@ def admin_edit_user(request, user_id):
 
 
 @admin_required
+@require_POST
 def admin_toggle_user(request, user_id):
-    edited_user = get_object_or_404(User, pk=user_id)
-    if request.method == 'POST':
-        if edited_user == request.user:
-            messages.error(request, 'Не можна архівувати самого себе.')
-        else:
-            edited_user.is_active = not edited_user.is_active
-            edited_user.save(update_fields=['is_active'])
-            action = 'Відновлено акаунт' if edited_user.is_active else 'Архівовано акаунт'
-            write_audit_log(request, action, edited_user)
-            message = 'Акаунт відновлено.' if edited_user.is_active else 'Акаунт перенесено до архіву.'
-            messages.success(request, message)
+    edited_user = get_object_or_404(User, pk=user_id, is_staff=False)
+    if edited_user == request.user:
+        messages.error(request, 'Не можна заблокувати самого себе.')
+    else:
+        edited_user.is_active = not edited_user.is_active
+        edited_user.save(update_fields=['is_active'])
+        action = 'Розблоковано акаунт' if edited_user.is_active else 'Заблоковано акаунт'
+        write_audit_log(request, action, edited_user)
+        message = 'Акаунт розблоковано.' if edited_user.is_active else 'Акаунт заблоковано.'
+        messages.success(request, message)
     return redirect('admin_panel')
 
 
+def _delete_user_account_and_related_data(user, actor):
+    using = router.db_for_write(User)
+    stored_files = {}
+    collector = Collector(using=using)
+
+    with transaction.atomic(using=using):
+        collector.collect([user])
+        collector.collect(Appointment.objects.using(using).filter(patient=user))
+        collector.collect(DoctorPatientCard.objects.using(using).filter(patient=user))
+        collector.collect(PatientRecordEntry.objects.using(using).filter(created_by=user))
+
+        deleted_targets = []
+        for model, instances in collector.data.items():
+            target_ids = [str(instance.pk) for instance in instances if instance.pk is not None]
+            if target_ids:
+                deleted_targets.append((str(model._meta.verbose_name), target_ids))
+            file_fields = [
+                field for field in model._meta.concrete_fields
+                if field.get_internal_type() in {'FileField', 'ImageField'}
+            ]
+            for instance in instances:
+                for field in file_fields:
+                    file_value = getattr(instance, field.name)
+                    if file_value and file_value.name:
+                        stored_files[(id(file_value.storage), file_value.name)] = (file_value.storage, file_value.name)
+        for queryset in collector.fast_deletes:
+            model = queryset.model
+            file_fields = [
+                field for field in model._meta.concrete_fields
+                if field.get_internal_type() in {'FileField', 'ImageField'}
+            ]
+            for instance in queryset:
+                for field in file_fields:
+                    file_value = getattr(instance, field.name)
+                    if file_value and file_value.name:
+                        stored_files[(id(file_value.storage), file_value.name)] = (file_value.storage, file_value.name)
+
+        AuditLog.objects.using(using).filter(actor=user).delete()
+        for target_type, target_ids in deleted_targets:
+            for offset in range(0, len(target_ids), 500):
+                AuditLog.objects.using(using).filter(
+                    target_type=target_type,
+                    target_id__in=target_ids[offset:offset + 500],
+                ).delete()
+
+        deleted_id = user.pk
+        collector.delete()
+        AuditLog.objects.using(using).create(
+            actor=actor,
+            action='Видалено обліковий запис',
+            target_type='Обліковий запис',
+            target_id=str(deleted_id),
+            target_label='Обліковий запис видалено',
+        )
+
+        def remove_files():
+            for storage, path in stored_files.values():
+                try:
+                    storage.delete(path)
+                except Exception:
+                    logger.exception('Could not remove stored file for deleted account: %s', path)
+
+        transaction.on_commit(remove_files, using=using)
+
+
 @admin_required
+@require_POST
 def admin_delete_user(request, user_id):
-    edited_user = get_object_or_404(User, pk=user_id)
-    if request.method == 'POST':
-        if edited_user == request.user:
-            messages.error(request, 'Не можна видалити власний акаунт.')
-        elif not hasattr(edited_user, 'profile') or edited_user.profile.role != Profile.ROLE_PATIENT:
-            messages.error(request, 'Назавжди видаляти можна лише профілі пацієнтів.')
-        elif edited_user.is_active:
-            messages.error(request, 'Спочатку перенесіть профіль пацієнта до архіву.')
-        else:
-            profile_photo = edited_user.profile.photo
-            write_audit_log(request, 'Назавжди видалено профіль пацієнта', edited_user)
-            edited_user.delete()
-            if profile_photo and profile_photo.name:
-                profile_photo.storage.delete(profile_photo.name)
-            messages.success(
-                request,
-                'Профіль пацієнта видалено назавжди. Історію прийомів і медичні записи збережено.',
-            )
+    edited_user = get_object_or_404(User, pk=user_id, is_staff=False)
+    if edited_user == request.user:
+        messages.error(request, 'Не можна видалити власний акаунт.')
+    elif edited_user.is_active:
+        messages.error(request, 'Спочатку заблокуйте акаунт.')
+    else:
+        _delete_user_account_and_related_data(edited_user, request.user)
+        messages.success(request, 'Акаунт і пов’язані з ним дані видалено. Користувач зможе зареєструватися знову як новий.')
     return redirect('admin_panel')
 
 
