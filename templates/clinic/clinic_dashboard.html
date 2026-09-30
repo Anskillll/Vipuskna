@@ -14,7 +14,6 @@
         <div class="field clinic-search"><label for="clinic-search">Пошук</label><div class="live-filter-input-row"><input id="clinic-search" name="q" value="{{ query }}" type="search" placeholder="Ім’я, прізвище або телефон" autocomplete="off"><button class="live-filter-clear" type="button" title="Очистити фільтр" aria-label="Очистити фільтр" data-clear-clinic-filter><span aria-hidden="true">{% include 'clinic/_icon.html' with name='close' %}</span></button></div></div>
         {% if tab != 'doctors' %}<div class="field"><label for="clinic-doctor">Лікар</label><select id="clinic-doctor" name="doctor"><option value="">Усі лікарі</option>{% for doctor in doctors %}<option value="{{ doctor.id }}"{% if selected_doctor == doctor.id|stringformat:'s' %} selected{% endif %}>{{ doctor.full_name }}</option>{% endfor %}</select></div>{% endif %}
         {% if tab == 'schedule' %}
-          <div class="field"><label for="clinic-date">Тиждень</label><input id="clinic-date" type="date" name="week" value="{{ selected_date|date:'Y-m-d' }}"></div>
           <div class="field"><label for="clinic-status">Статус</label><select id="clinic-status" name="status"><option value="">Усі статуси</option>{% for value, label in status_choices %}<option value="{{ value }}"{% if selected_status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
         {% endif %}
       </form>
