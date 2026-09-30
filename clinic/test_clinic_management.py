@@ -40,6 +40,9 @@ class ClinicManagementTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, 'Олена Адміністратор')
                 self.assertNotContains(response, 'Керуємо турботою')
+                self.assertNotContains(response, '>Знайти</button>')
+                self.assertNotContains(response, 'Скинути</a>')
+                self.assertContains(response, 'data-clear-clinic-filter')
                 self.assertNotContains(response, 'Контент сайту')
         for name in ('home', 'admin_add_doctor', 'admin_telegram_broadcast', 'clinic_admin_profile', 'clinic_admin_password'):
             with self.subTest(page=name):

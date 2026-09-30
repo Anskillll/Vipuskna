@@ -13,8 +13,12 @@
 .clinic-filters { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 14px; margin-bottom: 24px; padding: 20px; }
 .clinic-filters .field { flex: 1 1 155px; margin: 0; }
 .clinic-filters .clinic-search { flex: 2 1 225px; }
-.clinic-filters button { min-height: 44px; }
-.clinic-reset { align-self: center; font-size: 13px; }
+.clinic-search-control { display: flex; align-items: center; gap: 8px; }
+.clinic-search-control input { min-width: 0; flex: 1; }
+.clinic-search-control input::-webkit-search-cancel-button { display: none; }
+.clinic-filter-clear { display: grid; width: 36px; height: 36px; min-height: 36px; flex: 0 0 36px; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #b4232c; box-shadow: none; }
+.clinic-filter-clear:hover { background: #fff0ef; color: #8f1720; box-shadow: none; transform: none; }
+.clinic-filter-clear .ui-icon { width: 20px; height: 20px; }
 .clinic-results .section-head { margin-bottom: 18px; gap: 16px; flex-wrap: wrap; }
 .clinic-results .section-title { margin-bottom: 6px; }
 .clinic-results .table-wrap { box-shadow: none; }
