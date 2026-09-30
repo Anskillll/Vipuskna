@@ -4284,7 +4284,7 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, f'href="{reverse("admin_add_clinic_admin")}">Створити адміністратора</a>')
         for route, label in (
             ('admin_telegram_broadcast', 'Написати повідомлення в Telegram'),
-            ('admin_content', 'Контент сайту'),
+            ('admin_content', 'Оформлення клініки'),
         ):
             self.assertContains(
                 response,
@@ -4301,13 +4301,13 @@ class ClinicModelTests(TestCase):
         self.client.login(username=admin_user.username, password='pass12345')
         route_titles = (
             ('admin_panel', 'Огляд клініки'),
-            ('admin_content', 'Контент сайту'),
+            ('admin_content', 'Оформлення клініки'),
             ('admin_telegram_broadcast', 'Telegram-бот'),
         )
         expected_labels = (
             'Огляд',
             'Додати адміністратора',
-            'Контент сайту',
+            'Оформлення клініки',
             'Telegram-повідомлення',
             'Системні налаштування',
         )
@@ -4445,11 +4445,12 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Оберіть користувача, якому потрібно надіслати повідомлення.')
 
     def test_admin_can_add_home_hero_slide(self):
-        User.objects.create_superuser(
+        content_admin = User.objects.create_user(
             username='content-admin@test.local',
             email='content-admin@test.local',
             password='pass12345',
         )
+        Profile.objects.create(user=content_admin, role=Profile.ROLE_CLINIC_ADMIN, phone='+380501234568')
         self.client.login(username='content-admin@test.local', password='pass12345')
         image = SimpleUploadedFile(
             'reception.gif',
@@ -4479,11 +4480,12 @@ class ClinicModelTests(TestCase):
             self.assertEqual(slide.sort_order, 1)
 
     def test_admin_can_change_home_hero_slide_order(self):
-        User.objects.create_superuser(
+        slide_admin = User.objects.create_user(
             username='slide-admin@test.local',
             email='slide-admin@test.local',
             password='pass12345',
         )
+        Profile.objects.create(user=slide_admin, role=Profile.ROLE_CLINIC_ADMIN, phone='+380501234568')
         first = HomeHeroSlide.objects.create(title='Перше', image='clinic/hero/first.jpg', sort_order=1)
         second = HomeHeroSlide.objects.create(title='Друге', image='clinic/hero/second.jpg', sort_order=2)
         self.client.login(username='slide-admin@test.local', password='pass12345')
@@ -4528,11 +4530,14 @@ class ClinicModelTests(TestCase):
 
         response = self.client.get(reverse('admin_content'))
 
-        self.assertContains(response, 'Верхні фотографії')
-        self.assertContains(response, 'Додати у слайдер')
         self.assertContains(response, 'Оформлення клініки')
-        self.assertContains(response, 'Новини')
-        self.assertContains(response, 'Галерея')
+        self.assertNotContains(response, 'Верхні фотографії')
+        self.assertNotContains(response, 'Додати у слайдер')
+        self.assertNotContains(response, 'Новини клініки')
+        self.assertNotContains(response, 'Фото галереї')
+        self.assertNotContains(response, 'name="action" value="save_hero"')
+        self.assertNotContains(response, 'name="action" value="save_news"')
+        self.assertNotContains(response, 'name="action" value="save_gallery"')
 
     def test_home_renders_selected_background_effect(self):
         branding, _ = ClinicSettings.objects.get_or_create(pk=1)

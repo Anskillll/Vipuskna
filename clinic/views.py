@@ -3126,23 +3126,29 @@ def admin_telegram_broadcast(request):
 @clinic_manager_required
 def admin_content(request):
     is_chief_moderator = request.user.is_staff
-    if not is_chief_moderator and request.method == 'POST':
-        action = request.POST.get('action')
-        allowed_actions = {'save_hero', 'toggle_hero', 'move_hero', 'delete_hero', 'save_news', 'delete_news', 'save_gallery', 'delete_gallery'}
-        if action not in allowed_actions:
+    content_actions = {
+        'save_hero', 'toggle_hero', 'move_hero', 'delete_hero',
+        'save_news', 'delete_news', 'save_gallery', 'delete_gallery',
+    }
+    if is_chief_moderator:
+        if request.GET.keys() & {'hero', 'news', 'gallery'}:
             raise PermissionDenied
+        if request.method == 'POST' and request.POST.get('action') != 'save_settings':
+            raise PermissionDenied
+    elif request.method == 'POST' and request.POST.get('action') not in content_actions:
+        raise PermissionDenied
     branding, _ = ClinicSettings.objects.get_or_create(pk=1)
     hero_id = request.GET.get('hero')
     news_id = request.GET.get('news')
     gallery_id = request.GET.get('gallery')
-    hero_instance = HomeHeroSlide.objects.filter(pk=hero_id).first() if hero_id else None
-    news_instance = NewsPost.objects.filter(pk=news_id).first() if news_id else None
-    gallery_instance = GalleryImage.objects.filter(pk=gallery_id).first() if gallery_id else None
+    hero_instance = HomeHeroSlide.objects.filter(pk=hero_id).first() if hero_id and not is_chief_moderator else None
+    news_instance = NewsPost.objects.filter(pk=news_id).first() if news_id and not is_chief_moderator else None
+    gallery_instance = GalleryImage.objects.filter(pk=gallery_id).first() if gallery_id and not is_chief_moderator else None
 
     settings_form = ClinicSettingsForm(instance=branding, prefix='settings') if is_chief_moderator else None
-    hero_form = HomeHeroSlideForm(instance=hero_instance, prefix='hero')
-    news_form = NewsPostForm(instance=news_instance, prefix='news')
-    gallery_form = GalleryImageForm(instance=gallery_instance, prefix='gallery')
+    hero_form = HomeHeroSlideForm(instance=hero_instance, prefix='hero') if not is_chief_moderator else None
+    news_form = NewsPostForm(instance=news_instance, prefix='news') if not is_chief_moderator else None
+    gallery_form = GalleryImageForm(instance=gallery_instance, prefix='gallery') if not is_chief_moderator else None
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -3242,9 +3248,9 @@ def admin_content(request):
             messages.success(request, 'Фотографію видалено.')
             return redirect(f"{reverse('admin_content')}#gallery")
 
-    hero_slides = HomeHeroSlide.objects.all()
-    posts = NewsPost.objects.select_related('doctor__user').all()
-    gallery_images = GalleryImage.objects.all()
+    hero_slides = HomeHeroSlide.objects.all() if not is_chief_moderator else HomeHeroSlide.objects.none()
+    posts = NewsPost.objects.select_related('doctor__user').all() if not is_chief_moderator else NewsPost.objects.none()
+    gallery_images = GalleryImage.objects.all() if not is_chief_moderator else GalleryImage.objects.none()
     return render(
         request,
         'clinic/admin_content.html',

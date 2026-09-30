@@ -1,6 +1,6 @@
 {% extends 'clinic/base.html' %}
 
-{% block title %}Контент сайту - MedClinic{% endblock %}
+{% block title %}{% if user.is_staff %}Оформлення клініки{% else %}Контент сайту{% endif %} - MedClinic{% endblock %}
 {% block body_class %}admin-content-page{% endblock %}
 
 {% block content %}
@@ -8,7 +8,7 @@
     {% if user.is_staff %}{% include 'clinic/_chief_moderator_nav.html' %}{% else %}{% include 'clinic/_clinic_management_nav.html' %}{% endif %}
     <section class="page-head content-admin-head admin-tabs-head">
       <div>
-        <h1 class="page-title">Контент сайту</h1>
+        <h1 class="page-title">{% if user.is_staff %}Оформлення клініки{% else %}Контент сайту{% endif %}</h1>
       </div>
     </section>
 
@@ -16,6 +16,7 @@
       <a class="btn secondary" href="{% url 'home' %}" target="_blank" rel="noopener">Переглянути сайт</a>
     </div>
 
+    {% if not user.is_staff %}
     <section class="content-admin-summary" aria-label="Опублікований контент">
       <div>
         <span>Слайди</span>
@@ -36,10 +37,11 @@
     </section>
 
     <nav class="content-admin-jump" aria-label="Швидкий перехід до редактора">
-      {% if user.is_staff %}<a href="#branding">Оформлення</a>{% endif %}<a href="#hero-slides">Верхні фотографії</a>
+      <a href="#hero-slides">Верхні фотографії</a>
       <a href="#news">Новини</a>
       <a href="#gallery">Галерея</a>
     </nav>
+    {% endif %}
 
     {% if user.is_staff %}<section id="branding" class="content-admin-section">
       <header class="content-admin-section-head">
@@ -61,13 +63,13 @@
           <h3>Що на що впливає</h3>
           <p><strong>Логотип</strong> показується у шапці сайту. Підтримуються PNG, JPG, WEBP, GIF та SVG до 2 МБ.</p>
           <p><strong>Фон сайту</strong> залишається позаду внутрішніх сторінок.</p>
-          <p><strong>Верхні фотографії</strong> завантажуються окремо у наступному розділі.</p>
+          {% if not user.is_staff %}<p><strong>Верхні фотографії</strong> завантажуються окремо у наступному розділі.</p>{% endif %}
         </aside>
       </div>
     </section>
 
     {% endif %}
-    <section id="hero-slides" class="content-admin-section">
+    {% if not user.is_staff %}<section id="hero-slides" class="content-admin-section">
       <header class="content-admin-section-head">
         <div>
           <span class="content-admin-step">02</span>
@@ -291,5 +293,6 @@
         </aside>
       </div>
     </section>
+    {% endif %}
   </div>
 {% endblock %}

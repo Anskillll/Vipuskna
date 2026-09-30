@@ -41,7 +41,7 @@
         <a href="{% url 'admin_add_clinic_admin' %}">Створити адміністратора</a>
         <a class="account-menu-admin-action" href="{% url 'admin_panel' %}#users">Адміністратори клініки</a>
         <a class="account-menu-admin-action" href="{% url 'admin_telegram_broadcast' %}">Написати повідомлення в Telegram</a>
-        <a class="account-menu-admin-action" href="{% url 'admin_content' %}">Контент сайту</a>
+        <a class="account-menu-admin-action" href="{% url 'admin_content' %}">Оформлення клініки</a>
       {% elif not user.is_staff and user.profile.role == 'clinic_admin' %}
         <a class="account-menu-request-link" href="{% url 'clinic_dashboard' %}?tab=requests"><span>Заявки клініки</span>{% if clinic_pending_count %}<span class="account-request-count">{{ clinic_pending_count }}</span>{% endif %}</a>
         <a href="{% url 'doctor_book_patient' %}">Записати пацієнта</a>

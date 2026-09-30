@@ -116,6 +116,23 @@ class ClinicManagementTests(TestCase):
 
         self.assertEqual(self.client.post(reverse('admin_content'), {'action': 'save_settings'}).status_code, 403)
 
+    def test_chief_moderator_can_manage_branding_but_not_homepage_content(self):
+        self.client.force_login(self.chief)
+        response = self.client.get(reverse('admin_content'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Оформлення клініки')
+        for forbidden in ('Верхні фотографії', 'Новини клініки', 'Фото галереї', 'name="action" value="save_hero"',
+                          'name="action" value="save_news"', 'name="action" value="save_gallery"'):
+            with self.subTest(hidden=forbidden):
+                self.assertNotContains(response, forbidden)
+
+        for query in ({'hero': '1'}, {'news': '1'}, {'gallery': '1'}):
+            with self.subTest(query=query):
+                self.assertEqual(self.client.get(reverse('admin_content'), query).status_code, 403)
+        for action in ('save_hero', 'toggle_hero', 'move_hero', 'delete_hero', 'save_news', 'delete_news', 'save_gallery', 'delete_gallery'):
+            with self.subTest(action=action):
+                self.assertEqual(self.client.post(reverse('admin_content'), {'action': action}).status_code, 403)
+
     def test_admin_cannot_escalate_or_edit_other_users_or_doctor_settings(self):
         for name, args in [('admin_panel', []), ('admin_content', []), ('admin_add_clinic_admin', []),
                            ('admin_edit_user', [self.chief.id]), ('admin_toggle_user', [self.chief.id]),
