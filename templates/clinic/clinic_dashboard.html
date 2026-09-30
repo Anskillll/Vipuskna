@@ -12,7 +12,7 @@
     <a href="{% url 'clinic_dashboard' %}?tab=patients"><strong>{{ patient_count }}</strong><span>карток пацієнтів</span></a>
     <a href="{% url 'clinic_dashboard' %}?tab=doctors"><strong>{{ doctor_count }}</strong><span>лікарів у команді</span></a>
   </div>
-  {% include 'clinic/_clinic_management_nav.html' %}
+  {% if user.is_staff %}{% include 'clinic/_chief_moderator_nav.html' %}{% else %}{% include 'clinic/_clinic_management_nav.html' %}{% endif %}
   <form method="get" class="card clinic-filters">
     <input type="hidden" name="tab" value="{{ tab }}">
     <div class="field clinic-search"><label for="clinic-search">Пошук</label><input id="clinic-search" name="q" value="{{ query }}" type="search" placeholder="Ім’я, прізвище або телефон"></div>

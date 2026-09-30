@@ -205,6 +205,20 @@ body:not(.public-home-page) .admin-tabs .page-tab::before {
 body:not(.public-home-page) .admin-tabs .page-tab.active::before { background: #b9e2cb; }
 body:not(.public-home-page) .admin-tabs .page-tab,
 body:not(.public-home-page) .admin-tabs .page-tab.active { font-weight: 600; }
+body:not(.public-home-page) .admin-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+  margin-bottom: 0;
+  scrollbar-width: thin;
+}
+body:not(.public-home-page) .admin-tabs .page-tab {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
 body:not(.public-home-page) .admin-tabs-head {
   align-items: center;
   height: 40px;

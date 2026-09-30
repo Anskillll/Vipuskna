@@ -10,15 +10,7 @@
       </div>
     </section>
 
-    <nav class="page-tabs admin-tabs" aria-label="Розділи адміністратора">
-      <a class="page-tab active" href="{% url 'admin_panel' %}">Огляд</a>
-      <a class="page-tab" href="{% url 'admin_add_doctor' %}">Додати лікаря</a>
-      <a class="page-tab" href="{% url 'admin_content' %}">Контент сайту</a>
-      <a class="page-tab" href="{% url 'admin_telegram_broadcast' %}">Telegram-повідомлення</a>
-      <a class="page-tab" href="/admin/">Системні налаштування</a>
-      <a class="page-tab" href="{% url 'admin_add_clinic_admin' %}">Додати адміністратора</a>
-      <a class="page-tab" href="{% url 'clinic_dashboard' %}">Прийоми клініки</a>
-    </nav>
+    {% include 'clinic/_chief_moderator_nav.html' %}
 
     <section class="admin-summary-grid" aria-label="Стан клініки">
       <article class="admin-stat admin-stat-patients">

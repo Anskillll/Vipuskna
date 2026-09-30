@@ -1,6 +1,7 @@
 {% extends 'clinic/base.html' %}
 {% block title %}{% if creating_admin %}Новий адміністратор{% else %}Мій профіль{% endif %} — OrthoSmile{% endblock %}
 {% block content %}
+{% if creating_admin %}{% include 'clinic/_chief_moderator_nav.html' %}{% endif %}
 <a class="back-link" href="{% if creating_admin %}{% url 'admin_panel' %}{% else %}{% url 'clinic_dashboard' %}{% endif %}">{% include 'clinic/_icon.html' with name='left' %} До кабінету</a>
 <section class="card standalone-form-card">
   <h1 class="page-title">{% if creating_admin %}Новий адміністратор{% else %}Мій профіль{% endif %}</h1>

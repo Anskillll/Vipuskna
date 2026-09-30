@@ -1,0 +1,27 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+  <div id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></div>
+  {% if user.is_anonymous %}{% include "admin/color_theme_toggle.html" %}{% endif %}
+{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <style>
+    .chief-admin-navigation { position: sticky; top: 0; z-index: 100; padding: 8px max(16px, calc((100vw - 1200px) / 2)); border-bottom: 1px solid #dce7e0; background: #eaf1eb; }
+    .chief-admin-navigation .admin-tabs { display: flex; flex-wrap: nowrap; gap: 6px; max-width: 1200px; margin: 0 auto; overflow-x: auto; scrollbar-width: thin; }
+    .chief-admin-navigation .admin-tabs a { flex: 0 0 auto; padding: 10px 14px; border-radius: 12px; color: #315f59; font-weight: 600; text-decoration: none; white-space: nowrap; }
+    .chief-admin-navigation .admin-tabs a:hover { background: #fffefa; }
+    .chief-admin-navigation .admin-tabs a.active { background: #195f58; color: #fff; }
+    @media (max-width: 700px) { .chief-admin-navigation { padding-inline: 8px; } .chief-admin-navigation .admin-tabs a { padding: 9px 11px; font-size: 13px; } }
+  </style>
+{% endblock %}
+
+{% block nav-global %}
+  <div class="chief-admin-navigation">
+    {% include "clinic/_chief_moderator_nav.html" %}
+  </div>
+{% endblock %}
