@@ -25,7 +25,7 @@
           <span>Кабінет лікаря</span>
         </a>
       {% elif not user.is_staff and user.profile.role == 'clinic_admin' %}
-        <a class="account-menu-heading account-menu-profile-link" href="{% url 'clinic_dashboard' %}"><strong>{{ user.get_full_name|default:user.username }}</strong><span>Адміністратор клініки</span></a>
+        <a class="account-menu-heading account-menu-profile-link" href="{% url 'clinic_admin_profile' %}"><strong>{{ user.get_full_name|default:user.username }}</strong><span>Адміністратор клініки</span></a>
       {% elif user.is_staff %}
         <a class="account-menu-heading account-menu-profile-link" href="{% url 'admin_panel' %}">
           <strong>{{ user.get_full_name|default:user.username }}</strong>
@@ -45,11 +45,7 @@
       {% elif not user.is_staff and user.profile.role == 'clinic_admin' %}
         <a class="account-menu-request-link" href="{% url 'clinic_dashboard' %}?tab=requests"><span>Заявки клініки</span>{% if clinic_pending_count %}<span class="account-request-count">{{ clinic_pending_count }}</span>{% endif %}</a>
         <a href="{% url 'doctor_book_patient' %}">Записати пацієнта</a>
-        <a href="{% url 'clinic_dashboard' %}?tab=patients">Картки пацієнтів</a>
         <a href="{% url 'admin_add_doctor' %}">Створити лікаря</a>
-        <a href="{% url 'admin_telegram_broadcast' %}">Telegram-повідомлення</a>
-        <a href="{% url 'clinic_admin_profile' %}">Змінити профіль</a>
-        <a href="{% url 'clinic_admin_password' %}">Змінити пароль</a>
       {% elif user.profile.role == 'doctor' %}
         <a class="account-menu-request-link" href="{% url 'doctor_requests' %}">
           <span>Мої заявки</span>

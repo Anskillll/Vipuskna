@@ -50,6 +50,11 @@ class ClinicManagementTests(TestCase):
         response = self.client.get(reverse('home'))
         self.assertContains(response, 'Керувати клінікою')
         self.assertContains(response, 'account-request-count')
+        self.assertContains(response, f'href="{reverse("clinic_admin_profile")}"><strong>Олена Адміністратор</strong>')
+        self.assertNotContains(response, 'Картки пацієнтів</a>')
+        self.assertNotContains(response, 'Telegram-повідомлення</a>')
+        self.assertNotContains(response, 'Змінити профіль</a>')
+        self.assertNotContains(response, 'Змінити пароль</a>')
         self.assertNotContains(response, 'Кабінет пацієнта')
 
     def test_chief_creates_nonstaff_admin_with_validated_password(self):
