@@ -23,27 +23,22 @@
         <small>додано до системи</small>
       </article>
       <article class="admin-stat admin-stat-appointments">
-        <span>Усі записи</span>
-        <strong>{{ stats.appointments }}</strong>
-        <small>заявок і прийомів</small>
-      </article>
-      <article class="admin-stat admin-stat-pending">
-        <span>Очікують лікаря</span>
-        <strong>{{ stats.pending }}</strong>
-        <small>нових заявок</small>
+        <span>Адміністратори клініки</span>
+        <strong>{{ stats.clinic_admins }}</strong>
+        <small>активних облікових записів</small>
       </article>
     </section>
 
     <section id="users" class="card section-card admin-users-section" data-live-filter data-page-size="10">
       <div class="section-head admin-section-head">
         <div>
-          <h2 class="section-title">Користувачі</h2>
-          <p class="section-note">Редагування даних, доступу та ролей користувачів.</p>
+          <h2 class="section-title">Адміністратори клініки</h2>
+          <p class="section-note">Облікові записи адміністраторів клініки.</p>
         </div>
       </div>
       <div class="live-filter-bar">
         <div class="live-filter-field">
-          <label for="admin-user-search">Знайти користувача</label>
+          <label for="admin-user-search">Знайти адміністратора</label>
           <div class="live-filter-input-row">
             <input id="admin-user-search" type="search" placeholder="Ім'я, логін, телефон, роль або статус" autocomplete="off" data-live-filter-input>
             <button
@@ -106,12 +101,6 @@
                           {% if item.is_active %}Архівувати{% else %}Відновити{% endif %}
                         </button>
                       </form>
-                      {% if not item.is_active and item.profile.role == 'patient' %}
-                        <form method="post" action="{% url 'admin_delete_user' item.id %}" class="compact-form">
-                          {% csrf_token %}
-                          <button type="submit" class="danger">Видалити назавжди</button>
-                        </form>
-                      {% endif %}
                     {% endif %}
                   </div>
                 </td>
@@ -132,7 +121,6 @@
             <h2 class="section-title">Лікарі</h2>
             <p class="section-note">Навантаження та стан профілів.</p>
           </div>
-          <a class="btn secondary" href="{% url 'admin_add_doctor' %}">Додати</a>
         </div>
         <div class="admin-compact-list">
           {% for doctor in doctors %}
@@ -142,7 +130,6 @@
                 <span>{{ doctor.specialization }}</span>
               </div>
               <div class="admin-list-meta">
-                <span>{{ doctor.total }} записів</span>
                 {% if doctor.user.is_active %}
                   <span class="status completed">Активний</span>
                 {% else %}
@@ -157,32 +144,6 @@
         </div>
       </section>
 
-      <section id="recent-appointments" class="card section-card admin-overview-section">
-        <div class="section-head admin-section-head">
-          <div>
-            <h2 class="section-title">Останні записи</h2>
-            <p class="section-note">Нещодавно створені заявки та прийоми.</p>
-          </div>
-        </div>
-        <div class="admin-compact-list">
-          {% for appointment in appointments %}
-            <article class="admin-appointment-row">
-              <time datetime="{{ appointment.date|date:'Y-m-d' }}T{{ appointment.time|time:'H:i' }}">
-                {{ appointment.date|date:'d.m' }}<strong>{{ appointment.time|time:'H:i' }}</strong>
-              </time>
-              <div class="admin-list-main">
-                <strong>{{ appointment.patient_name }}</strong>
-                <span>{{ appointment.doctor.full_name }}{% if appointment.service %} · {{ appointment.service.name }}{% endif %}</span>
-              </div>
-              <span class="status {% if appointment.status == 'completed' %}completed{% elif appointment.status == 'canceled' or appointment.status == 'rejected' %}canceled{% endif %}">
-                {{ appointment.get_status_display }}
-              </span>
-            </article>
-          {% empty %}
-            <div class="empty">Записів поки немає.</div>
-          {% endfor %}
-        </div>
-      </section>
     </div>
 
     <section class="card section-card admin-audit-section">

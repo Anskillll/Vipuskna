@@ -45,14 +45,6 @@
       </div>
       <div class="home-hero-shade"></div>
 
-      {% if clinic_branding.home_effect != 'none' %}
-        <div
-          class="home-particles home-hero-particles"
-          data-particle-effect="{{ clinic_branding.home_effect }}"
-          {% if clinic_branding.particle_image %}data-particle-image="{{ clinic_branding.particle_image.url }}"{% endif %}
-          aria-hidden="true"
-        ></div>
-      {% endif %}
 
       <nav class="home-hero-nav" aria-label="Головна навігація">
         <a class="home-hero-brand" href="{% url 'home' %}" aria-label="{{ clinic_branding.clinic_name }}">
@@ -414,5 +406,5 @@
     </dialog>
   {% endif %}
 
-  <script src="{% static 'clinic/home.js' %}?v=20260929-3" defer></script>
+  <script src="{% static 'clinic/home.js' %}?v=20260930-4" defer></script>
 {% endblock %}

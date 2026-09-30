@@ -176,7 +176,7 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'Дніпро, вул. Гусенка, 17')
         self.assertContains(response, 'https://www.google.com/maps/search/?api=1&amp;query=')
         self.assertContains(response, 'href="tel:+380509168426" data-home-feedback')
-        self.assertContains(response, 'clinic/home.js?v=20260929-3')
+        self.assertContains(response, 'clinic/home.js?v=20260930-4')
         self.assertContains(response, '+38 (050) 916-84-26')
         self.assertIn('(hover: hover) and (pointer: fine)', home_script)
         self.assertIn("feedbackLink.removeAttribute('href')", home_script)
@@ -3697,9 +3697,7 @@ class ClinicModelTests(TestCase):
         self.client.force_login(admin_user)
 
         page = self.client.get(reverse('admin_add_doctor'))
-        self.assertContains(page, 'Фото з пристрою')
-        self.assertNotContains(page, 'Опис:')
-        self.assertNotContains(page, 'Посилання на фото')
+        self.assertEqual(page.status_code, 403)
 
         response = self.client.post(
             reverse('admin_add_doctor'),
@@ -3716,10 +3714,8 @@ class ClinicModelTests(TestCase):
             },
         )
 
-        doctor = Doctor.objects.get(user__username='new-doctor')
-        self.assertRedirects(response, reverse('admin_panel'))
-        self.assertEqual(doctor.description, '')
-        self.assertEqual(doctor.photo_url, '')
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(User.objects.filter(username='new-doctor').exists())
 
     def test_doctor_can_publish_short_about_text(self):
         self.client.login(username='doctor@test.local', password='pass12345')
@@ -4262,26 +4258,31 @@ class ClinicModelTests(TestCase):
             email='admin-panel@test.local',
             password='pass12345',
         )
+        clinic_admin = User.objects.create_user(username='simple-admin@test.local', password='pass12345')
+        Profile.objects.create(user=clinic_admin, role=Profile.ROLE_CLINIC_ADMIN, phone='+380501234569')
         self.client.login(username='admin-panel@test.local', password='pass12345')
 
         response = self.client.get(reverse('admin_panel'))
 
         self.assertContains(response, 'Огляд клініки')
-        self.assertNotContains(response, 'href="#users"')
+        self.assertContains(response, f'href="{reverse("admin_panel")}#users"')
         self.assertNotContains(response, 'Швидкі дії')
         self.assertNotContains(response, 'Що потрібно зробити?')
-        self.assertContains(response, 'Знайти користувача')
+        self.assertContains(response, 'Знайти адміністратора')
         self.assertContains(response, 'data-page-size="10"')
-        self.assertContains(response, 'Нещодавно створені заявки та прийоми.')
+        self.assertNotContains(response, 'Нещодавно створені заявки та прийоми.')
+        self.assertNotContains(response, 'Усі записи')
+        self.assertNotContains(response, reverse('admin_add_doctor'))
         self.assertNotContains(response, 'Відновлення доступу')
-        self.assertContains(response, 'Це ви')
-        self.assertContains(response, reverse('admin_edit_user', args=[admin_user.id]))
+        self.assertContains(response, 'Адміністратор клініки')
+        self.assertContains(response, reverse('admin_edit_user', args=[clinic_admin.id]))
+        self.assertNotContains(response, reverse('admin_edit_user', args=[self.patient.id]))
         self.assertContains(
             response,
             f'class="account-menu-heading account-menu-profile-link" href="{reverse("admin_panel")}"',
         )
+        self.assertContains(response, f'href="{reverse("admin_add_clinic_admin")}">Створити адміністратора</a>')
         for route, label in (
-            ('admin_add_doctor', 'Створити лікаря'),
             ('admin_telegram_broadcast', 'Написати повідомлення в Telegram'),
             ('admin_content', 'Контент сайту'),
         ):
@@ -4300,13 +4301,12 @@ class ClinicModelTests(TestCase):
         self.client.login(username=admin_user.username, password='pass12345')
         route_titles = (
             ('admin_panel', 'Огляд клініки'),
-            ('admin_add_doctor', 'Новий лікар'),
             ('admin_content', 'Контент сайту'),
             ('admin_telegram_broadcast', 'Telegram-бот'),
         )
         expected_labels = (
             'Огляд',
-            'Додати лікаря',
+            'Додати адміністратора',
             'Контент сайту',
             'Telegram-повідомлення',
             'Системні налаштування',
@@ -4325,8 +4325,8 @@ class ClinicModelTests(TestCase):
                 positions = [nav.index(label) for label in expected_labels]
                 self.assertEqual(positions, sorted(positions))
 
-        dashboard = self.client.get(reverse('clinic_dashboard')).content.decode()
-        self.assertLess(dashboard.index('<nav class="page-tabs admin-tabs"'), dashboard.index('class="clinic-workspace-head"'))
+        self.assertEqual(self.client.get(reverse('clinic_dashboard')).status_code, 403)
+        self.assertEqual(self.client.get(reverse('admin_add_doctor')).status_code, 403)
 
     def test_telegram_broadcast_page_requires_admin(self):
         self.client.login(username='patient@test.local', password='pass12345')
@@ -4541,7 +4541,8 @@ class ClinicModelTests(TestCase):
 
         response = self.client.get(reverse('home'))
 
-        self.assertContains(response, 'data-particle-effect="teeth"')
+        self.assertNotContains(response, 'data-particle-effect')
+        self.assertNotIn('home-particle', (Path(settings.BASE_DIR) / 'static' / 'clinic' / 'home.js').read_text(encoding='utf-8'))
 
     def test_selected_background_is_used_on_internal_pages(self):
         branding, _ = ClinicSettings.objects.get_or_create(pk=1)
@@ -4561,12 +4562,10 @@ class ClinicModelTests(TestCase):
 
         response = self.client.get(reverse('home'))
 
-        self.assertContains(response, 'data-particle-effect="dental_field"')
-        self.assertContains(response, 'clinic/home.js')
-        home_script = (Path(settings.BASE_DIR) / 'static' / 'clinic' / 'home.js').read_text(encoding='utf-8')
-        self.assertIn('pointermove', home_script)
-        self.assertIn('110 : 260', home_script)
-        self.assertIn('separateDentalParticles', home_script)
+        self.assertNotContains(response, 'data-particle-effect')
+        self.assertNotIn('home-particle', (Path(settings.BASE_DIR) / 'static' / 'clinic' / 'home.js').read_text(encoding='utf-8'))
+        self.assertNotIn('home_effect', ClinicSettingsForm().fields)
+        self.assertNotIn('particle_image', ClinicSettingsForm().fields)
 
     def test_doctor_can_create_only_own_news(self):
         self.client.login(username='doctor@test.local', password='pass12345')

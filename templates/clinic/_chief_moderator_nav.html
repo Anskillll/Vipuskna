@@ -1,7 +1,5 @@
 <nav class="page-tabs admin-tabs" aria-label="Розділи головного модератора">
   <a class="page-tab{% if request.resolver_match.url_name == 'admin_panel' %} active{% endif %}" href="{% url 'admin_panel' %}">Огляд</a>
-  <a class="page-tab{% if request.resolver_match.url_name == 'clinic_dashboard' %} active{% endif %}" href="{% url 'clinic_dashboard' %}">Прийоми клініки</a>
-  <a class="page-tab{% if request.resolver_match.url_name == 'admin_add_doctor' %} active{% endif %}" href="{% url 'admin_add_doctor' %}">Додати лікаря</a>
   <a class="page-tab{% if request.resolver_match.url_name == 'admin_add_clinic_admin' %} active{% endif %}" href="{% url 'admin_add_clinic_admin' %}">Додати адміністратора</a>
   <a class="page-tab{% if request.resolver_match.url_name == 'admin_content' %} active{% endif %}" href="{% url 'admin_content' %}">Контент сайту</a>
   <a class="page-tab{% if request.resolver_match.url_name == 'admin_telegram_broadcast' %} active{% endif %}" href="{% url 'admin_telegram_broadcast' %}">Telegram-повідомлення</a>

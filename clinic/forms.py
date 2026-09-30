@@ -1142,7 +1142,7 @@ class AdminTelegramBroadcastForm(FormStyleMixin, forms.Form):
 class ClinicSettingsForm(FormStyleMixin, forms.ModelForm):
     class Meta:
         model = ClinicSettings
-        fields = ['clinic_name', 'logo', 'home_background', 'home_effect', 'particle_image']
+        fields = ['clinic_name', 'logo', 'home_background']
         widgets = {
             'logo': forms.ClearableFileInput(
                 attrs={'accept': 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg'}
@@ -1152,15 +1152,7 @@ class ClinicSettingsForm(FormStyleMixin, forms.ModelForm):
             'clinic_name': 'Назва клініки',
             'logo': 'Логотип клініки',
             'home_background': 'Фон усього сайту',
-            'home_effect': 'Анімований ефект поверх фону',
-            'particle_image': 'Зображення для власного пресета',
         }
-
-    def clean(self):
-        cleaned_data = super().clean()
-        if cleaned_data.get('home_effect') == ClinicSettings.EFFECT_CUSTOM and not cleaned_data.get('particle_image'):
-            self.add_error('particle_image', 'Завантажте зображення для власного пресета.')
-        return cleaned_data
 
 
 class HomeHeroSlideForm(FormStyleMixin, forms.ModelForm):

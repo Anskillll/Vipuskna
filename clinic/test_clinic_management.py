@@ -96,7 +96,8 @@ class ClinicManagementTests(TestCase):
         self.assertContains(response, 'name="action" value="save_news"')
         self.assertContains(response, 'name="action" value="save_gallery"')
         self.assertNotContains(response, 'Оформлення клініки')
-        self.assertNotContains(response, 'Верхні фотографії')
+        self.assertContains(response, 'Верхні фотографії')
+        self.assertContains(response, 'name="action" value="save_hero"')
 
         response = self.client.post(reverse('admin_content'), {
             'action': 'save_news', 'news-title': 'Графік роботи',

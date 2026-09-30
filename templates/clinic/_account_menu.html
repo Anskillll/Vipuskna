@@ -39,9 +39,7 @@
       {% endif %}
       {% if user.is_staff %}
         <a href="{% url 'admin_add_clinic_admin' %}">Створити адміністратора</a>
-        <a href="{% url 'clinic_dashboard' %}">Керувати прийомами</a>
-        <a class="account-menu-admin-action" href="{% url 'admin_panel' %}#users">Користувачі</a>
-        <a class="account-menu-admin-action" href="{% url 'admin_add_doctor' %}">Створити лікаря</a>
+        <a class="account-menu-admin-action" href="{% url 'admin_panel' %}#users">Адміністратори клініки</a>
         <a class="account-menu-admin-action" href="{% url 'admin_telegram_broadcast' %}">Написати повідомлення в Telegram</a>
         <a class="account-menu-admin-action" href="{% url 'admin_content' %}">Контент сайту</a>
       {% elif not user.is_staff and user.profile.role == 'clinic_admin' %}

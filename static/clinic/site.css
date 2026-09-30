@@ -3154,79 +3154,6 @@ body:not(.public-home-page) button.reschedule-icon-action.reject:hover {
   padding: 56px 0 72px;
 }
 
-.home-particles {
-  position: absolute;
-  z-index: 1;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.home-particle {
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: grid;
-  place-items: center;
-  user-select: none;
-  will-change: transform;
-}
-
-.home-particle.tooth {
-  width: 28px;
-  height: 28px;
-  font-size: 22px;
-  opacity: 0.48;
-  filter: drop-shadow(0 2px 3px rgba(15, 23, 42, 0.14));
-}
-
-.home-particle.medical-cross {
-  width: 24px;
-  height: 24px;
-  color: #2563eb;
-  font-size: 25px;
-  font-weight: 800;
-  opacity: 0.34;
-}
-
-.home-particle.custom-particle {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-  opacity: 0.58;
-  filter: drop-shadow(0 2px 3px rgba(15, 23, 42, 0.16));
-}
-
-.home-particle.dental-particle {
-  width: 25px;
-  height: 25px;
-  opacity: 0.52;
-  filter: drop-shadow(0 2px 3px rgba(15, 23, 42, 0.13));
-}
-
-.dental-tooth,
-.braced-tooth {
-  font-size: 20px;
-}
-
-.braced-tooth::after {
-  content: '';
-  position: absolute;
-  left: 3px;
-  right: 3px;
-  top: 12px;
-  height: 3px;
-  border: 1px solid #64748b;
-  border-radius: 2px;
-  background: repeating-linear-gradient(90deg, #e2e8f0 0 3px, #475569 3px 5px);
-}
-
-.dental-braces {
-  color: #526579;
-  font-size: 23px;
-  font-weight: 700;
-}
-
 .public-home-intro {
   max-width: 680px;
   margin: 0 auto 36px;
@@ -4829,11 +4756,6 @@ button.compact {
 .home-hero-shade {
   background: rgba(8, 19, 19, 0.48);
   z-index: 2;
-}
-
-.home-hero-particles {
-  opacity: 0.34;
-  z-index: 3;
 }
 
 .home-hero-nav {

@@ -2944,6 +2944,8 @@ def doctor_news(request):
 
 @clinic_manager_required
 def clinic_dashboard(request):
+    if request.user.is_staff:
+        raise PermissionDenied
     refresh_completed_appointments()
     tab = request.GET.get('tab', 'schedule')
     if tab not in {'schedule', 'requests', 'patients', 'doctors'}:
@@ -3034,18 +3036,12 @@ def clinic_admin_password(request):
 
 @admin_required
 def admin_panel(request):
-    refresh_completed_appointments()
     stats = {
         'patients': Profile.objects.filter(role=Profile.ROLE_PATIENT, user__is_active=True).count(),
         'doctors': Doctor.objects.filter(user__is_active=True).count(),
-        'appointments': Appointment.objects.count(),
-        'pending': Appointment.objects.filter(status=Appointment.STATUS_PENDING).count(),
+        'clinic_admins': Profile.objects.filter(role=Profile.ROLE_CLINIC_ADMIN, user__is_active=True).count(),
     }
-    users = User.objects.select_related('profile').order_by('last_name', 'first_name', 'username')
-    appointments = (
-        Appointment.objects.select_related('doctor__user', 'service')
-        .order_by('-created_at')[:8]
-    )
+    users = User.objects.filter(profile__role=Profile.ROLE_CLINIC_ADMIN).select_related('profile').order_by('last_name', 'first_name', 'username')
     return render(
         request,
         'clinic/admin_panel.html',
@@ -3054,10 +3050,8 @@ def admin_panel(request):
             'users': users,
             'doctors': (
                 Doctor.objects.select_related('user')
-                .annotate(total=Count('appointments'))
                 .order_by('user__last_name', 'user__first_name')
             ),
-            'appointments': appointments,
             'audit_events': AuditLog.objects.select_related('actor')[:12],
         },
     )
@@ -3132,14 +3126,10 @@ def admin_telegram_broadcast(request):
 @clinic_manager_required
 def admin_content(request):
     is_chief_moderator = request.user.is_staff
-    if not is_chief_moderator:
-        if any(request.GET.get(key) for key in ('hero', 'news', 'gallery')):
-            raise PermissionDenied
-        if request.method == 'POST' and (
-            request.POST.get('action') not in {'save_news', 'save_gallery'}
-            or request.POST.get('news_id')
-            or request.POST.get('gallery_id')
-        ):
+    if not is_chief_moderator and request.method == 'POST':
+        action = request.POST.get('action')
+        allowed_actions = {'save_hero', 'toggle_hero', 'move_hero', 'delete_hero', 'save_news', 'delete_news', 'save_gallery', 'delete_gallery'}
+        if action not in allowed_actions:
             raise PermissionDenied
     branding, _ = ClinicSettings.objects.get_or_create(pk=1)
     hero_id = request.GET.get('hero')
@@ -3149,14 +3139,14 @@ def admin_content(request):
     news_instance = NewsPost.objects.filter(pk=news_id).first() if news_id else None
     gallery_instance = GalleryImage.objects.filter(pk=gallery_id).first() if gallery_id else None
 
-    settings_form = ClinicSettingsForm(instance=branding, prefix='settings')
+    settings_form = ClinicSettingsForm(instance=branding, prefix='settings') if is_chief_moderator else None
     hero_form = HomeHeroSlideForm(instance=hero_instance, prefix='hero')
     news_form = NewsPostForm(instance=news_instance, prefix='news')
     gallery_form = GalleryImageForm(instance=gallery_instance, prefix='gallery')
 
     if request.method == 'POST':
         action = request.POST.get('action')
-        if action == 'save_settings':
+        if action == 'save_settings' and is_chief_moderator:
             settings_form = ClinicSettingsForm(request.POST, request.FILES, instance=branding, prefix='settings')
             if settings_form.is_valid():
                 saved_branding = settings_form.save()
@@ -3281,6 +3271,8 @@ def admin_content(request):
 
 @clinic_manager_required
 def admin_add_doctor(request):
+    if request.user.is_staff:
+        raise PermissionDenied
     form = AdminDoctorCreateForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
         with transaction.atomic():
@@ -3293,7 +3285,7 @@ def admin_add_doctor(request):
 
 @admin_required
 def admin_edit_user(request, user_id):
-    edited_user = get_object_or_404(User, pk=user_id)
+    edited_user = get_object_or_404(User, pk=user_id, profile__role=Profile.ROLE_CLINIC_ADMIN)
     form = AdminUserEditForm(request.POST or None, user=edited_user)
     if request.method == 'POST' and form.is_valid():
         try:

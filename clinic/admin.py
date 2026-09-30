@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User
 
 from .models import (
     Appointment,
@@ -29,6 +31,27 @@ from .models import (
 admin.site.site_header = 'Адміністрування MedClinic'
 admin.site.site_title = 'Адміністрування MedClinic'
 admin.site.index_title = 'Керування клінікою'
+
+
+class LockedAdmin(admin.ModelAdmin):
+    def has_module_permission(self, request):
+        return False
+
+    def has_view_permission(self, request, obj=None):
+        return False
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+admin.site.unregister(User)
+admin.site.register(User, type('LockedUserAdmin', (LockedAdmin, UserAdmin), {}))
 
 
 class MedicalServiceInline(admin.TabularInline):
@@ -67,14 +90,14 @@ class MedicalServiceVideoInline(admin.TabularInline):
 
 
 @admin.register(Profile)
-class ProfileAdmin(admin.ModelAdmin):
+class ProfileAdmin(LockedAdmin):
     list_display = ('user', 'role', 'phone')
     list_filter = ('role',)
     search_fields = ('user__first_name', 'user__last_name', 'user__email', 'phone')
 
 
 @admin.register(Doctor)
-class DoctorAdmin(admin.ModelAdmin):
+class DoctorAdmin(LockedAdmin):
     list_display = ('doctor_name', 'specialization', 'phone', 'is_active')
     search_fields = ('user__first_name', 'user__last_name', 'specialization', 'phone')
     inlines = [DoctorWorkplaceInline, MedicalServiceInline, WorkScheduleInline]
@@ -89,7 +112,7 @@ class DoctorAdmin(admin.ModelAdmin):
 
 
 @admin.register(MedicalService)
-class MedicalServiceAdmin(admin.ModelAdmin):
+class MedicalServiceAdmin(LockedAdmin):
     list_display = ('name', 'doctor', 'approximate_price', 'is_patient_selectable', 'sort_order')
     list_filter = ('doctor__specialization', 'is_patient_selectable')
     search_fields = ('name', 'doctor__user__last_name')
@@ -97,20 +120,20 @@ class MedicalServiceAdmin(admin.ModelAdmin):
 
 
 @admin.register(WorkSchedule)
-class WorkScheduleAdmin(admin.ModelAdmin):
+class WorkScheduleAdmin(LockedAdmin):
     list_display = ('doctor', 'weekday', 'city', 'address', 'start_time', 'end_time', 'is_working')
     list_filter = ('weekday', 'city', 'is_working')
 
 
 @admin.register(DoctorWorkplace)
-class DoctorWorkplaceAdmin(admin.ModelAdmin):
+class DoctorWorkplaceAdmin(LockedAdmin):
     list_display = ('name', 'doctor', 'city', 'address')
     list_filter = ('city',)
     search_fields = ('name', 'city', 'address', 'doctor__user__last_name')
 
 
 @admin.register(Appointment)
-class AppointmentAdmin(admin.ModelAdmin):
+class AppointmentAdmin(LockedAdmin):
     list_display = ('patient_display_name', 'doctor', 'date', 'time', 'city', 'status')
     list_filter = ('status', 'date', 'doctor__specialization', 'city')
     search_fields = (
@@ -127,7 +150,7 @@ class AppointmentAdmin(admin.ModelAdmin):
 
 
 @admin.register(DoctorPatientCard)
-class DoctorPatientCardAdmin(admin.ModelAdmin):
+class DoctorPatientCardAdmin(LockedAdmin):
     list_display = ('patient_display_name', 'doctor', 'patient_phone', 'patient_email', 'updated_at')
     list_filter = ('doctor__specialization',)
     search_fields = (
@@ -146,6 +169,7 @@ class DoctorPatientCardAdmin(admin.ModelAdmin):
 @admin.register(ClinicSettings)
 class ClinicSettingsAdmin(admin.ModelAdmin):
     list_display = ('clinic_name',)
+    exclude = ('home_effect', 'particle_image')
 
 
 @admin.register(HomeHeroSlide)
@@ -179,7 +203,7 @@ class PatientRecordVideoInline(admin.TabularInline):
 
 
 @admin.register(PatientRecordEntry)
-class PatientRecordEntryAdmin(admin.ModelAdmin):
+class PatientRecordEntryAdmin(LockedAdmin):
     list_display = ('title', 'card', 'doctor', 'kind', 'created_at')
     list_filter = ('kind', 'doctor')
     search_fields = ('title', 'details', 'card__patient_first_name', 'card__patient_last_name')

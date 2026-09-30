@@ -36,18 +36,17 @@
     </section>
 
     <nav class="content-admin-jump" aria-label="Швидкий перехід до редактора">
-      {% if user.is_staff %}<a href="#branding">Оформлення</a><a href="#hero-slides">Верхні фотографії</a>{% endif %}
+      {% if user.is_staff %}<a href="#branding">Оформлення</a>{% endif %}<a href="#hero-slides">Верхні фотографії</a>
       <a href="#news">Новини</a>
       <a href="#gallery">Галерея</a>
     </nav>
 
-    {% if user.is_staff %}
-    <section id="branding" class="content-admin-section">
+    {% if user.is_staff %}<section id="branding" class="content-admin-section">
       <header class="content-admin-section-head">
         <div>
           <span class="content-admin-step">01</span>
           <h2>Оформлення клініки</h2>
-          <p>Назва, логотип, фон усіх сторінок та декоративний ефект.</p>
+          <p>Назва, логотип і фон клініки.</p>
         </div>
       </header>
       <div class="content-admin-branding-grid">
@@ -67,6 +66,7 @@
       </div>
     </section>
 
+    {% endif %}
     <section id="hero-slides" class="content-admin-section">
       <header class="content-admin-section-head">
         <div>
@@ -147,7 +147,6 @@
         </aside>
       </div>
     </section>
-    {% endif %}
 
     <section id="news" class="content-admin-section" data-live-filter data-page-size="6">
       <header class="content-admin-section-head">
@@ -183,7 +182,7 @@
                   <span>{% if post.doctor %}Лікар: {{ post.doctor.full_name }}{% else %}Новина клініки{% endif %}</span>
                 </div>
                 <span class="content-status{% if not post.is_published %} is-muted{% endif %}">{% if post.is_published %}На сайті{% else %}Приховано{% endif %}</span>
-                {% if user.is_staff %}<div class="actions">
+                <div class="actions">
                   <a class="btn secondary compact" href="{% url 'admin_content' %}?news={{ post.id }}#news">Редагувати</a>
                   <form method="post">
                     {% csrf_token %}
@@ -191,7 +190,7 @@
                     <input type="hidden" name="news_id" value="{{ post.id }}">
                     <button class="danger compact" type="submit">Видалити</button>
                   </form>
-                </div>{% endif %}
+                </div>
               </article>
             {% empty %}
               <div class="content-admin-empty">
@@ -251,7 +250,7 @@
                   <strong>{{ item.title|default:'Без підпису' }}</strong>
                   <span>{% if item.is_published %}Показується на сайті{% else %}Приховано{% endif %}</span>
                 </div>
-                {% if user.is_staff %}<div class="actions">
+                <div class="actions">
                   <a class="btn secondary compact" href="{% url 'admin_content' %}?gallery={{ item.id }}#gallery">Редагувати</a>
                   <form method="post">
                     {% csrf_token %}
@@ -259,7 +258,7 @@
                     <input type="hidden" name="gallery_id" value="{{ item.id }}">
                     <button class="danger compact" type="submit">Видалити</button>
                   </form>
-                </div>{% endif %}
+                </div>
               </article>
             {% empty %}
               <div class="content-admin-empty">
