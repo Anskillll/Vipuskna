@@ -6081,6 +6081,25 @@ body:not(.public-home-page) .live-filter-clear:hover {
   color: #fff;
 }
 
+.admin-users-section .live-filter-bar .live-filter-clear,
+.admin-users-section .live-filter-bar .live-filter-clear:disabled {
+  width: 34px;
+  height: 38px;
+  min-width: 34px;
+  min-height: 38px;
+  border: 0;
+  border-radius: 10px;
+  background: #d58b8b;
+  box-shadow: none;
+  color: #fff;
+  opacity: 1;
+}
+
+.admin-users-section .live-filter-bar .live-filter-clear:hover:not(:disabled) {
+  background: #bd4d4d;
+  color: #fff;
+}
+
 body:not(.public-home-page) .live-pagination button {
   border-color: #bdcbc7;
   background: #fff;
