@@ -6,13 +6,15 @@
 {% block content %}
   <section class="page-head appointment-detail-head">
     <div>
-      {% if appointment.status == 'pending' %}
+      {% if clinic_manager %}
+        <a class="back-link" href="{% url 'clinic_dashboard' %}?{% if appointment.status == 'pending' %}tab=requests{% else %}date={{ appointment.date|date:'Y-m-d' }}{% endif %}">До кабінету адміністратора</a>
+      {% elif appointment.status == 'pending' %}
         <a class="back-link" href="{% url 'doctor_requests' %}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до моїх заявок</a>
       {% else %}
         <a class="back-link" href="{% url 'doctor_appointments' %}?week={{ appointment.date|date:'Y-m-d' }}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до прийомів</a>
       {% endif %}
       <h1 class="page-title">Заявка {{ appointment.patient_name }}</h1>
-      <p class="page-subtitle">Повна інформація для лікаря</p>
+      <p class="page-subtitle">Лікар: {{ doctor.full_name }}</p>
     </div>
     <span class="status {{ appointment.status }}">{{ appointment.get_status_display }}</span>
   </section>
@@ -86,7 +88,7 @@
     <div class="appointment-detail-sidebar">
       {% if appointment.status == 'pending' %}
         <aside class="card section-card appointment-decision-panel">
-          <h2 class="section-title">Рішення лікаря</h2>
+          <h2 class="section-title">Рішення щодо заявки</h2>
           <form method="post" action="{% url 'doctor_review_appointment' appointment.id %}">
             {% csrf_token %}
             <div class="field">

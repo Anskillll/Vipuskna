@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="{% static 'clinic/refinement.css' %}?v=20260929-22">
   <script src="{% static 'clinic/live_filter.js' %}?v=20260928-1" defer></script>
   <script src="{% static 'clinic/flash_messages.js' %}?v=20260719-1" defer></script>
+  {% if clinic_manager %}<link rel="stylesheet" href="{% static 'clinic/management.css' %}?v=20260929-1">{% endif %}
 </head>
 <body class="{% if clinic_branding.home_background %}has-site-background {% endif %}{% block body_class %}{% endblock %}"{% if clinic_branding.home_background %} style="--site-bg: url('{{ clinic_branding.home_background.url }}');"{% endif %}>
   <header class="topbar {% block topbar_class %}{% endblock %}"{% block topbar_attributes %}{% endblock %}>
@@ -34,7 +35,9 @@
       <nav class="nav">
         {% if user.is_authenticated %}
           {% if user.is_staff %}
-            <a{% if '/panel/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'admin_panel' %}">Панель адміністратора</a>
+            <a{% if '/panel/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'admin_panel' %}">Головний модератор</a>
+          {% elif user.profile.role == 'clinic_admin' %}
+            <a href="{% url 'clinic_dashboard' %}">Кабінет адміністратора</a>
           {% elif user.profile.role == 'doctor' %}
           {% else %}
             <a{% if '/doctors/' in request.path %} class="nav-active" aria-current="page"{% endif %} href="{% url 'doctors' %}">Лікарі</a>

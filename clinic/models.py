@@ -34,10 +34,12 @@ def google_maps_search_url(*parts):
 class Profile(models.Model):
     ROLE_PATIENT = 'patient'
     ROLE_DOCTOR = 'doctor'
+    ROLE_CLINIC_ADMIN = 'clinic_admin'
 
     ROLE_CHOICES = [
         (ROLE_PATIENT, 'Пацієнт'),
         (ROLE_DOCTOR, 'Лікар'),
+        (ROLE_CLINIC_ADMIN, 'Адміністратор клініки'),
     ]
 
     user = models.OneToOneField(
@@ -687,6 +689,16 @@ class DoctorPatientCard(models.Model):
 
 
 class PatientRecordEntry(models.Model):
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='authored_patient_records', verbose_name='Автор запису',
+    )
+    author_name = models.CharField('Ім’я автора', max_length=320, blank=True)
+
+    @property
+    def author_label(self):
+        return self.author_name or self.doctor.full_name
+
     KIND_NOTE = 'note'
     KIND_EXAMINATION = 'examination'
     KIND_TREATMENT = 'treatment'

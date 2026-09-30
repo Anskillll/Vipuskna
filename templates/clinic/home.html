@@ -70,7 +70,9 @@
               <button class="home-hero-signin" type="button" data-home-login-open aria-haspopup="dialog">Увійти</button>
             {% endif %}
           {% elif user.is_staff %}
-            <a href="{% url 'admin_panel' %}">Панель адміністратора</a>
+            <a href="{% url 'admin_panel' %}">Головний модератор</a>
+          {% elif user.profile.role == 'clinic_admin' %}
+            <a href="{% url 'clinic_dashboard' %}">Кабінет адміністратора</a>
           {% elif user.profile.role == 'doctor' %}
           {% else %}
             <a href="{% url 'patient_dashboard' %}">Мій кабінет</a>
@@ -117,7 +119,9 @@
             <a class="home-hero-primary-action" href="{% url 'booking' %}">Записатися на прийом <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
             <a class="home-hero-secondary-action" href="{% url 'doctors' %}">Обрати лікаря <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
           {% elif user.is_staff %}
-            <a class="home-hero-primary-action" href="{% url 'admin_panel' %}">Перейти до панелі адміністратора <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
+            <a class="home-hero-primary-action" href="{% url 'admin_panel' %}">Перейти до кабінету модератора <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
+          {% elif user.profile.role == 'clinic_admin' %}
+            <a class="home-hero-primary-action" href="{% url 'clinic_dashboard' %}">Керувати клінікою {% include 'clinic/_icon.html' with name='right' %}</a>
           {% elif user.profile.role == 'doctor' %}
             <a class="home-hero-primary-action" href="{% url 'doctor_dashboard' %}">Перейти до кабінету лікаря <span aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span></a>
           {% else %}

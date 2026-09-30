@@ -209,6 +209,7 @@
                 <span aria-hidden="true">{{ entry.doctor.user.first_name|first }}{{ entry.doctor.user.last_name|first }}</span>
               {% endif %}
               <p class="patient-record-doctor">{{ entry.doctor.full_name }} · {{ entry.doctor.specialization }}</p>
+              <small>Запис додав(ла): {{ entry.author_label }}</small>
             </div>
             <h3>{{ entry.title }}</h3>
             <div class="record-entry-text">{{ entry.details|linebreaks }}</div>

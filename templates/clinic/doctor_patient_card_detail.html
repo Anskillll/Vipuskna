@@ -4,7 +4,7 @@
 
 {% block content %}
   <div class="profile-back-row">
-    <a class="back-link" href="{% url 'doctor_patient_cards' %}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до пацієнтів</a>
+    <a class="back-link" href="{% if clinic_manager %}{% url 'clinic_dashboard' %}?tab=patients{% else %}{% url 'doctor_patient_cards' %}{% endif %}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до пацієнтів</a>
   </div>
   <div class="medical-profile-grid">
     <section class="card medical-profile-overview">
@@ -31,10 +31,11 @@
         <li><span>Завершених прийомів</span><strong>{{ completed_visits }}</strong></li>
       </ul>
       <div class="medical-profile-actions">
-        <a class="btn secondary" href="{% url 'doctor_patient_cards' %}">До списку карток</a>
+        <a class="btn secondary" href="{% if clinic_manager %}{% url 'clinic_dashboard' %}?tab=patients{% else %}{% url 'doctor_patient_cards' %}{% endif %}">До списку карток</a>
       </div>
     </section>
 
+    {% if not clinic_manager %}
     <section class="card medical-notes-card">
       <div class="doctor-dashboard-card-title">
         <span>Внутрішня інформація</span>
@@ -48,6 +49,7 @@
         <button type="submit">Зберегти нотатки</button>
       </form>
     </section>
+    {% else %}<section class="card"><h2 class="section-title">Відповідальний лікар</h2><p>{{ doctor.full_name }} · {{ doctor.specialization }}</p><a class="btn" href="{% url 'doctor_book_patient' %}?doctor={{ doctor.id }}&card={{ card.id }}">Новий прийом</a><p class="muted">Додайте запис нижче. Автор і час додавання збережуться в історії картки.</p></section>{% endif %}
   </div>
 
   <section id="new-entry" class="card section-card record-entry-editor">
@@ -74,7 +76,7 @@
 
   <section class="card section-card" data-live-filter>
     <div class="section-head">
-      <h2 class="section-title">Розширені записи лікаря</h2>
+      <h2 class="section-title">Записи у картці</h2>
       <span class="section-note">{{ record_entries|length }} запис(ів)</span>
     </div>
     {% if record_entries %}
@@ -93,14 +95,14 @@
             <div>
               <span class="record-kind">{{ entry.get_kind_display }}</span>
               <h3>{{ entry.title }}</h3>
-              <span class="news-meta">{{ entry.created_at|date:'d.m.Y H:i' }}{% if entry.appointment %} · прийом {{ entry.appointment.date|date:'d.m.Y' }}{% endif %}</span>
+              <span class="news-meta">Автор: {{ entry.author_label }} · {{ entry.created_at|date:'d.m.Y H:i' }}{% if entry.appointment %} · прийом {{ entry.appointment.date|date:'d.m.Y' }}{% endif %}</span>
             </div>
-            <form method="post">
+            {% if not clinic_manager or entry.created_by_id == user.id %}<form method="post">
               {% csrf_token %}
               <input type="hidden" name="action" value="delete_entry">
               <input type="hidden" name="entry_id" value="{{ entry.id }}">
               <button type="submit" class="danger">Видалити</button>
-            </form>
+            </form>{% endif %}
           </div>
           <div class="record-entry-text">{{ entry.details|linebreaks }}</div>
           {% if entry.recommendations %}
@@ -111,12 +113,12 @@
               {% for item in entry.images.all %}
                 <figure>
                   <a href="{{ item.image.url }}" target="_blank" rel="noopener"><img src="{{ item.image.url }}" alt="Фото до запису {{ entry.title }}"></a>
-                  <form method="post">
+                  {% if not clinic_manager or entry.created_by_id == user.id %}<form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="delete_image">
                     <input type="hidden" name="image_id" value="{{ item.id }}">
                     <button type="submit" class="secondary">Видалити фото</button>
-                  </form>
+                  </form>{% endif %}
                 </figure>
               {% endfor %}
             </div>
@@ -129,12 +131,12 @@
                     <source src="{{ item.video.url }}">
                     Ваш браузер не підтримує відтворення відео.
                   </video>
-                  <form method="post">
+                  {% if not clinic_manager or entry.created_by_id == user.id %}<form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="delete_video">
                     <input type="hidden" name="video_id" value="{{ item.id }}">
                     <button type="submit" class="secondary">Видалити відео</button>
-                  </form>
+                  </form>{% endif %}
                 </figure>
               {% endfor %}
             </div>

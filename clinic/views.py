@@ -15,6 +15,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Max, Q
 from django.http import FileResponse, JsonResponse
@@ -29,6 +30,8 @@ from .forms import (
     AdminDoctorCreateForm,
     AdminTelegramBroadcastForm,
     AdminUserEditForm,
+    ClinicAdminCreateForm,
+    ClinicAdminProfileForm,
     AppointmentDecisionForm,
     AppointmentRescheduleForm,
     BookingReasonForm,
@@ -120,8 +123,8 @@ def write_audit_log(request, action, target, details=''):
 @login_required
 def telegram_connect(request):
     role = user_role(request.user)
-    if request.user.is_staff or role not in {Profile.ROLE_PATIENT, Profile.ROLE_DOCTOR}:
-        messages.error(request, 'Підключення Telegram доступне пацієнтам і лікарям.')
+    if request.user.is_staff or role not in {Profile.ROLE_PATIENT, Profile.ROLE_DOCTOR, Profile.ROLE_CLINIC_ADMIN}:
+        messages.error(request, 'Підключення Telegram доступне пацієнтам, лікарям та адміністраторам клініки.')
         return redirect_by_role(request.user)
 
     if role == Profile.ROLE_PATIENT and not SocialAccount.objects.filter(
@@ -142,8 +145,8 @@ def telegram_connect(request):
 @require_POST
 def telegram_reconnect(request):
     role = user_role(request.user)
-    if request.user.is_staff or role not in {Profile.ROLE_PATIENT, Profile.ROLE_DOCTOR}:
-        messages.error(request, 'Переприв’язування Telegram доступне пацієнтам і лікарям.')
+    if request.user.is_staff or role not in {Profile.ROLE_PATIENT, Profile.ROLE_DOCTOR, Profile.ROLE_CLINIC_ADMIN}:
+        messages.error(request, 'Переприв’язування Telegram доступне пацієнтам, лікарям та адміністраторам клініки.')
         return redirect_by_role(request.user)
 
     if role == Profile.ROLE_PATIENT and not SocialAccount.objects.filter(
@@ -250,7 +253,7 @@ def private_media(request, path):
     else:
         raise PermissionDenied
 
-    allowed = request.user.is_staff
+    allowed = is_clinic_manager(request.user)
     has_patient_google = SocialAccount.objects.filter(
         user=request.user,
         provider='google',
@@ -315,6 +318,8 @@ def redirect_by_role(user):
         return redirect('admin_panel')
     if role == Profile.ROLE_DOCTOR:
         return redirect('doctor_dashboard')
+    if role == Profile.ROLE_CLINIC_ADMIN:
+        return redirect('clinic_dashboard')
     return redirect('patient_dashboard')
 
 
@@ -365,6 +370,52 @@ def admin_required(view_func):
         return redirect('administration_login')
 
     return wrapper
+
+
+def is_clinic_manager(user):
+    return user.is_authenticated and user.is_active and (
+        user.is_staff or user_role(user) == Profile.ROLE_CLINIC_ADMIN
+    )
+
+
+def clinic_manager_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('administration_login')
+        if not is_clinic_manager(request.user):
+            raise PermissionDenied
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+def clinical_staff_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if is_clinic_manager(request.user):
+            return view_func(request, *args, **kwargs)
+        return doctor_required(view_func)(request, *args, **kwargs)
+    return wrapper
+
+
+def clinical_doctor(request, appointment_id=None, card_id=None):
+    # Doctors retain their own scope; managers choose by the target resource.
+    if not is_clinic_manager(request.user):
+        return request.user.doctor_profile
+    if appointment_id is not None:
+        return get_object_or_404(Appointment, pk=appointment_id).doctor
+    if card_id is not None:
+        return get_object_or_404(DoctorPatientCard, pk=card_id).doctor
+    doctor_id = request.POST.get('doctor') if request.method == 'POST' else request.GET.get('doctor')
+    if not doctor_id or not doctor_id.isdecimal():
+        raise PermissionDenied
+    return get_object_or_404(Doctor, pk=doctor_id, user__is_active=True)
+
+
+def clinical_schedule_url(request, date):
+    if is_clinic_manager(request.user):
+        return f'{reverse("clinic_dashboard")}?date={date.isoformat()}'
+    return doctor_appointments_week_url(date)
 
 
 def parse_date(value):
@@ -977,7 +1028,7 @@ def login_view(request, role='patient'):
         if user and user.is_active:
             actual_role = user_role(user)
             if role == 'administration' and not (
-                user.is_staff or actual_role == Profile.ROLE_DOCTOR
+                user.is_staff or actual_role in {Profile.ROLE_DOCTOR, Profile.ROLE_CLINIC_ADMIN}
             ):
                 messages.error(request, 'Цей акаунт не належить лікарю або адміністратору.')
             elif role == 'admin' and not user.is_staff:
@@ -1946,10 +1997,10 @@ def doctor_appointments_week_url(appointment_date):
     return f'{reverse("doctor_appointments")}?week={appointment_date.isoformat()}'
 
 
-@doctor_required
+@clinical_staff_required
 def doctor_appointment_detail(request, appointment_id):
     refresh_completed_appointments()
-    doctor = request.user.doctor_profile
+    doctor = clinical_doctor(request, appointment_id=appointment_id)
     appointment = get_object_or_404(
         doctor.appointments.select_related('service', 'patient__profile').prefetch_related('images', 'videos'),
         pk=appointment_id,
@@ -1982,9 +2033,9 @@ def doctor_appointment_detail(request, appointment_id):
     )
 
 
-@doctor_required
+@clinical_staff_required
 def doctor_propose_reschedule(request, appointment_id):
-    doctor = request.user.doctor_profile
+    doctor = clinical_doctor(request, appointment_id=appointment_id)
     appointment = get_object_or_404(
         Appointment,
         pk=appointment_id,
@@ -2107,16 +2158,16 @@ def doctor_propose_reschedule(request, appointment_id):
     notify_patient_status(
         appointment,
         f'reschedule_{int(appointment.reschedule_requested_at.timestamp())}',
-        'Лікар пропонує змінити час прийому',
+        'Клініка пропонує змінити час прийому',
     )
     messages.success(request, 'Новий час надіслано пацієнту на погодження.')
     return redirect('doctor_appointment_detail', appointment_id=appointment.id)
 
 
-@doctor_required
+@clinical_staff_required
 def doctor_review_appointment(request, appointment_id):
     refresh_completed_appointments()
-    doctor = request.user.doctor_profile
+    doctor = clinical_doctor(request, appointment_id=appointment_id)
     appointment = get_object_or_404(
         Appointment,
         pk=appointment_id,
@@ -2129,14 +2180,14 @@ def doctor_review_appointment(request, appointment_id):
             appointment.status = Appointment.STATUS_REJECTED
             appointment.save(update_fields=['status'])
             ensure_patient_card_from_appointment(appointment)
-            write_audit_log(request, 'Відхилено заявку лікарем', appointment)
+            write_audit_log(request, 'Відхилено заявку', appointment)
             notify_patient_status(
                 appointment,
                 'rejected',
-                'Лікар відхилив заявку на прийом',
+                'Клініка відхилила заявку на прийом',
             )
             messages.success(request, 'Заявку відхилено.')
-            return redirect(doctor_appointments_week_url(appointment.date))
+            return redirect(clinical_schedule_url(request, appointment.date))
 
         schedule = schedule_for_date(doctor, appointment.date)
         slot_minutes = schedule.slot_minutes if schedule else 60
@@ -2174,36 +2225,36 @@ def doctor_review_appointment(request, appointment_id):
                 appointment.approved_at = timezone.now()
                 appointment.save(update_fields=['duration_slots', 'duration_minutes_exact', 'status', 'approved_at'])
                 ensure_patient_card_from_appointment(appointment)
-                write_audit_log(request, 'Підтверджено заявку лікарем', appointment)
+                write_audit_log(request, 'Підтверджено заявку', appointment)
                 notify_patient_status(
                     appointment,
                     'approved',
-                    'Лікар підтвердив вашу заявку',
+                    'Клініка підтвердила вашу заявку',
                 )
                 messages.success(request, 'Заявку підтверджено.')
-                return redirect(doctor_appointments_week_url(appointment.date))
+                return redirect(clinical_schedule_url(request, appointment.date))
         else:
             error = form.errors.get('duration_minutes')
             messages.error(request, error[0] if error else 'Перевірте тривалість прийому.')
-    return redirect(doctor_appointments_week_url(appointment.date))
+    return redirect(clinical_schedule_url(request, appointment.date))
 
 
-@doctor_required
+@clinical_staff_required
 def doctor_cancel_appointment(request, appointment_id):
     appointment = get_object_or_404(
         Appointment,
         pk=appointment_id,
-        doctor=request.user.doctor_profile,
+        doctor=clinical_doctor(request, appointment_id=appointment_id),
     )
     if request.method == 'POST' and appointment.can_cancel:
         appointment.status = Appointment.STATUS_CANCELED
         appointment.save(update_fields=['status'])
         ensure_patient_card_from_appointment(appointment)
-        write_audit_log(request, 'Скасовано запис лікарем', appointment)
+        write_audit_log(request, 'Скасовано запис', appointment)
         notify_patient_status(
             appointment,
             'doctor_canceled',
-            'Лікар скасував прийом',
+            'Клініка скасувала прийом',
         )
         messages.success(request, 'Запис пацієнта скасовано.')
     elif request.method == 'POST':
@@ -2211,10 +2262,20 @@ def doctor_cancel_appointment(request, appointment_id):
     return redirect('doctor_appointment_detail', appointment_id=appointment.id)
 
 
-@doctor_required
+@clinical_staff_required
 def doctor_book_patient(request):
     refresh_completed_appointments()
-    doctor = request.user.doctor_profile
+    if is_clinic_manager(request.user) and request.method == 'GET' and not request.GET.get('doctor'):
+        return redirect(f'{reverse("clinic_dashboard")}?tab=doctors')
+    doctor = clinical_doctor(request)
+    source_card = None
+    booking_initial = {}
+    if request.GET.get('card', '').isdecimal():
+        source_card = get_object_or_404(DoctorPatientCard, pk=request.GET['card'], doctor=doctor)
+        booking_initial = {
+            'patient': source_card.patient_id, 'first_name': source_card.patient_first_name,
+            'last_name': source_card.patient_last_name, 'phone': source_card.patient_phone,
+        }
     earliest_booking_date = timezone.localdate()
     working_weekdays = doctor_working_weekdays(doctor)
     selected_date = parse_date(request.GET.get('date')) if request.GET.get('date') else timezone.localdate()
@@ -2251,6 +2312,7 @@ def doctor_book_patient(request):
     slot_minutes = schedule.slot_minutes if schedule else 60
     form = DoctorPatientBookingForm(
         request.POST or None,
+        initial=booking_initial,
         doctor=doctor,
         slot_minutes=slot_minutes,
         fixed_duration_minutes=(
@@ -2298,7 +2360,7 @@ def doctor_book_patient(request):
         )
 
         if not schedule or not schedule.is_working:
-            messages.error(request, 'У цей день ви не приймаєте. Оберіть робочий день у календарі.')
+            messages.error(request, 'У цей день лікар не приймає. Оберіть робочий день у календарі.')
             selected_time = None
         elif is_past_appointment(selected_date, selected_time):
             messages.error(request, 'Не можна записати пацієнта на минулу дату або час.')
@@ -2391,7 +2453,7 @@ def doctor_book_patient(request):
                             )
                             write_audit_log(
                                 request,
-                                'Лікар поділив слот прийому',
+                                'Поділено слот прийому',
                                 locked_source,
                                 (
                                     f'Тривалість змінено з '
@@ -2419,15 +2481,15 @@ def doctor_book_patient(request):
                             approved_at=timezone.now(),
                         )
                     ensure_patient_card_from_appointment(appointment)
-                    write_audit_log(request, 'Лікар записав пацієнта', appointment)
+                    write_audit_log(request, 'Створено запис пацієнта', appointment)
                     notify_patient_status(
                         appointment,
                         'doctor_created',
-                        'Лікар створив для вас запис',
+                        'Клініка створила для вас запис',
                     )
                     split_message = ' Стандартний слот поділено на два прийоми.' if split_source_id else ''
                     messages.success(request, f'Пацієнта записано.{split_message}{match_message}')
-                    return redirect(doctor_appointments_week_url(selected_date))
+                    return redirect(clinical_schedule_url(request, selected_date))
                 except (IntegrityError, Appointment.DoesNotExist):
                     messages.error(request, 'Цей час уже недоступний.')
 
@@ -2436,6 +2498,7 @@ def doctor_book_patient(request):
         'clinic/doctor_book_patient.html',
         {
             'doctor': doctor,
+            'source_card': source_card,
             'selected_date': selected_date,
             'selected_time': selected_time,
             'selected_schedule': schedule,
@@ -2495,10 +2558,10 @@ def doctor_patient_cards(request):
     )
 
 
-@doctor_required
+@clinical_staff_required
 def doctor_patient_card_detail(request, card_id):
     refresh_completed_appointments()
-    doctor = request.user.doctor_profile
+    doctor = clinical_doctor(request, card_id=card_id)
     sync_patient_cards_for_doctor(doctor)
     card = get_object_or_404(
         DoctorPatientCard.objects.select_related('patient__profile'),
@@ -2506,6 +2569,8 @@ def doctor_patient_card_detail(request, card_id):
         doctor=doctor,
     )
     action = request.POST.get('action') if request.method == 'POST' else None
+    if is_clinic_manager(request.user) and action == 'update_card':
+        raise PermissionDenied
     form = DoctorPatientCardForm(request.POST if action == 'update_card' else None, instance=card)
     entry_form = PatientRecordEntryForm(
         request.POST if action == 'add_entry' else None,
@@ -2546,6 +2611,8 @@ def doctor_patient_card_detail(request, card_id):
         entry.card = card
         entry.doctor = doctor
         entry.appointment = appointment
+        entry.created_by = request.user
+        entry.author_name = request.user.get_full_name().strip() or request.user.username
         entry.save()
         for photo in entry_form.cleaned_data['photos']:
             PatientRecordImage.objects.create(entry=entry, image=photo)
@@ -2557,6 +2624,8 @@ def doctor_patient_card_detail(request, card_id):
 
     if action == 'delete_entry':
         entry = get_object_or_404(card.record_entries, pk=request.POST.get('entry_id'), doctor=doctor)
+        if is_clinic_manager(request.user) and entry.created_by_id != request.user.id:
+            raise PermissionDenied
         write_audit_log(request, 'Видалено запис із картки', entry)
         entry.delete()
         messages.success(request, 'Запис із картки видалено.')
@@ -2569,6 +2638,8 @@ def doctor_patient_card_detail(request, card_id):
             entry__card=card,
             entry__doctor=doctor,
         )
+        if is_clinic_manager(request.user) and image.entry.created_by_id != request.user.id:
+            raise PermissionDenied
         image.delete()
         write_audit_log(request, 'Видалено фото з картки', card)
         messages.success(request, 'Фотографію видалено.')
@@ -2581,6 +2652,8 @@ def doctor_patient_card_detail(request, card_id):
             entry__card=card,
             entry__doctor=doctor,
         )
+        if is_clinic_manager(request.user) and video.entry.created_by_id != request.user.id:
+            raise PermissionDenied
         video.delete()
         write_audit_log(request, 'Видалено відео з картки', card)
         messages.success(request, 'Відео видалено.')
@@ -2605,7 +2678,7 @@ def doctor_patient_card_detail(request, card_id):
             'card': card,
             'form': form,
             'entry_form': entry_form,
-            'record_entries': card.record_entries.select_related('appointment__service').prefetch_related(
+            'record_entries': card.record_entries.select_related('appointment__service', 'created_by', 'doctor__user').prefetch_related(
                 'images',
                 'videos',
             ),
@@ -2869,6 +2942,96 @@ def doctor_news(request):
     )
 
 
+@clinic_manager_required
+def clinic_dashboard(request):
+    refresh_completed_appointments()
+    tab = request.GET.get('tab', 'schedule')
+    if tab not in {'schedule', 'requests', 'patients', 'doctors'}:
+        tab = 'schedule'
+    selected_date = parse_date(request.GET.get('date'))
+    query = request.GET.get('q', '').strip()[:200]
+    doctor_id = request.GET.get('doctor', '')
+    doctor_id = doctor_id if doctor_id.isdecimal() else ''
+    doctors = Doctor.objects.filter(user__is_active=True).select_related('user').order_by('user__last_name', 'user__first_name')
+    appointments = Appointment.objects.select_related('doctor__user', 'service', 'patient')
+    cards = DoctorPatientCard.objects.select_related('doctor__user', 'patient')
+    if doctor_id:
+        appointments = appointments.filter(doctor_id=doctor_id)
+        cards = cards.filter(doctor_id=doctor_id)
+    if query:
+        for term in query.split():
+            appointments = appointments.filter(
+                Q(patient_first_name__icontains=term) | Q(patient_last_name__icontains=term)
+                | Q(patient_phone__icontains=term) | Q(service__name__icontains=term)
+            )
+            cards = cards.filter(
+                Q(patient_first_name__icontains=term) | Q(patient_last_name__icontains=term)
+                | Q(patient_phone__icontains=term)
+            )
+            doctors = doctors.filter(Q(user__first_name__icontains=term) | Q(user__last_name__icontains=term) | Q(specialization__icontains=term))
+    status = request.GET.get('status', '')
+    if tab == 'requests':
+        rows = appointments.filter(status=Appointment.STATUS_PENDING).order_by('date', 'time')
+    elif tab == 'patients':
+        rows = cards.order_by('patient_last_name', 'patient_first_name', 'doctor_id')
+    elif tab == 'doctors':
+        rows = doctors
+    else:
+        rows = appointments.filter(date=selected_date).order_by('time', 'doctor_id')
+        if status in dict(Appointment.STATUS_CHOICES):
+            rows = rows.filter(status=status)
+    page = Paginator(rows, 25).get_page(request.GET.get('page'))
+    params = request.GET.copy()
+    params.pop('page', None)
+    return render(request, 'clinic/clinic_dashboard.html', {
+        'tab': tab, 'page': page, 'filter_query': params.urlencode(),
+        'query': query, 'selected_date': selected_date, 'selected_doctor': doctor_id,
+        'doctors': Doctor.objects.filter(user__is_active=True).select_related('user'),
+        'status_choices': Appointment.STATUS_CHOICES, 'selected_status': status,
+        'today_count': Appointment.objects.filter(date=timezone.localdate(), status=Appointment.STATUS_APPROVED).count(),
+        'patient_count': DoctorPatientCard.objects.count(),
+        'doctor_count': Doctor.objects.filter(user__is_active=True).count(),
+        'previous_date': selected_date - timedelta(days=1),
+        'next_date': selected_date + timedelta(days=1),
+    })
+
+
+@admin_required
+def admin_add_clinic_admin(request):
+    form = ClinicAdminCreateForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        with transaction.atomic():
+            user = form.save()
+            write_audit_log(request, 'Створено адміністратора клініки', user)
+        messages.success(request, f'Адміністратора створено. Логін: {user.username}')
+        return redirect('admin_panel')
+    return render(request, 'clinic/clinic_admin_form.html', {'form': form, 'creating_admin': True})
+
+
+@clinic_manager_required
+def clinic_admin_profile(request):
+    if request.user.is_staff:
+        return redirect('admin_panel')
+    form = ClinicAdminProfileForm(request.POST or None, request.FILES or None, instance=request.user.profile)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        write_audit_log(request, 'Оновлено власний профіль адміністратора', request.user)
+        messages.success(request, 'Профіль збережено.')
+        return redirect('clinic_admin_profile')
+    return render(request, 'clinic/clinic_admin_form.html', {'form': form})
+
+
+@clinic_manager_required
+def clinic_admin_password(request):
+    form = PasswordChangeForm(request.user, request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        user = form.save()
+        update_session_auth_hash(request, user)
+        messages.success(request, 'Пароль змінено.')
+        return redirect('clinic_dashboard')
+    return render(request, 'clinic/change_password.html', {'form': form})
+
+
 @admin_required
 def admin_panel(request):
     refresh_completed_appointments()
@@ -2900,7 +3063,7 @@ def admin_panel(request):
     )
 
 
-@admin_required
+@clinic_manager_required
 def admin_telegram_broadcast(request):
     connections = (
         TelegramConnection.objects.filter(is_active=True, user__is_active=True)
@@ -3106,14 +3269,15 @@ def admin_content(request):
     )
 
 
-@admin_required
+@clinic_manager_required
 def admin_add_doctor(request):
     form = AdminDoctorCreateForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
-        user = form.save()
+        with transaction.atomic():
+            user = form.save()
         write_audit_log(request, 'Додано лікаря', user.doctor_profile)
         messages.success(request, f'Лікаря додано. Логін для входу: {user.username}')
-        return redirect('admin_panel')
+        return redirect('admin_panel' if request.user.is_staff else 'clinic_dashboard')
     return render(request, 'clinic/admin_add_doctor.html', {'form': form})
 
 

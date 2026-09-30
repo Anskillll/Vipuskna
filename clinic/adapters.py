@@ -29,7 +29,7 @@ class ClinicSocialAccountAdapter(DefaultSocialAccountAdapter):
             raise ImmediateHttpResponse(redirect('home'))
 
         profile = getattr(existing_user, 'profile', None)
-        if profile and profile.role == Profile.ROLE_DOCTOR:
+        if profile and profile.role in {Profile.ROLE_DOCTOR, Profile.ROLE_CLINIC_ADMIN}:
             messages.error(
                 request,
                 'Лікар входить лише за логіном і паролем, не через Google.',

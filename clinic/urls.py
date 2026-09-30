@@ -4,6 +4,10 @@ from . import views
 
 
 urlpatterns = [
+    path('clinic/', views.clinic_dashboard, name='clinic_dashboard'),
+    path('clinic/profile/', views.clinic_admin_profile, name='clinic_admin_profile'),
+    path('clinic/password/', views.clinic_admin_password, name='clinic_admin_password'),
+    path('panel/administrators/add/', views.admin_add_clinic_admin, name='admin_add_clinic_admin'),
     path('private-media/<path:path>', views.private_media, name='private_media'),
     path('', views.home, name='home'),
     path('login/', views.login_view, name='patient_login'),

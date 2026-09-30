@@ -114,6 +114,7 @@ TEMPLATES = [
                 'clinic.context_processors.clinic_branding',
                 'clinic.context_processors.doctor_visit_status',
                 'clinic.context_processors.telegram_status',
+                'clinic.context_processors.clinic_management',
             ],
         },
     },

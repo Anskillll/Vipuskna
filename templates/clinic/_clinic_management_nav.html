@@ -1,0 +1,8 @@
+<nav class="page-tabs clinic-management-tabs" aria-label="Керування клінікою">
+  <a class="page-tab{% if tab == 'schedule' %} active{% endif %}" href="{% url 'clinic_dashboard' %}">Розклад</a>
+  <a class="page-tab{% if tab == 'requests' %} active{% endif %}" href="{% url 'clinic_dashboard' %}?tab=requests">Заявки {% if clinic_pending_count %}<span class="account-request-count">{{ clinic_pending_count }}</span>{% endif %}</a>
+  <a class="page-tab{% if tab == 'patients' %} active{% endif %}" href="{% url 'clinic_dashboard' %}?tab=patients">Пацієнти</a>
+  <a class="page-tab{% if tab == 'doctors' %} active{% endif %}" href="{% url 'clinic_dashboard' %}?tab=doctors">Лікарі</a>
+  <a class="page-tab{% if request.resolver_match.url_name == 'admin_telegram_broadcast' %} active{% endif %}" href="{% url 'admin_telegram_broadcast' %}">Telegram-бот</a>
+  {% if user.is_staff %}<a class="page-tab" href="{% url 'admin_panel' %}">Модерація</a>{% endif %}
+</nav>

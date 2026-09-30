@@ -12,6 +12,7 @@
       </div>
     </section>
 
+    {% if user.is_staff %}
     <nav class="page-tabs admin-tabs" aria-label="Розділи панелі адміністратора">
       <a class="page-tab" href="{% url 'admin_panel' %}">Огляд</a>
       <a class="page-tab" href="{% url 'admin_add_doctor' %}">Додати лікаря</a>
@@ -19,6 +20,7 @@
       <a class="page-tab active" href="{% url 'admin_telegram_broadcast' %}">Telegram-повідомлення</a>
       <a class="page-tab" href="/admin/">Системні налаштування</a>
     </nav>
+    {% else %}{% include 'clinic/_clinic_management_nav.html' %}{% endif %}
 
     <div class="admin-broadcast-count" aria-label="Кількість доступних адресатів">
       <strong>{{ connected_count }}</strong>

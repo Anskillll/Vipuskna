@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 
 from django import forms
 from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth.forms import UserCreationForm
+from django.db import transaction
 from django.utils import timezone
 
 from .models import (
@@ -962,6 +964,56 @@ class AdminDoctorCreateForm(FormStyleMixin, forms.Form):
         return user
 
 
+class ClinicAdminCreateForm(FormStyleMixin, UserCreationForm):
+    first_name = forms.CharField(label="Ім’я", max_length=150)
+    last_name = forms.CharField(label='Прізвище', max_length=150)
+    phone = forms.CharField(label='Телефон', validators=[validate_ukrainian_phone])
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = ('username', 'first_name', 'last_name', 'phone')
+
+    def clean_username(self):
+        username = super().clean_username()
+        if User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError('Такий логін уже використовується.')
+        return username
+
+    @transaction.atomic
+    def save(self):
+        user = super().save()
+        Profile.objects.create(
+            user=user, role=Profile.ROLE_CLINIC_ADMIN,
+            phone=normalize_phone_number(self.cleaned_data['phone']),
+        )
+        return user
+
+
+class ClinicAdminProfileForm(FormStyleMixin, forms.ModelForm):
+    first_name = forms.CharField(label="Ім’я", max_length=150)
+    last_name = forms.CharField(label='Прізвище', max_length=150)
+
+    class Meta:
+        model = Profile
+        fields = ('first_name', 'last_name', 'phone', 'photo')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['first_name'].initial = self.instance.user.first_name
+        self.fields['last_name'].initial = self.instance.user.last_name
+
+    def clean_phone(self):
+        return normalize_phone_number(self.cleaned_data['phone'])
+
+    @transaction.atomic
+    def save(self):
+        profile = super().save()
+        profile.user.first_name = self.cleaned_data['first_name']
+        profile.user.last_name = self.cleaned_data['last_name']
+        profile.user.save(update_fields=['first_name', 'last_name'])
+        return profile
+
+
 class AdminUserEditForm(FormStyleMixin, forms.Form):
     username = forms.CharField(label='Логін', max_length=150)
     first_name = forms.CharField(label="Ім'я", max_length=80)
@@ -1026,7 +1078,7 @@ class TelegramConnectionChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, connection):
         user = connection.user
         name = user.get_full_name().strip() or user.username
-        role = 'Адміністратор' if user.is_staff else getattr(
+        role = 'Головний модератор' if user.is_staff else getattr(
             getattr(user, 'profile', None),
             'get_role_display',
             lambda: 'Користувач',

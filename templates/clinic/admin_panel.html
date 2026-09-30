@@ -1,6 +1,6 @@
 {% extends 'clinic/base.html' %}
 
-{% block title %}Панель адміністратора - MedClinic{% endblock %}
+{% block title %}Головний модератор - MedClinic{% endblock %}
 
 {% block content %}
   <div class="admin-dashboard">
@@ -16,6 +16,8 @@
       <a class="page-tab" href="{% url 'admin_content' %}">Контент сайту</a>
       <a class="page-tab" href="{% url 'admin_telegram_broadcast' %}">Telegram-повідомлення</a>
       <a class="page-tab" href="/admin/">Системні налаштування</a>
+      <a class="page-tab" href="{% url 'admin_add_clinic_admin' %}">Додати адміністратора</a>
+      <a class="page-tab" href="{% url 'clinic_dashboard' %}">Прийоми клініки</a>
     </nav>
 
     <section class="admin-summary-grid" aria-label="Стан клініки">
@@ -77,7 +79,7 @@
           </thead>
           <tbody>
             {% for item in users %}
-              <tr data-live-filter-item data-filter-extra="{{ item.get_full_name|escape }} {{ item.username|escape }} {{ item.profile.phone|escape }} {% if item.is_staff %}адміністратор{% elif item.profile %}{{ item.profile.get_role_display|escape }}{% endif %} {% if item.is_active %}активний{% else %}архівований{% endif %}">
+              <tr data-live-filter-item data-filter-extra="{{ item.get_full_name|escape }} {{ item.username|escape }} {{ item.profile.phone|escape }} {% if item.is_staff %}головний модератор{% elif item.profile %}{{ item.profile.get_role_display|escape }}{% endif %} {% if item.is_active %}активний{% else %}архівований{% endif %}">
                 <td>
                   <div class="admin-user-identity">
                     <strong>{{ item.get_full_name|default:item.username }}</strong>
@@ -86,7 +88,7 @@
                 </td>
                 <td>
                   {% if item.is_staff %}
-                    <span class="admin-role admin-role-staff">Адміністратор</span>
+                    <span class="admin-role admin-role-staff">Головний модератор</span>
                   {% elif item.profile %}
                     <span class="admin-role">{{ item.profile.get_role_display }}</span>
                   {% else %}

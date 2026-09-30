@@ -92,7 +92,7 @@ def telegram_status(request):
     except Profile.DoesNotExist:
         role = Profile.ROLE_DOCTOR if hasattr(request.user, 'doctor_profile') else None
 
-    eligible = role == Profile.ROLE_DOCTOR
+    eligible = role in {Profile.ROLE_DOCTOR, Profile.ROLE_CLINIC_ADMIN}
     if role == Profile.ROLE_PATIENT:
         eligible = SocialAccount.objects.filter(user=request.user, provider='google').exists()
 
@@ -100,3 +100,14 @@ def telegram_status(request):
     context['telegram_connected'] = connected
     context['telegram_show_connect'] = eligible and not connected
     return context
+
+
+def clinic_management(request):
+    user = request.user
+    manager = user.is_authenticated and user.is_active and (
+        user.is_staff or getattr(getattr(user, 'profile', None), 'role', None) == Profile.ROLE_CLINIC_ADMIN
+    )
+    return {
+        'clinic_manager': manager,
+        'clinic_pending_count': Appointment.objects.filter(status=Appointment.STATUS_PENDING).count() if manager else 0,
+    }

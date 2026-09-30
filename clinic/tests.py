@@ -2243,7 +2243,7 @@ class ClinicModelTests(TestCase):
         )
         self.assertContains(
             response,
-            'У цей день ви не приймаєте. Оберіть робочий день у календарі.',
+            'У цей день лікар не приймає. Оберіть робочий день у календарі.',
         )
 
     def test_patient_does_not_choose_appointment_duration(self):
@@ -4250,7 +4250,7 @@ class ClinicModelTests(TestCase):
 
         response = self.client.get(reverse('home'))
 
-        self.assertContains(response, 'Перейти до панелі адміністратора')
+        self.assertContains(response, 'Перейти до кабінету модератора')
         self.assertContains(response, reverse('admin_panel'))
         self.assertNotContains(response, 'Переглянути лікарів')
 
@@ -4327,7 +4327,7 @@ class ClinicModelTests(TestCase):
 
         response = self.client.get(reverse('admin_telegram_broadcast'))
 
-        self.assertRedirects(response, reverse('administration_login'))
+        self.assertEqual(response.status_code, 403)
 
     @override_settings(
         TELEGRAM_BOT_TOKEN='test-token',
