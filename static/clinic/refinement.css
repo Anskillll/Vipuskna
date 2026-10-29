@@ -219,6 +219,10 @@ body:not(.public-home-page) .admin-tabs .page-tab {
   flex: 0 0 auto;
   white-space: nowrap;
 }
+body:not(.public-home-page) .admin-dashboard {
+  grid-template-columns: minmax(0, 1fr);
+}
+body:not(.public-home-page) .admin-dashboard > * { min-width: 0; }
 body:not(.public-home-page) .admin-tabs-head {
   align-items: center;
   height: 40px;
@@ -503,8 +507,8 @@ body:not(.public-home-page) .service-manager-item.editing {
   white-space: normal;
 }
 .account-menu-heading { display: grid; gap: 3px; padding: 10px 11px 12px; border-bottom: 1px solid #e4ebe6; }
-.account-menu-heading strong { overflow: hidden; font-size: 14px; text-overflow: ellipsis; }
-.account-menu-heading > span { color: #6a8078; font-size: 11px; }
+.account-menu-heading strong { min-width: 0; font-size: 14px; line-height: 1.3; overflow-wrap: anywhere; }
+.account-menu-heading > span { min-width: 0; color: #6a8078; font-size: 11px; line-height: 1.35; overflow-wrap: anywhere; }
 .account-menu-profile-link { color: #193d3b; text-decoration: none; transition: background 150ms ease, color 150ms ease; }
 .account-menu-profile-link:hover,
 .account-menu-profile-link:focus-visible { border-radius: 10px; background: #edf4ee; color: #115752; }
@@ -531,6 +535,14 @@ body:not(.public-home-page) .service-manager-item.editing {
 .account-menu-panel > form > button:hover,
 .account-menu-panel > a:focus-visible,
 .account-menu-panel > form > button:focus-visible { background: #edf4ee; color: #174943; }
+.account-menu-panel > a.account-menu-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  justify-items: start;
+  gap: 3px;
+  white-space: normal;
+}
 .account-menu-panel > form { margin: 0; }
 .account-menu-panel .account-menu-logout { margin-top: 5px; border-top: 1px solid #e4ebe6; border-radius: 0 0 10px 10px; color: #8a4c43; }
 .account-menu-toggle:focus-visible { outline: 3px solid #c6e9cf; outline-offset: 3px; }
@@ -922,6 +934,9 @@ body:not(.public-home-page) .nav .account-menu-panel > form > button:focus-visib
   transform: none;
 }
 body:not(.public-home-page) .nav .account-menu-panel > a.account-menu-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  white-space: normal;
   min-height: 0;
   padding: 10px 11px 12px;
   border: 0;
