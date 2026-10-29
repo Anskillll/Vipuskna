@@ -1,6 +1,6 @@
 {% extends 'clinic/base.html' %}
 
-{% block title %}Картка пацієнта - MedClinic{% endblock %}
+{% block title %}Картка пацієнта - {{ clinic_branding.clinic_name }}{% endblock %}
 
 {% block content %}
   <div class="profile-back-row">
@@ -85,7 +85,17 @@
       <div class="live-filter-bar">
         <div class="live-filter-field">
           <label for="record-entry-search">Фільтр записів картки</label>
-          <input id="record-entry-search" type="search" placeholder="Тип, заголовок, текст, рекомендація або дата" autocomplete="off" data-live-filter-input>
+          <div class="live-filter-input-row">
+            <input id="record-entry-search" type="search" placeholder="Тип, заголовок, текст, рекомендація або дата" autocomplete="off" data-live-filter-input>
+            <button
+              class="live-filter-clear"
+              type="button"
+              title="Очистити фільтр"
+              aria-label="Очистити фільтр"
+              data-live-filter-clear
+              disabled
+            ><span aria-hidden="true">{% include 'clinic/_icon.html' with name='close' %}</span></button>
+          </div>
         </div>
         <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
       </div>
@@ -157,7 +167,17 @@
       <div class="live-filter-bar">
         <div class="live-filter-field">
           <label for="patient-history-search">Фільтр історії</label>
-          <input id="patient-history-search" type="search" placeholder="Дата, час, послуга, статус або причина" autocomplete="off" data-live-filter-input>
+          <div class="live-filter-input-row">
+            <input id="patient-history-search" type="search" placeholder="Дата, час, послуга, статус або причина" autocomplete="off" data-live-filter-input>
+            <button
+              class="live-filter-clear"
+              type="button"
+              title="Очистити фільтр"
+              aria-label="Очистити фільтр"
+              data-live-filter-clear
+              disabled
+            ><span aria-hidden="true">{% include 'clinic/_icon.html' with name='close' %}</span></button>
+          </div>
         </div>
         <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
       </div>

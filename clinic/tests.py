@@ -9,11 +9,11 @@ from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.db import DatabaseError, IntegrityError
-from django.test import TestCase, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -72,6 +72,7 @@ from .views import (
     appointment_conflicts,
     next_working_date,
     patient_appointment_conflicts,
+    private_media,
 )
 from .telegram import (
     create_link_url,
@@ -460,7 +461,7 @@ class ClinicModelTests(TestCase):
     def test_site_and_admin_use_ukrainian_language(self):
         self.assertEqual(settings.LANGUAGE_CODE, 'uk')
         self.assertEqual(settings.LANGUAGES, [('uk', 'Українська')])
-        self.assertEqual(admin.site.site_header, 'Адміністрування MedClinic')
+        self.assertEqual(admin.site.site_header, 'Адміністрування клініки')
         self.assertEqual(Doctor._meta.get_field('specialization').verbose_name, 'Спеціальність')
         self.assertEqual(Appointment._meta.get_field('patient_first_name').verbose_name, "Ім'я пацієнта")
 
@@ -474,7 +475,7 @@ class ClinicModelTests(TestCase):
         self.client.login(username='patient@test.local', password='pass12345')
         response = self.client.get(reverse('admin:index'))
 
-        self.assertContains(response, 'Адміністрування MedClinic')
+        self.assertContains(response, 'Адміністрування клініки')
         self.assertContains(response, 'Керування клінікою')
         admin_content = response.content.decode()
         self.assertNotIn('chief-admin-navigation', admin_content)
@@ -5389,3 +5390,93 @@ class ClinicModelTests(TestCase):
         self.assertContains(response, 'data-admin-login-dialog')
         self.assertContains(response, 'data-auto-open="true"')
         self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_guest_booking_actions_open_booking_for_selected_doctor(self):
+        booking_url = f'{reverse("booking")}?doctor={self.doctor.pk}'
+        for url in (
+            reverse('doctors'),
+            reverse('doctor_detail', args=[self.doctor.pk]),
+            reverse('service_detail', args=[self.doctor.pk, self.service.pk]),
+        ):
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertContains(response, booking_url.replace('&', '&amp;'))
+                self.assertNotContains(response, 'Увійти для запису')
+
+    def test_doctor_profile_counts_only_working_days(self):
+        WorkSchedule.objects.create(
+            doctor=self.doctor,
+            weekday=(self.schedule.weekday + 1) % 7,
+            is_working=False,
+        )
+        response = self.client.get(reverse('doctor_detail', args=[self.doctor.pk]))
+        self.assertEqual(response.context['working_schedule_count'], 1)
+        self.assertContains(response, 'Прийом не ведеться')
+
+    def test_brand_and_home_contacts_follow_clinic_settings(self):
+        ClinicSettings.objects.update_or_create(
+            pk=1,
+            defaults={
+                'clinic_name': 'Clinic & Smile',
+                'contact_address_1': 'Київ, вул. Нова, 10',
+                'contact_address_2': '',
+                'contact_phone': '+38 (067) 123-45-67',
+            },
+        )
+        home = self.client.get(reverse('home'))
+        self.assertContains(home, '<title>Clinic &amp; Smile</title>')
+        self.assertContains(home, 'Київ, вул. Нова, 10')
+        self.assertNotContains(home, 'Нікополь, вул. Шевченка, 200')
+        self.assertContains(home, 'href="tel:+380671234567"')
+        self.assertContains(home, '+38 (067) 123-45-67')
+        doctors = self.client.get(reverse('doctors'))
+        self.assertContains(doctors, '<title>Лікарі - Clinic &amp; Smile</title>')
+        bot = Mock()
+        process_update({'message': {'chat': {'id': 123, 'type': 'private'}, 'text': '/help'}}, client=bot)
+        self.assertIn('Clinic &amp; Smile', bot.send_message.call_args.args[1])
+        self.assertIn('contact_phone', ClinicSettingsForm().fields)
+
+    def test_patient_photo_is_private_to_owner_care_team_and_manager(self):
+        relative_path = 'patient_photos/tests/secure-profile.gif'
+        file_path = Path(settings.PRIVATE_MEDIA_ROOT) / relative_path
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_bytes(b'GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff;')
+        try:
+            profile = self.patient.profile
+            profile.photo = relative_path
+            profile.save(update_fields=['photo'])
+            url = profile.photo.url
+            self.assertEqual(url, f'/private-media/{relative_path}')
+            self.assertEqual(self.client.get(url).status_code, 403)
+            self.assertIn(self.client.get(f'/media/{relative_path}').status_code, {403, 404})
+
+            unrelated = User.objects.create_user('unrelated-photo', password='pass12345')
+            Profile.objects.create(user=unrelated, role=Profile.ROLE_PATIENT)
+            manager = User.objects.create_superuser('photo-manager', password='pass12345')
+            factory = RequestFactory()
+
+            def request_for(user):
+                request = factory.get(url)
+                request.user = user
+                return request
+
+            with self.assertRaises(PermissionDenied):
+                private_media(request_for(unrelated), relative_path)
+            with self.assertRaises(PermissionDenied):
+                private_media(request_for(self.doctor.user), relative_path)
+
+            DoctorPatientCard.objects.create(
+                doctor=self.doctor,
+                patient=self.patient,
+                patient_first_name=self.patient.first_name,
+                patient_last_name=self.patient.last_name,
+                patient_phone=self.patient.profile.phone,
+            )
+            for user in (self.patient, self.doctor.user, manager):
+                with self.subTest(user=user.username):
+                    response = private_media(request_for(user), relative_path)
+                    self.assertEqual(response.status_code, 200)
+                    self.assertEqual(b''.join(response.streaming_content), file_path.read_bytes())
+                    response.file_to_stream.close()
+        finally:
+            file_path.unlink(missing_ok=True)

@@ -1,7 +1,7 @@
 {% extends 'clinic/base.html' %}
 {% load static %}
 
-{% block title %}{{ doctor.full_name }} - MedClinic{% endblock %}
+{% block title %}{{ doctor.full_name }} - {{ clinic_branding.clinic_name }}{% endblock %}
 
 {% block content %}
   {% with schedules=doctor.schedules.all services=doctor.services.all %}
@@ -46,14 +46,14 @@
           </div>
         {% elif not user.is_authenticated %}
           <div class="doctor-profile-actions">
-            <a class="btn" href="{% url 'google_login' %}">Увійти для запису</a>
+            <a class="btn" href="{% url 'booking' %}?doctor={{ doctor.id }}">Записатися на прийом</a>
           </div>
         {% endif %}
       </div>
 
       <div class="doctor-profile-metrics" aria-label="Інформація про профіль лікаря">
         <div class="doctor-profile-metric">
-          <strong>{{ schedules|length }}</strong>
+          <strong>{{ working_schedule_count }}</strong>
           <span>днів у графіку</span>
         </div>
         <div class="doctor-profile-metric">

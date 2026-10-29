@@ -1146,7 +1146,10 @@ class AdminTelegramBroadcastForm(FormStyleMixin, forms.Form):
 class ClinicSettingsForm(FormStyleMixin, forms.ModelForm):
     class Meta:
         model = ClinicSettings
-        fields = ['clinic_name', 'logo', 'home_background']
+        fields = [
+            'clinic_name', 'contact_address_1', 'contact_address_2',
+            'contact_phone', 'logo', 'home_background',
+        ]
         widgets = {
             'logo': forms.ClearableFileInput(
                 attrs={'accept': 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg'}

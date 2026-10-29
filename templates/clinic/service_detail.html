@@ -1,6 +1,6 @@
 {% extends 'clinic/base.html' %}
 
-{% block title %}{{ service.name }} - MedClinic{% endblock %}
+{% block title %}{{ service.name }} - {{ clinic_branding.clinic_name }}{% endblock %}
 
 {% block content %}
   <section class="page-head">
@@ -74,7 +74,7 @@
         {% elif user.is_authenticated and user.profile.role == 'patient' %}
           <a class="btn" href="{% url 'booking' %}?doctor={{ doctor.id }}">Записатися до лікаря</a>
         {% elif not user.is_authenticated %}
-          <a class="btn" href="{% url 'google_login' %}">Увійти для запису</a>
+          <a class="btn" href="{% url 'booking' %}?doctor={{ doctor.id }}">Записатися на прийом</a>
         {% endif %}
       </div>
     {% endif %}

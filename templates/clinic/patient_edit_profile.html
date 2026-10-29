@@ -1,6 +1,6 @@
 {% extends 'clinic/base.html' %}
 
-{% block title %}Редагувати профіль - MedClinic{% endblock %}
+{% block title %}Редагувати профіль - {{ clinic_branding.clinic_name }}{% endblock %}
 
 {% block content %}
   <a class="back-link" href="{% url 'patient_dashboard' %}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до мого кабінету</a>

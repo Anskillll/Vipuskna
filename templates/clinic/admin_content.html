@@ -1,6 +1,6 @@
 {% extends 'clinic/base.html' %}
 
-{% block title %}{% if user.is_staff %}Оформлення клініки{% else %}Контент сайту{% endif %} - MedClinic{% endblock %}
+{% block title %}{% if user.is_staff %}Оформлення клініки{% else %}Контент сайту{% endif %} - {{ clinic_branding.clinic_name }}{% endblock %}
 {% block body_class %}admin-content-page{% endblock %}
 
 {% block content %}
@@ -48,7 +48,7 @@
         <div>
           <span class="content-admin-step">01</span>
           <h2>Оформлення клініки</h2>
-          <p>Назва, логотип і фон клініки.</p>
+          <p>Назва, контакти, логотип і фон клініки.</p>
         </div>
       </header>
       <div class="content-admin-branding-grid">
@@ -166,7 +166,17 @@
             <div class="live-filter-bar">
               <div class="live-filter-field">
                 <label for="admin-news-search">Знайти новину</label>
-                <input id="admin-news-search" type="search" placeholder="Заголовок, текст, лікар або статус" autocomplete="off" data-live-filter-input>
+                <div class="live-filter-input-row">
+                  <input id="admin-news-search" type="search" placeholder="Заголовок, текст, лікар або статус" autocomplete="off" data-live-filter-input>
+                  <button
+                    class="live-filter-clear"
+                    type="button"
+                    title="Очистити фільтр"
+                    aria-label="Очистити фільтр"
+                    data-live-filter-clear
+                    disabled
+                  ><span aria-hidden="true">{% include 'clinic/_icon.html' with name='close' %}</span></button>
+                </div>
               </div>
               <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
             </div>
@@ -239,7 +249,17 @@
             <div class="live-filter-bar">
               <div class="live-filter-field">
                 <label for="admin-gallery-search">Знайти фотографію</label>
-                <input id="admin-gallery-search" type="search" placeholder="Назва або підпис фотографії" autocomplete="off" data-live-filter-input>
+                <div class="live-filter-input-row">
+                  <input id="admin-gallery-search" type="search" placeholder="Назва або підпис фотографії" autocomplete="off" data-live-filter-input>
+                  <button
+                    class="live-filter-clear"
+                    type="button"
+                    title="Очистити фільтр"
+                    aria-label="Очистити фільтр"
+                    data-live-filter-clear
+                    disabled
+                  ><span aria-hidden="true">{% include 'clinic/_icon.html' with name='close' %}</span></button>
+                </div>
               </div>
               <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
             </div>

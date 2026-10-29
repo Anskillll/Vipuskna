@@ -1,7 +1,7 @@
 {% extends 'clinic/base.html' %}
 {% load static %}
 
-{% block title %}Заявка {{ appointment.id }} - MedClinic{% endblock %}
+{% block title %}Заявка {{ appointment.id }} - {{ clinic_branding.clinic_name }}{% endblock %}
 
 {% block content %}
   <section class="page-head appointment-detail-head">

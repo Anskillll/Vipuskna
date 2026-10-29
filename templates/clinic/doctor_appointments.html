@@ -1,7 +1,7 @@
 {% extends 'clinic/base.html' %}
 {% load static %}
 
-{% block title %}Заявки та прийоми - MedClinic{% endblock %}
+{% block title %}Заявки та прийоми - {{ clinic_branding.clinic_name }}{% endblock %}
 
 {% block content %}
   {% include 'clinic/_doctor_dashboard_tabs.html' with doctor_tab='appointments' %}

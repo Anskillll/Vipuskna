@@ -13,6 +13,7 @@ from django.utils import timezone
 from .models import (
     Appointment,
     AuditLog,
+    current_clinic_name,
     TelegramConnection,
     TelegramLoginChallenge,
     TelegramLinkToken,
@@ -31,6 +32,10 @@ PATIENT_LOGIN_CALLBACK_PREFIX = 'patient_login'
 
 class TelegramError(Exception):
     pass
+
+
+def _clinic_name_html():
+    return html.escape(current_clinic_name())
 
 
 class TelegramBotClient:
@@ -220,7 +225,7 @@ def create_phone_login_challenge(user):
 
     requested_at = timezone.localtime(now).strftime('%d.%m.%Y о %H:%M')
     text = (
-        '<b>Підтвердження входу в MedClinic</b>\n\n'
+        f'<b>Підтвердження входу в {_clinic_name_html()}</b>\n\n'
         'Надійшов запит на вхід до вашого кабінету за номером телефону.\n'
         f'Час запиту: <b>{requested_at}</b>\n\n'
         'Підтверджуйте вхід лише якщо саме ви щойно відкрили сайт клініки.'
@@ -560,7 +565,7 @@ def process_update(update, client=None):
         reply = (
             'Сповіщення вимкнено. Підключити їх знову можна у своєму кабінеті на сайті.'
             if updated
-            else 'Цей Telegram не підключений до MedClinic.'
+            else f'Цей Telegram не підключений до {_clinic_name_html()}.'
         )
         client.send_message(chat_id, reply)
         return bool(updated)
@@ -574,7 +579,7 @@ def process_update(update, client=None):
         if connection is not None:
             client.send_message(
                 chat_id,
-                '<b>Ви вже зареєстровані в MedClinic.</b>\n'
+                f'<b>Ви вже зареєстровані в {_clinic_name_html()}.</b>\n'
                 'Telegram-сповіщення про записи та нагадування увімкнені.',
             )
             return True
@@ -582,7 +587,7 @@ def process_update(update, client=None):
     if text in {'/help', '/start'}:
         client.send_message(
             chat_id,
-            'Щоб підключити сповіщення, відкрийте свій кабінет MedClinic та натисніть '
+            f'Щоб підключити сповіщення, відкрийте свій кабінет {_clinic_name_html()} та натисніть '
             '«Приєднати Telegram-бота».',
         )
         return False
@@ -609,7 +614,7 @@ def process_update(update, client=None):
         if occupied and occupied.is_active:
             client.send_message(
                 chat_id,
-                'Цей Telegram уже підключений до іншого профілю MedClinic. '
+                f'Цей Telegram уже підключений до іншого профілю {_clinic_name_html()}. '
                 'Спочатку надішліть боту команду /stop.',
             )
             return False
@@ -630,7 +635,7 @@ def process_update(update, client=None):
 
     client.send_message(
         chat_id,
-        '<b>Telegram успішно підключено до MedClinic.</b>\n'
+        f'<b>Telegram успішно підключено до {_clinic_name_html()}.</b>\n'
         'Тепер сюди надходитимуть повідомлення про записи та нагадування.',
     )
     return True

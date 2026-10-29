@@ -1,6 +1,6 @@
 {% extends 'clinic/base.html' %}
 
-{% block title %}Кабінет лікаря - MedClinic{% endblock %}
+{% block title %}Кабінет лікаря - {{ clinic_branding.clinic_name }}{% endblock %}
 
 {% block content %}
   {% include 'clinic/_doctor_dashboard_tabs.html' with doctor_tab='overview' %}

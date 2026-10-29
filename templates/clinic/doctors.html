@@ -1,6 +1,6 @@
 {% extends 'clinic/base.html' %}
 
-{% block title %}Лікарі - MedClinic{% endblock %}
+{% block title %}Лікарі - {{ clinic_branding.clinic_name }}{% endblock %}
 
 {% block content %}
   <section class="page-head">
@@ -15,14 +15,24 @@
       <div class="live-filter-bar">
         <div class="live-filter-field">
           <label for="doctor-search">Фільтр лікарів</label>
-          <input
-            id="doctor-search"
-            type="search"
-            value="{{ query }}"
-            placeholder="Ім'я, спеціальність або місто"
-            autocomplete="off"
-            data-live-filter-input
-          >
+          <div class="live-filter-input-row">
+            <input
+              id="doctor-search"
+              type="search"
+              value="{{ query }}"
+              placeholder="Ім'я, спеціальність або місто"
+              autocomplete="off"
+              data-live-filter-input
+            >
+            <button
+              class="live-filter-clear"
+              type="button"
+              title="Очистити фільтр"
+              aria-label="Очистити фільтр"
+              data-live-filter-clear
+              disabled
+            ><span aria-hidden="true">{% include 'clinic/_icon.html' with name='close' %}</span></button>
+          </div>
         </div>
         <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
       </div>
@@ -51,8 +61,8 @@
           <a class="btn secondary" href="{% url 'doctor_detail' doctor.id %}">Детальніше</a>
           {% if user.is_authenticated and user.profile.role == 'patient' %}
             <a class="btn" href="{% url 'booking' %}?doctor={{ doctor.id }}">Записатися</a>
-          {% else %}
-            <a class="btn" href="{% url 'home' %}">Увійти для запису</a>
+          {% elif not user.is_authenticated %}
+            <a class="btn" href="{% url 'booking' %}?doctor={{ doctor.id }}">Записатися</a>
           {% endif %}
         </div>
       </article>

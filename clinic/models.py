@@ -53,6 +53,7 @@ class Profile(models.Model):
     photo = models.ImageField(
         'Фото профілю',
         upload_to='patient_photos/',
+        storage=private_media_storage,
         validators=[validate_image_upload],
         blank=True,
     )
@@ -964,6 +965,18 @@ class ClinicSettings(models.Model):
     ]
 
     clinic_name = models.CharField('Назва клініки', max_length=120, default='MedClinic')
+    contact_address_1 = models.CharField(
+        'Перша адреса клініки', max_length=200, blank=True,
+        default='Нікополь, вул. Шевченка, 200',
+    )
+    contact_address_2 = models.CharField(
+        'Друга адреса клініки', max_length=200, blank=True,
+        default='Дніпро, вул. Гусенка, 17',
+    )
+    contact_phone = models.CharField(
+        'Контактний телефон', max_length=25, blank=True,
+        default='+38 (050) 916-84-26',
+    )
     logo = models.FileField(
         'Логотип клініки',
         upload_to='clinic/branding/',
@@ -990,6 +1003,26 @@ class ClinicSettings(models.Model):
 
     def __str__(self):
         return self.clinic_name
+
+    @property
+    def contact_addresses(self):
+        return [
+            {'label': address, 'maps_url': google_maps_search_url(address)}
+            for address in (self.contact_address_1, self.contact_address_2)
+            if address.strip()
+        ]
+
+    @property
+    def contact_phone_href(self):
+        digits = ''.join(character for character in self.contact_phone if character.isdigit())
+        return f'tel:+{digits}' if digits else ''
+
+
+def current_clinic_name():
+    return (
+        ClinicSettings.objects.filter(pk=1).values_list('clinic_name', flat=True).first()
+        or ClinicSettings._meta.get_field('clinic_name').get_default()
+    )
 
 
 class HomeHeroSlide(models.Model):

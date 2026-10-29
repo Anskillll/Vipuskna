@@ -61,6 +61,7 @@ from .models import (
     AppointmentVideo,
     AuditLog,
     ClinicSettings,
+    current_clinic_name,
     Doctor,
     DoctorPatientCard,
     DoctorWorkplace,
@@ -217,8 +218,12 @@ def private_media(request, path):
     field = None
     appointment = None
     entry = None
+    profile = None
 
-    if path.startswith('appointment_images/'):
+    if path.startswith('patient_photos/'):
+        profile = get_object_or_404(Profile.objects.select_related('user'), photo=path)
+        field = profile.photo
+    elif path.startswith('appointment_images/'):
         item = get_object_or_404(
             AppointmentImage.objects.select_related('appointment__doctor__user'),
             image=path,
@@ -258,6 +263,12 @@ def private_media(request, path):
         raise PermissionDenied
 
     allowed = is_clinic_manager(request.user)
+    if profile:
+        allowed = allowed or profile.user_id == request.user.id
+        if hasattr(request.user, 'doctor_profile'):
+            allowed = allowed or DoctorPatientCard.objects.filter(
+                doctor=request.user.doctor_profile, patient_id=profile.user_id,
+            ).exists()
     has_patient_google = SocialAccount.objects.filter(
         user=request.user,
         provider='google',
@@ -297,6 +308,7 @@ def public_media(request, path):
         'appointment_videos/',
         'patient_records/',
         'patient_record_videos/',
+        'patient_photos/',
     )
     if path.replace('\\', '/').startswith(private_prefixes):
         raise PermissionDenied
@@ -1383,7 +1395,7 @@ def patient_edit_profile(request):
 @patient_required
 def patient_change_password(request):
     if not request.user.has_usable_password():
-        messages.info(request, 'Ви входите через Google, тому окремий пароль MedClinic не потрібен.')
+        messages.info(request, f'Ви входите через Google, тому окремий пароль {current_clinic_name()} не потрібен.')
         return redirect('patient_dashboard')
     form = PasswordChangeForm(request.user, request.POST or None)
     if request.method == 'POST' and form.is_valid():
@@ -1608,6 +1620,7 @@ def doctor_detail(request, doctor_id):
         'clinic/doctor_detail.html',
         {
             'doctor': doctor,
+            'working_schedule_count': sum(schedule.is_working for schedule in doctor.schedules.all()),
             'doctor_news': doctor.news_posts.filter(is_published=True)[:6],
             'booking_return_url': booking_return_url,
         },

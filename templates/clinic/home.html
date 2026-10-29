@@ -127,14 +127,17 @@
         <div class="home-hero-locations">
           <span>Адреси клініки</span>
           <address>
-            <a class="maps-location-link" href="https://www.google.com/maps/search/?api=1&amp;query=Нікополь%2C+вул.+Шевченка%2C+200" target="_blank" rel="noopener noreferrer">Нікополь, вул. Шевченка, 200</a>
-            <a class="maps-location-link" href="https://www.google.com/maps/search/?api=1&amp;query=Дніпро%2C+вул.+Гусенка%2C+17" target="_blank" rel="noopener noreferrer">Дніпро, вул. Гусенка, 17</a>
+            {% for address in clinic_branding.contact_addresses %}
+              <a class="maps-location-link" href="{{ address.maps_url }}" target="_blank" rel="noopener noreferrer">{{ address.label }}</a>
+            {% endfor %}
           </address>
         </div>
-        <a class="home-hero-phone" href="tel:+380509168426" data-home-feedback>
-          <span>Зворотний зв'язок</span>
-          <strong>+38 (050) 916-84-26</strong>
-        </a>
+        {% if clinic_branding.contact_phone_href %}
+          <a class="home-hero-phone" href="{{ clinic_branding.contact_phone_href }}" data-home-feedback>
+            <span>Зворотний зв'язок</span>
+            <strong>{{ clinic_branding.contact_phone }}</strong>
+          </a>
+        {% endif %}
       </div>
 
       <div class="home-slider-controls" data-home-slider-controls>

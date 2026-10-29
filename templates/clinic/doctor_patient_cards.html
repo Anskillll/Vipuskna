@@ -1,6 +1,6 @@
 {% extends 'clinic/base.html' %}
 
-{% block title %}Картки пацієнтів - MedClinic{% endblock %}
+{% block title %}Картки пацієнтів - {{ clinic_branding.clinic_name }}{% endblock %}
 
 {% block content %}
   {% include 'clinic/_doctor_dashboard_tabs.html' with doctor_tab='patients' %}
@@ -9,14 +9,24 @@
     <div class="live-filter-bar">
       <div class="live-filter-field">
         <label for="patient-search">Фільтр пацієнтів</label>
-        <input
-          id="patient-search"
-          type="search"
-          value="{{ query }}"
-          placeholder="Ім'я, прізвище, телефон або вік"
-          autocomplete="off"
-          data-live-filter-input
-        >
+        <div class="live-filter-input-row">
+          <input
+            id="patient-search"
+            type="search"
+            value="{{ query }}"
+            placeholder="Ім'я, прізвище, телефон або вік"
+            autocomplete="off"
+            data-live-filter-input
+          >
+          <button
+            class="live-filter-clear"
+            type="button"
+            title="Очистити фільтр"
+            aria-label="Очистити фільтр"
+            data-live-filter-clear
+            disabled
+          ><span aria-hidden="true">{% include 'clinic/_icon.html' with name='close' %}</span></button>
+        </div>
       </div>
       <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
     </div>

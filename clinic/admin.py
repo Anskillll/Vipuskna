@@ -28,8 +28,8 @@ from .models import (
     WorkSchedule,
 )
 
-admin.site.site_header = 'Адміністрування MedClinic'
-admin.site.site_title = 'Адміністрування MedClinic'
+admin.site.site_header = 'Адміністрування клініки'
+admin.site.site_title = 'Адміністрування клініки'
 admin.site.index_title = 'Керування клінікою'
 
 

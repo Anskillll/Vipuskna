@@ -1,6 +1,6 @@
 {% extends 'clinic/base.html' %}
 
-{% block title %}Мої новини - MedClinic{% endblock %}
+{% block title %}Мої новини - {{ clinic_branding.clinic_name }}{% endblock %}
 
 {% block content %}
   <section class="page-head"><div><h1 class="page-title">Мої новини</h1><p class="page-subtitle">Публікації, які бачать відвідувачі головної сторінки.</p></div></section>
@@ -25,7 +25,17 @@
         <div class="live-filter-bar">
           <div class="live-filter-field">
             <label for="doctor-news-search">Фільтр новин</label>
-            <input id="doctor-news-search" type="search" placeholder="Заголовок, текст, дата або статус" autocomplete="off" data-live-filter-input>
+            <div class="live-filter-input-row">
+              <input id="doctor-news-search" type="search" placeholder="Заголовок, текст, дата або статус" autocomplete="off" data-live-filter-input>
+              <button
+                class="live-filter-clear"
+                type="button"
+                title="Очистити фільтр"
+                aria-label="Очистити фільтр"
+                data-live-filter-clear
+                disabled
+              ><span aria-hidden="true">{% include 'clinic/_icon.html' with name='close' %}</span></button>
+            </div>
           </div>
           <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
         </div>

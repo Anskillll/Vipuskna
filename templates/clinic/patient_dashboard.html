@@ -1,6 +1,6 @@
 {% extends 'clinic/base.html' %}
 
-{% block title %}Кабінет пацієнта - MedClinic{% endblock %}
+{% block title %}Кабінет пацієнта - {{ clinic_branding.clinic_name }}{% endblock %}
 
 {% block content %}
   <div class="patient-dashboard">
@@ -190,7 +190,17 @@
         <div class="live-filter-bar patient-record-filter">
           <div class="live-filter-field">
             <label for="patient-record-search">Знайти матеріал</label>
-            <input id="patient-record-search" type="search" placeholder="Лікар, заголовок, текст або дата" autocomplete="off" data-live-filter-input>
+            <div class="live-filter-input-row">
+              <input id="patient-record-search" type="search" placeholder="Лікар, заголовок, текст або дата" autocomplete="off" data-live-filter-input>
+              <button
+                class="live-filter-clear"
+                type="button"
+                title="Очистити фільтр"
+                aria-label="Очистити фільтр"
+                data-live-filter-clear
+                disabled
+              ><span aria-hidden="true">{% include 'clinic/_icon.html' with name='close' %}</span></button>
+            </div>
           </div>
           <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
         </div>
