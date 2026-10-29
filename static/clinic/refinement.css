@@ -411,19 +411,26 @@ body:not(.public-home-page) .service-manager-item.editing {
   .public-home-page .home-hero-copy { top: 47%; }
   .public-home-page .home-hero-copy .home-hero-wordmark { font-size: clamp(42px, 12vw, 74px); }
   .public-home-page .home-hero-copy .home-hero-wordmark::after { bottom: -20px; height: 15px; }
-  .public-home-page .home-hero-actions { gap: 8px; margin-top: 44px; }
+  .public-home-page .home-hero-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 44px;
+  }
   .public-home-page .home-hero-actions .home-hero-primary-action,
   .public-home-page .home-hero-actions .home-hero-secondary-action {
     min-height: 50px;
     gap: 8px;
     padding: 0 13px;
     font-size: 12px;
-    white-space: nowrap;
+    min-width: 0;
+    line-height: 1.2;
+    text-align: center;
+    white-space: normal;
   }
   .public-home-page .home-hero-actions :is(.home-hero-primary-action, .home-hero-secondary-action) > span { width: 23px; height: 23px; }
 }
 @media (max-width: 350px) {
-  .public-home-page .home-hero-actions { flex-direction: column; }
+  .public-home-page .home-hero-actions { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* Keep the appointment-for-someone-else checkbox against the callout edge. */
