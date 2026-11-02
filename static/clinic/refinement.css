@@ -256,7 +256,7 @@ body:not(.public-home-page) :is(.btn, button):not(.working-date-day):not(.time-p
   border-radius: 12px;
 }
 body:not(.public-home-page) :is(.btn, button) { box-shadow: none; }
-body:not(.public-home-page) :is(input:not([type="checkbox"]), select, textarea) {
+body:not(.public-home-page) :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
   border-radius: 12px;
   border-color: #cfdfd7;
 }

@@ -8,7 +8,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import Appointment, AppointmentImage, AuditLog, Doctor, DoctorPatientCard, PatientRecordEntry, Profile, TelegramConnection
+from .models import Appointment, AppointmentImage, AuditLog, Doctor, DoctorPatientCard, GalleryImage, HomeHeroSlide, NewsPost, PatientRecordEntry, Profile, TelegramConnection
 from . import tests as existing_tests
 
 
@@ -66,6 +66,7 @@ class ClinicManagementTests(TestCase):
 
     def test_chief_creates_nonstaff_admin_with_validated_password(self):
         self.client.force_login(self.chief)
+        self.assertNotContains(self.client.get(reverse('admin_add_clinic_admin')), 'До кабінету')
         data = {'username': 'new-manager', 'first_name': 'Ірина', 'last_name': 'Клініка', 'phone': '0501234567',
                 'password1': 'Violet!74Turbine', 'password2': 'Violet!74Turbine', 'is_staff': '1', 'is_superuser': '1'}
         response = self.client.post(reverse('admin_add_clinic_admin'), data)
@@ -123,22 +124,61 @@ class ClinicManagementTests(TestCase):
 
         self.assertEqual(self.client.post(reverse('admin_content'), {'action': 'save_settings'}).status_code, 403)
 
-    def test_chief_moderator_can_manage_branding_but_not_homepage_content(self):
+    def test_chief_moderator_can_manage_all_site_content(self):
         self.client.force_login(self.chief)
         response = self.client.get(reverse('admin_content'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Оформлення клініки')
-        for forbidden in ('Верхні фотографії', 'Новини клініки', 'Фото галереї', 'name="action" value="save_hero"',
-                          'name="action" value="save_news"', 'name="action" value="save_gallery"'):
-            with self.subTest(hidden=forbidden):
-                self.assertNotContains(response, forbidden)
+        for visible in ('Оформлення клініки', 'Верхні фотографії', 'Новини клініки', 'Фото галереї',
+                        'name="action" value="save_settings"', 'name="action" value="save_hero"',
+                        'name="action" value="save_news"', 'name="action" value="save_gallery"'):
+            with self.subTest(visible=visible):
+                self.assertContains(response, visible)
 
-        for query in ({'hero': '1'}, {'news': '1'}, {'gallery': '1'}):
-            with self.subTest(query=query):
-                self.assertEqual(self.client.get(reverse('admin_content'), query).status_code, 403)
-        for action in ('save_hero', 'toggle_hero', 'move_hero', 'delete_hero', 'save_news', 'delete_news', 'save_gallery', 'delete_gallery'):
-            with self.subTest(action=action):
-                self.assertEqual(self.client.post(reverse('admin_content'), {'action': action}).status_code, 403)
+        image_data = (b'GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff!\xf9\x04\x01\x00\x00\x00\x00,'
+                      b'\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;')
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            hero = self.client.post(reverse('admin_content'), {
+                'action': 'save_hero', 'hero-title': 'Головне фото',
+                'hero-image': SimpleUploadedFile('hero.gif', image_data, content_type='image/gif'),
+                'hero-is_active': 'on',
+            })
+            self.assertEqual(hero.status_code, 302)
+            slide = HomeHeroSlide.objects.get(title='Головне фото')
+            self.assertContains(self.client.get(reverse('admin_content'), {'hero': slide.id}), 'Головне фото')
+            self.assertEqual(self.client.post(reverse('admin_content'), {
+                'action': 'toggle_hero', 'hero_id': slide.id,
+            }).status_code, 302)
+            slide.refresh_from_db()
+            self.assertFalse(slide.is_active)
+
+            news = self.client.post(reverse('admin_content'), {
+                'action': 'save_news', 'news-title': 'Новина клініки', 'news-text': 'Оновлення графіка.',
+                'news-is_published': 'on',
+            })
+            self.assertEqual(news.status_code, 302)
+            post = NewsPost.objects.get(title='Новина клініки')
+            self.assertEqual(self.client.get(reverse('admin_content'), {'news': post.id}).status_code, 200)
+
+            gallery = self.client.post(reverse('admin_content'), {
+                'action': 'save_gallery', 'gallery-title': 'Галерея',
+                'gallery-image': SimpleUploadedFile('gallery.gif', image_data, content_type='image/gif'),
+                'gallery-is_published': 'on',
+            })
+            self.assertEqual(gallery.status_code, 302)
+            item = GalleryImage.objects.get(title='Галерея')
+            self.assertEqual(self.client.get(reverse('admin_content'), {'gallery': item.id}).status_code, 200)
+
+            for action, field, pk in (('delete_hero', 'hero_id', slide.id),
+                                      ('delete_news', 'news_id', post.id),
+                                      ('delete_gallery', 'gallery_id', item.id)):
+                with self.subTest(action=action):
+                    self.assertEqual(self.client.post(reverse('admin_content'), {
+                        'action': action, field: pk,
+                    }).status_code, 302)
+            self.assertFalse(HomeHeroSlide.objects.exists())
+            self.assertFalse(NewsPost.objects.exists())
+            self.assertFalse(GalleryImage.objects.exists())
+        self.assertEqual(self.client.post(reverse('admin_content'), {'action': 'unknown'}).status_code, 403)
 
     def test_admin_cannot_escalate_or_edit_other_users_or_doctor_settings(self):
         for name, args in [('admin_panel', []), ('admin_content', []), ('admin_add_clinic_admin', []),

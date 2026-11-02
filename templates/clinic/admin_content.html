@@ -16,7 +16,6 @@
       <a class="btn secondary" href="{% url 'home' %}" target="_blank" rel="noopener">Переглянути сайт</a>
     </div>
 
-    {% if not user.is_staff %}
     <section class="content-admin-summary" aria-label="Опублікований контент">
       <div>
         <span>Слайди</span>
@@ -37,11 +36,11 @@
     </section>
 
     <nav class="content-admin-jump" aria-label="Швидкий перехід до редактора">
+      {% if user.is_staff %}<a href="#branding">Оформлення клініки</a>{% endif %}
       <a href="#hero-slides">Верхні фотографії</a>
       <a href="#news">Новини</a>
       <a href="#gallery">Галерея</a>
     </nav>
-    {% endif %}
 
     {% if user.is_staff %}<section id="branding" class="content-admin-section">
       <header class="content-admin-section-head">
@@ -63,16 +62,16 @@
           <h3>Що на що впливає</h3>
           <p><strong>Логотип</strong> показується у шапці сайту. Підтримуються PNG, JPG, WEBP, GIF та SVG до 2 МБ.</p>
           <p><strong>Фон сайту</strong> залишається позаду внутрішніх сторінок.</p>
-          {% if not user.is_staff %}<p><strong>Верхні фотографії</strong> завантажуються окремо у наступному розділі.</p>{% endif %}
+          <p><strong>Верхні фотографії</strong> завантажуються окремо у наступному розділі.</p>
         </aside>
       </div>
     </section>
 
     {% endif %}
-    {% if not user.is_staff %}<section id="hero-slides" class="content-admin-section">
+    <section id="hero-slides" class="content-admin-section">
       <header class="content-admin-section-head">
         <div>
-          <span class="content-admin-step">02</span>
+          <span class="content-admin-step">{% if user.is_staff %}02{% else %}01{% endif %}</span>
           <h2>Верхні фотографії</h2>
           <p>Ці кадри змінюються у верхній частині головної сторінки кожні 10 секунд.</p>
         </div>
@@ -153,9 +152,9 @@
     <section id="news" class="content-admin-section" data-live-filter data-page-size="6">
       <header class="content-admin-section-head">
         <div>
-          <span class="content-admin-step">03</span>
+          <span class="content-admin-step">{% if user.is_staff %}03{% else %}02{% endif %}</span>
           <h2>Новини</h2>
-          <p>Новини клініки створює адміністратор, а публікації лікарів тут можна перевірити або виправити.</p>
+          <p>Тут можна створювати новини клініки та перевіряти або виправляти публікації лікарів.</p>
         </div>
         <span class="content-admin-total">{{ posts|length }} публікацій</span>
       </header>
@@ -236,7 +235,7 @@
     <section id="gallery" class="content-admin-section" data-live-filter data-page-size="8">
       <header class="content-admin-section-head">
         <div>
-          <span class="content-admin-step">04</span>
+          <span class="content-admin-step">{% if user.is_staff %}04{% else %}03{% endif %}</span>
           <h2>Галерея</h2>
           <p>Фотографії для рухомої стрічки нижче новин на головній сторінці.</p>
         </div>
@@ -313,6 +312,5 @@
         </aside>
       </div>
     </section>
-    {% endif %}
   </div>
 {% endblock %}

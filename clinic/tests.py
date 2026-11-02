@@ -4545,13 +4545,13 @@ class ClinicModelTests(TestCase):
         response = self.client.get(reverse('admin_content'))
 
         self.assertContains(response, 'Оформлення клініки')
-        self.assertNotContains(response, 'Верхні фотографії')
-        self.assertNotContains(response, 'Додати у слайдер')
-        self.assertNotContains(response, 'Новини клініки')
-        self.assertNotContains(response, 'Фото галереї')
-        self.assertNotContains(response, 'name="action" value="save_hero"')
-        self.assertNotContains(response, 'name="action" value="save_news"')
-        self.assertNotContains(response, 'name="action" value="save_gallery"')
+        self.assertContains(response, 'Верхні фотографії')
+        self.assertContains(response, 'Додати у слайдер')
+        self.assertContains(response, 'Новини клініки')
+        self.assertContains(response, 'Фото галереї')
+        self.assertContains(response, 'name="action" value="save_hero"')
+        self.assertContains(response, 'name="action" value="save_news"')
+        self.assertContains(response, 'name="action" value="save_gallery"')
 
     def test_home_renders_selected_background_effect(self):
         branding, _ = ClinicSettings.objects.get_or_create(pk=1)
