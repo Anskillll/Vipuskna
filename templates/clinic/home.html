@@ -237,7 +237,6 @@
                 aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}"
               >
                 <img src="{{ item.image.url }}" alt="{{ item.title|default:'Фото клініки' }}" loading="lazy">
-                {% if item.title %}<figcaption>{{ item.title }}</figcaption>{% endif %}
               </figure>
             {% endfor %}
 

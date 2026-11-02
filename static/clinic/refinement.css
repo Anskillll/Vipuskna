@@ -603,19 +603,6 @@ body:not(.public-home-page) .service-manager-item.editing {
   transform: translateX(0) translateZ(0) rotateY(0);
   z-index: 2;
 }
-.home-gallery-slide figcaption {
-  max-width: calc(100% - 36px);
-  padding: 10px 18px;
-  border: 1px solid #ffffff80;
-  border-radius: 30px;
-  background: #173f38e8;
-  box-shadow: none;
-  color: white;
-  text-align: center;
-  opacity: 0;
-  transition: opacity 300ms ease;
-}
-.home-gallery-slide.is-active figcaption { opacity: 1; }
 .home-gallery-arrow { z-index: 3; width: 48px; height: 48px; min-height: 48px; }
 .home-gallery-arrow-prev { left: 8px; }
 .home-gallery-arrow-next { right: 8px; }
@@ -648,11 +635,10 @@ body:not(.public-home-page) .service-manager-item.editing {
   .home-gallery-arrow { width: 40px; height: 40px; min-height: 40px; }
   .home-gallery-arrow-prev { left: 3px; }
   .home-gallery-arrow-next { right: 3px; }
-  .home-gallery-slide figcaption { bottom: 12px; font-size: 12px; padding: 7px 12px; }
   body:not(.public-home-page) :is(.page-tabs, .doctor-tabs) .page-tab { padding: 9px 12px; font-size: 13px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .home-gallery-slide, .home-gallery-slide figcaption { transition: none; }
+  .home-gallery-slide { transition: none; }
 }
 
 /* Patient records dialog follows the porcelain and sea-glass clinic palette. */

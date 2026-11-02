@@ -5305,20 +5305,6 @@ button.compact {
   width: auto;
 }
 
-.home-gallery-slide figcaption {
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(41, 62, 58, 0.13);
-  bottom: 16px;
-  box-shadow: 0 8px 24px rgba(39, 58, 55, 0.14);
-  color: #243a36;
-  font-size: 14px;
-  left: 50%;
-  max-width: calc(100% - 180px);
-  padding: 10px 14px;
-  position: absolute;
-  transform: translateX(-50%);
-}
-
 .home-gallery-arrow {
   align-items: center;
   background: rgba(255, 255, 255, 0.94);
@@ -5679,12 +5665,6 @@ button.compact {
 
   .home-gallery-arrow-next {
     right: 12px;
-  }
-
-  .home-gallery-slide figcaption {
-    bottom: 10px;
-    max-width: calc(100% - 110px);
-    padding: 8px 11px;
   }
 
   .home-gallery-slide {
