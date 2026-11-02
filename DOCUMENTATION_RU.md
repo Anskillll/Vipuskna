@@ -2,7 +2,7 @@
 
 Версия документа: 1 августа 2026 года.
 
-Адрес рабочего сайта: `https://orthosmile.duckdns.org/`
+Адрес рабочего сайта: `https://orthosmile.ianskill.me/`
 
 Подробный технический том с разбором фактического кода, каждой backend-функции,
 интерактивных элементов, JavaScript и инфраструктуры находится в
@@ -723,7 +723,7 @@ HTML-ответ -> Nginx -> браузер
 
 Пошагово:
 
-1. Пользователь открывает `https://orthosmile.duckdns.org/doctor/services/`.
+1. Пользователь открывает `https://orthosmile.ianskill.me/doctor/services/`.
 2. DNS сообщает браузеру IP сервера.
 3. Nginx принимает защищенное HTTPS-соединение.
 4. Для `/static/` и `/media/` Nginx может отдать обычный файл сам.
@@ -1023,7 +1023,7 @@ PostgreSQL лучше подходит для постоянно работаю�
 2. Django создает OAuth-запрос и перенаправляет на Google.
 3. Google показывает название приложения и список аккаунтов.
 4. После согласия Google возвращает браузер на callback.
-5. Callback `https://orthosmile.duckdns.org/accounts/google/login/callback/` должен в точности совпадать с разрешенным URI в Google Cloud.
+5. Callback `https://orthosmile.ianskill.me/accounts/google/login/callback/` должен в точности совпадать с разрешенным URI в Google Cloud.
 6. `django-allauth` проверяет ответ Google и получает подтвержденные профиль и email.
 7. Django находит или создает пользователя и сессию.
 
@@ -1048,7 +1048,7 @@ PostgreSQL лучше подходит для постоянно работаю�
 - полный путь `/accounts/google/login/callback/`;
 - отсутствие лишнего или недостающего слеша;
 - правильные Client ID и Secret в `Social applications`;
-- что приложение связано с сайтом `orthosmile.duckdns.org` в Django Sites.
+- что приложение связано с сайтом `orthosmile.ianskill.me` в Django Sites.
 
 ## 15. Как работает регистрация по телефону
 
@@ -1354,7 +1354,7 @@ python manage.py collectstatic --noinput
 
 - Сервер: DigitalOcean Droplet.
 - IP: `167.71.48.181`.
-- Домен: `orthosmile.duckdns.org`.
+- Домен: `orthosmile.ianskill.me`.
 - Система: Linux.
 - Проект: `/opt/medclinic`.
 - Пользователь процесса: `medclinic`.
@@ -1534,7 +1534,7 @@ systemctl restart medclinic nginx
 Проверить точный callback, домен в Django Sites, Social application и HTTPS proxy-настройку. Для текущего домена callback:
 
 ```text
-https://orthosmile.duckdns.org/accounts/google/login/callback/
+https://orthosmile.ianskill.me/accounts/google/login/callback/
 ```
 
 ### 24.6. Telegram-бот не отвечает

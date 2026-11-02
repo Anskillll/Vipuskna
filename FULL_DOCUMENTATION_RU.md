@@ -11890,7 +11890,7 @@
 | 192 | <code>systemctl is-active --quiet medclinic-bot</code> | Выполняет административный шаг подготовки, проверки, миграции или запуска production. |
 | 194 | <code>sudo -u medclinic "$APP/.venv/bin/python" "$APP/manage.py" check \</code> | Выполняет административный шаг подготовки, проверки, миграции или запуска production. |
 | 195 | <code>    &gt; "$MIGRATION_DIR/django-check.log"</code> | Продолжает параметр или команду инфраструктурного файла. |
-| 196 | <code>curl -fsS --max-time 15 https://orthosmile.duckdns.org/ &gt; /dev/null</code> | Выполняет административный шаг подготовки, проверки, миграции или запуска production. |
+| 196 | <code>curl -fsS --max-time 15 https://orthosmile.ianskill.me/ &gt; /dev/null</code> | Выполняет административный шаг подготовки, проверки, миграции или запуска production. |
 | 198 | <code>systemctl start medclinic-db-backup.service</code> | Выполняет административный шаг подготовки, проверки, миграции или запуска production. |
 | 199 | <code>latest_backup=$(</code> | Продолжает параметр или команду инфраструктурного файла. |
 | 200 | <code>    find /opt/backups/postgresql \</code> | Продолжает параметр или команду инфраструктурного файла. |
@@ -11931,15 +11931,15 @@
 | 1 | <code>server {</code> | Открывает виртуальный сервер Nginx для домена. |
 | 2 | <code>    listen 80;</code> | Настраивает прием HTTP/HTTPS, сертификат, файлы или передачу запроса Django. |
 | 3 | <code>    listen [::]:80;</code> | Настраивает прием HTTP/HTTPS, сертификат, файлы или передачу запроса Django. |
-| 4 | <code>    server_name orthosmile.duckdns.org 167.71.48.181;</code> | Настраивает прием HTTP/HTTPS, сертификат, файлы или передачу запроса Django. |
-| 6 | <code>    return 301 https://orthosmile.duckdns.org$request_uri;</code> | Настраивает прием HTTP/HTTPS, сертификат, файлы или передачу запроса Django. |
+| 4 | <code>    server_name orthosmile.ianskill.me 167.71.48.181;</code> | Настраивает прием HTTP/HTTPS, сертификат, файлы или передачу запроса Django. |
+| 6 | <code>    return 301 https://orthosmile.ianskill.me$request_uri;</code> | Настраивает прием HTTP/HTTPS, сертификат, файлы или передачу запроса Django. |
 | 7 | <code>}</code> | Настраивает прием HTTP/HTTPS, сертификат, файлы или передачу запроса Django. |
 | 9 | <code>server {</code> | Открывает виртуальный сервер Nginx для домена. |
 | 10 | <code>    listen 443 ssl http2;</code> | Настраивает прием HTTP/HTTPS, сертификат, файлы или передачу запроса Django. |
 | 11 | <code>    listen [::]:443 ssl http2;</code> | Настраивает прием HTTP/HTTPS, сертификат, файлы или передачу запроса Django. |
-| 12 | <code>    server_name orthosmile.duckdns.org;</code> | Настраивает прием HTTP/HTTPS, сертификат, файлы или передачу запроса Django. |
-| 14 | <code>    ssl_certificate /etc/letsencrypt/live/orthosmile.duckdns.org/fullchain.pem;</code> | Настраивает прием HTTP/HTTPS, сертификат, файлы или передачу запроса Django. |
-| 15 | <code>    ssl_certificate_key /etc/letsencrypt/live/orthosmile.duckdns.org/privkey.pem;</code> | Настраивает прием HTTP/HTTPS, сертификат, файлы или передачу запроса Django. |
+| 12 | <code>    server_name orthosmile.ianskill.me;</code> | Настраивает прием HTTP/HTTPS, сертификат, файлы или передачу запроса Django. |
+| 14 | <code>    ssl_certificate /etc/letsencrypt/live/orthosmile.ianskill.me/fullchain.pem;</code> | Настраивает прием HTTP/HTTPS, сертификат, файлы или передачу запроса Django. |
+| 15 | <code>    ssl_certificate_key /etc/letsencrypt/live/orthosmile.ianskill.me/privkey.pem;</code> | Настраивает прием HTTP/HTTPS, сертификат, файлы или передачу запроса Django. |
 | 16 | <code>    include /etc/letsencrypt/options-ssl-nginx.conf;</code> | Настраивает прием HTTP/HTTPS, сертификат, файлы или передачу запроса Django. |
 | 17 | <code>    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;</code> | Настраивает прием HTTP/HTTPS, сертификат, файлы или передачу запроса Django. |
 | 19 | <code>    client_max_body_size 55M;</code> | Настраивает прием HTTP/HTTPS, сертификат, файлы или передачу запроса Django. |
