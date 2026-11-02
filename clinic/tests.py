@@ -3212,7 +3212,7 @@ class ClinicModelTests(TestCase):
 
         self.assertContains(response, 'Мій кабінет')
         self.assertContains(response, 'Обрати лікаря')
-        self.assertContains(response, 'Зареєструйтеся, щоб:')
+        self.assertContains(response, 'Керуйте записами в особистому кабінеті')
         self.assertContains(response, 'Записатися на прийом')
         self.assertNotContains(response, 'Реєстрація за номером телефону')
 
@@ -3504,7 +3504,8 @@ class ClinicModelTests(TestCase):
 
     def test_guest_can_book_without_account_and_gets_guest_home(self):
         home = self.client.get(reverse('home'))
-        self.assertContains(home, 'Зареєструйтеся, щоб:')
+        self.assertContains(home, 'Керуйте записами в особистому кабінеті')
+        self.assertContains(home, 'data-notice-dismiss')
         self.assertContains(home, 'data-home-login-open')
         self.assertContains(home, 'Записатися на прийом')
 

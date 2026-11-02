@@ -1,8 +1,8 @@
-<section class="telegram-connect-banner" aria-label="Підключення Telegram">
+<section class="telegram-connect-banner" aria-label="Підключення Telegram" data-dismissible-notice="telegram-connect-{{ user.id }}">
   <div class="telegram-connect-copy">
-    <span class="telegram-connect-kicker">Нагадування про прийоми</span>
     <strong>Приєднайте Telegram-бота</strong>
-    <span>Бот повідомить про заявку, зміни прийому й нагадає про візит напередодні.</span>
+    <span>Нагадування про прийоми та зміни запису.</span>
   </div>
   <a class="telegram-connect-button" href="{% url 'telegram_connect' %}">Приєднати Telegram-бота</a>
+  <button class="notice-dismiss" type="button" data-notice-dismiss aria-label="Закрити повідомлення" title="Закрити повідомлення">{% include 'clinic/_icon.html' with name='close' %}</button>
 </section>

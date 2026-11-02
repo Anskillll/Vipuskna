@@ -13,7 +13,8 @@
     </nav>
 
     {% for appointment in reschedule_requests %}
-      <aside class="patient-reschedule-alert patient-dashboard-alert">
+      <aside class="patient-reschedule-alert patient-dashboard-alert" data-dismissible-notice="reschedule-{{ appointment.id }}">
+        <button class="notice-dismiss" type="button" data-notice-dismiss aria-label="Закрити повідомлення" title="Закрити повідомлення">{% include 'clinic/_icon.html' with name='close' %}</button>
         <div class="patient-alert-doctor">
           {% if appointment.doctor.photo_src %}
             <img src="{{ appointment.doctor.photo_src }}" alt="{{ appointment.doctor.full_name }}">
@@ -60,7 +61,8 @@
     {% endfor %}
 
     {% if profile_incomplete %}
-      <aside class="profile-completion-alert patient-dashboard-alert">
+      <aside class="profile-completion-alert patient-dashboard-alert" data-dismissible-notice="profile-completion-{{ user.id }}">
+        <button class="notice-dismiss" type="button" data-notice-dismiss aria-label="Закрити повідомлення" title="Закрити повідомлення">{% include 'clinic/_icon.html' with name='close' %}</button>
         <div class="patient-alert-copy">
           <span class="reschedule-eyebrow">Профіль потребує уваги</span>
           <strong>Будь ласка, заповніть профіль</strong>
@@ -73,7 +75,8 @@
     {% endif %}
 
     {% if needs_phone %}
-      <aside class="patient-phone-alert patient-dashboard-alert">
+      <aside class="patient-phone-alert patient-dashboard-alert" data-dismissible-notice="patient-phone-{{ user.id }}">
+        <button class="notice-dismiss" type="button" data-notice-dismiss aria-label="Закрити повідомлення" title="Закрити повідомлення">{% include 'clinic/_icon.html' with name='close' %}</button>
         <div class="patient-alert-copy">
           <span class="reschedule-eyebrow">Потрібен номер телефону</span>
           <strong>Додайте телефон, щоб записуватися на прийом</strong>

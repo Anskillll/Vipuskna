@@ -13,7 +13,8 @@
       <a class="page-tab" href="#history">Історія</a>
     </nav>
 
-    <aside class="pending-google-alert patient-dashboard-alert">
+    <aside class="pending-google-alert patient-dashboard-alert" data-dismissible-notice="pending-google-{{ pending_phone }}">
+      <button class="notice-dismiss" type="button" data-notice-dismiss aria-label="Закрити повідомлення" title="Закрити повідомлення">{% include 'clinic/_icon.html' with name='close' %}</button>
       <div class="patient-alert-copy">
         <span class="reschedule-eyebrow">Завершіть створення кабінету</span>
         <strong>Увійдіть через Google для подальшої роботи із сайтом</strong>

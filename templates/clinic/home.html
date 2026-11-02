@@ -74,22 +74,17 @@
       </nav>
 
       {% if not user.is_authenticated %}
-        <div class="home-telegram-connect-banner">
+        <div class="home-telegram-connect-banner" data-dismissible-notice="home-registration">
           <section class="telegram-connect-banner home-registration-banner" aria-label="Переваги реєстрації">
             <div class="telegram-connect-copy">
-              <span class="telegram-connect-kicker">Особистий кабінет</span>
-              <strong>Зареєструйтеся, щоб:</strong>
-              <ul>
-                <li>бачити свої заявки та прийоми;</li>
-                <li>керувати записами й профілем;</li>
-                <li>отримувати сповіщення через Telegram-бота.</li>
-              </ul>
+              <strong>Керуйте записами в особистому кабінеті</strong>
             </div>
             {% if request.session.patient_claim_phone %}
               <a class="telegram-connect-button" href="{{ patient_google_login_url }}">Зареєструватися</a>
             {% else %}
               <button class="telegram-connect-button" type="button" data-home-login-open aria-haspopup="dialog">Зареєструватися</button>
             {% endif %}
+            <button class="notice-dismiss" type="button" data-notice-dismiss aria-label="Закрити повідомлення" title="Закрити повідомлення">{% include 'clinic/_icon.html' with name='close' %}</button>
           </section>
         </div>
       {% elif telegram_show_connect %}

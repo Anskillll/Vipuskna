@@ -767,8 +767,41 @@ body:not(.public-home-page) .current-records-dialog .btn.current-record-create:h
   background: #ffffff2e;
   color: #fff;
 }
-.home-registration-banner ul { display: flex; flex-wrap: wrap; gap: 5px 22px; margin: 8px 0 0; padding-left: 19px; font-size: 13px; }
 .home-registration-banner .telegram-connect-button { font: inherit; font-weight: 800; cursor: pointer; }
+.compact-filter-card,
+.compact-filter-bar { width: 100%; max-width: 560px; }
+.compact-filter-card .compact-filter-bar { margin-bottom: 0; }
+.compact-filter-bar { grid-template-columns: minmax(0, 1fr) auto; }
+.telegram-connect-banner,
+.patient-dashboard-alert { position: relative; padding: 12px 54px 12px 16px; gap: 12px; }
+.telegram-connect-copy strong { font-size: 17px; line-height: 1.3; }
+.telegram-connect-copy > span:last-child { font-size: 13px; line-height: 1.35; }
+.telegram-connect-button { min-width: 190px; padding: 10px 14px; }
+.home-registration-banner .telegram-connect-copy strong { font-size: 17px; }
+button.notice-dismiss,
+button.notice-dismiss:hover,
+button.notice-dismiss:active {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 1px solid #afcbc5;
+  border-radius: 9px;
+  background: #ffffffa8;
+  box-shadow: none;
+  color: #315c55;
+  cursor: pointer;
+  transform: none;
+}
+button.notice-dismiss:hover { background: #fff; color: #0b7168; }
+button.notice-dismiss .ui-icon { width: 17px; height: 17px; }
+[data-dismissible-notice][hidden], .home-telegram-connect-banner[hidden] { display: none; }
 .home-login-admin-link { display: block; margin-top: 14px; color: #5c7770; font-size: 11px; font-weight: 600; text-align: center; text-decoration: underline; text-underline-offset: 3px; }
 .home-login-admin-link:hover, .home-login-admin-link:focus-visible { color: #0b7168; }
 .booking-guest-fields { display: grid; gap: 12px; margin: 18px 0; padding: 20px; border: 1px solid #d5e5dd; border-radius: 16px; background: #f2f8f4; }
@@ -810,7 +843,14 @@ body:not(.public-home-page) .current-records-dialog .btn.current-record-create:h
 }
 .appointment-reschedule-panel .reschedule-time-options .time-pill { min-height: 40px; border-radius: 10px; cursor: pointer; }
 @media (max-width: 700px) {
-  .home-registration-banner ul { display: grid; gap: 3px; }
+  .telegram-connect-banner,
+  .patient-dashboard-alert { padding: 12px 44px 12px 12px; gap: 9px; }
+  .telegram-connect-copy strong { font-size: 15px; }
+  .telegram-connect-button { width: 100%; min-width: 0; padding: 9px 12px; font-size: 13px; }
+  .patient-dashboard-alert .btn { min-height: 38px; padding: 8px 12px; }
+  .patient-dashboard-alert .patient-alert-doctor img,
+  .patient-dashboard-alert .patient-alert-doctor-placeholder { width: 40px; height: 40px; }
+  button.notice-dismiss { top: 8px; right: 8px; }
   .public-home-page .home-hero-nav-links .home-hero-signin { min-height: 34px; padding: 7px 12px; font-size: 12px; }
 }
 
