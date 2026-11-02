@@ -1134,8 +1134,17 @@ body:not(.public-home-page) .service-drag-handle:focus-visible {
   color: #176d63;
 }
 body:not(.public-home-page) .service-drag-handle:active { cursor: grabbing; }
+body:not(.public-home-page) .service-manager-list { position: relative; }
+body:not(.public-home-page) .service-sort-placeholder {
+  width: 100%;
+  border: 1px dashed #8bbfb4;
+  border-radius: 9px;
+  background: rgba(226, 242, 236, .7);
+}
 body:not(.public-home-page) .service-manager-item.is-dragging {
-  opacity: .55;
+  z-index: 10;
   border-color: #7ab4a8;
-  background: #e8f3ef;
+  background: #fffefa;
+  box-shadow: 0 18px 38px rgba(20, 61, 56, .18);
+  cursor: grabbing;
 }

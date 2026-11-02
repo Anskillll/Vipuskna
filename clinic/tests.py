@@ -1322,6 +1322,7 @@ class ClinicModelTests(TestCase):
         self.assertContains(page, 'data-service-sort')
         self.assertContains(page, 'service-drag-handle')
         self.assertNotContains(page, 'service-order-button')
+        self.assertNotContains(page, 'draggable="true"')
 
         response = self.client.post(reverse('doctor_services'), {
             'action': 'reorder',

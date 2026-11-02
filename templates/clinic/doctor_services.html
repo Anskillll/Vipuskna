@@ -130,7 +130,7 @@
             </form>
           {% else %}
             <div class="service-manager-actions">
-              <button type="button" class="service-drag-handle" draggable="true" aria-label="Перетягнути послугу {{ service.name }}" title="Перетягнути послугу">
+              <button type="button" class="service-drag-handle" aria-label="Перетягнути послугу {{ service.name }}" title="Перетягнути послугу">
                 <svg width="16" height="22" viewBox="0 0 16 22" aria-hidden="true"><circle cx="5" cy="5" r="1.5"/><circle cx="11" cy="5" r="1.5"/><circle cx="5" cy="11" r="1.5"/><circle cx="11" cy="11" r="1.5"/><circle cx="5" cy="17" r="1.5"/><circle cx="11" cy="17" r="1.5"/></svg>
               </button>
               <form method="post">
@@ -168,6 +168,6 @@
     </div>
   </section>
   {% if services %}
-    <script src="{% static 'clinic/service_sort.js' %}?v=20261102-1" defer></script>
+    <script src="{% static 'clinic/service_sort.js' %}?v=20261102-2" defer></script>
   {% endif %}
 {% endblock %}
