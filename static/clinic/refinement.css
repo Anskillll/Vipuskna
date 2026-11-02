@@ -872,6 +872,15 @@ button.notice-dismiss .ui-icon { width: 17px; height: 17px; }
   .compact-filter-bar .live-filter-field { display: grid; gap: 6px; }
   .compact-filter-bar .live-filter-field label { padding-right: 80px; }
   .compact-filter-bar .live-filter-count { position: absolute; top: 10px; right: 12px; }
+  .compact-filter-card .live-filter-count {
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
   .telegram-connect-banner,
   .patient-dashboard-alert { padding: 12px 44px 12px 12px; gap: 9px; }
   .telegram-connect-copy strong { font-size: 15px; }
