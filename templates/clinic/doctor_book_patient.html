@@ -8,13 +8,22 @@
   {% else %}  <a class="back-link" href="{% url 'doctor_dashboard' %}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до кабінету лікаря</a>{% endif %}
   <h1 class="page-title">Записати пацієнта</h1>
 
-  <p class="muted">Лікар: {{ doctor.full_name }} · {{ doctor.specialization }}{% if clinic_manager %} · <a href="{% url 'clinic_dashboard' %}?tab=doctors">Обрати іншого лікаря</a>{% endif %}</p>
+  {% if source_card %}<p class="muted">Пацієнт: {{ source_card.full_name }}</p>{% endif %}
+  {% if doctor %}<p class="muted">Лікар: {{ doctor.full_name }} · {{ doctor.specialization }}</p>{% endif %}
   <div class="grid grid-2">
     <section class="card">
       <h2 class="section-title">Оберіть дату та час</h2>
       <form method="get" data-submit-on-date-change>
         {% if source_card %}<input type="hidden" name="card" value="{{ source_card.id }}">{% endif %}
-        {% if clinic_manager %}<input type="hidden" name="doctor" value="{{ doctor.id }}">{% endif %}
+        {% if clinic_manager %}
+          <div class="field">
+            <label for="booking-doctor">Лікар</label>
+            <select id="booking-doctor" name="doctor" data-submit-on-change required>
+              <option value="">Оберіть лікаря</option>
+              {% for booking_doctor in doctors %}<option value="{{ booking_doctor.id }}"{% if doctor.id == booking_doctor.id %} selected{% endif %}>{{ booking_doctor.full_name }} · {{ booking_doctor.specialization }}</option>{% endfor %}
+            </select>
+          </div>
+        {% endif %}
         <div class="field">
           <label for="date">Дата</label>
           {% include 'clinic/_working_date_picker.html' with date_input_id='date' %}
@@ -24,7 +33,9 @@
 
     <section class="card">
       <h2 class="section-title">Інформація про прийом</h2>
-      {% if selected_schedule and selected_schedule.is_working %}
+      {% if not doctor %}
+        <div class="empty">Оберіть лікаря, щоб побачити місце та тривалість прийому.</div>
+      {% elif selected_schedule and selected_schedule.is_working %}
           <p class="muted">
             <a class="maps-location-link" href="{{ selected_schedule.google_maps_url }}" target="_blank" rel="noopener noreferrer">
             {% if selected_schedule.workplace %}
@@ -43,7 +54,9 @@
 
   <section class="card" style="margin-top: 18px;">
     <h2 class="section-title">Вільний час</h2>
-    {% if selected_schedule and selected_schedule.is_working %}
+    {% if not doctor %}
+      <div class="empty">Оберіть лікаря, щоб побачити вільний час.</div>
+    {% elif selected_schedule and selected_schedule.is_working %}
       <div class="slot-grid">
         {% for slot in slots %}
           {% if slot.split_option %}
@@ -182,5 +195,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-  <script src="{% static 'clinic/working_date_picker.js' %}?v=20261001-1" defer></script>
+  <script src="{% static 'clinic/working_date_picker.js' %}?v=20261102-1" defer></script>
 {% endblock %}

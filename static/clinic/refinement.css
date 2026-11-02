@@ -206,9 +206,6 @@ body:not(.public-home-page) .admin-tabs .page-tab.active::before { background: #
 body:not(.public-home-page) .admin-tabs .page-tab,
 body:not(.public-home-page) .admin-tabs .page-tab.active { font-weight: 600; }
 body:not(.public-home-page) .admin-tabs {
-  position: sticky;
-  top: 0;
-  z-index: 40;
   flex-wrap: nowrap;
   gap: 6px;
   overflow-x: auto;

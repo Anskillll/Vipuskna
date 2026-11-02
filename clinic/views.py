@@ -833,6 +833,16 @@ def appointments_for_patient_card(doctor, card):
     )
 
 
+def patient_card_identity(card):
+    if card.patient_id:
+        return ('patient', card.patient_id)
+    return (
+        'guest', normalize_phone_number(card.patient_phone),
+        card.patient_first_name.strip().casefold(),
+        card.patient_last_name.strip().casefold(),
+    )
+
+
 def ensure_patient_card_from_appointment(appointment):
     normalized_phone = normalize_phone_number(appointment.patient_phone)
     if appointment.patient_phone != normalized_phone:
@@ -2283,12 +2293,29 @@ def doctor_cancel_appointment(request, appointment_id):
 def doctor_book_patient(request):
     refresh_completed_appointments()
     if is_clinic_manager(request.user) and request.method == 'GET' and not request.GET.get('doctor'):
-        return redirect(f'{reverse("clinic_dashboard")}?tab=doctors')
+        selected_date = parse_date(request.GET.get('date'))
+        if selected_date < timezone.localdate():
+            selected_date = timezone.localdate()
+        source_card = None
+        if request.GET.get('card', '').isdecimal():
+            source_card = get_object_or_404(DoctorPatientCard, pk=request.GET['card'])
+        return render(request, 'clinic/doctor_book_patient.html', {
+            'doctor': None,
+            'source_card': source_card,
+            'doctors': Doctor.objects.filter(user__is_active=True).select_related('user').order_by(
+                'user__last_name', 'user__first_name',
+            ),
+            'selected_date': selected_date,
+            'earliest_booking_date': timezone.localdate(),
+            'working_weekdays': range(7),
+            'working_weekday_labels': working_weekday_labels(range(7)),
+        })
     doctor = clinical_doctor(request)
     source_card = None
     booking_initial = {}
     if request.GET.get('card', '').isdecimal():
-        source_card = get_object_or_404(DoctorPatientCard, pk=request.GET['card'], doctor=doctor)
+        card_filter = {} if is_clinic_manager(request.user) else {'doctor': doctor}
+        source_card = get_object_or_404(DoctorPatientCard, pk=request.GET['card'], **card_filter)
         booking_initial = {
             'patient': source_card.patient_id, 'first_name': source_card.patient_first_name,
             'last_name': source_card.patient_last_name, 'phone': source_card.patient_phone,
@@ -2515,6 +2542,9 @@ def doctor_book_patient(request):
         'clinic/doctor_book_patient.html',
         {
             'doctor': doctor,
+            'doctors': Doctor.objects.filter(user__is_active=True).select_related('user').order_by(
+                'user__last_name', 'user__first_name',
+            ) if is_clinic_manager(request.user) else (),
             'source_card': source_card,
             'selected_date': selected_date,
             'selected_time': selected_time,
@@ -2689,12 +2719,27 @@ def doctor_patient_card_detail(request, card_id):
     if request.GET.get('appointment'):
         selected_appointment = appointments.filter(pk=request.GET.get('appointment')).first()
 
+    related_cards = [card]
+    if is_clinic_manager(request.user):
+        candidates = DoctorPatientCard.objects.select_related('doctor__user').filter(
+            patient_id=card.patient_id,
+        ) if card.patient_id else DoctorPatientCard.objects.select_related('doctor__user').filter(
+            patient__isnull=True,
+            patient_first_name__iexact=card.patient_first_name,
+            patient_last_name__iexact=card.patient_last_name,
+        )
+        related_cards = [
+            item for item in candidates.order_by('doctor__user__last_name', 'doctor__user__first_name')
+            if patient_card_identity(item) == patient_card_identity(card)
+        ]
+
     return render(
         request,
         'clinic/doctor_patient_card_detail.html',
         {
             'doctor': doctor,
             'card': card,
+            'related_cards': related_cards,
             'form': form,
             'entry_form': entry_form,
             'record_entries': card.record_entries.select_related('appointment__service', 'created_by', 'doctor__user').prefetch_related(
@@ -2996,7 +3041,11 @@ def clinic_dashboard(request):
     if tab == 'requests':
         rows = appointments.filter(status=Appointment.STATUS_PENDING).order_by('date', 'time')
     elif tab == 'patients':
-        rows = cards.order_by('patient_last_name', 'patient_first_name', 'doctor_id')
+        grouped_cards = {}
+        for card in cards.order_by('patient_last_name', 'patient_first_name', 'doctor_id'):
+            identity = patient_card_identity(card)
+            grouped_cards.setdefault(identity, {'card': card})
+        rows = list(grouped_cards.values())
     elif tab == 'doctors':
         rows = doctors
     else:

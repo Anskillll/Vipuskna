@@ -1,4 +1,10 @@
 (() => {
+  document.querySelectorAll('[data-submit-on-change]').forEach((select) => {
+    select.addEventListener('change', () => {
+      select.form?.requestSubmit();
+    });
+  });
+
   const pad = (value) => String(value).padStart(2, '0');
 
   const parseDate = (value) => {

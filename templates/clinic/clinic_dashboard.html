@@ -31,7 +31,7 @@
                 <section class="card section-card appointment-day-group{% if day.appointments|length > 5 %} is-collapsible{% endif %}" data-live-filter-group data-live-filter-keep-empty data-appointment-day>
                   <div class="appointment-day-head">
                     <div class="appointment-day-title"><h2>{{ day.weekday_name }}, {{ day.date|date:'d.m.Y' }}</h2>
-                      {% if day.can_book %}<div class="appointment-day-book-actions">{% for booking_doctor, schedule in day.working_doctors %}<a class="appointment-day-book-button" href="{% url 'doctor_book_patient' %}?doctor={{ booking_doctor.id }}&date={{ day.date|date:'Y-m-d' }}">{% include 'clinic/_icon.html' with name='plus' %} Записати{% if not selected_doctor %} · {{ booking_doctor.full_name }}{% else %} на цей день{% endif %}</a>{% endfor %}</div>{% endif %}
+                      {% if day.can_book %}<div class="appointment-day-book-actions"><a class="appointment-day-book-button" href="{% url 'doctor_book_patient' %}?date={{ day.date|date:'Y-m-d' }}{% if selected_doctor %}&doctor={{ selected_doctor }}{% endif %}">{% include 'clinic/_icon.html' with name='plus' %} Записати пацієнта</a></div>{% endif %}
                     </div>
                     <div class="appointment-day-head-actions">{% if day.appointments %}<span data-live-filter-group-count data-count-template="{count} запис(ів)">{{ day.appointments|length }} запис(ів)</span>{% if day.is_outside_schedule %}<span class="appointment-day-outside-label">Поза графіком</span>{% endif %}{% else %}<span>0 записів</span>{% endif %}</div>
                   </div>
@@ -68,9 +68,9 @@
           </article>{% empty %}<div class="empty">Лікарів не знайдено. Додайте лікаря, щоб розпочати роботу.</div>{% endfor %}
           </div>
         {% elif tab == 'patients' %}
-          <p class="muted">Картки згруповані за відповідальним лікарем. Натисніть ім’я, щоб переглянути історію або додати запис.</p>
-          <div class="table-wrap"><table><thead><tr><th>Пацієнт</th><th>Телефон</th><th>Лікар</th><th>Дії</th></tr></thead><tbody>
-          {% for card in page %}<tr><td><a class="clinic-patient-name" href="{% url 'doctor_patient_card_detail' card.id %}">{{ card.full_name }}</a></td><td><a href="tel:{{ card.patient_phone }}">{{ card.patient_phone }}</a></td><td>{{ card.doctor.full_name }}</td><td><a href="{% url 'doctor_patient_card_detail' card.id %}#new-entry">Додати запис {% include 'clinic/_icon.html' with name='plus' %}</a></td></tr>{% empty %}<tr><td colspan="4" class="empty">Карток не знайдено. Після запису на прийом картка створюється автоматично.</td></tr>{% endfor %}
+          <p class="muted">Кожен пацієнт показаний один раз. Відкрийте картку, щоб побачити його лікарів та історію прийомів.</p>
+          <div class="table-wrap"><table><thead><tr><th>Пацієнт</th><th>Телефон</th><th>Дії</th></tr></thead><tbody>
+          {% for row in page %}{% with card=row.card %}<tr><td><a class="clinic-patient-name" href="{% url 'doctor_patient_card_detail' card.id %}">{{ card.full_name }}</a></td><td><a href="tel:{{ card.patient_phone }}">{{ card.patient_phone }}</a></td><td><a href="{% url 'doctor_book_patient' %}?card={{ card.id }}">Записати пацієнта {% include 'clinic/_icon.html' with name='plus' %}</a></td></tr>{% endwith %}{% empty %}<tr><td colspan="3" class="empty">Карток не знайдено. Після запису на прийом картка створюється автоматично.</td></tr>{% endfor %}
           </tbody></table></div>
         {% else %}
           <div class="table-wrap"><table><thead><tr><th>Час</th><th>Пацієнт</th><th>Лікар та послуга</th><th>Статус</th><th>Дії</th></tr></thead><tbody>

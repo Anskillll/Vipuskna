@@ -191,10 +191,15 @@ class ClinicManagementTests(TestCase):
         self.assertEqual(Appointment.objects.count(), 2)
 
     def test_booking_keeps_doctor_between_calendar_time_and_form(self):
-        self.assertRedirects(self.client.get(reverse('doctor_book_patient')), reverse('clinic_dashboard') + '?tab=doctors')
+        choice_response = self.client.get(reverse('doctor_book_patient'), {'date': self.date.isoformat()})
+        self.assertEqual(choice_response.status_code, 200)
+        self.assertContains(choice_response, 'Оберіть лікаря, щоб побачити вільний час.')
+        self.assertContains(choice_response, f'value="{self.doctor.id}"')
         response = self.client.get(reverse('doctor_book_patient'), {'doctor': self.doctor.id, 'date': self.date.isoformat(), 'time': '09:00'})
-        self.assertContains(response, f'name="doctor" value="{self.doctor.id}"', count=2)
+        self.assertContains(response, f'<option value="{self.doctor.id}" selected>')
+        self.assertContains(response, f'name="doctor" value="{self.doctor.id}"')
         self.assertContains(response, f'&doctor={self.doctor.id}')
+        self.assertContains(response, 'data-submit-on-change')
         self.assertEqual(self.client.post(reverse('doctor_book_patient'), {}).status_code, 403)
         self.assertEqual(self.client.get(reverse('doctor_book_patient'), {'doctor': 'invalid'}).status_code, 403)
 
@@ -204,6 +209,35 @@ class ClinicManagementTests(TestCase):
         self.assertContains(response, 'value="Анна"')
         self.assertContains(response, 'value="+380502223344"')
         self.assertContains(response, f'&card={card.id}')
+
+    def test_admin_groups_patient_cards_and_can_choose_any_doctor_for_booking(self):
+        other_user = User.objects.create_user('second-doctor', first_name='Марія', last_name='Друга')
+        other = Doctor.objects.create(user=other_user, specialization='Ортодонт')
+        first_card = DoctorPatientCard.objects.create(
+            doctor=self.doctor, patient=self.patient,
+            patient_first_name=self.patient.first_name, patient_last_name=self.patient.last_name,
+            patient_phone=self.patient.profile.phone,
+        )
+        other_card = DoctorPatientCard.objects.create(
+            doctor=other, patient=self.patient,
+            patient_first_name=self.patient.first_name, patient_last_name=self.patient.last_name,
+            patient_phone=self.patient.profile.phone,
+        )
+        response = self.client.get(reverse('clinic_dashboard'), {'tab': 'patients'})
+        self.assertEqual(response.context['page'].paginator.count, 1)
+        self.assertNotContains(response, '<th>Лікар</th>')
+        self.assertContains(response, f'{reverse("doctor_book_patient")}?card={first_card.id}')
+        detail = self.client.get(reverse('doctor_patient_card_detail', args=[first_card.id]))
+        self.assertContains(detail, self.doctor.full_name)
+        self.assertContains(detail, other.full_name)
+        self.assertContains(detail, reverse('doctor_patient_card_detail', args=[other_card.id]))
+        self.assertContains(detail, f'{reverse("doctor_book_patient")}?card={first_card.id}')
+        selection = self.client.get(reverse('doctor_book_patient'), {'card': first_card.id})
+        self.assertContains(selection, f'name="card" value="{first_card.id}"')
+        booking = self.client.get(reverse('doctor_book_patient'), {'doctor': other.id, 'card': first_card.id})
+        self.assertEqual(booking.status_code, 200)
+        self.assertEqual(booking.context['source_card'], first_card)
+        self.assertEqual(booking.context['form'].initial['patient'], self.patient.id)
 
     def test_admin_can_access_clinical_media_but_other_patient_cannot(self):
         with tempfile.TemporaryDirectory() as media_root, override_settings(PRIVATE_MEDIA_ROOT=media_root):

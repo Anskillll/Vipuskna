@@ -49,7 +49,7 @@
         <button type="submit">Зберегти нотатки</button>
       </form>
     </section>
-    {% else %}<section class="card"><h2 class="section-title">Відповідальний лікар</h2><p>{{ doctor.full_name }} · {{ doctor.specialization }}</p><a class="btn" href="{% url 'doctor_book_patient' %}?doctor={{ doctor.id }}&card={{ card.id }}">Новий прийом</a></section>{% endif %}
+    {% else %}<section class="card"><h2 class="section-title">Лікарі пацієнта</h2><div class="actions">{% for doctor_card in related_cards %}<a href="{% url 'doctor_patient_card_detail' doctor_card.id %}"{% if doctor_card.id == card.id %} aria-current="page"{% endif %}>{{ doctor_card.doctor.full_name }} · {{ doctor_card.doctor.specialization }}</a>{% endfor %}</div><p class="muted">Оберіть лікаря, щоб переглянути записи в його картці.</p><a class="btn" href="{% url 'doctor_book_patient' %}?card={{ card.id }}">Записати пацієнта</a></section>{% endif %}
   </div>
 
   {% if not clinic_manager %}
