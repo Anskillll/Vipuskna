@@ -24,7 +24,6 @@
         <div>
           <span class="content-admin-step">01</span>
           <h2>Оформлення клініки</h2>
-          <p>Назва, контакти, логотип і фон клініки.</p>
         </div>
       </header>
       <div class="content-admin-branding-grid">
@@ -50,7 +49,6 @@
         <div>
           <span class="content-admin-step">{% if user.is_staff %}02{% else %}01{% endif %}</span>
           <h2>Верхні фотографії</h2>
-          <p>Ці кадри змінюються у верхній частині головної сторінки кожні 10 секунд.</p>
         </div>
         <span class="content-admin-total">{{ hero_slides|length }} фото</span>
       </header>
@@ -62,7 +60,7 @@
               <img src="{{ slide.image.url }}" alt="{{ slide.title|default:'Фото верхнього слайдера' }}">
               <div class="hero-admin-copy">
                 <strong>{{ slide.title|default:'Без назви' }}</strong>
-                <span>{% if slide.is_active %}Показується на сайті{% else %}Приховано від відвідувачів{% endif %}</span>
+                {% if not slide.is_active %}<span>Приховано</span>{% endif %}
               </div>
               <div class="hero-admin-actions">
                 <form method="post">
@@ -131,7 +129,6 @@
         <div>
           <span class="content-admin-step">{% if user.is_staff %}03{% else %}02{% endif %}</span>
           <h2>Новини</h2>
-          <p>Тут можна створювати новини клініки та перевіряти або виправляти публікації лікарів.</p>
         </div>
         <span class="content-admin-total">{{ posts|length }} публікацій</span>
       </header>
@@ -214,7 +211,6 @@
         <div>
           <span class="content-admin-step">{% if user.is_staff %}04{% else %}03{% endif %}</span>
           <h2>Галерея</h2>
-          <p>Фотографії для рухомої стрічки нижче новин на головній сторінці.</p>
         </div>
         <span class="content-admin-total">{{ gallery_images|length }} фото</span>
       </header>
@@ -246,7 +242,7 @@
                 <img src="{{ item.image.url }}" alt="{{ item.title }}">
                 <div>
                   <strong>{{ item.title|default:'Без підпису' }}</strong>
-                  <span>{% if item.is_published %}Показується на сайті{% else %}Приховано{% endif %}</span>
+                  {% if not item.is_published %}<span>Приховано</span>{% endif %}
                 </div>
                 <div class="actions">
                   <a class="btn secondary compact" href="{% url 'admin_content' %}?gallery={{ item.id }}#gallery">Редагувати</a>

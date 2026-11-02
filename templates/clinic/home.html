@@ -160,7 +160,6 @@
             <h2>Новини клініки</h2>
             {% if clinic_manager %}<a class="home-admin-action" href="{% url 'admin_content' %}#news">{% include 'clinic/_icon.html' with name='plus' %} Додати новину</a>{% endif %}
           </div>
-          <p>Події, зміни в роботі та важлива інформація для пацієнтів.</p>
         </header>
 
         <div class="home-news-grid">
@@ -190,7 +189,6 @@
             <h2>Новини лікарів</h2>
             {% if clinic_manager %}<a class="home-admin-action" href="{% url 'admin_content' %}#news">{% include 'clinic/_icon.html' with name='plus' %} Додати новину</a>{% endif %}
           </div>
-          <p>Пояснення, рекомендації та професійні спостереження лікарів.</p>
         </header>
 
         <div class="home-doctor-news-list">
@@ -226,7 +224,6 @@
             <h2 id="home-gallery-title">Галерея</h2>
             {% if clinic_manager %}<a class="home-admin-action" href="{% url 'admin_content' %}#gallery">{% include 'clinic/_icon.html' with name='plus' %} Додати фото</a>{% endif %}
           </div>
-          <p>Кабінети, команда та звичайні моменти нашої роботи.</p>
         </header>
       </div>
 
@@ -329,7 +326,6 @@
             <path fill="#34A853" d="M24 48c6.4 0 11.8-2.1 15.7-5.7l-7.6-5.9c-2 1.4-4.8 2.4-8.1 2.4-6.3 0-11.7-4.2-13.6-10.1l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/>
           </svg>
           <span>
-            <small>Швидкий та захищений спосіб</small>
             <strong>Увійти через Google</strong>
           </span>
           <span class="home-login-arrow" aria-hidden="true">{% include 'clinic/_icon.html' with name='right' %}</span>

@@ -111,7 +111,6 @@
       {% elif appointment.status == 'approved' %}
         <aside class="card section-card appointment-decision-panel">
           <h2 class="section-title">Керування прийомом</h2>
-          <p class="section-note">Прийом підтверджено. За потреби його можна скасувати.</p>
           {% if appointment.patient %}
             <a class="btn warning appointment-reschedule-button" href="{% url 'doctor_appointment_detail' appointment.id %}?reschedule=1#reschedule">Перенести прийом</a>
           {% endif %}
@@ -172,7 +171,6 @@
         <div class="section-head day-appointments-head">
           <div>
             <h2 class="section-title">Записи на {{ appointment.weekday_name }}, {{ appointment.date|date:'d.m.Y' }}</h2>
-            <p class="section-note">Усі прийоми цього дня</p>
           </div>
           <span class="section-note">{{ day_appointments|length }}</span>
         </div>

@@ -68,7 +68,6 @@
           </article>{% empty %}<div class="empty">Лікарів не знайдено. Додайте лікаря, щоб розпочати роботу.</div>{% endfor %}
           </div>
         {% elif tab == 'patients' %}
-          <p class="muted">Кожен пацієнт показаний один раз. Відкрийте картку, щоб побачити його лікарів та історію прийомів.</p>
           <div class="table-wrap"><table><thead><tr><th>Пацієнт</th><th>Телефон</th><th>Дії</th></tr></thead><tbody>
           {% for row in page %}{% with card=row.card %}<tr><td><a class="clinic-patient-name" href="{% url 'doctor_patient_card_detail' card.id %}">{{ card.full_name }}</a></td><td><a href="tel:{{ card.patient_phone }}">{{ card.patient_phone }}</a></td><td><a href="{% url 'doctor_book_patient' %}?card={{ card.id }}">Записати пацієнта {% include 'clinic/_icon.html' with name='plus' %}</a></td></tr>{% endwith %}{% empty %}<tr><td colspan="3" class="empty">Карток не знайдено. Після запису на прийом картка створюється автоматично.</td></tr>{% endfor %}
           </tbody></table></div>
