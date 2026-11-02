@@ -2864,6 +2864,26 @@ def doctor_services(request):
     edit_id = request.GET.get('edit')
     instance = doctor.services.filter(pk=edit_id).first() if edit_id else None
 
+    if request.method == 'POST' and request.POST.get('action') == 'reorder':
+        raw_ids = request.POST.getlist('service_id')
+        if not raw_ids or any(not value.isdecimal() for value in raw_ids):
+            return JsonResponse({'error': 'Невірний порядок послуг.'}, status=400)
+        ordered_ids = [int(value) for value in raw_ids]
+        if len(ordered_ids) != len(set(ordered_ids)):
+            return JsonResponse({'error': 'Послуги повторюються.'}, status=400)
+        with transaction.atomic():
+            services = list(doctor.services.select_for_update().order_by('sort_order', 'id'))
+            if set(ordered_ids) != {service.id for service in services}:
+                return JsonResponse({'error': 'Список послуг змінився. Оновіть сторінку.'}, status=409)
+            previous_ids = [service.id for service in services]
+            if ordered_ids != previous_ids:
+                by_id = {service.id: service for service in services}
+                for position, service_id in enumerate(ordered_ids):
+                    by_id[service_id].sort_order = position
+                MedicalService.objects.bulk_update(services, ['sort_order'])
+                write_audit_log(request, 'Змінено порядок послуг', doctor)
+        return JsonResponse({'order': ordered_ids})
+
     if request.method == 'POST' and request.POST.get('action') in {'move_up', 'move_down'}:
         service = get_object_or_404(doctor.services, pk=request.POST.get('service_id'))
         services = list(doctor.services.order_by('sort_order', 'id'))

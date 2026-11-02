@@ -1,4 +1,5 @@
 {% extends 'clinic/base.html' %}
+{% load static %}
 
 {% block title %}Послуги лікаря - {{ clinic_branding.clinic_name }}{% endblock %}
 
@@ -10,7 +11,7 @@
     <a class="btn secondary" href="{% url 'doctor_dashboard' %}">До профілю</a>
   </section>
 
-  <section class="card service-manager" data-live-filter>
+  <section class="card service-manager" data-live-filter data-live-filter-no-pagination>
     {% if not editing %}
       <details class="manager-create-disclosure"{% if form.errors %} open{% endif %}>
         <summary class="btn manager-create-trigger">Додати нову послугу</summary>
@@ -50,10 +51,11 @@
         <span class="live-filter-count" data-live-filter-count aria-live="polite"></span>
       </div>
     {% endif %}
-    <div class="service-manager-list">
+    <div class="service-manager-list" data-service-sort data-csrf-token="{{ csrf_token }}">
       {% for service in services %}
         <article
           class="service-manager-item{% if editing.id == service.id %} editing{% endif %}"
+          data-service-id="{{ service.id }}"
           data-live-filter-item
           data-filter-extra="{{ service.name|escape }} {{ service.description|escape }} {% if service.is_patient_selectable %}доступна онлайн запис{% else %}прихована недоступна{% endif %}"
           {% if editing.id == service.id %}data-live-filter-active{% endif %}
@@ -128,32 +130,9 @@
             </form>
           {% else %}
             <div class="service-manager-actions">
-              <div class="service-order-controls" aria-label="Змінити порядок послуги">
-                <form method="post">
-                  {% csrf_token %}
-                  <input type="hidden" name="action" value="move_up">
-                  <input type="hidden" name="service_id" value="{{ service.id }}">
-                  <button
-                    type="submit"
-                    class="secondary service-order-button"
-                    aria-label="Підняти послугу вище"
-                    title="Підняти вище"
-                    {% if forloop.first %}disabled{% endif %}
-                  >{% include 'clinic/_icon.html' with name='up' %}</button>
-                </form>
-                <form method="post">
-                  {% csrf_token %}
-                  <input type="hidden" name="action" value="move_down">
-                  <input type="hidden" name="service_id" value="{{ service.id }}">
-                  <button
-                    type="submit"
-                    class="secondary service-order-button"
-                    aria-label="Опустити послугу нижче"
-                    title="Опустити нижче"
-                    {% if forloop.last %}disabled{% endif %}
-                  >{% include 'clinic/_icon.html' with name='down' %}</button>
-                </form>
-              </div>
+              <button type="button" class="service-drag-handle" draggable="true" aria-label="Перетягнути послугу {{ service.name }}" title="Перетягнути послугу">
+                <svg width="16" height="22" viewBox="0 0 16 22" aria-hidden="true"><circle cx="5" cy="5" r="1.5"/><circle cx="11" cy="5" r="1.5"/><circle cx="5" cy="11" r="1.5"/><circle cx="11" cy="11" r="1.5"/><circle cx="5" cy="17" r="1.5"/><circle cx="11" cy="17" r="1.5"/></svg>
+              </button>
               <form method="post">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="toggle_patient_visibility">
@@ -188,4 +167,7 @@
       {% endif %}
     </div>
   </section>
+  {% if services %}
+    <script src="{% static 'clinic/service_sort.js' %}?v=20261102-1" defer></script>
+  {% endif %}
 {% endblock %}

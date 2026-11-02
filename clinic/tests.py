@@ -1313,6 +1313,40 @@ class ClinicModelTests(TestCase):
         content = dashboard_response.content.decode()
         self.assertLess(content.index('Друга послуга'), content.index(self.service.name))
 
+    def test_doctor_can_drag_services_into_any_order(self):
+        second = MedicalService.objects.create(doctor=self.doctor, name='Друга послуга', sort_order=1)
+        third = MedicalService.objects.create(doctor=self.doctor, name='Третя послуга', sort_order=2)
+        self.client.login(username='doctor@test.local', password='pass12345')
+
+        page = self.client.get(reverse('doctor_services'))
+        self.assertContains(page, 'data-service-sort')
+        self.assertContains(page, 'service-drag-handle')
+        self.assertNotContains(page, 'service-order-button')
+
+        response = self.client.post(reverse('doctor_services'), {
+            'action': 'reorder',
+            'service_id': [third.id, self.service.id, second.id],
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['order'], [third.id, self.service.id, second.id])
+        self.assertEqual(list(self.doctor.services.values_list('id', flat=True)),
+                         [third.id, self.service.id, second.id])
+
+    def test_service_reorder_rejects_incomplete_or_duplicate_list(self):
+        second = MedicalService.objects.create(doctor=self.doctor, name='Друга послуга', sort_order=1)
+        self.client.login(username='doctor@test.local', password='pass12345')
+        for submitted, expected_status in (
+            ([self.service.id], 409),
+            ([self.service.id, self.service.id], 400),
+            ([self.service.id, 999999], 409),
+        ):
+            response = self.client.post(reverse('doctor_services'), {
+                'action': 'reorder', 'service_id': submitted,
+            })
+            self.assertEqual(response.status_code, expected_status)
+            self.assertEqual(list(self.doctor.services.values_list('id', flat=True)),
+                             [self.service.id, second.id])
+
     def test_doctor_can_toggle_service_visibility_without_editing(self):
         self.client.login(username='doctor@test.local', password='pass12345')
 

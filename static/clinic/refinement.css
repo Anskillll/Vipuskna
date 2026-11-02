@@ -1107,3 +1107,35 @@ body:not(.public-home-page) .nav .account-menu-panel > a.account-menu-logout:foc
   .booking-for-other-fields { grid-template-columns: minmax(0, 1fr); }
   .booking-for-other.is-expanded .booking-for-other-fields { max-height: 560px; }
 }
+
+body:not(.public-home-page) .service-drag-handle {
+  display: grid;
+  place-items: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid #dce3df;
+  border-radius: 9px;
+  background: #f3f8f5;
+  color: #5e7973;
+  cursor: grab;
+  touch-action: none;
+}
+body:not(.public-home-page) .service-drag-handle svg {
+  display: block;
+  fill: currentColor;
+  pointer-events: none;
+}
+body:not(.public-home-page) .service-drag-handle:hover,
+body:not(.public-home-page) .service-drag-handle:focus-visible {
+  border-color: #7ab4a8;
+  background: #e8f3ef;
+  color: #176d63;
+}
+body:not(.public-home-page) .service-drag-handle:active { cursor: grabbing; }
+body:not(.public-home-page) .service-manager-item.is-dragging {
+  opacity: .55;
+  border-color: #7ab4a8;
+  background: #e8f3ef;
+}
