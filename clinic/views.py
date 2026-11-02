@@ -3377,12 +3377,6 @@ def admin_content(request):
             'hero_slides': hero_slides,
             'posts': posts,
             'gallery_images': gallery_images,
-            'content_stats': {
-                'hero': hero_slides.filter(is_active=True).count(),
-                'clinic_news': posts.filter(doctor__isnull=True, is_published=True).count(),
-                'doctor_news': posts.filter(doctor__isnull=False, is_published=True).count(),
-                'gallery': gallery_images.filter(is_published=True).count(),
-            },
         },
     )
 

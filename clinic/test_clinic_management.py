@@ -128,11 +128,13 @@ class ClinicManagementTests(TestCase):
         self.client.force_login(self.chief)
         response = self.client.get(reverse('admin_content'))
         self.assertEqual(response.status_code, 200)
-        for visible in ('Оформлення клініки', 'Верхні фотографії', 'Новини клініки', 'Фото галереї',
+        for visible in ('Оформлення клініки', 'Верхні фотографії', 'Новини', 'Галерея',
                         'name="action" value="save_settings"', 'name="action" value="save_hero"',
                         'name="action" value="save_news"', 'name="action" value="save_gallery"'):
             with self.subTest(visible=visible):
                 self.assertContains(response, visible)
+        self.assertNotContains(response, 'Переглянути сайт')
+        self.assertNotContains(response, 'content-admin-summary')
 
         image_data = (b'GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff!\xf9\x04\x01\x00\x00\x00\x00,'
                       b'\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;')

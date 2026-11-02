@@ -12,29 +12,6 @@
       </div>
     </section>
 
-    <div class="content-admin-toolbar">
-      <a class="btn secondary" href="{% url 'home' %}" target="_blank" rel="noopener">Переглянути сайт</a>
-    </div>
-
-    <section class="content-admin-summary" aria-label="Опублікований контент">
-      <div>
-        <span>Слайди</span>
-        <strong>{{ content_stats.hero }}</strong>
-      </div>
-      <div>
-        <span>Новини клініки</span>
-        <strong>{{ content_stats.clinic_news }}</strong>
-      </div>
-      <div>
-        <span>Новини лікарів</span>
-        <strong>{{ content_stats.doctor_news }}</strong>
-      </div>
-      <div>
-        <span>Фото галереї</span>
-        <strong>{{ content_stats.gallery }}</strong>
-      </div>
-    </section>
-
     <nav class="content-admin-jump" aria-label="Швидкий перехід до редактора">
       {% if user.is_staff %}<a href="#branding">Оформлення клініки</a>{% endif %}
       <a href="#hero-slides">Верхні фотографії</a>

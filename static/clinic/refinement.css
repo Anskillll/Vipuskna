@@ -237,7 +237,6 @@ body:not(.public-home-page) .content-admin {
 }
 body:not(.public-home-page) .content-admin > .admin-tabs-head,
 body:not(.public-home-page) .content-admin > .admin-tabs { margin: 0; }
-.content-admin-toolbar { display: flex; justify-content: flex-end; }
 .admin-broadcast-shell > .admin-broadcast-count {
   display: flex;
   align-items: center;
