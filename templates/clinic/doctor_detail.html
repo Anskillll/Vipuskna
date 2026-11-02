@@ -5,18 +5,16 @@
 
 {% block content %}
   {% with schedules=doctor.schedules.all services=doctor.services.all %}
-    <div class="profile-back-row">
-      {% if booking_return_url %}
+    {% if booking_return_url %}
+      <div class="profile-back-row">
         <a
           class="back-link"
           href="{{ booking_return_url }}"
           data-booking-return
           data-booking-path="{% url 'booking' %}"
         >{% include 'clinic/_icon.html' with name='left' %} Повернутися до запису</a>
-      {% else %}
-        <a class="back-link" href="{% url 'doctors' %}">{% include 'clinic/_icon.html' with name='left' %} Повернутися до списку лікарів</a>
-      {% endif %}
-    </div>
+      </div>
+    {% endif %}
 
     <section class="card doctor-detail-profile doctor-profile-overview doctor-public-overview">
       <div class="doctor-profile-hero">

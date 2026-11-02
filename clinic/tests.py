@@ -443,13 +443,7 @@ class ClinicModelTests(TestCase):
             reverse('doctor_detail', args=[self.doctor.id])
         )
         self.assertEqual(detail_response.status_code, 200)
-        self.assertContains(
-            detail_response,
-            (
-                f'class="back-link" href="{reverse("doctors")}">'
-                '<svg class="ui-icon"'
-            ),
-        )
+        self.assertNotContains(detail_response, 'Повернутися до списку лікарів')
         self.assertNotContains(detail_response, 'data-history-back')
 
         base_template = (
@@ -1558,7 +1552,7 @@ class ClinicModelTests(TestCase):
         self.assertContains(detail_response, self.doctor.description)
         self.assertContains(detail_response, self.service.name)
         self.assertContains(detail_response, 'Графік роботи')
-        self.assertContains(detail_response, 'Повернутися до списку лікарів')
+        self.assertNotContains(detail_response, 'Повернутися до списку лікарів')
 
     def test_booking_doctor_summary_is_compact(self):
         self.client.login(username='patient@test.local', password='pass12345')
