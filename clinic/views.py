@@ -3026,10 +3026,14 @@ def doctor_news(request):
     )
 
 
-@clinic_manager_required
 def clinic_dashboard(request):
-    if request.user.is_staff:
-        raise PermissionDenied
+    if not request.user.is_authenticated or not request.user.is_active:
+        return redirect('administration_login')
+    role = user_role(request.user)
+    if role != Profile.ROLE_CLINIC_ADMIN:
+        if role in {'admin', Profile.ROLE_DOCTOR, Profile.ROLE_PATIENT}:
+            return redirect_by_role(request.user)
+        return redirect('home')
     refresh_completed_appointments()
     tab = request.GET.get('tab', 'schedule')
     if tab not in {'schedule', 'requests', 'patients', 'doctors'}:

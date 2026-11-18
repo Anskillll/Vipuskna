@@ -4369,7 +4369,10 @@ class ClinicModelTests(TestCase):
                 positions = [nav.index(label) for label in expected_labels]
                 self.assertEqual(positions, sorted(positions))
 
-        self.assertEqual(self.client.get(reverse('clinic_dashboard')).status_code, 403)
+        self.assertRedirects(
+            self.client.get(reverse('clinic_dashboard')),
+            reverse('admin_panel'),
+        )
         self.assertEqual(self.client.get(reverse('admin_add_doctor')).status_code, 403)
 
     def test_telegram_broadcast_page_requires_admin(self):

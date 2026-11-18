@@ -205,7 +205,12 @@ class ClinicManagementTests(TestCase):
             self.client.logout()
             if user:
                 self.client.force_login(user)
-            for name in ('clinic_dashboard', 'clinic_admin_profile', 'admin_add_doctor', 'admin_telegram_broadcast'):
+            expected_dashboard = reverse('patient_dashboard' if user == self.patient else 'doctor_dashboard')
+            with self.subTest(user=user, route='clinic_dashboard'):
+                response = self.client.get(reverse('clinic_dashboard'))
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(response.url, expected_dashboard)
+            for name in ('clinic_admin_profile', 'admin_add_doctor', 'admin_telegram_broadcast'):
                 with self.subTest(user=user, route=name):
                     self.assertEqual(self.client.get(reverse(name)).status_code, 403)
         self.manager.is_active = False
