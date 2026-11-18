@@ -92,7 +92,10 @@ def telegram_status(request):
     except Profile.DoesNotExist:
         role = Profile.ROLE_DOCTOR if hasattr(request.user, 'doctor_profile') else None
 
-    eligible = role in {Profile.ROLE_DOCTOR, Profile.ROLE_CLINIC_ADMIN}
+    if role not in {Profile.ROLE_DOCTOR, Profile.ROLE_PATIENT}:
+        return context
+
+    eligible = role == Profile.ROLE_DOCTOR
     if role == Profile.ROLE_PATIENT:
         eligible = SocialAccount.objects.filter(user=request.user, provider='google').exists()
 
