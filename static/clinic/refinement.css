@@ -807,8 +807,8 @@ button.notice-dismiss,
 button.notice-dismiss:hover,
 button.notice-dismiss:active {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 4px;
+  right: 4px;
   display: grid;
   place-items: center;
   width: 32px;
@@ -816,15 +816,16 @@ button.notice-dismiss:active {
   height: 32px;
   min-height: 32px;
   padding: 0;
-  border: 1px solid #afcbc5;
-  border-radius: 9px;
-  background: #ffffffa8;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   box-shadow: none;
   color: #315c55;
   cursor: pointer;
   transform: none;
 }
-button.notice-dismiss:hover { background: #fff; color: #0b7168; }
+button.notice-dismiss:hover { background: transparent; color: #0b7168; }
+button.notice-dismiss:focus-visible { outline: 2px solid #0b7168; outline-offset: 1px; }
 button.notice-dismiss .ui-icon { width: 17px; height: 17px; }
 [data-dismissible-notice][hidden], .home-telegram-connect-banner[hidden] { display: none; }
 .home-login-admin-link { display: block; margin-top: 14px; color: #5c7770; font-size: 11px; font-weight: 600; text-align: center; text-decoration: underline; text-underline-offset: 3px; }
@@ -888,7 +889,7 @@ button.notice-dismiss .ui-icon { width: 17px; height: 17px; }
   .patient-dashboard-alert .btn { min-height: 38px; padding: 8px 12px; }
   .patient-dashboard-alert .patient-alert-doctor img,
   .patient-dashboard-alert .patient-alert-doctor-placeholder { width: 40px; height: 40px; }
-  button.notice-dismiss { top: 8px; right: 8px; }
+  button.notice-dismiss { top: 4px; right: 4px; }
   .public-home-page .home-hero-nav-links .home-hero-signin { min-height: 34px; padding: 7px 12px; font-size: 12px; }
 }
 
@@ -1028,31 +1029,32 @@ body:not(.public-home-page) .nav .account-menu-panel > a.account-menu-logout:foc
 .current-visit-banner-actions { align-items: center; padding-right: 56px; }
 .current-visit-dismiss {
   position: absolute;
-  top: 10px;
-  right: 12px;
+  top: 4px;
+  right: 4px;
   display: grid;
-  width: 38px;
-  min-width: 38px;
-  height: 38px;
-  min-height: 38px;
-  flex: 0 0 38px;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  flex: 0 0 32px;
   place-items: center;
   padding: 0;
-  border: 1px solid #b8d8c5;
-  border-radius: 50%;
-  background: #eff8f2;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: #286350;
   box-shadow: none;
   cursor: pointer;
 }
 .current-visit-dismiss:hover,
 .current-visit-dismiss:focus-visible {
-  border-color: #dc4b45;
-  background: #fff0ee;
+  border-color: transparent;
+  background: transparent;
   color: #b42318;
-  box-shadow: 0 0 0 3px #dc262626, 0 4px 12px #dc262633;
+  box-shadow: none;
   transform: none;
 }
+.current-visit-dismiss:focus-visible { outline: 2px solid #b42318; outline-offset: 1px; }
 .current-visit-dismiss .ui-icon { width: 17px; height: 17px; min-width: 17px; }
 [data-current-visit-banner][hidden] { display: none; }
 @media (max-width: 720px) {
